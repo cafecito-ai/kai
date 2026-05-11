@@ -75,7 +75,14 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
       </Routes>
   );
 
-  if (!authEnabled) return routes;
+  if (!authEnabled) {
+    return (
+      <>
+        <AppDataHydrator />
+        {routes}
+      </>
+    );
+  }
 
   return (
     <ApiAuthBridge>

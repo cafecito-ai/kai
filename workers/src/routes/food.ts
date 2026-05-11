@@ -4,15 +4,19 @@ import type { Env } from "../types";
 export const foodRoutes = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
 
 foodRoutes.post("/food-photo", async (c) => {
-  const body = await c.req.json<{ r2Key?: string }>();
+  const body = await c.req.json<{ r2Key?: string; note?: string }>();
   const id = crypto.randomUUID();
-  const items = [
-    { name: "Detected meal item", calories: 320, protein: 18, carbs: 34, fat: 12 }
-  ];
+  const items = parseFoodItems(body.note);
   await c.env.DB.prepare("INSERT INTO meals (id, user_id, photo_r2_key, items, total_calories, total_protein) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(id, c.get("userId"), body.r2Key ?? null, JSON.stringify(items), 320, 18)
+    .bind(id, c.get("userId"), body.r2Key ?? null, JSON.stringify(items), null, null)
     .run();
-  return c.json({ mealId: id, items, totals: { calories: 320, protein: 18, carbs: 34, fat: 12 }, confidence: 0.68 });
+  return c.json({
+    mealId: id,
+    items,
+    totals: null,
+    confidence: body.r2Key ? "photo_stub" : "manual_stub",
+    notes: "Food photo analysis is descriptive in beta. Kai does not score meals or show calorie targets."
+  });
 });
 
 foodRoutes.patch("/meals/:mealId", async (c) => {
@@ -22,3 +26,14 @@ foodRoutes.patch("/meals/:mealId", async (c) => {
     .run();
   return c.json({ meal: { id: c.req.param("mealId"), ...body } });
 });
+
+function parseFoodItems(note?: string) {
+  const items = (note ?? "")
+    .split(/,|\n/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+
+  if (items.length === 0) return [{ name: "Meal item", source: "manual" }];
+  return items.map((name) => ({ name, source: "manual" }));
+}

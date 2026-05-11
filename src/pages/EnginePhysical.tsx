@@ -46,7 +46,7 @@ export function EnginePhysical() {
     }
   }
 
-  function logMeal(mode: "meal_log" | "food_photo_stub") {
+  async function logMeal(mode: "meal_log" | "food_photo_stub") {
     const safety = localSafetyCheck(meal);
     if (!safety.safe) {
       setFoodSafetyMessage(
@@ -55,10 +55,21 @@ export function EnginePhysical() {
       return;
     }
 
-    void completeEntry({
+    const photoResult = mode === "food_photo_stub" ? await api.analyzeFoodPhoto({ note: meal }) : null;
+
+    await completeEntry({
       entryType: mode,
       title: mode === "meal_log" ? "Fuel note" : "Food photo stub",
-      payload: mode === "meal_log" ? { meal, mode: "fuel_note" } : { meal, labels: ["meal", "editable"] },
+      payload:
+        mode === "meal_log"
+          ? { meal, mode: "fuel_note" }
+          : {
+              meal,
+              mealId: photoResult?.mealId,
+              items: photoResult?.items ?? [],
+              notes: photoResult?.notes,
+              labels: ["meal", "editable", "no calorie target"]
+            },
       eventType: mode === "meal_log" ? "meal_logged" : "food_photo_stub",
       eventValue: mode === "meal_log" ? 24 : 12
     });
@@ -77,6 +88,19 @@ export function EnginePhysical() {
           </p>
           <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
           {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {foodExamples.map((example) => (
+              <button
+                key={example.title}
+                type="button"
+                onClick={() => setMeal(example.note)}
+                className="focus-ring overflow-hidden rounded-kai border border-white/15 bg-white/10 text-left"
+              >
+                <img src="/images/food-photo-examples.png" alt={example.title} className={`h-24 w-full object-cover ${example.position}`} />
+                <span className="block px-2 py-1.5 text-[11px] font-black text-paper/80">{example.title}</span>
+              </button>
+            ))}
+          </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               disabled={saving === "meal_log"}
@@ -88,13 +112,21 @@ export function EnginePhysical() {
               variant="secondary"
               className="border-white/20 bg-white/10 text-paper hover:border-white/50"
               disabled={saving === "food_photo_stub"}
-              onClick={() => logMeal("food_photo_stub")}
+              onClick={() => void logMeal("food_photo_stub")}
             >
-              Photo stub
+              Use photo example
             </Button>
           </div>
         </section>
         <section className="grid gap-3">
+          <div className="overflow-hidden rounded-kai border border-line bg-white shadow-sm">
+            <img src="/images/food-photo-examples.png" alt="Example food photos for Kai food logging" className="h-48 w-full object-cover" />
+            <div className="p-4">
+              <p className="eyebrow">photo examples</p>
+              <h3 className="mt-2 font-display text-xl font-black tracking-normal">Descriptive, not judgmental.</h3>
+              <p className="mt-2 text-sm leading-6 text-muted">Kai can use photos as context, then asks what helped and how it felt. No calorie targets or food scores.</p>
+            </div>
+          </div>
           <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, hunger/fullness, energy after, and any useful context." />
           <PhysicalModule icon={<Camera />} title="Photo flow" copy="R2 upload and Workers AI vision slot. Output stays soft: sandwich, fruit, water." />
           <PhysicalModule icon={<Wind />} title="Guardrail" copy="Risk language redirects to support. No restriction rewards or body comparison." />
@@ -171,6 +203,12 @@ export function EnginePhysical() {
     </EnginePanel>
   );
 }
+
+const foodExamples = [
+  { title: "sandwich + apple", note: "Turkey sandwich, apple, water", position: "object-left" },
+  { title: "yogurt bowl", note: "Yogurt, berries, granola", position: "object-center" },
+  { title: "rice bowl", note: "Rice bowl with chicken, greens, avocado", position: "object-right" }
+];
 
 function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");

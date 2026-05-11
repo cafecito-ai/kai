@@ -37,7 +37,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 function getDevUser() {
   if (typeof window === "undefined") return null;
   const host = window.location.hostname;
-  const canUseDevUser = host === "localhost" || host === "127.0.0.1" || host.endsWith(".pages.dev");
+  const authRequired = import.meta.env.VITE_AUTH_REQUIRED === "1";
+  const canUseDevUser =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.endsWith(".pages.dev") ||
+    (host === "kai.boostaisearch.ai" && !authRequired);
   if (!canUseDevUser) return null;
   return localStorage.getItem("kai.devUser") || "demo-teen";
 }
@@ -71,6 +76,11 @@ export const api = {
     request<{ entries: EngineEntry[] }>(`/api/engines/${engine}/entries`),
   createEngineEntry: (engine: EngineId, body: { entryType: string; title?: string; payload?: unknown; completed?: boolean }) =>
     request<{ entry: EngineEntry }>(`/api/engines/${engine}/entries`, { method: "POST", body: JSON.stringify(body) }),
+  analyzeFoodPhoto: (body: { r2Key?: string; note?: string }) =>
+    request<{ mealId: string; items: Array<{ name: string; source?: string }>; totals: null; confidence: string; notes: string }>("/api/food-photo", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
   sendParentConsent: (body: { parentEmail: string; teenName?: string }) =>
     request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) })
 };

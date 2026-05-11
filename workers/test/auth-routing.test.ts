@@ -12,4 +12,11 @@ describe("worker auth routing", () => {
     const res = await app.fetch(new Request("https://worker.test/api/user/me"), { APP_ENV: "production" } as never);
     expect(res.status).toBe(401);
   });
+
+  it("allows production review users without ops access", async () => {
+    const res = await app.fetch(new Request("https://worker.test/api/ops/safety-events", { headers: { "x-dev-user": "demo-teen" } }), {
+      APP_ENV: "production"
+    } as never);
+    expect(res.status).toBe(403);
+  });
 });

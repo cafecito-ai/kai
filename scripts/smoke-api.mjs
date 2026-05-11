@@ -91,6 +91,15 @@ async function main() {
   });
   console.log(`Entry: ${entry.entry.id}`);
 
+  const foodPhoto = await request("/api/food-photo", {
+    method: "POST",
+    body: JSON.stringify({ note: "apple, water" })
+  });
+  if (foodPhoto.totals !== null) {
+    throw new Error("Food photo smoke expected no calorie totals by default");
+  }
+  console.log(`Food photo meal: ${foodPhoto.mealId}`);
+
   const entries = await request("/api/engines/physical/entries");
   if (!entries.entries.some((item) => item.id === entry.entry.id)) {
     throw new Error("Created engine entry was not returned by list endpoint");

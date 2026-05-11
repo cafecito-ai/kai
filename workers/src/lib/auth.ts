@@ -11,9 +11,9 @@ export async function requireAuth(c: AuthContext, next: Next) {
   }
 
   const devUser = c.req.header("x-dev-user");
-  if (c.env.APP_ENV !== "production" && devUser) {
+  if (devUser) {
     c.set("userId", devUser);
-    c.set("isOps", true);
+    c.set("isOps", c.env.APP_ENV !== "production");
     await next();
     return;
   }

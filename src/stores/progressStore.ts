@@ -5,6 +5,7 @@ import { beltForLevel, calculateLevel, calculateStreak } from "../lib/tracker";
 
 interface ProgressState {
   events: ProgressEvent[];
+  setEvents: (events: ProgressEvent[]) => void;
   addEvent: (event: Omit<ProgressEvent, "id" | "occurredAt">) => void;
   level: () => number;
   streak: () => number;
@@ -13,6 +14,7 @@ interface ProgressState {
 
 export const useProgressStore = create<ProgressState>((set, get) => ({
   events: [],
+  setEvents: (events) => set({ events }),
   addEvent: (event) => {
     void api.logProgress(event).catch(() => undefined);
     set((state) => ({

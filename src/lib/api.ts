@@ -1,4 +1,4 @@
-import type { EngineId, Goal, KaiTone, ProgressEvent } from "./types";
+import type { EngineId, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const PROD_API_BASE = "https://kai.evan-ratner.workers.dev";
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
@@ -44,13 +44,13 @@ function getDevUser() {
 
 export const api = {
   getUser: () =>
-    request<{ user: unknown; intake: unknown; primaryEngine: EngineId; kaiName: string; kaiTone: KaiTone }>("/api/user/me"),
+    request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
   chat: (engine: EngineId | "kai", message: string, conversationId = "local") =>
     request<{ reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
       method: "POST",
       body: JSON.stringify({ conversationId, message })
     }),
-  updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string }) =>
+  updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean }) =>
     request("/api/user/me", { method: "PATCH", body: JSON.stringify(body) }),
   submitIntake: (responses: Record<string, string>) =>
     request<{ summary: string; suggestedEngine: EngineId; reasoning: string }>("/api/onboarding/intake", {
@@ -65,6 +65,6 @@ export const api = {
     request<{ goal: Goal }>("/api/goals", { method: "POST", body: JSON.stringify(goal) }),
   updateGoal: (goalId: string, body: Partial<Goal>) =>
     request<{ goal: Goal }>(`/api/goals/${goalId}`, { method: "PATCH", body: JSON.stringify(body) }),
-  sendParentConsent: (body: { parentEmail: string; teenName?: string; consentUrl: string }) =>
-    request<{ ok: boolean }>("/api/parent/consent", { method: "POST", body: JSON.stringify(body) })
+  sendParentConsent: (body: { parentEmail: string; teenName?: string }) =>
+    request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) })
 };

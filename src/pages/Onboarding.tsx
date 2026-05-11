@@ -46,13 +46,13 @@ export function Onboarding() {
         kaiTone,
         primaryEngine: engine,
         age: Number(age) || undefined,
-        parentEmail: parentEmail || undefined
+        parentEmail: parentEmail || undefined,
+        onboardingCompleted: true
       });
       if (Number(age) < 18 && parentEmail) {
         void api.sendParentConsent({
           parentEmail,
-          teenName: kaiName || "Kai user",
-          consentUrl: `${window.location.origin}/for-parents`
+          teenName: kaiName || "Kai user"
         }).catch(() => undefined);
       }
       setKai(kaiName || "Kai", kaiTone);

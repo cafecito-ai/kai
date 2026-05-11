@@ -1,15 +1,21 @@
 import { useAuth } from "@clerk/clerk-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { setApiAuthTokenGetter } from "../../lib/api";
 
 export function ApiAuthBridge({ children }: { children: ReactNode }) {
   const { getToken } = useAuth();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    setReady(false);
     setApiAuthTokenGetter(() => getToken());
-    return () => setApiAuthTokenGetter(null);
+    setReady(true);
+    return () => {
+      setReady(false);
+      setApiAuthTokenGetter(null);
+    };
   }, [getToken]);
 
-  return <>{children}</>;
+  return ready ? <>{children}</> : null;
 }

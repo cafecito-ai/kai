@@ -19,6 +19,15 @@ export interface Goal {
   status: "active" | "achieved" | "paused" | "released";
 }
 
+export interface UserProfile {
+  kaiName: string;
+  kaiTone: KaiTone;
+  primaryEngine: EngineId;
+  onboardingCompletedAt?: string | null;
+  consentStatus?: "not_required" | "pending" | "complete";
+  parentConsentAt?: string | null;
+}
+
 export interface SafetyResult {
   safe: boolean;
   category?: string;

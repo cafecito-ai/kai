@@ -1,5 +1,6 @@
 import { SignIn, SignUp } from "@clerk/clerk-react";
 import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { AppDataHydrator } from "./components/app/AppDataHydrator";
 import { ApiAuthBridge } from "./components/auth/ApiAuthBridge";
 import { RequireAuth } from "./components/auth/RequireAuth";
 import { RequireOnboarding } from "./components/auth/RequireOnboarding";
@@ -48,6 +49,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
 
   return (
     <ApiAuthBridge>
+      <AppDataHydrator />
       {routes}
     </ApiAuthBridge>
   );

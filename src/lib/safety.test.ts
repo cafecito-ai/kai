@@ -11,4 +11,10 @@ describe("localSafetyCheck", () => {
     expect(result.safe).toBe(false);
     expect(result.category).toBe("suicide_ideation");
   });
+
+  it("flags risky food and body language", () => {
+    const result = localSafetyCheck("I hate my body and I am skipping meals");
+    expect(result.safe).toBe(false);
+    expect(result.category).toBe("eating_disorder");
+  });
 });

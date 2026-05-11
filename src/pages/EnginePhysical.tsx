@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
+import { localSafetyCheck } from "../lib/safety";
 import type { EngineEntry } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
@@ -11,12 +12,14 @@ export function EnginePhysical() {
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
   const [entries, setEntries] = useState<EngineEntry[]>([]);
   const [saving, setSaving] = useState("");
+  const [foodSafetyMessage, setFoodSafetyMessage] = useState("");
 
   useEffect(() => {
     void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
   }, []);
 
   async function completeEntry(input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) {
+    setFoodSafetyMessage("");
     setSaving(input.entryType);
     const optimistic: EngineEntry = {
       id: crypto.randomUUID(),
@@ -43,6 +46,24 @@ export function EnginePhysical() {
     }
   }
 
+  function logMeal(mode: "meal_log" | "food_photo_stub") {
+    const safety = localSafetyCheck(meal);
+    if (!safety.safe) {
+      setFoodSafetyMessage(
+        "This sounds bigger than a normal food note. Kai will not score, reward, or optimize restriction. If eating or body thoughts feel hard to control, bring in a trusted adult or clinician."
+      );
+      return;
+    }
+
+    void completeEntry({
+      entryType: mode,
+      title: mode === "meal_log" ? "Fuel note" : "Food photo stub",
+      payload: mode === "meal_log" ? { meal, mode: "fuel_note" } : { meal, labels: ["meal", "editable"] },
+      eventType: mode === "meal_log" ? "meal_logged" : "food_photo_stub",
+      eventValue: mode === "meal_log" ? 24 : 12
+    });
+  }
+
   return (
     <EnginePanel title="Physical wellness" label="Body" accent="text-sage" intro="Food, movement, sleep, stretching, and breathing. Useful, pattern-aware, never obsessive.">
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
@@ -55,18 +76,11 @@ export function EnginePhysical() {
             The first version captures what happened, how it felt, and what helped. It avoids good/bad meal labels, body scoring, and weight-loss loops.
           </p>
           <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
+          {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               disabled={saving === "meal_log"}
-              onClick={() =>
-                completeEntry({
-                  entryType: "meal_log",
-                  title: "Fuel note",
-                  payload: { meal, mode: "fuel_note" },
-                  eventType: "meal_logged",
-                  eventValue: 24
-                })
-              }
+              onClick={() => logMeal("meal_log")}
             >
               {saving === "meal_log" ? "Logging" : "Log fuel note"}
             </Button>
@@ -74,15 +88,7 @@ export function EnginePhysical() {
               variant="secondary"
               className="border-white/20 bg-white/10 text-paper hover:border-white/50"
               disabled={saving === "food_photo_stub"}
-              onClick={() =>
-                completeEntry({
-                  entryType: "food_photo_stub",
-                  title: "Food photo stub",
-                  payload: { meal, labels: ["meal", "editable"] },
-                  eventType: "food_photo_stub",
-                  eventValue: 12
-                })
-              }
+              onClick={() => logMeal("food_photo_stub")}
             >
               Photo stub
             </Button>

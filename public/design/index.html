@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kai Design — Pick a Direction</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Inter+Tight:wght@600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0E0E12;
+  --surface: #1A1A22;
+  --surface-2: #232330;
+  --border: #2A2A38;
+  --text: #F5F5F7;
+  --text-dim: #A8A8B5;
+  --text-mute: #6B6B7A;
+  --accent: #6EE7FF;
+  --accent-2: #B084FF;
+  --warm: #FFB74D;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  background:
+    radial-gradient(800px 600px at 10% 10%, rgba(110, 231, 255, 0.06), transparent 60%),
+    radial-gradient(900px 700px at 95% 90%, rgba(176, 132, 255, 0.06), transparent 60%),
+    var(--bg);
+}
+
+.frame {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 64px 32px 96px;
+}
+
+.header {
+  margin-bottom: 64px;
+}
+.eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace, system-ui;
+  margin-bottom: 18px;
+}
+.title {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.0;
+  margin-bottom: 18px;
+}
+.title em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+}
+.sub {
+  font-size: 18px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  max-width: 600px;
+}
+
+.intro {
+  margin: 40px 0 64px;
+  padding: 24px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+.intro strong { color: var(--text); }
+
+.directions {
+  display: grid;
+  gap: 20px;
+}
+
+.dir {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 32px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 200ms, transform 200ms;
+  align-items: center;
+}
+.dir:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.dir-body { min-width: 0; }
+.dir-num {
+  font-family: 'JetBrains Mono', monospace, system-ui;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.dir-title {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 10px;
+}
+.dir-title em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+.dir-tagline {
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+.dir-refs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.dir-ref {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-mute);
+}
+.dir-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* preview chip art */
+.dir-preview {
+  width: 100%;
+  aspect-ratio: 1.4 / 1;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* preview 1: bold electric */
+.dir-preview.electric {
+  background: linear-gradient(135deg, #0F141C 0%, #1A1A2E 100%);
+  border: 1px solid #2A3145;
+}
+.dir-preview.electric::before {
+  content: "";
+  position: absolute;
+  top: 20%;
+  left: 20%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #6EE7FF 0%, #B084FF 60%, transparent 80%);
+  box-shadow: 0 0 60px rgba(110, 231, 255, 0.4);
+  filter: blur(2px);
+}
+.dir-preview.electric::after {
+  content: "Kai";
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #6EE7FF, #FF7AE0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* preview 2: y2k soft */
+.dir-preview.y2k {
+  background: #FFF8EE;
+  border: 2px solid #1F1A2E;
+  box-shadow: 4px 4px 0 rgba(31, 26, 46, 0.8);
+  display: grid;
+  place-items: center;
+}
+.dir-preview.y2k::before {
+  content: "";
+  width: 90px;
+  height: 90px;
+  background: #FF8B6A;
+  border: 3px solid #1F1A2E;
+  border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%;
+  box-shadow: 4px 4px 0 #1F1A2E;
+  position: relative;
+}
+.dir-preview.y2k::after {
+  content: "Kai";
+  position: absolute;
+  bottom: 14px;
+  left: 16px;
+  font-family: 'Instrument Serif', serif;
+  font-weight: 700;
+  font-size: 28px;
+  font-style: italic;
+  color: #1F1A2E;
+}
+
+/* preview 3: calm teen */
+.dir-preview.calm {
+  background: #FAFAF7;
+  border: 1px solid #E5E2D9;
+  display: grid;
+  place-items: center;
+}
+.dir-preview.calm::before {
+  content: "k";
+  width: 90px;
+  height: 90px;
+  background: #0A0A0A;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 58px;
+  color: #FAFAF7;
+  line-height: 1;
+}
+.dir-preview.calm::after {
+  content: "Kai";
+  position: absolute;
+  bottom: 14px;
+  left: 18px;
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  color: #0A0A0A;
+}
+
+@media (max-width: 720px) {
+  .frame { padding: 32px 16px 64px; }
+  .dir { grid-template-columns: 1fr; gap: 20px; }
+  .dir-preview { max-height: 200px; }
+}
+
+.note {
+  margin-top: 56px;
+  padding: 24px 28px;
+  background: rgba(255, 183, 77, 0.08);
+  border: 1px solid rgba(255, 183, 77, 0.3);
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.note-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--warm);
+  margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <header class="header">
+    <div class="eyebrow">PROJECT NORTH STAR · DESIGN REVIEW</div>
+    <h1 class="title">Three directions.<br>Pick the one that <em>feels right.</em></h1>
+    <p class="sub">Three working prototypes of Kai's home, onboarding, and meet-Kai screens. Open each one on your phone. The one that makes you go "yes" is the one we build.</p>
+  </header>
+
+  <div class="intro">
+    Each prototype is a real working HTML page that shows the same three screens — landing, meet Kai, and home — rendered in a different visual language. Same product, same content, three different feels. <strong>This is the most important decision for the project's feel.</strong> Once we lock the direction, everything else (every screen, every animation, every word) flows from it.
+  </div>
+
+  <div class="directions">
+
+    <a class="dir" href="direction-1-bold-electric.html">
+      <div class="dir-body">
+        <div class="dir-num">DIRECTION 01</div>
+        <div class="dir-title">Bold &amp; Electric</div>
+        <div class="dir-tagline">Dark base. Cyan and purple neon. Glow effects. Gradient drift. Motion as a primary design surface.</div>
+        <div class="dir-refs">
+          <span class="dir-ref">Linear</span>
+          <span class="dir-ref">Discord</span>
+          <span class="dir-ref">After Effects</span>
+        </div>
+        <div class="dir-cta">Open prototype →</div>
+      </div>
+      <div class="dir-preview electric"></div>
+    </a>
+
+    <a class="dir" href="direction-2-y2k-soft.html">
+      <div class="dir-body">
+        <div class="dir-num">DIRECTION 02</div>
+        <div class="dir-title">Y2K Soft <em>— playful</em></div>
+        <div class="dir-tagline">Warm cream base. Chunky serif headlines. Hand-cut sticker shapes. Solid-black borders with offset shadows. A friend's well-loved zine.</div>
+        <div class="dir-refs">
+          <span class="dir-ref">Cash App</span>
+          <span class="dir-ref">Be Real</span>
+          <span class="dir-ref">Glossier</span>
+        </div>
+        <div class="dir-cta">Open prototype →</div>
+      </div>
+      <div class="dir-preview y2k"></div>
+    </a>
+
+    <a class="dir" href="direction-3-calm-teen.html">
+      <div class="dir-body">
+        <div class="dir-num">DIRECTION 03</div>
+        <div class="dir-title">Calm <em>but distinctly teen</em></div>
+        <div class="dir-tagline">Calm cream base. Oversized display type. Italic Instrument Serif for emphasis. One signature indigo, used precisely. Editorial, intentional.</div>
+        <div class="dir-refs">
+          <span class="dir-ref">Editorial</span>
+          <span class="dir-ref">Modern wellness</span>
+          <span class="dir-ref">Premium teen</span>
+        </div>
+        <div class="dir-cta">Open prototype →</div>
+      </div>
+      <div class="dir-preview calm"></div>
+    </a>
+
+  </div>
+
+  <div class="note">
+    <div class="note-title">A NOTE FOR LEV</div>
+    You don't have to articulate why. "This one" is enough. We'll back into the reasons together once you point. If none of them feel right, that's also signal — tell us what's off and we'll iterate. You're the visual director on this; this is your call.
+  </div>
+
+</div>
+</body>
+</html>

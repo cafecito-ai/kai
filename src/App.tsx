@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import { Crisis } from "./pages/Crisis";
+import { DesignPicker } from "./pages/DesignPicker";
 import { EngineMental } from "./pages/EngineMental";
 import { EnginePhysical } from "./pages/EnginePhysical";
 import { EnginePotential } from "./pages/EnginePotential";
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/progress" element={<Progress />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/crisis" element={<Crisis />} />
+        <Route path="/design" element={<DesignPicker />} />
         <Route path="/for-parents" element={<ForParents />} />
         <Route path="/terms" element={<PolicyPage kind="terms" />} />
         <Route path="/privacy" element={<PolicyPage kind="privacy" />} />

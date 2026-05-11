@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kai · Direction 1 — Bold + Electric</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07080C;
+  --bg-elevated: #0E1119;
+  --surface: #161A26;
+  --surface-2: #1E2332;
+  --border: #2A3145;
+  --border-bright: #3A4467;
+
+  --text: #F5F7FA;
+  --text-dim: #A8B0C2;
+  --text-mute: #6B7591;
+
+  --neon: #6EE7FF;          /* signature cyan */
+  --neon-2: #B084FF;        /* electric purple */
+  --neon-3: #FF7AE0;        /* hot pink */
+  --neon-warm: #FFD86B;     /* warm yellow */
+  --neon-green: #7CFFB2;    /* spring green */
+
+  --glow-cyan: 0 0 24px rgba(110, 231, 255, 0.45), 0 0 60px rgba(110, 231, 255, 0.15);
+  --glow-purple: 0 0 24px rgba(176, 132, 255, 0.45);
+  --glow-pink: 0 0 24px rgba(255, 122, 224, 0.45);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+body {
+  background:
+    radial-gradient(800px 600px at 10% -10%, rgba(110, 231, 255, 0.10), transparent 60%),
+    radial-gradient(900px 700px at 95% 110%, rgba(176, 132, 255, 0.10), transparent 60%),
+    var(--bg);
+}
+
+/* ============ LAYOUT ============ */
+.frame {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+}
+
+.lane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 40px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+.lane-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--neon);
+  font-family: 'JetBrains Mono', monospace;
+}
+.lane-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.lane-meta {
+  font-size: 12px;
+  color: var(--text-mute);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.phones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-bottom: 56px;
+}
+@media (max-width: 1100px) {
+  .phones { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .phones { grid-template-columns: 1fr; }
+  .frame { padding: 16px 16px 64px; }
+}
+
+.phone-frame {
+  position: relative;
+}
+.phone-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.phone {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  aspect-ratio: 9 / 19.5;
+  background: var(--bg-elevated);
+  border-radius: 36px;
+  border: 1px solid var(--border-bright);
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 0 0 4px var(--bg),
+    0 0 0 6px var(--border-bright),
+    0 30px 80px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(110, 231, 255, 0.08);
+}
+.phone-inner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* status bar */
+.statusbar {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 22px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+.statusbar-right { display: flex; gap: 4px; align-items: center; }
+.statusbar-right svg { width: 11px; height: 11px; }
+
+/* ============ SCREEN 1: LANDING ============ */
+.s1 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 20px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.s1::before {
+  content: "";
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, var(--neon) 0%, transparent 70%);
+  opacity: 0.18;
+  filter: blur(20px);
+  pointer-events: none;
+  animation: drift 12s ease-in-out infinite alternate;
+}
+.s1::after {
+  content: "";
+  position: absolute;
+  bottom: -100px;
+  left: -100px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, var(--neon-2) 0%, transparent 70%);
+  opacity: 0.16;
+  filter: blur(20px);
+  pointer-events: none;
+  animation: drift 14s ease-in-out infinite alternate-reverse;
+}
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(40px, 60px) scale(1.15); }
+}
+
+.s1-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 64px;
+  z-index: 2;
+  position: relative;
+}
+.s1-logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--neon), var(--neon-2));
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--bg);
+  box-shadow: var(--glow-cyan);
+}
+.s1-logo-name {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.s1-hero {
+  z-index: 2;
+  position: relative;
+  margin-top: auto;
+  margin-bottom: 24px;
+}
+.s1-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--neon);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 14px;
+}
+.s1-headline {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  margin-bottom: 16px;
+}
+.s1-headline span {
+  background: linear-gradient(135deg, var(--neon) 0%, var(--neon-3) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.s1-sub {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  margin-bottom: 32px;
+  max-width: 280px;
+}
+
+.s1-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 32px;
+  z-index: 2;
+  position: relative;
+}
+.s1-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: 1px solid var(--border-bright);
+  border-radius: 999px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.s1-cta {
+  z-index: 2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-primary {
+  width: 100%;
+  height: 56px;
+  border: none;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--neon) 0%, var(--neon-2) 100%);
+  color: var(--bg);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: var(--glow-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-secondary {
+  width: 100%;
+  height: 44px;
+  border: 1px solid var(--border-bright);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.s1-foot {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-top: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+.s1-foot span { color: var(--neon-warm); }
+
+/* ============ SCREEN 2: MEET KAI ============ */
+.s2 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 24px;
+  background: var(--bg-elevated);
+}
+.s2-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.s2-nav-back {
+  color: var(--text-mute);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.s2-progress {
+  display: flex;
+  gap: 4px;
+}
+.s2-dot {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-2);
+}
+.s2-dot.active { background: var(--neon); box-shadow: var(--glow-cyan); }
+.s2-dot.done { background: var(--neon); opacity: 0.4; }
+
+.kai-orb-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 16px;
+  position: relative;
+}
+.kai-orb {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--neon) 0%, var(--neon-2) 50%, var(--neon-3) 100%);
+  position: relative;
+  box-shadow:
+    0 0 40px rgba(110, 231, 255, 0.6),
+    0 0 80px rgba(176, 132, 255, 0.4),
+    inset -20px -20px 40px rgba(0, 0, 0, 0.3);
+  animation: orb-pulse 4s ease-in-out infinite;
+}
+@keyframes orb-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.kai-orb::after {
+  content: "";
+  position: absolute;
+  inset: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--neon) 0%, transparent 60%);
+  opacity: 0.3;
+  z-index: -1;
+  animation: orb-aura 3s ease-in-out infinite;
+}
+@keyframes orb-aura {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+.s2-headline {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.s2-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 24px;
+  padding: 0 12px;
+}
+
+.s2-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.s2-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 10px;
+}
+.s2-input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid var(--border-bright);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 0 14px;
+}
+.s2-input::placeholder { color: var(--text-mute); }
+.s2-input:focus {
+  outline: none;
+  border-color: var(--neon);
+  box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.15);
+}
+
+.s2-tones {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.s2-tone {
+  padding: 10px 6px;
+  border: 1px solid var(--border-bright);
+  border-radius: 12px;
+  background: var(--bg);
+  text-align: center;
+  cursor: pointer;
+}
+.s2-tone.active {
+  border-color: var(--neon);
+  background: rgba(110, 231, 255, 0.08);
+  box-shadow: 0 0 0 1px var(--neon);
+}
+.s2-tone-emoji {
+  font-size: 18px;
+  margin-bottom: 2px;
+  display: block;
+}
+.s2-tone-label {
+  font-size: 11px;
+  font-weight: 700;
+}
+.s2-tone-sub {
+  font-size: 9px;
+  color: var(--text-mute);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.s2-spacer { flex: 1; min-height: 16px; }
+
+/* ============ SCREEN 3: HOME ============ */
+.s3 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px 80px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.s3-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.s3-greet-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 4px;
+}
+.s3-greet-name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.s3-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--neon-3), var(--neon-2));
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--bg);
+}
+
+.s3-streak {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.s3-streak-num {
+  font-size: 30px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--neon-warm), var(--neon-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.s3-streak-info { flex: 1; }
+.s3-streak-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+.s3-streak-sub {
+  font-size: 11px;
+  color: var(--text-mute);
+}
+.s3-streak-flame {
+  font-size: 22px;
+  filter: drop-shadow(0 0 8px rgba(255, 122, 224, 0.6));
+}
+
+.s3-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  font-family: 'JetBrains Mono', monospace;
+  margin: 6px 0 10px;
+}
+
+.s3-kai {
+  background: linear-gradient(135deg, rgba(110, 231, 255, 0.10), rgba(176, 132, 255, 0.10));
+  border: 1px solid var(--border-bright);
+  border-radius: 22px;
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.s3-kai::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, var(--neon) 0%, transparent 70%);
+  opacity: 0.25;
+}
+.s3-kai-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  position: relative;
+}
+.s3-kai-orb-small {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--neon), var(--neon-2));
+  box-shadow: var(--glow-cyan);
+}
+.s3-kai-name {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+.s3-kai-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+  margin-left: auto;
+}
+.s3-kai-msg {
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+  position: relative;
+}
+.s3-kai-msg span { color: var(--neon); }
+
+.s3-engines {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.s3-engine {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.s3-engine.primary {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--surface), var(--surface-2));
+  border-color: var(--neon);
+  box-shadow: 0 0 0 1px var(--neon), 0 0 24px rgba(110, 231, 255, 0.15);
+}
+.s3-engine-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.s3-engine.body .s3-engine-icon { background: rgba(124, 255, 178, 0.15); }
+.s3-engine.potential .s3-engine-icon { background: rgba(255, 216, 107, 0.15); }
+.s3-engine.mental .s3-engine-icon { background: rgba(255, 122, 224, 0.15); }
+.s3-engine-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 2px;
+}
+.s3-engine-name {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+.s3-engine-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+.s3-engine-tag {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neon);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.s3-actions {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -18px 16px;
+  padding: 0 18px;
+}
+.s3-actions::-webkit-scrollbar { display: none; }
+.s3-action {
+  flex-shrink: 0;
+  height: 76px;
+  min-width: 132px;
+  border: 1px solid var(--border-bright);
+  border-radius: 14px;
+  background: var(--bg-elevated);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.s3-action-emoji { font-size: 18px; }
+.s3-action-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.s3-action-sub {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-top: 1px;
+}
+
+.s3-character {
+  background: linear-gradient(135deg, rgba(255, 122, 224, 0.10), rgba(176, 132, 255, 0.05));
+  border: 1px solid var(--border-bright);
+  border-radius: 22px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.s3-character-art {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--neon-3), var(--neon-2), var(--neon));
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  box-shadow: var(--glow-pink);
+  flex-shrink: 0;
+}
+.s3-character-info { flex: 1; min-width: 0; }
+.s3-character-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon-3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 2px;
+}
+.s3-character-name {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.s3-character-level {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.s3-character-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.s3-character-bar-fill {
+  width: 64%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-3), var(--neon-2));
+  box-shadow: 0 0 8px var(--neon-3);
+}
+
+/* tabbar */
+.tabbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(7, 8, 12, 0.85);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 24px env(safe-area-inset-bottom);
+}
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-mute);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.tab svg { width: 22px; height: 22px; stroke-width: 2.2; }
+.tab.active { color: var(--neon); }
+.tab.active svg { filter: drop-shadow(0 0 6px var(--neon)); }
+
+/* annotations under each phone */
+.phone-notes {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding: 0 8px;
+  max-width: 380px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.phone-notes strong { color: var(--neon); font-weight: 700; }
+
+/* ============ DIRECTION SUMMARY ============ */
+.summary {
+  margin-top: 40px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+}
+.summary-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.summary-sub {
+  color: var(--text-dim);
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+}
+.summary-item {
+  font-size: 13px;
+}
+.summary-item dt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+  margin-bottom: 6px;
+}
+.summary-item dd {
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.palette-strip {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.palette-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <header class="lane-header">
+    <div>
+      <div class="lane-eyebrow">DIRECTION 01  ·  PROTOTYPE</div>
+      <div class="lane-title">Bold &amp; Electric</div>
+    </div>
+    <div class="lane-meta">Linear × Discord × After Effects</div>
+  </header>
+
+  <section class="phones">
+
+    <!-- PHONE 1: LANDING -->
+    <div class="phone-frame">
+      <div class="phone-label">01  ·  LANDING</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h2v6H2zm5-3h2v9H7zm5-3h2v12h-2zm5-3h2v15h-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+          </span>
+        </div>
+
+        <div class="s1">
+          <div class="s1-logo">
+            <div class="s1-logo-mark">K</div>
+            <div class="s1-logo-name">Kai</div>
+          </div>
+
+          <div class="s1-hero">
+            <div class="s1-eyebrow">FOR TEENS · BUILT WITH TEENS</div>
+            <h1 class="s1-headline">An AI that actually <span>gets it.</span></h1>
+            <p class="s1-sub">Mentor, mirror, hype-team. For the stuff teen life actually throws at you.</p>
+          </div>
+
+          <div class="s1-pills">
+            <span class="s1-pill">Wellness, not therapy</span>
+            <span class="s1-pill">Built with safety</span>
+            <span class="s1-pill">Free to start</span>
+          </div>
+
+          <div class="s1-cta">
+            <button class="btn-primary">Start with Kai →</button>
+            <button class="btn-secondary">I'm a parent</button>
+            <div class="s1-foot">Crisis support <span>available 24/7</span></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="phone-notes"><strong>Landing.</strong> Hero gradient drifts slowly behind. Headline uses gradient text on the punch word. CTA glows. Parent path is a quiet secondary button, never hidden but never the loud option.</div>
+    </div>
+
+    <!-- PHONE 2: MEET KAI -->
+    <div class="phone-frame">
+      <div class="phone-label">02  ·  MEET KAI</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="statusbar">
+          <span>9:42</span>
+          <span class="statusbar-right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h2v6H2zm5-3h2v9H7zm5-3h2v12h-2zm5-3h2v15h-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+          </span>
+        </div>
+
+        <div class="s2">
+          <div class="s2-nav">
+            <span class="s2-nav-back">← BACK</span>
+            <div class="s2-progress">
+              <span class="s2-dot done"></span>
+              <span class="s2-dot done"></span>
+              <span class="s2-dot active"></span>
+              <span class="s2-dot"></span>
+              <span class="s2-dot"></span>
+            </div>
+          </div>
+
+          <div class="kai-orb-wrap"><div class="kai-orb"></div></div>
+
+          <h2 class="s2-headline">Meet your mentor.</h2>
+          <p class="s2-sub">Name them. Pick a vibe. You can change either anytime.</p>
+
+          <div class="s2-card">
+            <div class="s2-card-label">CALL THEM</div>
+            <input class="s2-input" type="text" placeholder="Kai" value="Kai">
+          </div>
+
+          <div class="s2-card">
+            <div class="s2-card-label">VIBE</div>
+            <div class="s2-tones">
+              <div class="s2-tone"><span class="s2-tone-emoji">🌊</span><div class="s2-tone-label">Warm</div><div class="s2-tone-sub">Gentle</div></div>
+              <div class="s2-tone active"><span class="s2-tone-emoji">⚡</span><div class="s2-tone-label">Balanced</div><div class="s2-tone-sub">Default</div></div>
+              <div class="s2-tone"><span class="s2-tone-emoji">🎯</span><div class="s2-tone-label">Direct</div><div class="s2-tone-sub">Real</div></div>
+            </div>
+          </div>
+
+          <div class="s2-spacer"></div>
+
+          <button class="btn-primary">Continue →</button>
+        </div>
+      </div></div>
+      <div class="phone-notes"><strong>Meet Kai.</strong> The orb is Kai's identity — gradient, glowing, gently pulsing. Three vibes use emoji because emoji + label is faster than reading paragraphs. The "active" state has a subtle ring not a hard fill.</div>
+    </div>
+
+    <!-- PHONE 3: HOME -->
+    <div class="phone-frame">
+      <div class="phone-label">03  ·  HOME</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="statusbar">
+          <span>9:43</span>
+          <span class="statusbar-right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h2v6H2zm5-3h2v9H7zm5-3h2v12h-2zm5-3h2v15h-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+          </span>
+        </div>
+
+        <div class="s3">
+          <div class="s3-head">
+            <div>
+              <div class="s3-greet-eyebrow">FRIDAY · 9:43 AM</div>
+              <div class="s3-greet-name">Hey, Lev 👋</div>
+            </div>
+            <div class="s3-avatar">L</div>
+          </div>
+
+          <div class="s3-streak">
+            <div class="s3-streak-num">12</div>
+            <div class="s3-streak-info">
+              <div class="s3-streak-label">Day streak</div>
+              <div class="s3-streak-sub">Best you've ever had</div>
+            </div>
+            <div class="s3-streak-flame">🔥</div>
+          </div>
+
+          <div class="s3-kai">
+            <div class="s3-kai-head">
+              <div class="s3-kai-orb-small"></div>
+              <div class="s3-kai-name">KAI</div>
+              <div class="s3-kai-dot"></div>
+            </div>
+            <div class="s3-kai-msg">Slept rough last night? <span>One breath session</span> before school could help.</div>
+          </div>
+
+          <div class="s3-section-label">YOUR ENGINES</div>
+          <div class="s3-engines">
+            <div class="s3-engine primary body">
+              <div class="s3-engine-tag">PRIMARY</div>
+              <div class="s3-engine-icon">💪</div>
+              <div class="s3-engine-label">ENGINE 01</div>
+              <div class="s3-engine-name">Physical Wellness</div>
+              <div class="s3-engine-sub">3 sessions this week · log a meal</div>
+            </div>
+            <div class="s3-engine potential">
+              <div class="s3-engine-icon">⚡</div>
+              <div class="s3-engine-label">ENGINE 02</div>
+              <div class="s3-engine-name">Potential</div>
+            </div>
+            <div class="s3-engine mental">
+              <div class="s3-engine-icon">🧠</div>
+              <div class="s3-engine-label">ENGINE 03</div>
+              <div class="s3-engine-name">Mental</div>
+            </div>
+          </div>
+
+          <div class="s3-section-label">QUICK</div>
+          <div class="s3-actions">
+            <div class="s3-action"><div class="s3-action-emoji">📸</div><div><div class="s3-action-label">Log a meal</div><div class="s3-action-sub">Photo → done</div></div></div>
+            <div class="s3-action"><div class="s3-action-emoji">🌬️</div><div><div class="s3-action-label">Breathe</div><div class="s3-action-sub">4-7-8</div></div></div>
+            <div class="s3-action"><div class="s3-action-emoji">😴</div><div><div class="s3-action-label">Log sleep</div><div class="s3-action-sub">Last night</div></div></div>
+          </div>
+
+          <div class="s3-character">
+            <div class="s3-character-art">⊹</div>
+            <div class="s3-character-info">
+              <div class="s3-character-label">YOUR CHARACTER</div>
+              <div class="s3-character-name">Level 4 — Moving</div>
+              <div class="s3-character-level">640 / 1000 to Level 5</div>
+              <div class="s3-character-bar"><div class="s3-character-bar-fill"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Home</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Engines</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 17l5-5 4 4 8-8"/><path d="M16 8h5v5"/></svg>Progress</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>You</div>
+        </div>
+      </div></div>
+      <div class="phone-notes"><strong>Home.</strong> Streak is the loudest single number on the page. Kai card is a soft gradient bloom. Primary engine takes the full row. Character lives at the bottom — visible but not screaming for attention.</div>
+    </div>
+
+  </section>
+
+  <section class="summary">
+    <h2 class="summary-title">What this direction is</h2>
+    <p class="summary-sub">Dark base. Electric accents. Generous glow. Motion as a primary design surface. Meant to feel like the apps a 16-year-old actually opens at night.</p>
+    <dl class="summary-grid">
+      <div class="summary-item">
+        <dt>Palette</dt>
+        <dd>Near-black base, cyan + purple + pink neon for moments, soft gradient blooms.
+          <div class="palette-strip">
+            <div class="palette-chip" style="background: #07080C"></div>
+            <div class="palette-chip" style="background: #6EE7FF"></div>
+            <div class="palette-chip" style="background: #B084FF"></div>
+            <div class="palette-chip" style="background: #FF7AE0"></div>
+            <div class="palette-chip" style="background: #FFD86B"></div>
+            <div class="palette-chip" style="background: #7CFFB2"></div>
+          </div>
+        </dd>
+      </div>
+      <div class="summary-item">
+        <dt>Type</dt>
+        <dd>Inter at heavy weights (800–900) for impact, JetBrains Mono for labels and microcopy. Tight tracking, gradient highlights on punch words.</dd>
+      </div>
+      <div class="summary-item">
+        <dt>Motion</dt>
+        <dd>Gradient drift, orb pulse, glow auras, slow background blooms. Always optional via reduced-motion.</dd>
+      </div>
+      <div class="summary-item">
+        <dt>Character (Kai)</dt>
+        <dd>An orb with a gradient core and a soft aura. Animated breathing. No face, no anthropomorphism — Kai is a presence, not a mascot.</dd>
+      </div>
+      <div class="summary-item">
+        <dt>Copy voice</dt>
+        <dd>Short, punchy, slightly cocky. "An AI that actually gets it." "Best streak you've ever had." Confident but never preachy.</dd>
+      </div>
+      <div class="summary-item">
+        <dt>Reads as</dt>
+        <dd>Discord meets Linear meets a teen producer's project file. Reads premium without reading corporate.</dd>
+      </div>
+    </dl>
+  </section>
+
+</div>
+</body>
+</html>

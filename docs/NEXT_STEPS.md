@@ -88,10 +88,9 @@ Acceptance:
 
 ## Immediate Order
 
-1. Restyle remaining shell routes to match `design.md`.
-2. Wire frontend API base config and deployed Worker URLs.
+1. Have Lev/Offy pick Direction A, B, or C at `/design`.
+2. Lock the selected direction into app tokens/components and archive the other two.
 3. Configure Clerk and replace auth redirects.
-4. Persist onboarding/profile/progress to D1.
-5. Implement real Workers AI Kai chat with safety precheck.
-6. Deepen Body, Goals, and Reset workflows.
-7. Add beta QA docs and teen testing script.
+4. Persist onboarding/profile/progress to D1 under authenticated user IDs.
+5. Deepen Body, Goals, and Reset workflows.
+6. Add beta QA docs and teen testing script.

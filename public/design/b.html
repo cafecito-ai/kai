@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kai · Direction 2 — Y2K Soft</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #FFF8EE;
+  --cream-dark: #FFEFD9;
+  --paper: #FFFFFF;
+  --ink: #1F1A2E;
+  --ink-dim: #5C5470;
+  --ink-soft: #8B83A0;
+
+  --plum: #6B4FBB;
+  --plum-soft: #E9DFFF;
+  --peach: #FF8B6A;
+  --peach-soft: #FFE0D2;
+  --sky: #7BC4F5;
+  --sky-soft: #D4ECFC;
+  --grass: #A8DC8F;
+  --grass-soft: #E2F2D6;
+  --sun: #FFC95C;
+  --sun-soft: #FFEFC4;
+  --rose: #F5A1C9;
+  --rose-soft: #FCDCE9;
+
+  --shadow-sticker: 4px 4px 0 var(--ink);
+  --shadow-sticker-sm: 2px 2px 0 var(--ink);
+  --shadow-soft: 0 12px 32px rgba(31, 26, 46, 0.08);
+  --shadow-card: 0 4px 0 rgba(31, 26, 46, 0.08), 0 2px 8px rgba(31, 26, 46, 0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--cream); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+body {
+  background:
+    radial-gradient(600px 500px at 5% 5%, var(--peach-soft) 0%, transparent 60%),
+    radial-gradient(700px 600px at 95% 100%, var(--plum-soft) 0%, transparent 60%),
+    radial-gradient(500px 400px at 50% 50%, var(--sun-soft) 0%, transparent 70%),
+    var(--cream);
+}
+
+.serif { font-family: 'Fraunces', Georgia, serif; }
+
+/* ============ LAYOUT ============ */
+.frame {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+}
+
+.lane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 40px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 40px;
+}
+.lane-eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: 999px;
+}
+.lane-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+}
+.lane-meta {
+  font-size: 12px;
+  color: var(--ink-dim);
+  font-weight: 600;
+  font-style: italic;
+}
+
+.phones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-bottom: 56px;
+}
+@media (max-width: 1100px) {
+  .phones { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .phones { grid-template-columns: 1fr; }
+  .frame { padding: 16px 16px 64px; }
+}
+
+.phone-frame { position: relative; }
+.phone-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: 999px;
+  margin-bottom: 12px;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.phone {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  aspect-ratio: 9 / 19.5;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 8px 8px 0 var(--ink);
+}
+.phone-inner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 38px;
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+}
+
+.statusbar {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 22px 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.statusbar-right { display: flex; gap: 4px; align-items: center; }
+.statusbar-right svg { width: 11px; height: 11px; }
+
+/* ============ SCREEN 1: LANDING ============ */
+.s1 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 22px 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.s1-stickers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.sticker {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-sticker);
+  font-size: 22px;
+  font-weight: 900;
+  background: var(--sun);
+}
+.sticker.s1 { top: 76px; right: 24px; width: 52px; height: 52px; transform: rotate(8deg); background: var(--peach); }
+.sticker.s2 { top: 240px; left: 14px; width: 44px; height: 44px; transform: rotate(-12deg); background: var(--sky); border-radius: 22px; }
+.sticker.s3 { top: 168px; right: 12px; width: 38px; height: 38px; transform: rotate(20deg); background: var(--grass); }
+
+.s1-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+  z-index: 2;
+  position: relative;
+}
+.s1-logo-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--plum);
+  border: 2px solid var(--ink);
+  display: grid;
+  place-items: center;
+  font-family: 'Fraunces', serif;
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--cream);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.s1-logo-name {
+  font-family: 'Fraunces', serif;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.s1-hero {
+  z-index: 2;
+  position: relative;
+  margin-top: auto;
+  margin-bottom: 28px;
+}
+.s1-eyebrow {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  background: var(--peach-soft);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-sticker-sm);
+}
+.s1-headline {
+  font-family: 'Fraunces', serif;
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  margin-bottom: 14px;
+}
+.s1-headline em {
+  font-style: italic;
+  color: var(--plum);
+}
+.s1-headline-underline {
+  display: inline-block;
+  position: relative;
+}
+.s1-headline-underline::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: -4px;
+  right: -4px;
+  height: 12px;
+  background: var(--sun);
+  z-index: -1;
+  transform: rotate(-1deg);
+}
+.s1-sub {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  margin-bottom: 28px;
+  max-width: 280px;
+  font-weight: 500;
+}
+
+.s1-cta {
+  z-index: 2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-primary {
+  width: 100%;
+  height: 56px;
+  border: 2px solid var(--ink);
+  border-radius: 18px;
+  background: var(--plum);
+  color: var(--cream);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow-sticker);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-secondary {
+  width: 100%;
+  height: 48px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.s1-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-dim);
+  margin-top: 12px;
+  font-weight: 600;
+}
+.s1-foot-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--grass);
+  border: 1.5px solid var(--ink);
+}
+
+/* ============ SCREEN 2: MEET KAI ============ */
+.s2 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 22px 24px;
+  position: relative;
+}
+
+.s2-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.s2-nav-back {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  padding: 6px 12px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sticker-sm);
+}
+.s2-progress {
+  display: flex;
+  gap: 4px;
+  background: var(--paper);
+  padding: 5px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sticker-sm);
+}
+.s2-dot {
+  width: 18px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--cream-dark);
+}
+.s2-dot.active { background: var(--plum); }
+.s2-dot.done { background: var(--grass); }
+
+.kai-blob-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 16px;
+  position: relative;
+}
+.kai-blob {
+  width: 140px;
+  height: 140px;
+  background: var(--peach);
+  border: 3px solid var(--ink);
+  border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%;
+  box-shadow: 6px 6px 0 var(--ink);
+  position: relative;
+  animation: blob-wiggle 6s ease-in-out infinite;
+}
+@keyframes blob-wiggle {
+  0%, 100% { border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%; transform: rotate(-2deg); }
+  50% { border-radius: 50% 50% 45% 55% / 55% 45% 55% 45%; transform: rotate(2deg); }
+}
+.kai-eyes {
+  position: absolute;
+  top: 48%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+}
+.kai-eye {
+  width: 12px;
+  height: 16px;
+  background: var(--ink);
+  border-radius: 50%;
+}
+.kai-blush {
+  position: absolute;
+  top: 64%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 38px;
+}
+.kai-blush span {
+  width: 14px;
+  height: 8px;
+  background: var(--rose);
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.s2-headline {
+  font-family: 'Fraunces', serif;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.s2-headline em { font-style: italic; color: var(--plum); }
+.s2-sub {
+  font-size: 14px;
+  color: var(--ink-dim);
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.s2-card {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sticker-sm);
+}
+.s2-card-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.s2-input {
+  width: 100%;
+  height: 44px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 0 14px;
+}
+.s2-input::placeholder { color: var(--ink-soft); }
+.s2-input:focus { outline: none; background: var(--paper); }
+
+.s2-tones {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.s2-tone {
+  padding: 12px 6px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--cream);
+  text-align: center;
+  cursor: pointer;
+}
+.s2-tone.active {
+  background: var(--plum);
+  color: var(--cream);
+  box-shadow: var(--shadow-sticker-sm);
+}
+.s2-tone-emoji {
+  font-size: 22px;
+  margin-bottom: 4px;
+  display: block;
+}
+.s2-tone-label {
+  font-size: 12px;
+  font-weight: 800;
+}
+.s2-tone-sub {
+  font-size: 9px;
+  opacity: 0.65;
+  font-weight: 600;
+  margin-top: 1px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.s2-spacer { flex: 1; min-height: 12px; }
+
+/* ============ SCREEN 3: HOME ============ */
+.s3 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px 80px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.s3-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.s3-greet-eyebrow {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+.s3-greet-name {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.s3-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--rose);
+  border: 2px solid var(--ink);
+  display: grid;
+  place-items: center;
+  font-family: 'Fraunces', serif;
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--ink);
+  box-shadow: var(--shadow-sticker-sm);
+}
+
+.s3-streak {
+  background: var(--sun);
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sticker);
+  position: relative;
+}
+.s3-streak-num {
+  font-family: 'Fraunces', serif;
+  font-size: 38px;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+.s3-streak-info { flex: 1; }
+.s3-streak-label {
+  font-size: 14px;
+  font-weight: 800;
+}
+.s3-streak-sub {
+  font-size: 11px;
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+.s3-streak-flame {
+  font-size: 28px;
+}
+
+.s3-section-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin: 6px 4px 10px;
+}
+
+.s3-kai {
+  background: var(--plum-soft);
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+.s3-kai-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.s3-kai-blob-small {
+  width: 28px;
+  height: 28px;
+  background: var(--peach);
+  border: 2px solid var(--ink);
+  border-radius: 50% 45% 55% 50% / 45% 55% 50% 50%;
+  position: relative;
+}
+.s3-kai-blob-small::before, .s3-kai-blob-small::after {
+  content: "";
+  position: absolute;
+  top: 38%;
+  width: 3px;
+  height: 5px;
+  background: var(--ink);
+  border-radius: 50%;
+}
+.s3-kai-blob-small::before { left: 30%; }
+.s3-kai-blob-small::after { right: 30%; }
+.s3-kai-name {
+  font-size: 13px;
+  font-weight: 800;
+}
+.s3-kai-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--grass);
+  border: 1.5px solid var(--ink);
+  margin-left: auto;
+}
+.s3-kai-msg {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--ink);
+}
+.s3-kai-msg em { color: var(--plum); font-style: italic; }
+
+.s3-engines {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.s3-engine {
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  padding: 14px;
+  position: relative;
+  box-shadow: var(--shadow-card);
+  background: var(--paper);
+}
+.s3-engine.primary {
+  grid-column: 1 / -1;
+  background: var(--grass-soft);
+  box-shadow: var(--shadow-sticker);
+}
+.s3-engine-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 2px solid var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  margin-bottom: 10px;
+  background: var(--paper);
+}
+.s3-engine.primary .s3-engine-icon { background: var(--grass); }
+.s3-engine.potential .s3-engine-icon { background: var(--sun); }
+.s3-engine.mental .s3-engine-icon { background: var(--rose); }
+.s3-engine-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 2px;
+}
+.s3-engine-name {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+.s3-engine-sub {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 6px;
+  font-weight: 600;
+}
+.s3-engine-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: 999px;
+}
+
+.s3-actions {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -18px 16px;
+  padding: 0 18px 4px;
+}
+.s3-actions::-webkit-scrollbar { display: none; }
+.s3-action {
+  flex-shrink: 0;
+  width: 130px;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  background: var(--paper);
+  padding: 12px;
+  box-shadow: var(--shadow-card);
+}
+.s3-action.peach { background: var(--peach-soft); }
+.s3-action.sky { background: var(--sky-soft); }
+.s3-action.sun { background: var(--sun-soft); }
+.s3-action-emoji { font-size: 22px; margin-bottom: 4px; }
+.s3-action-label {
+  font-size: 13px;
+  font-weight: 800;
+}
+.s3-action-sub {
+  font-size: 10px;
+  color: var(--ink-dim);
+  margin-top: 1px;
+  font-weight: 600;
+}
+
+.s3-character {
+  background: var(--rose-soft);
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-sticker);
+}
+.s3-character-art {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: var(--plum);
+  border: 2px solid var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  color: var(--cream);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sticker-sm);
+}
+.s3-character-info { flex: 1; min-width: 0; }
+.s3-character-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 2px;
+}
+.s3-character-name {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.s3-character-level {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 2px;
+  font-weight: 600;
+}
+.s3-character-bar {
+  height: 8px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.s3-character-bar-fill {
+  width: 64%;
+  height: 100%;
+  background: var(--plum);
+}
+
+/* tabbar */
+.tabbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: var(--paper);
+  border-top: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 24px env(safe-area-inset-bottom);
+}
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+.tab svg { width: 22px; height: 22px; stroke-width: 2.2; }
+.tab.active { color: var(--plum); }
+
+/* notes */
+.phone-notes {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+  padding: 0 8px;
+  max-width: 380px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-weight: 500;
+}
+.phone-notes strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 800;
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+/* summary */
+.summary {
+  margin-top: 40px;
+  padding: 36px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 28px;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.summary-title {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.summary-sub {
+  color: var(--ink-dim);
+  margin-bottom: 24px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+}
+.summary-item {
+  font-size: 13px;
+}
+.summary-item dt {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--plum);
+  margin-bottom: 6px;
+}
+.summary-item dd {
+  color: var(--ink-dim);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.palette-strip {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.palette-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 2px solid var(--ink);
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <header class="lane-header">
+    <div>
+      <span class="lane-eyebrow">DIRECTION 02  ·  PROTOTYPE</span>
+      <div class="lane-title">Y2K Soft <em style="font-style: italic; color: var(--plum)">— playful, warm, hand-made</em></div>
+    </div>
+    <div class="lane-meta">Cash App × Be Real × Glossier</div>
+  </header>
+
+  <section class="phones">
+
+    <!-- PHONE 1: LANDING -->
+    <div class="phone-frame">
+      <div class="phone-label">01 · LANDING</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h2v6H2zm5-3h2v9H7zm5-3h2v12h-2zm5-3h2v15h-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+          </span>
+        </div>
+
+        <div class="s1">
+          <div class="s1-stickers">
+            <div class="sticker s1">★</div>
+            <div class="sticker s2">♥</div>
+            <div class="sticker s3">✦</div>
+          </div>
+
+          <div class="s1-logo">
+            <div class="s1-logo-mark">K</div>
+            <div class="s1-logo-name">Kai</div>
+          </div>
+
+          <div class="s1-hero">
+            <div class="s1-eyebrow">✶ FOR TEENS, BY TEENS</div>
+            <h1 class="s1-headline">A mentor that <span class="s1-headline-underline">actually</span> <em>listens.</em></h1>
+            <p class="s1-sub">Sleep. Stress. The group chat. Anything you don't feel like telling your parents.</p>
+          </div>
+
+          <div class="s1-cta">
+            <button class="btn-primary">Get started →</button>
+            <button class="btn-secondary">For parents</button>
+            <div class="s1-foot">
+              <span class="s1-foot-dot"></span>
+              Crisis support 24/7 · Always private
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="phone-notes"><strong>Landing</strong>Hand-cut sticker shapes float in the background. Serif punch word with a highlighter underline. Solid black border + offset shadow on the CTA reads as confident, not corporate.</div>
+    </div>
+
+    <!-- PHONE 2: MEET KAI -->
+    <div class="phone-frame">
+      <div class="phone-label">02 · MEET KAI</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="statusbar">
+          <span>9:42</span>
+          <span class="statusbar-right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h2v6H2zm5-3h2v9H7zm5-3h2v12h-2zm5-3h2v15h-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+          </span>
+        </div>
+
+        <div class="s2">
+          <div class="s2-nav">
+            <span class="s2-nav-back">← Back</span>
+            <div class="s2-progress">
+              <span class="s2-dot done"></span>
+              <span class="s2-dot done"></span>
+              <span class="s2-dot active"></span>
+              <span class="s2-dot"></span>
+              <span class="s2-dot"></span>
+            </div>
+          </div>
+
+          <div class="kai-blob-wrap">
+            <div class="kai-blob">
+              <div class="kai-eyes"><div class="kai-eye"></div><div class="kai-eye"></div></div>
+              <div class="kai-blush"><span></span><span></span></div>
+            </div>
+          </div>
+
+          <h2 class="s2-headline">Meet your <em>mentor.</em></h2>
+          <p class="s2-sub">Call them whatever feels right. Change anytime.</p>
+
+          <div class="s2-card">
+            <div class="s2-card-label">Call them</div>
+            <input class="s2-input" type="text" placeholder="Kai" value="Kai">
+          </div>
+
+          <div class="s2-card">
+            <div class="s2-card-label">What vibe?</div>
+            <div class="s2-tones">
+              <div class="s2-tone"><span class="s2-tone-emoji">🌷</span><div class="s2-tone-label">Warm</div><div class="s2-tone-sub">Gentle</div></div>
+              <div class="s2-tone active"><span class="s2-tone-emoji">☀️</span><div class="s2-tone-label">Balanced</div><div class="s2-tone-sub">Default</div></div>
+              <div class="s2-tone"><span class="s2-tone-emoji">⚡</span><div class="s2-tone-label">Direct</div><div class="s2-tone-sub">Real</div></div>
+            </div>
+          </div>
+
+          <div class="s2-spacer"></div>
+
+          <button class="btn-primary">Continue →</button>
+        </div>
+      </div></div>
+      <div class="phone-notes"><strong>Meet Kai</strong>Kai is a soft blob with eyes and blush — friendly mascot, not a serious AI. It wiggles when idle. Active vibe is solid plum on cream. Everything has that hand-drawn offset-shadow feel.</div>
+    </div>
+
+    <!-- PHONE 3: HOME -->
+    <div class="phone-frame">
+      <div class="phone-label">03 · HOME</div>
+      <div class="phone"><div class="phone-inner">
+        <div class="statusbar">
+          <span>9:43</span>
+          <span class="statusbar-right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h2v6H2zm5-3h2v9H7zm5-3h2v12h-2zm5-3h2v15h-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+          </span>
+        </div>
+
+        <div class="s3">
+          <div class="s3-head">
+            <div>
+              <span class="s3-greet-eyebrow">FRIDAY · 9:43</span>
+              <div class="s3-greet-name">Hey Lev ✿</div>
+            </div>
+            <div class="s3-avatar">L</div>
+          </div>
+
+          <div class="s3-streak">
+            <div class="s3-streak-num">12</div>
+            <div class="s3-streak-info">
+              <div class="s3-streak-label">Day streak</div>
+              <div class="s3-streak-sub">Best you've ever had ✨</div>
+            </div>
+            <div class="s3-streak-flame">🔥</div>
+          </div>
+
+          <div class="s3-kai">
+            <div class="s3-kai-head">
+              <div class="s3-kai-blob-small"></div>
+              <div class="s3-kai-name">Kai</div>
+              <div class="s3-kai-dot"></div>
+            </div>
+            <div class="s3-kai-msg">Slept rough? One <em>breath session</em> could change today.</div>
+          </div>
+
+          <div class="s3-section-label">Your engines</div>
+          <div class="s3-engines">
+            <div class="s3-engine primary body">
+              <span class="s3-engine-tag">PRIMARY</span>
+              <div class="s3-engine-icon">💪</div>
+              <div class="s3-engine-label">Engine 01</div>
+              <div class="s3-engine-name">Physical Wellness</div>
+              <div class="s3-engine-sub">3 sessions this week · log a meal</div>
+            </div>
+            <div class="s3-engine potential">
+              <div class="s3-engine-icon">⚡</div>
+              <div class="s3-engine-label">Engine 02</div>
+              <div class="s3-engine-name">Potential</div>
+            </div>
+            <div class="s3-engine mental">
+              <div class="s3-engine-icon">🧠</div>
+              <div class="s3-engine-label">Engine 03</div>
+              <div class="s3-engine-name">Mental</div>
+            </div>
+          </div>
+
+          <div class="s3-section-label">Quick</div>
+          <div class="s3-actions">
+            <div class="s3-action peach"><div class="s3-action-emoji">📸</div><div class="s3-action-label">Log a meal</div><div class="s3-action-sub">Photo → done</div></div>
+            <div class="s3-action sky"><div class="s3-action-emoji">🌬</div><div class="s3-action-label">Breathe</div><div class="s3-action-sub">4-7-8</div></div>
+            <div class="s3-action sun"><div class="s3-action-emoji">😴</div><div class="s3-action-label">Log sleep</div><div class="s3-action-sub">Last night</div></div>
+          </div>
+
+          <div class="s3-character">
+            <div class="s3-character-art">⊹</div>
+            <div class="s3-character-info">
+              <div class="s3-character-label">Your character</div>
+              <div class="s3-character-name">Lv. 4 — Moving</div>
+              <div class="s3-character-level">640 / 1000 to Level 5</div>
+              <div class="s3-character-bar"><div class="s3-character-bar-fill"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Home</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Engines</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 17l5-5 4 4 8-8"/><path d="M16 8h5v5"/></svg>Progress</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>You</div>
+        </div>
+      </div></div>
+      <div class="phone-notes"><strong>Home</strong>Streak is a chunky yellow sticker with offset shadow. Primary engine card is mint-on-cream. Every card has that pen-and-paper 2px-black-border feel. Reads warm, never sterile.</div>
+    </div>
+
+  </section>
+
+  <section class="summary">
+    <h2 class="summary-title">What this direction <em style="font-style: italic; color: var(--plum)">is</em></h2>
+    <p class="summary-sub">Warm cream base. Hand-cut sticker shapes. Chunky serif headlines + clean sans body. Solid black borders with offset shadows. Reads like a friend's well-loved zine, not a SaaS dashboard.</p>
+    <dl class="summary-grid">
+      <div class="summary-item">
+        <dt>Palette</dt>
+        <dd>Cream + ink base, with peach, plum, sky, grass, sun, rose as soft pop colors.
+          <div class="palette-strip">
+            <div class="palette-chip" style="background: #FFF8EE"></div>
+            <div class="palette-chip" style="background: #1F1A2E"></div>
+            <div class="palette-chip" style="background: #6B4FBB"></div>
+            <div class="palette-chip" style="background: #FF8B6A"></div>
+            <div class="palette-chip" style="background: #FFC95C"></div>
+            <div class="palette-chip" style="background: #A8DC8F"></div>
+            <div class="palette-chip" style="background: #F5A1C9"></div>
+            <div class="palette-chip" style="background: #7BC4F5"></div>
+          </div>
+        </dd>
+      </div>
+      <div class="summary-item">
+        <dt>Type</dt>
+        <dd>Fraunces (chunky serif, italic emphasis) for headlines and big numbers. Inter for body and labels. Punch words in italic plum.</dd>
+      </div>
+      <div class="summary-item">
+        <dt>Motion</dt>
+        <dd>Blob wiggle, sticker tilt on hover, gentle bounces. Less ambient, more punctuation.</dd>
+      </div>
+      <div class="summary-item">
+        <dt>Character (Kai)</dt>
+        <dd>A peach-colored blob with two eyes and pink blush spots. Friendly, mascot-energy, slightly silly on purpose. Anthropomorphic in a low-key way.</dd>
+      </div>
+      <div class="summary-item">
+        <dt>Copy voice</dt>
+        <dd>"A mentor that actually listens." "The group chat. Anything you don't feel like telling your parents." Sentence fragments. Friend-energy.</dd>
+      </div>
+      <div class="summary-item">
+        <dt>Reads as</dt>
+        <dd>Cash App if it was friendlier. BeReal if it grew up. Glossier if it shipped software. Distinct, warm, never tries to be cool.</dd>
+      </div>
+    </dl>
+  </section>
+
+</div>
+</body>
+</html>

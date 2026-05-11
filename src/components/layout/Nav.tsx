@@ -1,4 +1,4 @@
-import { Activity, Home, MessageCircle, Settings, Shield, Target } from "lucide-react";
+import { Activity, GalleryHorizontal, Home, MessageCircle, Settings, Shield, Target } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const links = [
@@ -6,6 +6,7 @@ const links = [
   { to: "/engine/physical", label: "Body", icon: Activity },
   { to: "/engine/potential", label: "Goals", icon: Target },
   { to: "/progress", label: "Progress", icon: Shield },
+  { to: "/design", label: "Design", icon: GalleryHorizontal },
   { to: "/settings", label: "Settings", icon: Settings }
 ];
 

@@ -23,6 +23,8 @@ export interface UserProfile {
   kaiName: string;
   kaiTone: KaiTone;
   primaryEngine: EngineId;
+  age?: number | null;
+  parentEmail?: string | null;
   onboardingCompletedAt?: string | null;
   consentStatus?: "not_required" | "pending" | "complete";
   parentConsentAt?: string | null;

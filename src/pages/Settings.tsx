@@ -5,12 +5,15 @@ import type { KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
 export function Settings() {
-  const { kaiName, kaiTone, setKai } = useUserStore();
+  const { kaiName, kaiTone, parentEmail, consentStatus, parentConsentAt, setKai, setConsentPending } = useUserStore();
   const [name, setName] = useState(kaiName);
   const [tone, setTone] = useState<KaiTone>(kaiTone);
+  const [consentEmail, setConsentEmail] = useState(parentEmail ?? "");
   const [saving, setSaving] = useState(false);
+  const [sendingConsent, setSendingConsent] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [consentMessage, setConsentMessage] = useState("");
 
   async function save() {
     setSaving(true);
@@ -27,6 +30,26 @@ export function Settings() {
       setSaving(false);
     }
   }
+
+  async function resendConsent() {
+    if (!consentEmail.trim()) {
+      setConsentMessage("Add a parent email first.");
+      return;
+    }
+    setSendingConsent(true);
+    setConsentMessage("");
+    try {
+      await api.updateUser({ parentEmail: consentEmail.trim() });
+      const result = await api.sendParentConsent({ parentEmail: consentEmail.trim(), teenName: name || "Kai user" });
+      setConsentPending(consentEmail.trim());
+      setConsentMessage(result.emailSent ? "Consent email sent." : "Consent link created. Email sender is not configured yet.");
+    } catch {
+      setConsentMessage("Could not send consent right now.");
+    } finally {
+      setSendingConsent(false);
+    }
+  }
+
   return (
     <div className="max-w-xl space-y-6">
       <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
@@ -52,6 +75,32 @@ export function Settings() {
         </div>
         {error && <p className="text-sm font-semibold text-muted">{error}</p>}
       </section>
+      <section className="space-y-4 rounded-kai border border-line bg-white p-5 shadow-sm">
+        <div>
+          <p className="eyebrow">Parent consent</p>
+          <h2 className="mt-2 font-display text-2xl font-black tracking-normal">{consentLabel(consentStatus)}</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Parent consent confirms beta access for teen accounts. It never exposes private answers, goals, meals, or chats.
+          </p>
+          {parentConsentAt && <p className="mt-2 text-xs font-bold uppercase tracking-wider text-sage">Completed {new Date(parentConsentAt).toLocaleDateString()}</p>}
+        </div>
+        <label className="block text-sm font-semibold">
+          Parent email
+          <input className="field mt-2" type="email" value={consentEmail} onChange={(event) => setConsentEmail(event.target.value)} />
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="secondary" onClick={resendConsent} disabled={sendingConsent}>
+            {sendingConsent ? "Sending" : consentStatus === "pending" ? "Resend consent" : "Send consent"}
+          </Button>
+          {consentMessage && <span className="text-sm font-semibold text-muted">{consentMessage}</span>}
+        </div>
+      </section>
     </div>
   );
+}
+
+function consentLabel(status: string) {
+  if (status === "complete") return "Consent complete";
+  if (status === "pending") return "Waiting for parent";
+  return "Not required";
 }

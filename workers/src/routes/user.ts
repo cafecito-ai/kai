@@ -16,6 +16,8 @@ userRoutes.get("/user/me", async (c) => {
     primaryEngine: user?.primary_engine ?? "physical",
     kaiName: user?.kai_name ?? "Kai",
     kaiTone: user?.kai_tone ?? "balanced",
+    age: user?.age ?? null,
+    parentEmail: user?.parent_email ?? null,
     onboardingCompletedAt: user?.onboarding_completed_at ?? null,
     consentStatus: user?.consent_status ?? "not_required",
     parentConsentAt: user?.parent_consent_at ?? null

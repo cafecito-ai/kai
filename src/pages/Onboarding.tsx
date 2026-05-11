@@ -17,7 +17,7 @@ const questions = [
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setKai, setPrimaryEngine } = useUserStore();
+  const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
   const [age, setAge] = useState("16");
   const [parentEmail, setParentEmail] = useState("");
   const [kaiName, setKaiName] = useState("Kai");
@@ -37,6 +37,14 @@ export function Onboarding() {
     event.preventDefault();
     setSaving(true);
     setError("");
+    const normalizedAge = Number(age) || undefined;
+    const normalizedParentEmail = parentEmail.trim();
+    if (normalizedAge && normalizedAge < 18 && !normalizedParentEmail) {
+      setSaving(false);
+      setError("Parent email is required for teen accounts.");
+      return;
+    }
+
     try {
       const keyedResponses = Object.fromEntries(questions.map((question, index) => [`q${index + 1}`, responses[index] || question]));
       const intake = await api.submitIntake(keyedResponses);
@@ -45,15 +53,16 @@ export function Onboarding() {
         kaiName: kaiName || "Kai",
         kaiTone,
         primaryEngine: engine,
-        age: Number(age) || undefined,
-        parentEmail: parentEmail || undefined,
+        age: normalizedAge,
+        parentEmail: normalizedParentEmail || undefined,
         onboardingCompleted: true
       });
-      if (Number(age) < 18 && parentEmail) {
-        void api.sendParentConsent({
-          parentEmail,
+      if (normalizedAge && normalizedAge < 18 && normalizedParentEmail) {
+        await api.sendParentConsent({
+          parentEmail: normalizedParentEmail,
           teenName: kaiName || "Kai user"
-        }).catch(() => undefined);
+        });
+        setConsentPending(normalizedParentEmail);
       }
       setKai(kaiName || "Kai", kaiTone);
       setPrimaryEngine(engine);
@@ -84,8 +93,8 @@ export function Onboarding() {
           <input className="field mt-2" value={age} onChange={(event) => setAge(event.target.value)} />
         </label>
         <label className="text-sm font-semibold">
-          Parent email {Number(age) < 18 ? "" : "(optional)"}
-          <input className="field mt-2" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} />
+          Parent email {Number(age) < 18 ? "(required)" : "(optional)"}
+          <input className="field mt-2" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} />
         </label>
         <label className="text-sm font-semibold">
           Kai's name
@@ -115,6 +124,11 @@ export function Onboarding() {
       <div className="rounded-kai border border-line bg-lime p-4 text-sm">
         Suggested start: <strong className="capitalize">{suggestedEngine}</strong>. You can switch any time.
       </div>
+      {Number(age) < 18 && (
+        <div className="rounded-kai border border-line bg-white p-4 text-sm font-semibold leading-6 text-muted">
+          Kai will email a parent consent link before beta use. The parent view confirms consent only; it does not show private answers, goals, meals, or chats.
+        </div>
+      )}
       {error && <p className="text-sm font-semibold text-danger">{error}</p>}
       <Button disabled={saving}>{saving ? "Saving" : "Finish onboarding"}</Button>
     </form>

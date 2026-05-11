@@ -10,17 +10,7 @@ const hasRealClerkKey = typeof clerkKey === "string" && clerkKey.startsWith("pk_
 
 function Providers({ children }: { children: React.ReactNode }) {
   if (!hasRealClerkKey) return <>{children}</>;
-  return (
-    <ClerkProvider
-      publishableKey={clerkKey}
-      signInFallbackRedirectUrl="/onboarding"
-      signInForceRedirectUrl="/onboarding"
-      signUpFallbackRedirectUrl="/onboarding"
-      signUpForceRedirectUrl="/onboarding"
-    >
-      {children}
-    </ClerkProvider>
-  );
+  return <ClerkProvider publishableKey={clerkKey}>{children}</ClerkProvider>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

@@ -29,15 +29,18 @@ export function Settings() {
   }
   return (
     <div className="max-w-xl space-y-6">
-      <h1 className="text-4xl font-black">Settings</h1>
-      <section className="space-y-4 rounded-kai border border-ink/10 bg-white p-5">
+      <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+        <p className="eyebrow">Settings</p>
+        <h1 className="mt-2 font-display text-4xl font-black tracking-normal">Tune Kai’s voice.</h1>
+      </section>
+      <section className="space-y-4 rounded-kai border border-line bg-white p-5 shadow-sm">
         <label className="block text-sm font-semibold">
           Kai name
-          <input className="focus-ring mt-2 w-full rounded-kai border border-ink/15 px-3 py-2" value={name} onChange={(event) => setName(event.target.value)} />
+          <input className="field mt-2" value={name} onChange={(event) => setName(event.target.value)} />
         </label>
         <label className="block text-sm font-semibold">
           Tone
-          <select className="focus-ring mt-2 w-full rounded-kai border border-ink/15 px-3 py-2" value={tone} onChange={(event) => setTone(event.target.value as KaiTone)}>
+          <select className="field mt-2" value={tone} onChange={(event) => setTone(event.target.value as KaiTone)}>
             <option value="warm">Warm</option>
             <option value="balanced">Balanced</option>
             <option value="direct">Direct</option>
@@ -47,7 +50,7 @@ export function Settings() {
           <Button onClick={save} disabled={saving}>{saving ? "Saving" : "Save"}</Button>
           {saved && <span className="text-sm font-semibold text-sage">Saved</span>}
         </div>
-        {error && <p className="text-sm font-semibold text-ink/60">{error}</p>}
+        {error && <p className="text-sm font-semibold text-muted">{error}</p>}
       </section>
     </div>
   );

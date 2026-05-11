@@ -16,19 +16,19 @@ export function KaiChat() {
 
   return (
     <section className="app-panel overflow-hidden">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between border-b border-line">
         <div className="p-4 pb-0">
-          <p className="text-xs font-black uppercase tracking-wider text-sage">kai check-in</p>
-          <h2 className="text-2xl font-black">What’s actually loud?</h2>
+          <p className="eyebrow">kai check-in</p>
+          <h2 className="mt-1 font-display text-3xl font-black tracking-normal">What needs care?</h2>
         </div>
-        <div className="mr-4 mt-4 grid size-11 place-items-center rounded-kai bg-ink text-paper text-sm font-black">kai</div>
+        <div className="mr-4 mt-4 grid size-11 place-items-center rounded-full bg-ink font-serif text-xl italic text-paper">k</div>
       </div>
       <div className="mx-4 mb-4 space-y-3">
         {messages.map((message) => (
           <div
             key={message.id}
             className={`max-w-[88%] rounded-kai px-4 py-3 text-sm ${
-              message.role === "assistant" ? "bg-mist text-ink" : "ml-auto bg-ink text-paper"
+              message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
             }`}
           >
             {message.content}
@@ -41,17 +41,17 @@ export function KaiChat() {
             key={item}
             type="button"
             onClick={() => setDraft(item)}
-            className="focus-ring rounded-kai border border-ink/10 bg-paper px-3 py-1.5 text-xs font-bold text-ink/70"
+            className="focus-ring rounded-full border border-line bg-paper px-3 py-1.5 text-xs font-bold text-muted hover:bg-white hover:text-ink"
           >
             {item}
           </button>
         ))}
       </div>
-      <form onSubmit={onSubmit} className="flex gap-2 border-t border-ink/10 bg-paper p-3">
+      <form onSubmit={onSubmit} className="flex gap-2 border-t border-line bg-paper p-3">
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          className="focus-ring min-w-0 flex-1 rounded-kai border border-ink/15 bg-white px-3 py-2"
+          className="field min-w-0 flex-1"
           placeholder={sending ? "kai is thinking" : "say it messy"}
           disabled={sending}
         />

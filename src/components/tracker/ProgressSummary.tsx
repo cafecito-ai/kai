@@ -15,12 +15,12 @@ export function ProgressSummary() {
       <div className="app-panel p-4 sm:col-span-3">
         <div className="mb-2 flex items-center justify-between text-sm font-semibold">
           <span>Growth chart</span>
-          <span>{events.length} events</span>
+          <span className="text-muted">{events.length} events</span>
         </div>
-        <div className="flex h-24 items-end gap-2 rounded-kai bg-mist p-3">
+        <div className="flex h-28 items-end gap-2 rounded-kai border border-line bg-paper p-3">
           {Array.from({ length: 14 }).map((_, index) => {
             const value = events[index % Math.max(events.length, 1)]?.eventValue ?? 8 + index * 3;
-            return <div key={index} className="flex-1 rounded-t bg-ink" style={{ height: `${Math.min(100, value)}%` }} />;
+            return <div key={index} className="flex-1 rounded-t-full bg-ink" style={{ height: `${Math.min(100, value)}%` }} />;
           })}
         </div>
       </div>
@@ -31,9 +31,9 @@ export function ProgressSummary() {
 function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="app-panel p-4">
-      <div className="mb-3 text-sage">{icon}</div>
-      <p className="text-sm text-ink/60">{label}</p>
-      <p className="text-xl font-black capitalize">{value}</p>
+      <div className="mb-3 text-plum">{icon}</div>
+      <p className="eyebrow">{label}</p>
+      <p className="mt-1 font-display text-2xl font-black capitalize tracking-normal">{value}</p>
     </div>
   );
 }

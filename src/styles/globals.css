@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #171717;
-  background: #fbf4e8;
+  color: #0a0a0a;
+  background: #fafaf7;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,9 +15,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent 260px),
-    #fbf4e8;
+  background: #fafaf7;
 }
 
 button,
@@ -28,16 +26,27 @@ select {
 }
 
 .focus-ring {
-  @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky;
+  @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-plum;
 }
 
 .noise {
-  background-image:
-    linear-gradient(rgba(23, 23, 23, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 23, 23, 0.028) 1px, transparent 1px);
-  background-size: 18px 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 280px),
+    #fafaf7;
 }
 
 .app-panel {
-  @apply rounded-kai border border-ink/10 bg-white shadow-sm;
+  @apply rounded-kai border border-line bg-white shadow-sm;
+}
+
+.eyebrow {
+  @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-muted;
+}
+
+.display-title {
+  @apply font-display font-black leading-none tracking-normal text-ink;
+}
+
+.field {
+  @apply focus-ring w-full rounded-kai border border-line bg-white px-3 py-2 text-ink placeholder:text-muted/70;
 }

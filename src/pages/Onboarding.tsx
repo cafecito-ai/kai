@@ -70,27 +70,30 @@ export function Onboarding() {
 
   return (
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-6">
-      <section>
-        <p className="text-sm font-bold uppercase tracking-wider text-coral">Onboarding</p>
-        <h1 className="mt-2 text-4xl font-black">Meet Kai</h1>
+      <section className="rounded-kai border border-line bg-white p-5 shadow-sm sm:p-7">
+        <p className="eyebrow">Onboarding</p>
+        <h1 className="mt-3 font-display text-5xl font-black leading-none tracking-normal">
+          Meet <span className="font-serif font-normal italic text-plum">Kai.</span>
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-muted">A few answers shape the first engine and the tone Kai uses with you.</p>
       </section>
       <DisclosureBanner />
-      <section className="grid gap-4 rounded-kai border border-ink/10 bg-white p-5 sm:grid-cols-2">
+      <section className="grid gap-4 rounded-kai border border-line bg-white p-5 shadow-sm sm:grid-cols-2">
         <label className="text-sm font-semibold">
           Age
-          <input className="focus-ring mt-2 w-full rounded-kai border border-ink/15 px-3 py-2" value={age} onChange={(event) => setAge(event.target.value)} />
+          <input className="field mt-2" value={age} onChange={(event) => setAge(event.target.value)} />
         </label>
         <label className="text-sm font-semibold">
           Parent email {Number(age) < 18 ? "" : "(optional)"}
-          <input className="focus-ring mt-2 w-full rounded-kai border border-ink/15 px-3 py-2" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} />
+          <input className="field mt-2" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} />
         </label>
         <label className="text-sm font-semibold">
           Kai's name
-          <input className="focus-ring mt-2 w-full rounded-kai border border-ink/15 px-3 py-2" value={kaiName} onChange={(event) => setKaiName(event.target.value)} />
+          <input className="field mt-2" value={kaiName} onChange={(event) => setKaiName(event.target.value)} />
         </label>
         <label className="text-sm font-semibold">
           Tone
-          <select className="focus-ring mt-2 w-full rounded-kai border border-ink/15 px-3 py-2" value={kaiTone} onChange={(event) => setKaiTone(event.target.value as KaiTone)}>
+          <select className="field mt-2" value={kaiTone} onChange={(event) => setKaiTone(event.target.value as KaiTone)}>
             <option value="balanced">Balanced</option>
             <option value="warm">Warm</option>
             <option value="direct">Direct</option>
@@ -99,17 +102,17 @@ export function Onboarding() {
       </section>
       <section className="space-y-3">
         {questions.map((question, index) => (
-          <label key={question} className="block rounded-kai border border-ink/10 bg-white p-4 text-sm font-semibold">
+          <label key={question} className="block rounded-kai border border-line bg-white p-4 text-sm font-semibold shadow-sm">
             {question}
             <textarea
-              className="focus-ring mt-2 min-h-20 w-full rounded-kai border border-ink/15 px-3 py-2"
+              className="field mt-2 min-h-20"
               value={responses[index]}
               onChange={(event) => setResponses((items) => items.map((item, i) => (i === index ? event.target.value : item)))}
             />
           </label>
         ))}
       </section>
-      <div className="rounded-kai bg-sage/15 p-4 text-sm">
+      <div className="rounded-kai border border-line bg-lime p-4 text-sm">
         Suggested start: <strong className="capitalize">{suggestedEngine}</strong>. You can switch any time.
       </div>
       {error && <p className="text-sm font-semibold text-danger">{error}</p>}

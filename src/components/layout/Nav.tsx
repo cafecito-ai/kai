@@ -1,10 +1,11 @@
-import { Activity, GalleryHorizontal, Home, MessageCircle, Settings, Shield, Target } from "lucide-react";
+import { Activity, Brain, GalleryHorizontal, Home, Settings, Shield, Target } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const links = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/engine/physical", label: "Body", icon: Activity },
   { to: "/engine/potential", label: "Goals", icon: Target },
+  { to: "/engine/mental", label: "Reset", icon: Brain },
   { to: "/progress", label: "Progress", icon: Shield },
   { to: "/design", label: "Design", icon: GalleryHorizontal },
   { to: "/settings", label: "Settings", icon: Settings }
@@ -36,7 +37,7 @@ export function Nav() {
         </nav>
       </div>
       <nav className="fixed inset-x-3 bottom-3 z-20 grid grid-cols-5 gap-1 rounded-kai border border-ink/10 bg-white/95 p-1 shadow-soft backdrop-blur md:hidden">
-        {[{ to: "/home", label: "Home", icon: Home }, { to: "/home", label: "Kai", icon: MessageCircle }, ...links.slice(1, 4)].map(({ to, label, icon: Icon }) => (
+        {links.slice(0, 5).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={`${to}-${label}`}
             to={to}

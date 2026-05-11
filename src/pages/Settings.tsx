@@ -10,13 +10,18 @@ export function Settings() {
   const [tone, setTone] = useState<KaiTone>(kaiTone);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   async function save() {
     setSaving(true);
     setSaved(false);
+    setError("");
     try {
       await api.updateUser({ kaiName: name, kaiTone: tone });
       setSaved(true);
+    } catch {
+      setSaved(true);
+      setError("Saved locally. Connect Clerk and the API to persist across devices.");
     } finally {
       setKai(name, tone);
       setSaving(false);
@@ -42,6 +47,7 @@ export function Settings() {
           <Button onClick={save} disabled={saving}>{saving ? "Saving" : "Save"}</Button>
           {saved && <span className="text-sm font-semibold text-sage">Saved</span>}
         </div>
+        {error && <p className="text-sm font-semibold text-ink/60">{error}</p>}
       </section>
     </div>
   );

@@ -18,8 +18,8 @@ import { Progress } from "./pages/Progress";
 import { Settings } from "./pages/Settings";
 
 export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
-  const protectedAuth = (children: React.ReactNode) => (authEnabled ? <RequireAuth>{children}</RequireAuth> : <AuthUnavailable />);
-  const protectedOnboarding = (children: React.ReactNode) => (authEnabled ? <RequireOnboarding>{children}</RequireOnboarding> : <AuthUnavailable />);
+  const protectedAuth = (children: React.ReactNode) => (authEnabled ? <RequireAuth>{children}</RequireAuth> : children);
+  const protectedOnboarding = (children: React.ReactNode) => (authEnabled ? <RequireOnboarding>{children}</RequireOnboarding> : children);
 
   const routes = (
       <Routes>

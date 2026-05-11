@@ -1,4 +1,4 @@
-import type { EngineId, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { EngineEntry, EngineId, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const PROD_API_BASE = "https://kai.evan-ratner.workers.dev";
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
@@ -65,6 +65,10 @@ export const api = {
     request<{ goal: Goal }>("/api/goals", { method: "POST", body: JSON.stringify(goal) }),
   updateGoal: (goalId: string, body: Partial<Goal>) =>
     request<{ goal: Goal }>(`/api/goals/${goalId}`, { method: "PATCH", body: JSON.stringify(body) }),
+  getEngineEntries: (engine: EngineId) =>
+    request<{ entries: EngineEntry[] }>(`/api/engines/${engine}/entries`),
+  createEngineEntry: (engine: EngineId, body: { entryType: string; title?: string; payload?: unknown; completed?: boolean }) =>
+    request<{ entry: EngineEntry }>(`/api/engines/${engine}/entries`, { method: "POST", body: JSON.stringify(body) }),
   sendParentConsent: (body: { parentEmail: string; teenName?: string }) =>
     request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) })
 };

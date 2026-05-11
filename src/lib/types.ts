@@ -28,6 +28,16 @@ export interface UserProfile {
   parentConsentAt?: string | null;
 }
 
+export interface EngineEntry {
+  id: string;
+  engine: EngineId;
+  entryType: string;
+  title?: string | null;
+  payload?: unknown;
+  createdAt?: string;
+  completedAt?: string | null;
+}
+
 export interface SafetyResult {
   safe: boolean;
   category?: string;

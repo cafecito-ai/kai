@@ -1,12 +1,47 @@
-import { Camera, Dumbbell, Moon, Utensils, Wind } from "lucide-react";
-import { useState } from "react";
+import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-react";
+import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { Button } from "../components/ui/Button";
+import { api } from "../lib/api";
+import type { EngineEntry } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
 export function EnginePhysical() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
+  const [entries, setEntries] = useState<EngineEntry[]>([]);
+  const [saving, setSaving] = useState("");
+
+  useEffect(() => {
+    void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
+  }, []);
+
+  async function completeEntry(input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) {
+    setSaving(input.entryType);
+    const optimistic: EngineEntry = {
+      id: crypto.randomUUID(),
+      engine: "physical",
+      entryType: input.entryType,
+      title: input.title,
+      payload: input.payload ?? {},
+      completedAt: new Date().toISOString()
+    };
+    setEntries((items) => [optimistic, ...items].slice(0, 8));
+    addEvent({ engine: "physical", eventType: input.eventType, eventValue: input.eventValue, payload: input.payload });
+    try {
+      const result = await api.createEngineEntry("physical", {
+        entryType: input.entryType,
+        title: input.title,
+        payload: input.payload,
+        completed: true
+      });
+      setEntries((items) => items.map((item) => (item.id === optimistic.id ? result.entry : item)));
+    } catch {
+      // Keep the optimistic entry in demo mode.
+    } finally {
+      setSaving("");
+    }
+  }
 
   return (
     <EnginePanel title="Physical wellness" label="Body" accent="text-sage" intro="Food, movement, sleep, stretching, and breathing. Useful, pattern-aware, never obsessive.">
@@ -21,8 +56,34 @@ export function EnginePhysical() {
           </p>
           <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button onClick={() => addEvent({ engine: "physical", eventType: "meal_logged", eventValue: 24, payload: { meal, mode: "fuel_note" } })}>Log fuel note</Button>
-            <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" onClick={() => addEvent({ engine: "physical", eventType: "food_photo_stub", eventValue: 12, payload: { meal } })}>
+            <Button
+              disabled={saving === "meal_log"}
+              onClick={() =>
+                completeEntry({
+                  entryType: "meal_log",
+                  title: "Fuel note",
+                  payload: { meal, mode: "fuel_note" },
+                  eventType: "meal_logged",
+                  eventValue: 24
+                })
+              }
+            >
+              {saving === "meal_log" ? "Logging" : "Log fuel note"}
+            </Button>
+            <Button
+              variant="secondary"
+              className="border-white/20 bg-white/10 text-paper hover:border-white/50"
+              disabled={saving === "food_photo_stub"}
+              onClick={() =>
+                completeEntry({
+                  entryType: "food_photo_stub",
+                  title: "Food photo stub",
+                  payload: { meal, labels: ["meal", "editable"] },
+                  eventType: "food_photo_stub",
+                  eventValue: 12
+                })
+              }
+            >
               Photo stub
             </Button>
           </div>
@@ -34,12 +95,79 @@ export function EnginePhysical() {
         </section>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <ActionCard icon={<Dumbbell />} title="Movement" copy="Practice, sport, walk, lift, stretch." action="Log 35 min" onClick={() => addEvent({ engine: "physical", eventType: "workout", eventValue: 30, payload: { type: "sport", duration: 35 } })} />
-        <ActionCard icon={<Moon />} title="Sleep" copy="Quality, blockers, and one experiment." action="Log sleep" onClick={() => addEvent({ engine: "physical", eventType: "sleep_log", eventValue: 18, payload: { quality: 7 } })} />
-        <ActionCard icon={<Wind />} title="Recovery" copy="Breathing, soreness, hydration, reset." action="Complete reset" onClick={() => addEvent({ engine: "physical", eventType: "breathing_session", eventValue: 20, payload: { pattern: "box" } })} />
+        <ActionCard
+          icon={<Dumbbell />}
+          title="Movement"
+          copy="Practice, sport, walk, lift, stretch."
+          action={saving === "movement_log" ? "Logging" : "Log 35 min"}
+          onClick={() =>
+            completeEntry({
+              entryType: "movement_log",
+              title: "Movement",
+              payload: { type: "sport", duration: 35 },
+              eventType: "workout",
+              eventValue: 30
+            })
+          }
+        />
+        <ActionCard
+          icon={<Moon />}
+          title="Sleep"
+          copy="Quality, blockers, and one experiment."
+          action={saving === "sleep_log" ? "Logging" : "Log sleep"}
+          onClick={() =>
+            completeEntry({
+              entryType: "sleep_log",
+              title: "Sleep check",
+              payload: { quality: 7 },
+              eventType: "sleep_log",
+              eventValue: 18
+            })
+          }
+        />
+        <ActionCard
+          icon={<Wind />}
+          title="Recovery"
+          copy="Breathing, soreness, hydration, reset."
+          action={saving === "recovery_reset" ? "Saving" : "Complete reset"}
+          onClick={() =>
+            completeEntry({
+              entryType: "recovery_reset",
+              title: "Recovery reset",
+              payload: { pattern: "box" },
+              eventType: "breathing_session",
+              eventValue: 20
+            })
+          }
+        />
       </div>
+      <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="eyebrow">body history</p>
+            <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent physical entries</h2>
+          </div>
+          <span className="rounded-full bg-lime px-3 py-1 text-xs font-black text-sage">{entries.length} saved</span>
+        </div>
+        <div className="space-y-2">
+          {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Body entries yet. Log one fuel, movement, sleep, or recovery note.</p>}
+          {entries.slice(0, 6).map((entry) => (
+            <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
+              <CheckCircle2 className="text-sage" size={18} />
+              <div>
+                <p className="text-sm font-black">{entry.title || labelForEntry(entry.entryType)}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted">{labelForEntry(entry.entryType)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </EnginePanel>
   );
+}
+
+function labelForEntry(entryType: string) {
+  return entryType.replace(/_/g, " ");
 }
 
 function PhysicalModule({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {

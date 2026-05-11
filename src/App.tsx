@@ -26,8 +26,38 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/" element={<Landing />} />
-          <Route path="/sign-in/*" element={authEnabled ? <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/onboarding" /> : <AuthUnavailable />} />
-          <Route path="/sign-up/*" element={authEnabled ? <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/onboarding" /> : <AuthUnavailable />} />
+          <Route
+            path="/sign-in/*"
+            element={
+              authEnabled ? (
+                <SignIn
+                  routing="path"
+                  path="/sign-in"
+                  signUpUrl="/sign-up"
+                  fallbackRedirectUrl="/onboarding"
+                  forceRedirectUrl="/onboarding"
+                />
+              ) : (
+                <AuthUnavailable />
+              )
+            }
+          />
+          <Route
+            path="/sign-up/*"
+            element={
+              authEnabled ? (
+                <SignUp
+                  routing="path"
+                  path="/sign-up"
+                  signInUrl="/sign-in"
+                  fallbackRedirectUrl="/onboarding"
+                  forceRedirectUrl="/onboarding"
+                />
+              ) : (
+                <AuthUnavailable />
+              )
+            }
+          />
           <Route path="/onboarding" element={protectedAuth(<Onboarding />)} />
           <Route path="/home" element={protectedOnboarding(<Home />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />

@@ -1,1 +1,9 @@
+/design/a.html /design/a.html 200
+/design/b.html /design/b.html 200
+/design/c.html /design/c.html 200
+/design/index.html /design/index.html 200
+/design/direction-1-bold-electric.html /design/a.html 301
+/design/direction-2-y2k-soft.html /design/b.html 301
+/design/direction-3-calm-teen.html /design/c.html 301
+/design/* /design/:splat 200
 /* /index.html 200

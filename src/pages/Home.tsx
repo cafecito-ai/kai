@@ -3,10 +3,18 @@ import { Link } from "react-router-dom";
 import { KaiChat } from "../components/kai/KaiChat";
 import { ProgressSummary } from "../components/tracker/ProgressSummary";
 import { Button } from "../components/ui/Button";
+import { engineTotals } from "../lib/tracker";
+import { useProgressStore } from "../stores/progressStore";
 import { useUserStore } from "../stores/userStore";
 
 export function Home() {
   const { kaiName, primaryEngine } = useUserStore();
+  const events = useProgressStore((state) => state.events);
+  const streak = useProgressStore((state) => state.streak());
+  const belt = useProgressStore((state) => state.belt());
+  const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
+  const topEngine = topEngineLabel(events);
+
   return (
     <div className="space-y-4">
       <section className="rounded-kai border border-line bg-white p-5 shadow-sm sm:p-7">
@@ -21,9 +29,9 @@ export function Home() {
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2 rounded-kai border border-line bg-paper p-2 text-center">
-            <MiniMetric icon={<Flame size={15} />} label="streak" value="3" />
-            <MiniMetric icon={<Moon size={15} />} label="sleep" value="7/10" />
-            <MiniMetric icon={<CheckCircle2 size={15} />} label="next" value="8m" />
+            <MiniMetric icon={<Flame size={15} />} label="streak" value={String(streak)} />
+            <MiniMetric icon={<Moon size={15} />} label="top" value={topEngine} />
+            <MiniMetric icon={<CheckCircle2 size={15} />} label="today" value={String(todayCount)} />
           </div>
         </div>
       </section>
@@ -40,7 +48,7 @@ export function Home() {
           <Link to={`/engine/${primaryEngine}`}>
             <Button className="w-full">Open today’s lane</Button>
           </Link>
-          <TodayPlan />
+          <TodayPlan belt={belt} todayCount={todayCount} />
           <ProgressSummary />
           <section className="rounded-kai border border-line bg-ink p-4 text-paper shadow-sm">
             <Wind className="mb-3 text-lime" />
@@ -64,7 +72,7 @@ function MiniMetric({ icon, label, value }: { icon: React.ReactNode; label: stri
   );
 }
 
-function TodayPlan() {
+function TodayPlan({ belt, todayCount }: { belt: string; todayCount: number }) {
   const rows = [
     ["Body", "Log dinner without judging it"],
     ["Goals", "Write the next 10-minute task"],
@@ -74,7 +82,7 @@ function TodayPlan() {
     <section className="app-panel p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-display text-2xl font-black tracking-normal">Today</h2>
-        <span className="rounded-full bg-lime px-3 py-1 text-xs font-black text-sage">3 reps</span>
+        <span className="rounded-full bg-lime px-3 py-1 text-xs font-black text-sage">{todayCount} reps</span>
       </div>
       <div className="space-y-2">
         {rows.map(([label, copy]) => (
@@ -87,8 +95,20 @@ function TodayPlan() {
           </div>
         ))}
       </div>
+      <p className="mt-3 text-xs font-bold uppercase tracking-wider text-muted">Current belt: {belt}</p>
     </section>
   );
+}
+
+function topEngineLabel(events: ReturnType<typeof useProgressStore.getState>["events"]) {
+  const totals = engineTotals(events);
+  const [engine] = Object.entries(totals)
+    .filter(([key]) => key !== "kai")
+    .sort((a, b) => b[1] - a[1])[0] ?? ["none", 0];
+  if (engine === "physical") return "body";
+  if (engine === "potential") return "goals";
+  if (engine === "mental") return "reset";
+  return "new";
 }
 
 function EngineLink({ to, icon, title, copy, tone }: { to: string; icon: React.ReactNode; title: string; copy: string; tone: string }) {

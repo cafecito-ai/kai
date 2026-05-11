@@ -1,96 +1,129 @@
-# Kai Next Steps
+# Kai Build Plan
 
 ## Current State
 
-Kai has a live teen-facing shell at `https://kai.boostaisearch.ai`, a private GitHub repo, Cloudflare Pages/Workers staging and production resources, D1/KV/R2 provisioned, and the first design direction captured in `design.md`.
+Kai is live at `https://kai.boostaisearch.ai` with:
 
-The current product is still a polished shell, not a complete app. The next work should turn the demo into a usable beta in a strict order: product shell polish, auth/onboarding, real persistence, AI/safety, then engine depth.
+- React/Vite app shell on Cloudflare Pages.
+- Cloudflare Workers API for user/profile, onboarding, Kai chat, progress, goals, food-photo placeholders, friends, safety, and parent consent.
+- Staging and production D1/KV/R2 resources.
+- Workers AI wired for Kai chat.
+- A/B/C design picker at `/design`; Lev/Offy will pick the final visual direction later.
 
-## 1. Product Shell Polish
+Design is now parked as an external decision. Until a direction is chosen, keep UI changes minimal and focus on product infrastructure and real workflows.
 
-Goal: make the visible app feel credible enough to show Lev/Offy and early teen testers.
+## P0 — Auth And Identity
 
-- Replace remaining generic screens: onboarding, progress, settings, crisis, and all three engine pages should match the new design direction.
-- Add believable demo state across all screens: recent check-ins, today plan, streaks, body/goals/reset activity, and empty states that feel intentional.
-- Add a simple app frame for mobile screenshots: bottom nav, compact page headers, and no marketing-style hero after first load.
-- Tighten copy everywhere against `design.md`: short, grounded, no “AI companion,” no “journey,” no therapy-coded language.
+Goal: remove demo identity behavior and make every API write belong to a real user.
 
-Acceptance:
-- A user can click through every visible route without hitting a generic placeholder screen.
-- The app reads as “teen utility” within the first 5 seconds on mobile.
-
-## 2. Auth And Onboarding
-
-Goal: move from demo state to real user sessions.
-
-- Configure Clerk production/staging keys.
-- Implement real sign-up/sign-in routes instead of redirects.
-- Persist user profile, age, parent email, Kai name, Kai tone, and primary engine to D1.
-- Build the parental-consent request flow with Cloudflare Email Service.
-- Add route guards for app pages after onboarding.
+- Configure Clerk production and staging apps.
+- Add `VITE_CLERK_PUBLISHABLE_KEY` to Cloudflare Pages environments.
+- Add `CLERK_SECRET_KEY` to Worker secrets for production and staging.
+- Replace `/sign-in` and `/sign-up` redirects with real Clerk screens.
+- Add a reusable auth helper on the frontend that gets the Clerk token for API requests.
+- Update Worker auth middleware to verify Clerk sessions and derive `userId` from the verified subject.
+- Keep `x-dev-user` only in local development, never production.
+- Add route guards for `/home`, `/onboarding`, `/engine/*`, `/progress`, and `/settings`.
 
 Acceptance:
-- New user can sign up, complete onboarding, refresh the page, and retain Kai/profile state.
-- Under-18 user can trigger a parent-consent email.
 
-## 3. Cloudflare API Integration
+- Signed-out users can view `/`, `/design`, `/crisis`, `/for-parents`, `/terms`, and `/privacy`.
+- Signed-out users are redirected from app routes to sign-in.
+- Signed-in users can refresh and keep the same D1 user record.
+- Production Worker rejects unauthenticated `/api/*` calls except explicit public endpoints.
 
-Goal: wire the frontend to the deployed Workers API instead of local Zustand-only behavior.
+## P1 — Onboarding And Parent Consent
 
-- Add `VITE_API_BASE_URL` for staging and production.
-- Route Kai chat, onboarding, goals, progress events, meals, and settings through Worker endpoints.
-- Store and fetch dashboard state from D1/KV.
-- Add clean loading/error states for API failures.
+Goal: turn onboarding into the real account setup flow.
 
-Acceptance:
-- Production app writes progress/goals/chat metadata to production D1.
-- Staging app writes only to staging D1.
-
-## 4. Workers AI And Safety
-
-Goal: make Kai useful while keeping safety non-negotiable.
-
-- Replace fallback chat replies with Workers AI responses using the configured text model.
-- Keep safety classification before every model call.
-- Add structured safety event review view for ops.
-- Add safety alert email path for high/critical events.
-- Create prompt files for Kai, Body, Goals, and Reset that match `design.md`.
+- Store age, parent email, Kai name, Kai tone, intake responses, intake summary, and primary engine in D1.
+- Add onboarding completion state to the user record.
+- Redirect users who have not completed onboarding back to `/onboarding`.
+- Send parent-consent email for under-18 users through Cloudflare Email Service.
+- Add a consent-token table and a real `/api/parent/consent` verification flow.
+- Add user-facing states for pending consent, consent complete, and resend consent email.
 
 Acceptance:
-- Normal chat gets a short useful Kai reply from Workers AI.
-- Crisis/self-harm/eating-disorder/abuse/violence/substance text never reaches the normal Kai prompt first.
 
-## 5. Engine Depth
+- A new under-18 user can sign up, complete onboarding, and trigger a parent email.
+- Parent consent link marks consent on the user record.
+- A returning user lands on `/home` after onboarding is complete.
 
-Goal: make each mode useful beyond the shell.
+## P2 — Persistent App State
 
-- Body: meal log, sleep check-in, movement log, breathing timer, and food-photo upload to R2.
-- Goals: strengths discovery, goal creation, next-step planning, goal completion, and goal release/reframe.
-- Reset: feelings check-in, breathing, social reset, thought reframe, and letter tool.
-- All engines write normalized `progress_events`.
+Goal: make dashboard and core app screens read from Cloudflare, not local-only stores.
 
-Acceptance:
-- Each engine has at least three real workflows with persisted data and progress impact.
-
-## 6. Beta Readiness
-
-Goal: make the product safe to put in front of real teen testers.
-
-- Add privacy/terms copy that accurately reflects data collection, safety handling, and “not therapy.”
-- Add accessibility pass for mobile, keyboard, contrast, and form labels.
-- Add analytics events for onboarding completion, engine starts, progress events, and safety events.
-- Add manual QA script for Lev/Offy demos and teen friend tests.
-- Create a staging test checklist and production launch checklist.
+- Fetch `/api/user/me`, `/api/progress`, and `/api/goals` on app load.
+- Hydrate Zustand from API results, then keep optimistic updates for fast UX.
+- Add loading, empty, and error states for all API-backed screens.
+- Normalize Worker response shapes from snake_case database rows to frontend camelCase types.
+- Add an API smoke-test script for production and staging.
 
 Acceptance:
+
+- Dashboard, progress, settings, and goals survive refresh.
+- Production writes only to production D1; staging writes only to staging D1.
+- Smoke tests cover user read/update, onboarding, goal create/update, progress write, and Kai chat.
+
+## P3 — Safety And Workers AI Hardening
+
+Goal: make AI useful while keeping safety non-negotiable.
+
+- Replace regex-only safety with a two-step approach: fast local keyword screen plus Workers AI structured classifier.
+- Store conversations and messages in D1.
+- Ensure every chat route writes messages and safety metadata.
+- Add prompt files for Kai, Body, Goals, and Reset that match the product voice, not the temporary shell copy.
+- Add ops-only safety event list endpoint.
+- Send safety alert emails for high/critical categories once Email Service sender verification is complete.
+
+Acceptance:
+
+- Normal Kai chat persists in D1 and returns a short useful response.
+- Crisis/self-harm/eating-disorder/abuse/violence/substance messages never reach normal prompts first.
+- Safety events are queryable for ops review.
+
+## P4 — Engine Workflows
+
+Goal: each mode should do real work, not just log a button click.
+
+- Body: meal log, sleep check-in, movement log, breathing timer, stretching/yoga flow, R2 food-photo upload.
+- Goals: strengths discovery, goal creation, next-step planner, goal completion, goal release/reframe.
+- Reset: feelings check-in, breathing practice, social reset, thought reframe, future/past self letter.
+- All workflows write `progress_events` with normalized event types and payloads.
+- Add per-engine history views.
+
+Acceptance:
+
+- Each engine has at least three persisted workflows.
+- Progress events are visible on `/progress` after refresh.
+- Users can switch engines without losing context.
+
+## P5 — Beta Readiness
+
+Goal: make staging safe for Lev/Offy and 5 teen testers.
+
+- Update Terms and Privacy to reflect real data collection, safety event handling, parent consent, and “not therapy.”
+- Add accessibility pass for mobile, keyboard, contrast, and labels.
+- Add Cloudflare Web Analytics and D1 product event logging.
+- Add `docs/QA.md` with demo script, staging checklist, production checklist, and teen tester feedback prompts.
+- Add basic monitoring notes for Pages, Workers, D1, and safety events.
+
+Acceptance:
+
 - 5 teen testers can use staging without developer intervention.
-- No known critical safety, auth, or data-loss bugs before production beta.
+- No known critical auth, safety, or data-loss bugs before production beta.
 
-## Immediate Order
+## Immediate Build Order
 
-1. Have Lev/Offy pick Direction A, B, or C at `/design`.
-2. Lock the selected direction into app tokens/components and archive the other two.
-3. Configure Clerk and replace auth redirects.
-4. Persist onboarding/profile/progress to D1 under authenticated user IDs.
-5. Deepen Body, Goals, and Reset workflows.
-6. Add beta QA docs and teen testing script.
+1. Clerk auth setup and Worker verification.
+2. Onboarding completion and parent-consent persistence.
+3. API hydration for dashboard/progress/goals/settings.
+4. Conversation/message persistence and AI safety classifier.
+5. Engine workflow depth.
+6. Beta QA and monitoring docs.
+
+## Parked Decisions
+
+- Final visual direction: Lev/Offy choose A, B, or C from `/design`.
+- Final Kai character treatment follows the selected direction.
+- Final production staging hostname: branch previews are acceptable until a custom staging domain is requested.

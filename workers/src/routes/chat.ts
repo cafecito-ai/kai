@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { callClaude } from "../lib/claude";
-import { createMessage, getOrCreateConversation } from "../lib/conversations";
+import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
 import { enginePrompt } from "../lib/prompts/engines";
 import { kaiSystemPrompt } from "../lib/prompts/kai";
@@ -8,6 +8,15 @@ import { classifySafety, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
 
 export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+
+chatRoutes.get("/conversations/current", async (c) => {
+  const engine = (c.req.query("engine") ?? "kai") as EngineId | "kai";
+  if (!["kai", "physical", "potential", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
+  const conversation = await getLatestConversation(c.env.DB, { userId: c.get("userId"), engine });
+  if (!conversation) return c.json({ conversationId: null, messages: [] });
+  const messages = await getConversationMessages(c.env.DB, { conversationId: conversation.id, userId: c.get("userId") });
+  return c.json({ conversationId: conversation.id, messages: messages ?? [] });
+});
 
 chatRoutes.post("/kai/chat", async (c) => {
   const body = await c.req.json<{ conversationId?: string; message: string }>();

@@ -46,3 +46,10 @@ export interface SafetyResult {
   severity?: "low" | "medium" | "high" | "critical";
   response?: string;
 }
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt?: string;
+}

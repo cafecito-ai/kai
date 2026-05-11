@@ -1,4 +1,4 @@
-import type { EngineEntry, EngineId, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { ChatMessage, EngineEntry, EngineId, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const PROD_API_BASE = "https://kai.evan-ratner.workers.dev";
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
@@ -45,11 +45,13 @@ function getDevUser() {
 export const api = {
   getUser: () =>
     request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
-  chat: (engine: EngineId | "kai", message: string, conversationId = "local") =>
-    request<{ reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
+  chat: (engine: EngineId | "kai", message: string, conversationId?: string | null) =>
+    request<{ conversationId: string; reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
       method: "POST",
       body: JSON.stringify({ conversationId, message })
     }),
+  getCurrentConversation: (engine: EngineId | "kai" = "kai") =>
+    request<{ conversationId: string | null; messages: ChatMessage[] }>(`/api/conversations/current?engine=${engine}`),
   updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean }) =>
     request("/api/user/me", { method: "PATCH", body: JSON.stringify(body) }),
   submitIntake: (responses: Record<string, string>) =>

@@ -1,17 +1,50 @@
 import { Brain, PenLine, RefreshCw, Wind } from "lucide-react";
+import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { Button } from "../components/ui/Button";
+import { api } from "../lib/api";
+import type { EngineEntry } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
 export function EngineMental() {
   const addEvent = useProgressStore((state) => state.addEvent);
+  const [entries, setEntries] = useState<EngineEntry[]>([]);
   const actions = [
     { icon: Brain, title: "Feelings check-in", copy: "Name the pressure without turning it into a diagnosis.", eventType: "feelings_check_in" },
     { icon: Wind, title: "Contextual breathing", copy: "A short reset matched to the moment, not generic calm content.", eventType: "mental_breathing" },
     { icon: RefreshCw, title: "Social media reset", copy: "Pick one boundary that makes the next hour less loud.", eventType: "social_reset" },
     { icon: PenLine, title: "Future self letter", copy: "Write to the version of you that has a little more room.", eventType: "letter_written" }
   ];
+
+  useEffect(() => {
+    void api.getEngineEntries("mental").then((result) => setEntries(result.entries)).catch(() => undefined);
+  }, []);
+
+  async function completeReset(input: { eventType: string; title: string }) {
+    const optimistic: EngineEntry = {
+      id: crypto.randomUUID(),
+      engine: "mental",
+      entryType: input.eventType,
+      title: input.title,
+      payload: { completed: true },
+      completedAt: new Date().toISOString()
+    };
+    setEntries((items) => [optimistic, ...items].slice(0, 8));
+    addEvent({ engine: "mental", eventType: input.eventType, eventValue: 24, payload: { completed: true } });
+    try {
+      const result = await api.createEngineEntry("mental", {
+        entryType: input.eventType,
+        title: input.title,
+        payload: { completed: true },
+        completed: true
+      });
+      setEntries((items) => items.map((item) => (item.id === optimistic.id ? result.entry : item)));
+    } catch {
+      // Keep the optimistic entry in demo mode.
+    }
+  }
+
   return (
     <EnginePanel title="Mental wellness" label="Reset" accent="text-coral" intro="Self-esteem, pressure, emotions, and resets. Always wellness. Never diagnosis.">
       <DisclosureBanner />
@@ -23,10 +56,35 @@ export function EngineMental() {
             </div>
             <h2 className="font-display text-2xl font-black tracking-normal">{title}</h2>
             <p className="my-3 text-sm leading-6 text-muted">{copy}</p>
-            <Button variant="secondary" onClick={() => addEvent({ engine: "mental", eventType, eventValue: 24, payload: { completed: true } })}>Complete</Button>
+            <Button variant="secondary" onClick={() => completeReset({ eventType, title })}>Complete</Button>
           </section>
         ))}
       </div>
+      <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="eyebrow">reset history</p>
+            <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent reset work</h2>
+          </div>
+          <span className="rounded-full bg-[#FFE8DD] px-3 py-1 text-xs font-black text-coral">{entries.length} saved</span>
+        </div>
+        <div className="space-y-2">
+          {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Reset entries yet. Complete one check-in, breathing session, or letter.</p>}
+          {entries.slice(0, 6).map((entry) => (
+            <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
+              <Brain className="text-coral" size={18} />
+              <div>
+                <p className="text-sm font-black">{entry.title || labelForEntry(entry.entryType)}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted">{labelForEntry(entry.entryType)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </EnginePanel>
   );
+}
+
+function labelForEntry(entryType: string) {
+  return entryType.replace(/_/g, " ");
 }

@@ -5,14 +5,20 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
 import "./styles/globals.css";
 
-const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder";
+const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+function Providers({ children }: { children: React.ReactNode }) {
+  const hasRealClerkKey = typeof clerkKey === "string" && clerkKey.startsWith("pk_");
+  if (!hasRealClerkKey) return <>{children}</>;
+  return <ClerkProvider publishableKey={clerkKey}>{children}</ClerkProvider>;
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={clerkKey}>
+    <Providers>
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </ClerkProvider>
+    </Providers>
   </React.StrictMode>
 );

@@ -96,6 +96,9 @@ async function main() {
     throw new Error("Created engine entry was not returned by list endpoint");
   }
 
+  const safetyEvents = await request("/api/ops/safety-events");
+  console.log(`Safety events visible: ${safetyEvents.events.length}`);
+
   if (runChat) {
     const chat = await request("/api/kai/chat", {
       method: "POST",

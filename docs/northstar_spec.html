@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLAUDE.md — Project North Star Build Spec</title>
+<style>
+  :root {
+    --bg: #0F1419;
+    --surface: #1A2028;
+    --elevated: #232A33;
+    --border: #2D3640;
+    --text: #F5F7FA;
+    --muted: #8B95A3;
+    --subtle: #5A6473;
+    --accent: #4FC3F7;
+    --accent-dim: rgba(79, 195, 247, 0.15);
+    --warm: #FFB74D;
+    --danger: #EF5350;
+    --success: #66BB6A;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 32px 24px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .sidebar h2 {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 24px 0 12px;
+    font-weight: 600;
+  }
+  .sidebar h2:first-child { margin-top: 0; }
+
+  .sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 6px 0;
+    font-size: 14px;
+    transition: color 150ms;
+    border-left: 2px solid transparent;
+    padding-left: 12px;
+    margin-left: -12px;
+  }
+  .sidebar a:hover {
+    color: var(--text);
+    border-left-color: var(--accent);
+  }
+
+  .brand {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .brand-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  main {
+    padding: 64px 56px;
+    max-width: 880px;
+  }
+
+  .cover {
+    margin-bottom: 64px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cover-eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .cover h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0 0 16px;
+    letter-spacing: -0.02em;
+  }
+  .cover-sub {
+    font-size: 20px;
+    color: var(--muted);
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .cover-meta div {
+    font-size: 13px;
+  }
+  .cover-meta dt {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .cover-meta dd {
+    margin: 0;
+    color: var(--text);
+  }
+
+  h1 {
+    font-size: clamp(28px, 4vw, 36px);
+    font-weight: 700;
+    margin: 64px 0 24px;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    scroll-margin-top: 24px;
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 40px 0 16px;
+    line-height: 1.3;
+    scroll-margin-top: 24px;
+  }
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 32px 0 12px;
+    line-height: 1.4;
+    color: var(--text);
+  }
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 24px 0 8px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  p { margin: 0 0 16px; }
+  p + p { margin-top: 0; }
+
+  ul, ol { margin: 0 0 20px; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--accent); }
+
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--muted); }
+
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 150ms; }
+  a:hover { border-bottom-color: var(--accent); }
+
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+    font-size: 13px;
+    background: var(--elevated);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  pre {
+    background: var(--elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 0 0 24px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  pre code {
+    background: transparent;
+    padding: 0;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 24px 0;
+    padding: 12px 24px;
+    background: var(--accent-dim);
+    border-radius: 0 8px 8px 0;
+    color: var(--text);
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+  }
+  th {
+    text-align: left;
+    background: var(--elevated);
+    color: var(--text);
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--accent);
+    font-weight: 600;
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:hover td { background: rgba(79, 195, 247, 0.03); }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  .callout {
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 24px 0;
+  }
+  .callout-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .callout-danger {
+    border-left-color: var(--danger);
+    background: rgba(239, 83, 80, 0.08);
+  }
+  .callout-danger .callout-title { color: var(--danger); }
+
+  .callout-success {
+    border-left-color: var(--success);
+    background: rgba(102, 187, 106, 0.08);
+  }
+  .callout-success .callout-title { color: var(--success); }
+
+  .phase-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .phase-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .phase-tag {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .phase-card h3 {
+    margin: 4px 0 12px;
+    font-size: 20px;
+  }
+  .phase-card ol {
+    padding-left: 20px;
+  }
+  .gate {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .gate strong { color: var(--accent); }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar {
+      position: relative;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    main { padding: 32px 24px; }
+  }
+
+  /* Print-friendly when needed */
+  @media print {
+    .sidebar { display: none; }
+    body { background: white; color: black; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">BOOST AI</div>
+    <div class="brand-sub">Project North Star · Build Spec</div>
+
+    <h2>Foundations</h2>
+    <a href="#sec-0">0. Project context</a>
+    <a href="#sec-1">1. Editorial guardrails</a>
+    <a href="#sec-2">2. Tech stack</a>
+    <a href="#sec-3">3. Repository structure</a>
+    <a href="#sec-4">4. Design system</a>
+    <a href="#sec-5">5. Data schema</a>
+
+    <h2>The Platform</h2>
+    <a href="#sec-6">6. Kai &amp; the engines</a>
+    <a href="#sec-7">7. The safety layer</a>
+    <a href="#sec-8">8. Onboarding flow</a>
+    <a href="#sec-9">9. Progress tracker</a>
+    <a href="#sec-10">10. Food-photo flow</a>
+    <a href="#sec-11">11. Routes &amp; API</a>
+
+    <h2>Execution</h2>
+    <a href="#sec-12">12. The five phases</a>
+    <a href="#sec-13">13. Agent notes</a>
+    <a href="#sec-14">14. Glossary</a>
+  </aside>
+
+  <main>
+    <div class="cover">
+      <div class="cover-eyebrow">CLAUDE.md  ·  Build Specification</div>
+      <h1>Project North Star</h1>
+      <p class="cover-sub">An AI-powered wellness platform for teens. Master build spec for Claude Code, Codex, and human review.</p>
+      <dl class="cover-meta">
+        <div>
+          <dt>Built by</dt>
+          <dd>Boost AI</dd>
+        </div>
+        <div>
+          <dt>For</dt>
+          <dd>Offy &amp; Lev</dd>
+        </div>
+        <div>
+          <dt>Scope</dt>
+          <dd>Operator + 3 engines + tracker + safety</dd>
+        </div>
+        <div>
+          <dt>Phases</dt>
+          <dd>5 phases · 6 payment gates</dd>
+        </div>
+      </dl>
+    </div>
+
+    <blockquote>
+      <strong>Purpose:</strong> Master build specification for the Project North Star platform. Read this entire document before writing any code. Every section is load-bearing.
+    </blockquote>
+
+    <h1 id="sec-0">0. Project context</h1>
+    <p>Project North Star is an AI-powered wellness platform for teenagers (ages 13–18). The product is being built by Boost AI for a client (Offy, the funder) whose son (Lev, age 16) is the product visionary. The platform is web-first, architected for an iOS port later.</p>
+    <p>The audience is teenagers under significant pressure from social media, academic life, social dynamics, and identity formation. The product is not therapy. It is a structured coaching environment that helps teens take action on their wellness, discover their strengths, and feel less alone. The voice of the product is warm, real, slightly irreverent, never preachy, and never makes a teenager feel small.</p>
+
+    <h3>Core product loop</h3>
+    <ol>
+      <li>A teenager signs up. With parental consent if under 18.</li>
+      <li>They meet Kai, the AI mentor. They can rename Kai (Coach, Buddy, Pal, anything) and lightly customize tone.</li>
+      <li>Kai asks a short series of questions to understand what the teen is dealing with right now.</li>
+      <li>Based on the answers, Kai routes the teen into one of three engines: Physical Wellness, Potential &amp; Goals, or Mental Wellness.</li>
+      <li>The teen engages with that engine — content, exercises, reflections, tracking — and Kai checks in regularly.</li>
+      <li>A cross-cutting progress tracker visualizes growth: personal charts, an evolving character avatar, and opt-in comparison with friends.</li>
+      <li>Over time, the teen can engage all three engines and use Kai as their general-purpose mentor.</li>
+    </ol>
+
+    <h1 id="sec-1">1. Editorial guardrails (read first)</h1>
+    <p>These rules govern every line of content, every Kai response, every UI string. Apply them ruthlessly.</p>
+
+    <h3>Voice</h3>
+    <ul>
+      <li><strong>Warm, real, slightly irreverent.</strong> Sound like a cool older sibling, not a guidance counselor.</li>
+      <li><strong>No preaching.</strong> Never tell a teen they "should" feel a certain way.</li>
+      <li><strong>No corporate language.</strong> No "leverage," "synergy," "transform your life."</li>
+      <li><strong>Short sentences.</strong> Active voice. Concrete nouns.</li>
+      <li><strong>Plain language.</strong> Grade 8 for content, grade 6 for UI.</li>
+      <li><strong>No emoji by default.</strong> Teens read excessive emoji as cringe.</li>
+    </ul>
+
+    <h3>Things Kai never does</h3>
+    <ul>
+      <li>Never diagnoses anything. Not depression, not anxiety, not anything.</li>
+      <li>Never prescribes medication, supplements, dosages, or specific drugs.</li>
+      <li>Never tells a teen what's wrong with them. Asks questions, reflects what it hears, offers options.</li>
+      <li>Never claims to be human.</li>
+      <li>Never agrees with self-harm, suicide, eating-disorder behavior, substance abuse, or violence — even softly, even rhetorically.</li>
+      <li>Never shares any user's data with another user.</li>
+    </ul>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">Crisis content — hard rules</div>
+      <p>If a user expresses suicidal ideation, self-harm, active eating disorder behaviors, disclosure of abuse, acute substance abuse, or threats to harm others — the safety layer takes over immediately. Kai does not coach. Kai hands off. See Section 7 for the full safety architecture.</p>
+    </div>
+
+    <h1 id="sec-2">2. Technology stack</h1>
+    <table>
+      <thead><tr><th>Layer</th><th>Tool</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Frontend</td><td>React 18 + Vite</td><td>TypeScript. Ports to React Native.</td></tr>
+        <tr><td>Styling</td><td>Tailwind CSS</td><td>Custom theme per Section 4.</td></tr>
+        <tr><td>Routing</td><td>React Router 6</td><td>Client-side.</td></tr>
+        <tr><td>State</td><td>React Context + Zustand</td><td>No Redux.</td></tr>
+        <tr><td>Hosting</td><td>Cloudflare Pages</td><td>Auto-deploy from GitHub.</td></tr>
+        <tr><td>API/backend</td><td>Cloudflare Workers (Hono.js)</td><td>Standard Boost AI pattern.</td></tr>
+        <tr><td>Database</td><td>Cloudflare D1</td><td>Primary user/content data.</td></tr>
+        <tr><td>State cache</td><td>Cloudflare KV</td><td>Sessions, streaks.</td></tr>
+        <tr><td>Object storage</td><td>Cloudflare R2</td><td>User photos.</td></tr>
+        <tr><td>AI (Kai &amp; engines)</td><td>Anthropic Claude API</td><td>Model selection per Section 6.</td></tr>
+        <tr><td>Vision (food-photo)</td><td>Cloudflare Workers AI</td><td>~$0.001/image vs $0.01+ third-party.</td></tr>
+        <tr><td>Nutrition database</td><td>USDA FoodData Central</td><td>Public API.</td></tr>
+        <tr><td>Auth</td><td>Clerk</td><td>Age + parental consent flows.</td></tr>
+        <tr><td>Email</td><td>Resend</td><td>Transactional only.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Why these choices:</p>
+    <ul>
+      <li><strong>React with TypeScript</strong> because the iOS port (React Native, future phase) shares components, types, and meaningful logic.</li>
+      <li><strong>Cloudflare end-to-end</strong> because Boost AI runs this stack already — costs are predictable, latency is good, no vendor sprawl.</li>
+      <li><strong>Claude API</strong> because the engines need character-grounded conversations with constraints. Claude is materially better at staying in character.</li>
+      <li><strong>Workers AI vision</strong> because food-photo will be high volume; ~$0.001 per image vs ~$0.01+ from third parties.</li>
+      <li><strong>Clerk</strong> because it handles age verification and parental consent out of the box.</li>
+    </ul>
+
+    <h1 id="sec-6">6. AI architecture: Kai and the engines</h1>
+
+    <h3>Model selection</h3>
+    <table>
+      <thead><tr><th>Use case</th><th>Model</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Kai (operator)</td><td>claude-haiku-4-5</td><td>Fast, cheap, good for routing turns.</td></tr>
+        <tr><td>Physical &amp; Potential engines</td><td>claude-sonnet-4-6</td><td>Strong reasoning + persona adherence.</td></tr>
+        <tr><td>Mental wellness engine</td><td>claude-opus-4-7</td><td>Highest quality and safest. Worth the cost.</td></tr>
+        <tr><td>Onboarding intake summary</td><td>claude-haiku-4-5</td><td>Single-shot, low complexity.</td></tr>
+        <tr><td>Safety classifier</td><td>claude-haiku-4-5 (structured)</td><td>Runs on every inbound message before the main model.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>The safety classifier (runs on every message)</h3>
+    <p>Every inbound user message runs through a safety classifier <strong>before</strong> being passed to the main model. The classifier returns:</p>
+    <pre><code>{
+  "categories": ["suicide_ideation" | "self_harm" | ... | "none"],
+  "severity": "low" | "medium" | "high" | "critical",
+  "explanation": "&lt;short reason&gt;"
+}</code></pre>
+    <p>If any category is non-<code>none</code> at <code>medium</code> severity or higher, the main model is bypassed. The safety layer takes over.</p>
+
+    <h3>The three engines</h3>
+
+    <div class="phase-card">
+      <h3>Physical Wellness</h3>
+      <p><strong>Domain:</strong> Nutrition, exercise, sleep, breathing, yoga, stretching. The body as the foundation of how a teenager feels day to day. Build habits, pursue physical goals without falling into diet culture or appearance obsession.</p>
+      <p><strong>Grounded in:</strong> Whole-food-first nutrition (no calorie obsession), movement they enjoy (not punishment), sleep as infrastructure, breathwork as daily practice, yoga as nervous-system regulation.</p>
+      <p><strong>Never does:</strong> Calorie obsession, supplement recommendations, body comparison, "no pain no gain" framing, food moralizing, eating disorder diagnosis (safety layer takes over).</p>
+    </div>
+
+    <div class="phase-card">
+      <h3>Potential &amp; Goals</h3>
+      <p><strong>Domain:</strong> Discovering hidden strengths and pursuing real goals. School, instruments, sports, business, charity, creative work. Help teens notice what they're naturally good at, set goals that matter to <em>them</em>, and stay with it through the hard middle.</p>
+      <p><strong>Grounded in:</strong> Strengths-based discovery, goals specific enough to act on and modest enough to start, process over outcome, self-determination over external validation, failure as data.</p>
+      <p><strong>Never does:</strong> Tell teens what they "should" do, compare to peers/siblings, encourage parent-pleasing goals, treat failure as failure, push entrepreneurship as inherently superior.</p>
+    </div>
+
+    <div class="phase-card">
+      <h3>Mental Wellness</h3>
+      <p><strong>Domain:</strong> Self-esteem, identity, emotion regulation, nervous-system literacy, specific pressures of social media. Help teens name feelings, understand body and mind responses, build practices. <em>Not a therapist. Says so clearly.</em></p>
+      <p><strong>Grounded in:</strong> Source materials to be selected with Offy and Lev. Nervous-system literacy, identity formation, anti-comparison framing, breath and body as primary regulation tools.</p>
+      <p><strong>Never does:</strong> Diagnose, tell feelings are wrong, push positive thinking on pain, replace therapy. <strong>Safety layer priority: HIGH.</strong></p>
+    </div>
+
+    <h1 id="sec-7">7. The safety layer</h1>
+    <p>The safety layer is not a feature. It is infrastructure. It exists at four levels.</p>
+
+    <h3>Level 1: Inbound message classifier</h3>
+    <p>Every message a user sends, in any engine, runs through a fast classifier before the main model sees it.</p>
+
+    <h3>Level 2: The safety response</h3>
+    <p>When the safety layer takes over, the user sees:</p>
+    <ol>
+      <li>A warm acknowledgment generated by claude-opus-4-7, streamed in immediately</li>
+      <li>A clear "this is bigger than I can help with directly" statement</li>
+      <li>Crisis resources rendered in a card: 988, Crisis Text Line, Trevor Project, NEDA helpline</li>
+      <li>A parent-notification offer if user is under 18 and parent email is on file</li>
+      <li>A "stay with me" prompt — the conversation does not end</li>
+    </ol>
+
+    <h3>Level 3: The crisis page</h3>
+    <p><code>/crisis</code> is a static page accessible from every footer, always reachable, no login required. Loads in under 1 second. Works offline (PWA cache).</p>
+
+    <h3>Level 4: Operations review</h3>
+    <p>Every safety event is logged to <code>safety_events</code>. An ops dashboard lets a designated operator review all events daily. For <code>critical</code> severity, an immediate email goes to the operations email address — user ID only, no raw user text.</p>
+
+    <div class="callout">
+      <div class="callout-title">Parental notification — when and how</div>
+      <p><strong>Always offer first.</strong> System asks "is it OK if I let your parent know you reached out?" before notifying. <strong>Always notify for critical severity</strong> in suicide/self-harm/abuse categories, regardless of user consent, if parent contact is on file. This is named explicitly in Terms of Service so it's not a surprise.</p>
+      <p>Notification content: a calm email saying their child reached out about a serious topic, that crisis resources were provided, and that they should reach out to their teen. No raw chat content. No specifics.</p>
+    </div>
+
+    <h1 id="sec-8">8. Onboarding flow</h1>
+    <p>The onboarding flow is the most important sequence in the entire product. It is where trust is built or lost. Every step has been designed deliberately. Build it exactly as specified.</p>
+
+    <h3>Step 0: Landing page (pre-signup)</h3>
+    <p>A single page at <code>/</code>. Hero: "An AI mentor for the stuff teen life actually throws at you." Three-card explanation of Kai, the engines, and the safety promise. A "For parents" button. Single CTA: "Get started." No marketing fluff. No fake testimonials.</p>
+
+    <h3>Step 1: Account creation</h3>
+    <p>Via Clerk. Email + password, or Google/Apple OAuth. Phone optional. Capture age immediately after.</p>
+
+    <h3>Step 2: Parental consent (if under 18)</h3>
+    <ul>
+      <li>Ask for parent's email</li>
+      <li>Send parent a one-click consent email via Resend</li>
+      <li>Teen sees "while you wait" screen with crisis resources prominently displayed</li>
+      <li>Teen cannot proceed until parent has clicked the consent link</li>
+      <li>Parent's consent action is logged in <code>users.parent_consent_at</code></li>
+    </ul>
+
+    <h3>Step 3: Basics</h3>
+    <p>Three short questions:</p>
+    <ol>
+      <li>What's your first name? (or nickname)</li>
+      <li>How old are you? (confirm)</li>
+      <li>Anything you want me to know up front? (optional, freeform)</li>
+    </ol>
+
+    <h3>Step 4: Meet Kai (customization)</h3>
+    <ol>
+      <li><strong>What do you want to call your mentor?</strong> Default: "Kai". Free text, up to 20 chars.</li>
+      <li><strong>How direct do you want them to be?</strong> Warm / Balanced / Direct.</li>
+      <li><strong>Voice preview:</strong> Canned sample messages in each tone, swipeable.</li>
+    </ol>
+
+    <h3>Step 5: Intake questions</h3>
+    <p>Six questions, asked one at a time:</p>
+    <ol>
+      <li>Walk me into a normal day for you. What does it look like from when you wake up to when you go to bed?</li>
+      <li>What's one thing you wish was different about your life right now?</li>
+      <li>What's one thing you actually like about your life right now?</li>
+      <li>Where do you feel pressure these days — and where's it coming from?</li>
+      <li>If you could spend an extra hour every day on anything, no judgment, what would you do with it?</li>
+      <li>On a scale of 1 to 10, how are you actually doing this week?</li>
+    </ol>
+    <p>After Q6, Kai writes a 3-sentence summary (using claude-haiku-4-5) that becomes part of every future context.</p>
+
+    <h3>Step 6: Engine routing</h3>
+    <p>Kai routes the teen to a primary engine using a structured-output call. The teen sees: "Based on what you shared, let's start with [Engine]. Here's why: [Kai's one-sentence reasoning]. You can switch any time."</p>
+    <p>Two buttons: "Sounds good. Let's start." or "Let me pick something else." (shows all three).</p>
+
+    <h3>Step 7: First real conversation</h3>
+    <p>Teen lands in their chosen engine. Kai opens with engine-specific opening style. Intake summary is in Kai's context.</p>
+
+    <h3>Step 8: The character is born</h3>
+    <p>After the first conversation (5+ messages or 5+ minutes), the evolving character avatar is generated at Level 1. Teen sees brief animation: "This is you. As you use this, you'll see them grow."</p>
+
+    <h1 id="sec-9">9. The cross-cutting progress tracker</h1>
+    <p>Three views on the <code>/progress</code> page:</p>
+
+    <h3>1. Personal chart</h3>
+    <p>Line/area chart showing wellness contribution over last 30 days. Smoothed daily rollup. Color-coded by engine.</p>
+
+    <h3>2. The evolving character</h3>
+    <p>Ten levels, threshold-based:</p>
+    <table>
+      <thead><tr><th>Level</th><th>Cumulative score</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>0</td><td>Starting form</td></tr>
+        <tr><td>2</td><td>100</td><td>Gentle smile</td></tr>
+        <tr><td>3</td><td>250</td><td>Posture improves, eyes brighten</td></tr>
+        <tr><td>4</td><td>500</td><td>More color, more energy</td></tr>
+        <tr><td>5</td><td>1000</td><td>Accessory appears</td></tr>
+        <tr><td>6</td><td>1750</td><td>Background detail</td></tr>
+        <tr><td>7</td><td>2750</td><td>Animated subtle motion</td></tr>
+        <tr><td>8</td><td>4000</td><td>Full vibrancy</td></tr>
+        <tr><td>9</td><td>6000</td><td>Aura effect</td></tr>
+        <tr><td>10</td><td>9000</td><td>Fully realized</td></tr>
+      </tbody>
+    </table>
+
+    <h3>3. Friend compare</h3>
+    <p>Opt-in. Requires mutual accept. Shows streak, level, weekly score only. <strong>Never shows</strong> conversation content, goal content, reflection content, or meal photos. Aggregate stats only.</p>
+
+    <h3>Karate-belt achievement system</h3>
+    <p>Lev's idea. Belts for engine-specific milestones (white → yellow → green → blue → black). Visible on user profile and to friends.</p>
+
+    <h1 id="sec-10">10. The food-photo nutrition flow</h1>
+    <p>The most engineered feature in v1.</p>
+    <ol>
+      <li>User taps "Log a meal" anywhere in the physical engine</li>
+      <li>Takes photo or uploads one</li>
+      <li>Photo uploaded to R2</li>
+      <li>Frontend calls <code>POST /api/food-photo</code></li>
+      <li>Worker calls Cloudflare Workers AI vision with structured prompt → returns JSON of food items with estimated grams</li>
+      <li>For each item, Worker calls USDA FoodData Central API for nutrition data</li>
+      <li>Sums totals, saves to <code>meals</code> table</li>
+      <li>Returns breakdown to frontend with edit option</li>
+    </ol>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">Critical: framing the response</div>
+      <p>Never show the meal as "good" or "bad." Never compare to a daily target unless the user has explicitly asked to track macros. Default presentation is descriptive, not evaluative.</p>
+    </div>
+
+    <h1 id="sec-12">12. The five phases</h1>
+    <p>Each phase is a payment gate. Each phase ends with a working demo. Phases run sequentially.</p>
+
+    <div class="phase-card">
+      <div class="phase-card-header"><span class="phase-tag">PHASE 1</span></div>
+      <h3>Foundations &amp; Kai</h3>
+      <ol>
+        <li>Initialize repo, configure Cloudflare (Pages, Workers, D1, KV, R2)</li>
+        <li>Set up Clerk with age-aware sign-up</li>
+        <li>Build design system per Section 4</li>
+        <li>Build app shell, nav, footer (footer MUST include crisis link)</li>
+        <li>Build always-on /crisis page</li>
+        <li>Build landing page</li>
+        <li>Build onboarding flow per Section 8</li>
+        <li>Build safety classifier (Section 7 Level 1+2)</li>
+        <li>Build Kai chat surface with Section 6 system prompt</li>
+        <li>Build progress tracker scaffold, character Level 1 only</li>
+        <li>Write Terms of Service and Privacy Policy</li>
+      </ol>
+      <div class="gate"><strong>Gate G2:</strong> Teen can sign up, complete consent, meet Kai, customize, complete intake, be routed. Safety is live.</div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header"><span class="phase-tag">PHASE 2</span></div>
+      <h3>Physical Wellness Engine</h3>
+      <ol>
+        <li>Pick source materials with Offy and Lev</li>
+        <li>Build engine page with Kai as host</li>
+        <li>Build food-photo flow end-to-end (Section 10)</li>
+        <li>Build workout, sleep, breathing, yoga loggers</li>
+        <li>Wire events to progress_events</li>
+        <li>Connect to character (now through Level 3 minimum)</li>
+        <li>Friend-test with 5+ teens</li>
+      </ol>
+      <div class="gate"><strong>Gate G3:</strong> All physical features work end-to-end. Food-photo is accurate enough to be useful. Character visibly evolves.</div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header"><span class="phase-tag">PHASE 3</span></div>
+      <h3>Potential &amp; Goals Engine</h3>
+      <ol>
+        <li>Pick source materials</li>
+        <li>Build engine page</li>
+        <li>Build strengths-discovery flow (15-min guided sequence)</li>
+        <li>Build goal CRUD across all categories</li>
+        <li>Build celebration animations</li>
+        <li>Build goal-reframe conversation</li>
+        <li>Wire events, connect to character, add belts</li>
+        <li>Friend-test with 5+ teens</li>
+      </ol>
+      <div class="gate"><strong>Gate G4:</strong> Strengths discovery works. Goals can be set, tracked, completed. Belts award correctly.</div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header"><span class="phase-tag">PHASE 4</span></div>
+      <h3>Mental Wellness Engine + Safety Hardening</h3>
+      <p><em>Safety first, engine second.</em></p>
+      <ol>
+        <li>Harden safety classifier based on Phases 1–3 learnings</li>
+        <li>Build parent-notification flow (Section 7 Level 4)</li>
+        <li>Build ops review dashboard</li>
+        <li>Get third-party clinical review (provided by Offy) BEFORE engine launch</li>
+        <li>Build mental engine page</li>
+        <li>Build feelings check-in, contextual breathing, meditation, social-media reset, thought reframe, letter writing</li>
+        <li>Wire events, connect to character, add belts</li>
+        <li>Friend-test ALL safety-flagged for review</li>
+      </ol>
+      <div class="gate"><strong>Gate G5:</strong> Mental engine live, clinically reviewed, integrated with hardened safety layer. No unhandled safety incidents.</div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header"><span class="phase-tag">PHASE 5</span></div>
+      <h3>Integration, Testing &amp; Launch Prep</h3>
+      <ol>
+        <li>Full cross-engine integration testing</li>
+        <li>Performance testing: 100+ concurrent users, &lt;2s loads</li>
+        <li>Accessibility audit: WCAG AA</li>
+        <li>Real-user testing with 15–20 teens, sustained usage</li>
+        <li>Critical bug triage and fix</li>
+        <li>Build analytics dashboard</li>
+        <li>Write user-facing help docs</li>
+        <li>Write internal handoff docs</li>
+        <li>Soft launch plan locked in</li>
+        <li>Final production deploy on chosen custom domain</li>
+      </ol>
+      <div class="gate"><strong>Gate G6:</strong> Platform is live, tested, accessible, ready for real users. Documentation handed off.</div>
+    </div>
+
+    <h1 id="sec-13">13. Agent execution notes</h1>
+
+    <h3>Order of operations</h3>
+    <ol>
+      <li>Read this entire document before writing any code. Re-read sections 1, 7, 8.</li>
+      <li>Initialize the repo structure (Section 3) first.</li>
+      <li>Build the safety classifier (Section 7 Level 1) before any conversational surface. Non-negotiable.</li>
+      <li>Build the onboarding flow (Section 8) before any engine.</li>
+      <li>Build engines in Section 12 order, not in parallel.</li>
+    </ol>
+
+    <h3>Conventions</h3>
+    <ul>
+      <li><strong>Always-on safety:</strong> Every chat code path calls the safety classifier before the main model. No exceptions.</li>
+      <li><strong>All prompts in <code>workers/src/lib/prompts/</code>.</strong> Never inline system prompts.</li>
+      <li><strong>All AI calls go through <code>workers/src/lib/claude.ts</code>.</strong> Never call Anthropic SDK from routes.</li>
+      <li><strong>Errors logged with user ID + request ID.</strong> No raw user text in logs.</li>
+      <li><strong>Never commit <code>.env</code>.</strong></li>
+    </ul>
+
+    <h3>What NOT to do</h3>
+    <ul>
+      <li>Don't introduce new dependencies without asking.</li>
+      <li>Don't build engines in parallel.</li>
+      <li>Don't skip the safety classifier "for testing."</li>
+      <li>Don't add features not in this spec.</li>
+      <li>Don't introduce React Native components in v1.</li>
+    </ul>
+
+    <hr>
+
+    <p style="color: var(--muted); font-size: 14px; text-align: center; margin: 64px 0 32px;">
+      This is the human-readable render. The canonical spec is <code>CLAUDE.md</code> in the repo root.<br>
+      Read the markdown for full detail before writing code.
+    </p>
+  </main>
+</div>
+</body>
+</html>

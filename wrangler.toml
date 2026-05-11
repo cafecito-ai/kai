@@ -1,0 +1,21 @@
+name = "kai"
+main = "workers/src/index.ts"
+compatibility_date = "2026-05-11"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kai"
+database_id = "replace-with-d1-database-id"
+
+[[kv_namespaces]]
+binding = "PROGRESS_KV"
+id = "replace-with-progress-kv-id"
+
+[[kv_namespaces]]
+binding = "SESSIONS_KV"
+id = "replace-with-sessions-kv-id"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "northstar-uploads"

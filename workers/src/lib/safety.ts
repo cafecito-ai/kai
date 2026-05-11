@@ -22,14 +22,14 @@ export function classifySafety(text: string): SafetyClassification {
   };
 }
 
-export async function logSafetyEvent(db: D1Database, input: { userId: string; conversationId?: string; rawText: string; classification: SafetyClassification }) {
+export async function logSafetyEvent(db: D1Database, input: { userId: string; conversationId?: string; messageId?: string; rawText: string; classification: SafetyClassification }) {
   if (input.classification.safe || !input.classification.category || !input.classification.severity) return null;
   await ensureUser(db, input.userId);
   const id = crypto.randomUUID();
   await db
     .prepare(
-      `INSERT INTO safety_events (id, user_id, trigger_category, severity, conversation_id, raw_text, resources_shown)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO safety_events (id, user_id, trigger_category, severity, conversation_id, message_id, raw_text, resources_shown)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       id,
@@ -37,6 +37,7 @@ export async function logSafetyEvent(db: D1Database, input: { userId: string; co
       input.classification.category,
       input.classification.severity,
       input.conversationId ?? null,
+      input.messageId ?? null,
       input.rawText,
       JSON.stringify(["988", "Crisis Text Line"])
     )

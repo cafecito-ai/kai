@@ -10,6 +10,7 @@ export interface Env {
     send: (message: { to: string; from: string; subject: string; html?: string; text?: string }) => Promise<{ messageId?: string }>;
   };
   CLERK_SECRET_KEY: string;
+  CLERK_JWT_KEY?: string;
   EMAIL_FROM: string;
   USDA_API_KEY: string;
   SAFETY_ALERT_EMAIL?: string;
@@ -19,6 +20,7 @@ export interface Env {
 }
 
 export type EngineId = "physical" | "potential" | "mental";
+export type AppVariables = { userId: string; isOps: boolean };
 
 export interface SafetyClassification {
   safe: boolean;

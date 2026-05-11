@@ -1,4 +1,5 @@
 import type { SafetyClassification } from "../types";
+import { ensureUser } from "./db";
 
 const rules: Array<{ category: NonNullable<SafetyClassification["category"]>; severity: NonNullable<SafetyClassification["severity"]>; pattern: RegExp }> = [
   { category: "suicide_ideation", severity: "critical", pattern: /\b(kill myself|suicide|end my life|not want to live)\b/i },
@@ -23,6 +24,7 @@ export function classifySafety(text: string): SafetyClassification {
 
 export async function logSafetyEvent(db: D1Database, input: { userId: string; conversationId?: string; rawText: string; classification: SafetyClassification }) {
   if (input.classification.safe || !input.classification.category || !input.classification.severity) return null;
+  await ensureUser(db, input.userId);
   const id = crypto.randomUUID();
   await db
     .prepare(

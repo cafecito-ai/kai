@@ -11,13 +11,21 @@ userRoutes.get("/user/me", async (c) => {
 
 userRoutes.patch("/user/me", async (c) => {
   const userId = c.get("userId");
-  const body = await c.req.json<{ kaiName?: string; kaiTone?: string; primaryEngine?: string }>();
+  const body = await c.req.json<{ kaiName?: string; kaiTone?: string; primaryEngine?: string; age?: number; parentEmail?: string; email?: string; displayName?: string }>();
   await c.env.DB.prepare(
-    `INSERT INTO users (id, kai_name, kai_tone, primary_engine, updated_at)
-     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-     ON CONFLICT(id) DO UPDATE SET kai_name = excluded.kai_name, kai_tone = excluded.kai_tone, primary_engine = excluded.primary_engine, updated_at = CURRENT_TIMESTAMP`
+    `INSERT INTO users (id, email, display_name, age, parent_email, kai_name, kai_tone, primary_engine, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(id) DO UPDATE SET
+       email = COALESCE(excluded.email, users.email),
+       display_name = COALESCE(excluded.display_name, users.display_name),
+       age = COALESCE(excluded.age, users.age),
+       parent_email = COALESCE(excluded.parent_email, users.parent_email),
+       kai_name = COALESCE(excluded.kai_name, users.kai_name),
+       kai_tone = COALESCE(excluded.kai_tone, users.kai_tone),
+       primary_engine = COALESCE(excluded.primary_engine, users.primary_engine),
+       updated_at = CURRENT_TIMESTAMP`
   )
-    .bind(userId, body.kaiName ?? "Kai", body.kaiTone ?? "balanced", body.primaryEngine ?? "physical")
+    .bind(userId, body.email ?? null, body.displayName ?? null, body.age ?? null, body.parentEmail ?? null, body.kaiName ?? null, body.kaiTone ?? null, body.primaryEngine ?? null)
     .run();
   return c.json({ ok: true });
 });

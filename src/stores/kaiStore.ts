@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { api } from "../lib/api";
 import { localSafetyCheck } from "../lib/safety";
 
 export interface ChatMessage {
@@ -9,10 +10,12 @@ export interface ChatMessage {
 
 interface KaiState {
   messages: ChatMessage[];
-  send: (message: string) => void;
+  sending: boolean;
+  send: (message: string) => Promise<void>;
 }
 
 export const useKaiStore = create<KaiState>((set) => ({
+  sending: false,
   messages: [
     {
       id: "welcome",
@@ -20,18 +23,34 @@ export const useKaiStore = create<KaiState>((set) => ({
       content: "Tell me the loud part. I’ll help you turn it into one small move."
     }
   ],
-  send: (message) =>
-    set((state) => {
-      const safety = localSafetyCheck(message);
-      const reply = safety.safe
-        ? "Got it. Pick a lane: body, goals, or reset. We only need one rep."
-        : safety.response ?? "Let's get you real support right now.";
-      return {
+  send: async (message) => {
+    const userMessage: ChatMessage = { id: crypto.randomUUID(), role: "user", content: message };
+    set((state) => ({ sending: true, messages: [...state.messages, userMessage] }));
+    const safety = localSafetyCheck(message);
+    if (!safety.safe) {
+      set((state) => ({
+        sending: false,
         messages: [
           ...state.messages,
-          { id: crypto.randomUUID(), role: "user", content: message },
-          { id: crypto.randomUUID(), role: "assistant", content: reply }
+          { id: crypto.randomUUID(), role: "assistant", content: safety.response ?? "Let's get you real support right now." }
         ]
-      };
-    })
+      }));
+      return;
+    }
+    try {
+      const result = await api.chat("kai", message);
+      set((state) => ({
+        sending: false,
+        messages: [...state.messages, { id: crypto.randomUUID(), role: "assistant", content: result.reply }]
+      }));
+    } catch {
+      set((state) => ({
+        sending: false,
+        messages: [
+          ...state.messages,
+          { id: crypto.randomUUID(), role: "assistant", content: "I could not reach Kai right now. Pick body, goals, or reset and do one small rep." }
+        ]
+      }));
+    }
+  }
 }));

@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { Button } from "../components/ui/Button";
+import { api } from "../lib/api";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -22,6 +23,8 @@ export function Onboarding() {
   const [kaiName, setKaiName] = useState("Kai");
   const [kaiTone, setKaiTone] = useState<KaiTone>("balanced");
   const [responses, setResponses] = useState<string[]>(Array(questions.length).fill(""));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const suggestedEngine = useMemo<EngineId>(() => {
     const text = responses.join(" ").toLowerCase();
@@ -30,11 +33,39 @@ export function Onboarding() {
     return "physical";
   }, [responses]);
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
-    setKai(kaiName || "Kai", kaiTone);
-    setPrimaryEngine(suggestedEngine);
-    navigate(`/engine/${suggestedEngine}`);
+    setSaving(true);
+    setError("");
+    try {
+      const keyedResponses = Object.fromEntries(questions.map((question, index) => [`q${index + 1}`, responses[index] || question]));
+      const intake = await api.submitIntake(keyedResponses);
+      const engine = intake.suggestedEngine || suggestedEngine;
+      await api.updateUser({
+        kaiName: kaiName || "Kai",
+        kaiTone,
+        primaryEngine: engine,
+        age: Number(age) || undefined,
+        parentEmail: parentEmail || undefined
+      });
+      if (Number(age) < 18 && parentEmail) {
+        void api.sendParentConsent({
+          parentEmail,
+          teenName: kaiName || "Kai user",
+          consentUrl: `${window.location.origin}/for-parents`
+        }).catch(() => undefined);
+      }
+      setKai(kaiName || "Kai", kaiTone);
+      setPrimaryEngine(engine);
+      navigate(`/engine/${engine}`);
+    } catch {
+      setError("Could not save onboarding yet. You can keep going in demo mode.");
+      setKai(kaiName || "Kai", kaiTone);
+      setPrimaryEngine(suggestedEngine);
+      navigate(`/engine/${suggestedEngine}`);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -81,7 +112,8 @@ export function Onboarding() {
       <div className="rounded-kai bg-sage/15 p-4 text-sm">
         Suggested start: <strong className="capitalize">{suggestedEngine}</strong>. You can switch any time.
       </div>
-      <Button>Finish onboarding</Button>
+      {error && <p className="text-sm font-semibold text-danger">{error}</p>}
+      <Button disabled={saving}>{saving ? "Saving" : "Finish onboarding"}</Button>
     </form>
   );
 }

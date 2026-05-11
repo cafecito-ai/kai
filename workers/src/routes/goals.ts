@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { ensureUser } from "../lib/db";
 import type { Env } from "../types";
 
 export const goalsRoutes = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
@@ -10,6 +11,7 @@ goalsRoutes.get("/goals", async (c) => {
 
 goalsRoutes.post("/goals", async (c) => {
   const body = await c.req.json<{ category: string; title: string; description?: string; targetDate?: string }>();
+  await ensureUser(c.env.DB, c.get("userId"));
   const id = crypto.randomUUID();
   await c.env.DB.prepare("INSERT INTO goals (id, user_id, category, title, description, target_date) VALUES (?, ?, ?, ?, ?, ?)")
     .bind(id, c.get("userId"), body.category, body.title, body.description ?? null, body.targetDate ?? null)

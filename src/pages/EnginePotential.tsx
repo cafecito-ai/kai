@@ -1,7 +1,8 @@
 import { Award, CheckCircle2, Target } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { Button } from "../components/ui/Button";
+import { api } from "../lib/api";
 import type { Goal } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
@@ -10,10 +11,21 @@ export function EnginePotential() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [title, setTitle] = useState("");
 
-  function submit(event: FormEvent) {
+  useEffect(() => {
+    void api.getGoals().then((result) => setGoals(result.goals)).catch(() => undefined);
+  }, []);
+
+  async function submit(event: FormEvent) {
     event.preventDefault();
     if (!title.trim()) return;
-    setGoals((items) => [...items, { id: crypto.randomUUID(), category: "custom", title, status: "active" }]);
+    const fallback = { id: crypto.randomUUID(), category: "custom" as const, title, status: "active" as const };
+    setGoals((items) => [...items, fallback]);
+    try {
+      const result = await api.createGoal({ category: "custom", title });
+      setGoals((items) => items.map((goal) => (goal.id === fallback.id ? result.goal : goal)));
+    } catch {
+      // Keep the optimistic local goal in demo mode.
+    }
     addEvent({ engine: "potential", eventType: "goal_created", eventValue: 18, payload: { title } });
     setTitle("");
   }
@@ -41,6 +53,7 @@ export function EnginePotential() {
                 className="focus-ring flex w-full items-center gap-3 rounded-kai border border-ink/10 p-3 text-left"
                 onClick={() => {
                   setGoals((items) => items.map((item) => (item.id === goal.id ? { ...item, status: "achieved" } : item)));
+                  void api.updateGoal(goal.id, { status: "achieved" }).catch(() => undefined);
                   addEvent({ engine: "potential", eventType: "goal_hit", eventValue: 40, payload: { goalId: goal.id } });
                 }}
               >

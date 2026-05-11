@@ -1,9 +1,11 @@
 import type { EngineId } from "../types";
+import { ensureUser } from "./db";
 
 export async function createProgressEvent(
   db: D1Database,
   input: { userId: string; engine: EngineId | "kai"; eventType: string; eventValue: number; payload?: unknown }
 ) {
+  await ensureUser(db, input.userId);
   const id = crypto.randomUUID();
   await db
     .prepare(

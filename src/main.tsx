@@ -7,6 +7,7 @@ import "./styles/globals.css";
 
 const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
+// Keep Clerk optional so the public shell can render before auth is configured.
 function Providers({ children }: { children: React.ReactNode }) {
   const hasRealClerkKey = typeof clerkKey === "string" && clerkKey.startsWith("pk_");
   if (!hasRealClerkKey) return <>{children}</>;

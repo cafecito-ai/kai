@@ -1,10 +1,10 @@
-import { Activity, Home, MessageCircle, Settings, Shield, Sparkles } from "lucide-react";
+import { Activity, Home, MessageCircle, Settings, Shield, Target } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const links = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/engine/physical", label: "Body", icon: Activity },
-  { to: "/engine/potential", label: "Goals", icon: Sparkles },
+  { to: "/engine/potential", label: "Goals", icon: Target },
   { to: "/progress", label: "Progress", icon: Shield },
   { to: "/settings", label: "Settings", icon: Settings }
 ];
@@ -14,7 +14,7 @@ export function Nav() {
     <header className="sticky top-0 z-10 border-b border-ink/10 bg-paper/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <NavLink to="/" className="flex items-center gap-2 text-lg font-black tracking-normal">
-          <span className="grid size-9 place-items-center rounded-kai bg-ink text-paper">K</span>
+          <span className="grid size-9 place-items-center rounded-kai bg-ink text-paper">kai</span>
           <span>Kai</span>
         </NavLink>
         <nav className="hidden items-center gap-1 overflow-x-auto md:flex">

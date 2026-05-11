@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #141414;
-  background: #faf7f0;
+  color: #171717;
+  background: #fbf4e8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -16,9 +16,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    linear-gradient(120deg, rgba(78, 143, 117, 0.12), transparent 32%),
-    linear-gradient(250deg, rgba(230, 95, 71, 0.12), transparent 30%),
-    #fff9f0;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent 260px),
+    #fbf4e8;
 }
 
 button,
@@ -34,7 +33,11 @@ select {
 
 .noise {
   background-image:
-    linear-gradient(rgba(20, 20, 20, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(20, 20, 20, 0.035) 1px, transparent 1px);
-  background-size: 22px 22px;
+    linear-gradient(rgba(23, 23, 23, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 23, 23, 0.028) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.app-panel {
+  @apply rounded-kai border border-ink/10 bg-white shadow-sm;
 }

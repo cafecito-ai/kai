@@ -4,17 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#141414",
-        paper: "#FFF9F0",
-        mist: "#EEF7F4",
-        sage: "#4E8F75",
-        sky: "#3D8FD1",
-        coral: "#E65F47",
-        plum: "#8A4D82",
-        amber: "#F0A629",
-        lime: "#B9D755",
+        ink: "#171717",
+        paper: "#FBF4E8",
+        mist: "#EAF1EA",
+        sage: "#3F8068",
+        sky: "#2F7AB8",
+        coral: "#D94E3F",
+        plum: "#6F4D79",
+        amber: "#E7A326",
+        lime: "#C8DB5B",
         danger: "#B42318",
-        night: "#202332"
+        night: "#22212B",
+        graphite: "#3A3938"
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]

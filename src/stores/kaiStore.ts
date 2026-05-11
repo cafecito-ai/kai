@@ -17,14 +17,14 @@ export const useKaiStore = create<KaiState>((set) => ({
     {
       id: "welcome",
       role: "assistant",
-      content: "I'm Kai. Tell me what's going on, and we'll pick the next useful step."
+      content: "Tell me the loud part. I’ll help you turn it into one small move."
     }
   ],
   send: (message) =>
     set((state) => {
       const safety = localSafetyCheck(message);
       const reply = safety.safe
-        ? "Got it. Let's turn that into one small next move."
+        ? "Got it. Pick a lane: body, goals, or reset. We only need one rep."
         : safety.response ?? "Let's get you real support right now.";
       return {
         messages: [

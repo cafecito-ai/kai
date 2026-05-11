@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { callClaude } from "../lib/claude";
+import { sendSafetyAlert } from "../lib/email";
 import { enginePrompt } from "../lib/prompts/engines";
 import { kaiSystemPrompt } from "../lib/prompts/kai";
 import { classifySafety, logSafetyEvent } from "../lib/safety";
@@ -23,6 +24,9 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const safety = classifySafety(message);
   if (!safety.safe) {
     const event = await logSafetyEvent(env.DB, { userId, conversationId, rawText: message, classification: safety });
+    if (event && safety.category && safety.severity) {
+      await sendSafetyAlert(env, { eventId: event.id, category: safety.category, severity: safety.severity });
+    }
     return Response.json({ reply: safety.response, safetyEvent: event });
   }
   const reply = await callClaude(env, system, [{ role: "user", content: message }]);

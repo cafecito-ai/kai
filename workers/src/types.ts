@@ -3,12 +3,19 @@ export interface Env {
   PROGRESS_KV: KVNamespace;
   SESSIONS_KV: KVNamespace;
   UPLOADS: R2Bucket;
-  ANTHROPIC_API_KEY: string;
+  AI?: {
+    run: (model: string, input: Record<string, unknown>, options?: Record<string, unknown>) => Promise<unknown>;
+  };
+  EMAIL?: {
+    send: (message: { to: string; from: string; subject: string; html?: string; text?: string }) => Promise<{ messageId?: string }>;
+  };
   CLERK_SECRET_KEY: string;
-  RESEND_API_KEY: string;
-  RESEND_FROM_EMAIL: string;
+  EMAIL_FROM: string;
   USDA_API_KEY: string;
   SAFETY_ALERT_EMAIL?: string;
+  AI_TEXT_MODEL?: string;
+  AI_VISION_MODEL?: string;
+  APP_ENV?: "staging" | "production" | "development";
 }
 
 export type EngineId = "physical" | "potential" | "mental";

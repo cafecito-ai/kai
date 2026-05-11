@@ -4,6 +4,7 @@
 
 - React/Vite mobile-first app with all v1 public routes.
 - Cloudflare Worker API with the specified chat, onboarding, progress, goals, meals, friends, safety, and parent-consent endpoints.
+- Cloudflare-first runtime: Workers AI for model calls and Cloudflare Email Service for transactional/alert email.
 - D1 initial migration matching the product spec tables.
 - Safety-first chat pipeline: inbound user text is classified before Claude is called.
 - Local fallback behavior for development when external service keys are not set.
@@ -13,9 +14,9 @@
 1. Create Cloudflare D1, KV namespaces, R2 bucket, Pages project, and Worker.
 2. Replace placeholder IDs in `wrangler.toml`.
 3. Configure Clerk and set `VITE_CLERK_PUBLISHABLE_KEY` plus Worker `CLERK_SECRET_KEY`.
-4. Set `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `USDA_API_KEY`, and `SAFETY_ALERT_EMAIL`.
+4. Configure Workers AI, Cloudflare Email Service, `EMAIL_FROM`, `USDA_API_KEY`, and `SAFETY_ALERT_EMAIL`.
 5. Run D1 migration `workers/migrations/0001_initial.sql`.
-6. Connect GitHub `main` to Cloudflare Pages.
+6. Deploy production to `kai.boostaisearch.ai`; use a staging Pages project or preview branch for staging.
 
 ## Source Materials Still Needed
 

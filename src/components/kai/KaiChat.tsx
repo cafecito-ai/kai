@@ -16,6 +16,13 @@ export function KaiChat() {
 
   return (
     <section className="rounded-kai border border-ink/10 bg-white p-4 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-sky">Kai</p>
+          <h2 className="text-2xl font-black">Dump the thought</h2>
+        </div>
+        <div className="grid size-12 place-items-center rounded-kai bg-ink text-paper">K</div>
+      </div>
       <div className="mb-4 space-y-3">
         {messages.map((message) => (
           <div

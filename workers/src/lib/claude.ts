@@ -6,29 +6,19 @@ interface ClaudeMessage {
 }
 
 export async function callClaude(env: Env, system: string, messages: ClaudeMessage[]): Promise<string> {
-  if (!env.ANTHROPIC_API_KEY) {
+  if (!env.AI) {
     return "I can help with that. For now, pick one small step you can do in the next ten minutes.";
   }
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
+  try {
+    const prompt = `${system}\n\nConversation:\n${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}\nassistant:`;
+    const result = (await env.AI.run(env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct", {
+      prompt,
       max_tokens: 500,
-      system,
-      messages
-    })
-  });
-
-  if (!res.ok) {
+      temperature: 0.5
+    })) as { response?: string; text?: string };
+    return result.response || result.text || "I'm here. What's the smallest next step?";
+  } catch {
     return "I hit a snag, but the next move is still simple: pause, name what is happening, and choose one small action.";
   }
-
-  const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-  return data.content?.find((part) => part.type === "text")?.text ?? "I'm here. What's the smallest next step?";
 }

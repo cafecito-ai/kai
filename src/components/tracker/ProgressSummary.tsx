@@ -17,7 +17,7 @@ export function ProgressSummary() {
           <span>Growth chart</span>
           <span>{events.length} events</span>
         </div>
-        <div className="flex h-28 items-end gap-2">
+        <div className="flex h-28 items-end gap-2 rounded-kai bg-mist p-3">
           {Array.from({ length: 14 }).map((_, index) => {
             const value = events[index % Math.max(events.length, 1)]?.eventValue ?? 8 + index * 3;
             return <div key={index} className="flex-1 rounded-t bg-sage" style={{ height: `${Math.min(100, value)}%` }} />;

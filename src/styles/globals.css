@@ -15,6 +15,10 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background:
+    linear-gradient(120deg, rgba(78, 143, 117, 0.12), transparent 32%),
+    linear-gradient(250deg, rgba(230, 95, 71, 0.12), transparent 30%),
+    #fff9f0;
 }
 
 button,
@@ -26,4 +30,11 @@ select {
 
 .focus-ring {
   @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky;
+}
+
+.noise {
+  background-image:
+    linear-gradient(rgba(20, 20, 20, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 20, 20, 0.035) 1px, transparent 1px);
+  background-size: 22px 22px;
 }

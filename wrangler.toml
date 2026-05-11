@@ -1,21 +1,68 @@
 name = "kai"
 main = "workers/src/index.ts"
 compatibility_date = "2026-05-11"
+account_id = "f7a9b24f679e1d3952921ee5e72e677e"
 pages_build_output_dir = "dist"
+
+[ai]
+binding = "AI"
+
+[[send_email]]
+name = "EMAIL"
+allowed_sender_addresses = ["hello@kai.boostaisearch.ai", "safety@kai.boostaisearch.ai", "noreply@kai.boostaisearch.ai"]
+
+[vars]
+APP_ENV = "production"
+EMAIL_FROM = "hello@kai.boostaisearch.ai"
+AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+AI_VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "kai"
-database_id = "replace-with-d1-database-id"
+database_name = "kai-prod"
+database_id = "31687ec8-ec8e-4151-86d9-ef39951474f9"
 
 [[kv_namespaces]]
 binding = "PROGRESS_KV"
-id = "replace-with-progress-kv-id"
+id = "ddb651014ac54b20991299e2a705e32d"
 
 [[kv_namespaces]]
 binding = "SESSIONS_KV"
-id = "replace-with-sessions-kv-id"
+id = "6c5e3e0de0da42a1906e1200e9b9c5cc"
 
 [[r2_buckets]]
 binding = "UPLOADS"
-bucket_name = "northstar-uploads"
+bucket_name = "kai-uploads-prod"
+
+[env.staging]
+name = "kai-staging"
+
+[env.staging.ai]
+binding = "AI"
+
+[env.staging.vars]
+APP_ENV = "staging"
+EMAIL_FROM = "hello@kai.boostaisearch.ai"
+AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+AI_VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "kai-staging"
+database_id = "03f03ca8-5194-4599-8e87-68a9abc4b9af"
+
+[[env.staging.kv_namespaces]]
+binding = "PROGRESS_KV"
+id = "7dd0e5ba9371480980322476257789dd"
+
+[[env.staging.kv_namespaces]]
+binding = "SESSIONS_KV"
+id = "298fe76f8b1345d4990e6210e3b10027"
+
+[[env.staging.r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "kai-uploads-staging"
+
+[[env.staging.send_email]]
+name = "EMAIL"
+allowed_sender_addresses = ["hello@kai.boostaisearch.ai", "safety@kai.boostaisearch.ai", "noreply@kai.boostaisearch.ai"]

@@ -17,6 +17,15 @@ Worker development:
 npm run worker:dev
 ```
 
+Cloudflare deploy targets:
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name kai --branch main
+npx wrangler deploy --env staging
+npx wrangler deploy
+```
+
 ## Checks
 
 ```bash

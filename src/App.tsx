@@ -1,4 +1,8 @@
+import { SignIn, SignUp } from "@clerk/clerk-react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { ApiAuthBridge } from "./components/auth/ApiAuthBridge";
+import { RequireAuth } from "./components/auth/RequireAuth";
+import { RequireOnboarding } from "./components/auth/RequireOnboarding";
 import { AppShell } from "./components/layout/AppShell";
 import { Crisis } from "./pages/Crisis";
 import { DesignPicker } from "./pages/DesignPicker";
@@ -15,24 +19,27 @@ import { Settings } from "./pages/Settings";
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route path="/" element={<Landing />} />
-        <Route path="/sign-in" element={<Navigate to="/onboarding" replace />} />
-        <Route path="/sign-up" element={<Navigate to="/onboarding" replace />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/engine/physical" element={<EnginePhysical />} />
-        <Route path="/engine/potential" element={<EnginePotential />} />
-        <Route path="/engine/mental" element={<EngineMental />} />
-        <Route path="/progress" element={<Progress />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/crisis" element={<Crisis />} />
-        <Route path="/design" element={<DesignPicker />} />
-        <Route path="/for-parents" element={<ForParents />} />
-        <Route path="/terms" element={<PolicyPage kind="terms" />} />
-        <Route path="/privacy" element={<PolicyPage kind="privacy" />} />
-      </Route>
-    </Routes>
+    <ApiAuthBridge>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/onboarding" />} />
+          <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/onboarding" />} />
+          <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
+          <Route path="/home" element={<RequireOnboarding><Home /></RequireOnboarding>} />
+          <Route path="/engine/physical" element={<RequireOnboarding><EnginePhysical /></RequireOnboarding>} />
+          <Route path="/engine/potential" element={<RequireOnboarding><EnginePotential /></RequireOnboarding>} />
+          <Route path="/engine/mental" element={<RequireOnboarding><EngineMental /></RequireOnboarding>} />
+          <Route path="/progress" element={<RequireOnboarding><Progress /></RequireOnboarding>} />
+          <Route path="/settings" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
+          <Route path="/crisis" element={<Crisis />} />
+          <Route path="/design" element={<DesignPicker />} />
+          <Route path="/for-parents" element={<ForParents />} />
+          <Route path="/terms" element={<PolicyPage kind="terms" />} />
+          <Route path="/privacy" element={<PolicyPage kind="privacy" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </ApiAuthBridge>
   );
 }

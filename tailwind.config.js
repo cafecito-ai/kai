@@ -18,7 +18,9 @@ export default {
         graphite: "#3A3938"
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]
+        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Inter Tight", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["Instrument Serif", "Georgia", "serif"]
       },
       borderRadius: {
         kai: "8px"

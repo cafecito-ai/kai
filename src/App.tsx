@@ -1,5 +1,5 @@
 import { SignIn, SignUp } from "@clerk/clerk-react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { ApiAuthBridge } from "./components/auth/ApiAuthBridge";
 import { RequireAuth } from "./components/auth/RequireAuth";
 import { RequireOnboarding } from "./components/auth/RequireOnboarding";
@@ -17,21 +17,23 @@ import { PolicyPage } from "./pages/PolicyPage";
 import { Progress } from "./pages/Progress";
 import { Settings } from "./pages/Settings";
 
-export default function App() {
-  return (
-    <ApiAuthBridge>
+export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
+  const protectedAuth = (children: React.ReactNode) => (authEnabled ? <RequireAuth>{children}</RequireAuth> : <AuthUnavailable />);
+  const protectedOnboarding = (children: React.ReactNode) => (authEnabled ? <RequireOnboarding>{children}</RequireOnboarding> : <AuthUnavailable />);
+
+  const routes = (
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/" element={<Landing />} />
-          <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/onboarding" />} />
-          <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/onboarding" />} />
-          <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
-          <Route path="/home" element={<RequireOnboarding><Home /></RequireOnboarding>} />
-          <Route path="/engine/physical" element={<RequireOnboarding><EnginePhysical /></RequireOnboarding>} />
-          <Route path="/engine/potential" element={<RequireOnboarding><EnginePotential /></RequireOnboarding>} />
-          <Route path="/engine/mental" element={<RequireOnboarding><EngineMental /></RequireOnboarding>} />
-          <Route path="/progress" element={<RequireOnboarding><Progress /></RequireOnboarding>} />
-          <Route path="/settings" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
+          <Route path="/sign-in/*" element={authEnabled ? <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/onboarding" /> : <AuthUnavailable />} />
+          <Route path="/sign-up/*" element={authEnabled ? <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/onboarding" /> : <AuthUnavailable />} />
+          <Route path="/onboarding" element={protectedAuth(<Onboarding />)} />
+          <Route path="/home" element={protectedOnboarding(<Home />)} />
+          <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
+          <Route path="/engine/potential" element={protectedOnboarding(<EnginePotential />)} />
+          <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />
+          <Route path="/progress" element={protectedOnboarding(<Progress />)} />
+          <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/design" element={<DesignPicker />} />
           <Route path="/for-parents" element={<ForParents />} />
@@ -40,6 +42,24 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
+  );
+
+  if (!authEnabled) return routes;
+
+  return (
+    <ApiAuthBridge>
+      {routes}
     </ApiAuthBridge>
+  );
+}
+
+function AuthUnavailable() {
+  return (
+    <section className="mx-auto max-w-lg rounded-kai border border-ink/10 bg-white p-5 shadow-sm">
+      <p className="text-xs font-black uppercase tracking-wider text-coral">Auth setup needed</p>
+      <h1 className="mt-2 text-2xl font-black">Kai sign-in is not configured yet.</h1>
+      <p className="mt-2 text-sm leading-6 text-ink/70">Set the Clerk publishable key to open the app shell. Public pages are still available.</p>
+      <Link to="/" className="mt-4 inline-flex text-sm font-black text-sky">Back to homepage</Link>
+    </section>
   );
 }

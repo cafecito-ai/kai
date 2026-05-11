@@ -2,6 +2,13 @@ import type { EngineId, Goal, KaiTone, ProgressEvent } from "./types";
 
 const PROD_API_BASE = "https://kai.evan-ratner.workers.dev";
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
+type TokenGetter = () => Promise<string | null>;
+
+let apiAuthTokenGetter: TokenGetter | null = null;
+
+export function setApiAuthTokenGetter(getter: TokenGetter | null) {
+  apiAuthTokenGetter = getter;
+}
 
 function getApiBaseUrl() {
   if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "");
@@ -12,16 +19,27 @@ function getApiBaseUrl() {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${getApiBaseUrl()}${path}`;
+  const token = await apiAuthTokenGetter?.();
+  const devUser = getDevUser();
   const res = await fetch(url, {
     ...init,
     headers: {
       "content-type": "application/json",
-      "x-dev-user": localStorage.getItem("kai.devUser") || "demo-teen",
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(!token && devUser ? { "x-dev-user": devUser } : {}),
       ...init?.headers
     }
   });
   if (!res.ok) throw new Error(`Request failed: ${res.status}`);
   return res.json() as Promise<T>;
+}
+
+function getDevUser() {
+  if (typeof window === "undefined") return null;
+  const host = window.location.hostname;
+  const canUseDevUser = host === "localhost" || host === "127.0.0.1" || host.endsWith(".pages.dev");
+  if (!canUseDevUser) return null;
+  return localStorage.getItem("kai.devUser") || "demo-teen";
 }
 
 export const api = {

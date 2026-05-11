@@ -1,8 +1,9 @@
 import { useAuth } from "@clerk/clerk-react";
 import { useEffect } from "react";
+import type { ReactNode } from "react";
 import { setApiAuthTokenGetter } from "../../lib/api";
 
-export function ApiAuthBridge({ children }: { children: React.ReactNode }) {
+export function ApiAuthBridge({ children }: { children: ReactNode }) {
   const { getToken } = useAuth();
 
   useEffect(() => {

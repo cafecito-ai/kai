@@ -1,4 +1,4 @@
-import { Award, CheckCircle2, Target } from "lucide-react";
+import { Award, CheckCircle2, RefreshCw, Target } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { Button } from "../components/ui/Button";
@@ -11,6 +11,10 @@ export function EnginePotential() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<Goal["category"]>("custom");
+  const [description, setDescription] = useState("");
+  const [nextStep, setNextStep] = useState("Spend 10 minutes on the first draft");
+  const [reframe, setReframe] = useState("This goal still matters, but the next version can be smaller.");
 
   useEffect(() => {
     void api.getGoals().then((result) => setGoals(result.goals)).catch(() => undefined);
@@ -44,16 +48,17 @@ export function EnginePotential() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!title.trim()) return;
-    const fallback = { id: crypto.randomUUID(), category: "custom" as const, title, status: "active" as const };
+    const fallback = { id: crypto.randomUUID(), category, title, description, status: "active" as const };
     setGoals((items) => [...items, fallback]);
     try {
-      const result = await api.createGoal({ category: "custom", title });
+      const result = await api.createGoal({ category, title, description });
       setGoals((items) => items.map((goal) => (goal.id === fallback.id ? result.goal : goal)));
     } catch {
       // Keep the optimistic local goal in demo mode.
     }
-    await createEntry({ entryType: "goal_created", title, payload: { title }, eventType: "goal_created", eventValue: 18 });
+    await createEntry({ entryType: "goal_created", title, payload: { title, category, description }, eventType: "goal_created", eventValue: 18 });
     setTitle("");
+    setDescription("");
   }
 
   return (
@@ -66,7 +71,18 @@ export function EnginePotential() {
           <p className="eyebrow">strengths discovery</p>
           <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Turn patterns into a first experiment.</h2>
           <p className="mt-3 text-sm leading-6 text-muted">Energy, curiosity, feedback, repetition, courage, and one useful experiment. No big life plan required.</p>
-          <Button className="mt-5" onClick={() => createEntry({ entryType: "strengths_discovery", title: "Strengths discovery", payload: { completed: true }, eventType: "strengths_discovery", eventValue: 28 })}>Complete discovery</Button>
+          <div className="mt-4 grid gap-2">
+            {["What do people ask me for help with?", "What do I keep practicing without being told?", "What problem do I notice faster than others?"].map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => createEntry({ entryType: "strengths_discovery", title: prompt, payload: { prompt }, eventType: "strengths_discovery", eventValue: 28 })}
+                className="focus-ring rounded-kai border border-line bg-paper p-3 text-left text-sm font-semibold transition hover:bg-white"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         </section>
         <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
           <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
@@ -74,9 +90,20 @@ export function EnginePotential() {
           </div>
           <p className="eyebrow">goals</p>
           <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make the next move visible.</h2>
-          <form onSubmit={submit} className="mt-4 flex gap-2">
-            <input className="field min-w-0 flex-1" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Start a goal" />
-            <Button>Add</Button>
+          <form onSubmit={submit} className="mt-4 grid gap-2">
+            <div className="grid gap-2 sm:grid-cols-[0.7fr_1.3fr]">
+              <select className="field" value={category} onChange={(event) => setCategory(event.target.value as Goal["category"])}>
+                <option value="school">School</option>
+                <option value="instrument">Instrument</option>
+                <option value="sport">Sport</option>
+                <option value="business">Business</option>
+                <option value="charity">Charity</option>
+                <option value="custom">Custom</option>
+              </select>
+              <input className="field min-w-0" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Start a goal" />
+            </div>
+            <textarea className="field min-h-20" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Why this matters, in one messy sentence" />
+            <Button>Add goal</Button>
           </form>
           <div className="mt-4 space-y-2">
             {goals.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No goals yet. Add one tiny thing worth doing this week.</p>}
@@ -95,6 +122,38 @@ export function EnginePotential() {
               </button>
             ))}
           </div>
+        </section>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+          <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
+            <Target />
+          </div>
+          <p className="eyebrow">next step planner</p>
+          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make it small enough to start.</h2>
+          <textarea className="field mt-4 min-h-24" value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
+          <Button
+            className="mt-4"
+            variant="secondary"
+            onClick={() => createEntry({ entryType: "next_step_planned", title: "Next step", payload: { nextStep }, eventType: "next_step_planned", eventValue: 22 })}
+          >
+            Save next step
+          </Button>
+        </section>
+        <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+          <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
+            <RefreshCw />
+          </div>
+          <p className="eyebrow">release or reframe</p>
+          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">A goal can change without becoming a failure.</h2>
+          <textarea className="field mt-4 min-h-24" value={reframe} onChange={(event) => setReframe(event.target.value)} />
+          <Button
+            className="mt-4"
+            variant="secondary"
+            onClick={() => createEntry({ entryType: "goal_reframed", title: "Goal reframe", payload: { reframe }, eventType: "goal_reframed", eventValue: 24 })}
+          >
+            Save reframe
+          </Button>
         </section>
       </div>
       <History entries={entries} />

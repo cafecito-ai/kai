@@ -10,8 +10,11 @@ import { useProgressStore } from "../stores/progressStore";
 export function EngineMental() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
+  const [feeling, setFeeling] = useState("Stressed, but not sure why yet");
+  const [thought, setThought] = useState("If I mess this up, everyone will notice.");
+  const [boundary, setBoundary] = useState("Mute one app until tomorrow morning");
+  const [letter, setLetter] = useState("You got through the loud part. Do the next tiny thing.");
   const actions = [
-    { icon: Brain, title: "Feelings check-in", copy: "Name the pressure without turning it into a diagnosis.", eventType: "feelings_check_in" },
     { icon: Wind, title: "Contextual breathing", copy: "A short reset matched to the moment, not generic calm content.", eventType: "mental_breathing" },
     { icon: RefreshCw, title: "Social media reset", copy: "Pick one boundary that makes the next hour less loud.", eventType: "social_reset" },
     { icon: PenLine, title: "Future self letter", copy: "Write to the version of you that has a little more room.", eventType: "letter_written" }
@@ -21,22 +24,22 @@ export function EngineMental() {
     void api.getEngineEntries("mental").then((result) => setEntries(result.entries)).catch(() => undefined);
   }, []);
 
-  async function completeReset(input: { eventType: string; title: string }) {
+  async function completeReset(input: { eventType: string; title: string; payload?: unknown; eventValue?: number }) {
     const optimistic: EngineEntry = {
       id: crypto.randomUUID(),
       engine: "mental",
       entryType: input.eventType,
       title: input.title,
-      payload: { completed: true },
+      payload: input.payload ?? { completed: true },
       completedAt: new Date().toISOString()
     };
     setEntries((items) => [optimistic, ...items].slice(0, 8));
-    addEvent({ engine: "mental", eventType: input.eventType, eventValue: 24, payload: { completed: true } });
+    addEvent({ engine: "mental", eventType: input.eventType, eventValue: input.eventValue ?? 24, payload: input.payload ?? { completed: true } });
     try {
       const result = await api.createEngineEntry("mental", {
         entryType: input.eventType,
         title: input.title,
-        payload: { completed: true },
+        payload: input.payload ?? { completed: true },
         completed: true
       });
       setEntries((items) => items.map((item) => (item.id === optimistic.id ? result.entry : item)));
@@ -48,6 +51,44 @@ export function EngineMental() {
   return (
     <EnginePanel title="Mental wellness" label="Reset" accent="text-coral" intro="Self-esteem, pressure, emotions, and resets. Always wellness. Never diagnosis.">
       <DisclosureBanner />
+      <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+        <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+          <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#FFE8DD] text-coral">
+            <Brain />
+          </div>
+          <p className="eyebrow">feelings check-in</p>
+          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Name it without diagnosing it.</h2>
+          <textarea className="field mt-4 min-h-24" value={feeling} onChange={(event) => setFeeling(event.target.value)} />
+          <Button
+            className="mt-4"
+            variant="secondary"
+            onClick={() => completeReset({ eventType: "feelings_check_in", title: "Feelings check-in", payload: { feeling }, eventValue: 24 })}
+          >
+            Save check-in
+          </Button>
+        </section>
+        <section className="rounded-kai border border-line bg-ink p-5 text-paper shadow-sm">
+          <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#FFE8DD] text-coral">
+            <RefreshCw />
+          </div>
+          <p className="eyebrow text-soft">thought reframe</p>
+          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Take one scary thought down a notch.</h2>
+          <textarea className="field mt-4 min-h-24 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={thought} onChange={(event) => setThought(event.target.value)} />
+          <Button
+            className="mt-4"
+            onClick={() =>
+              completeReset({
+                eventType: "thought_reframe",
+                title: "Thought reframe",
+                payload: { thought, reframe: "What is one boring, realistic next step?" },
+                eventValue: 28
+              })
+            }
+          >
+            Save reframe
+          </Button>
+        </section>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {actions.map(({ icon: Icon, title, copy, eventType }) => (
           <section key={eventType} className="rounded-kai border border-line bg-white p-5 shadow-sm">
@@ -56,7 +97,25 @@ export function EngineMental() {
             </div>
             <h2 className="font-display text-2xl font-black tracking-normal">{title}</h2>
             <p className="my-3 text-sm leading-6 text-muted">{copy}</p>
-            <Button variant="secondary" onClick={() => completeReset({ eventType, title })}>Complete</Button>
+            {eventType === "social_reset" && <input className="field mb-3" value={boundary} onChange={(event) => setBoundary(event.target.value)} />}
+            {eventType === "letter_written" && <textarea className="field mb-3 min-h-20" value={letter} onChange={(event) => setLetter(event.target.value)} />}
+            <Button
+              variant="secondary"
+              onClick={() =>
+                completeReset({
+                  eventType,
+                  title,
+                  payload:
+                    eventType === "social_reset"
+                      ? { boundary }
+                      : eventType === "letter_written"
+                        ? { letter }
+                        : { completed: true }
+                })
+              }
+            >
+              Complete
+            </Button>
           </section>
         ))}
       </div>

@@ -5,15 +5,16 @@ import type { AppVariables, Env } from "../types";
 type AuthContext = Context<{ Bindings: Env; Variables: AppVariables }>;
 
 export async function requireAuth(c: AuthContext, next: Next) {
-  if (c.req.method === "OPTIONS" || c.req.path === "/health" || c.req.path === "/api/parent/consent") {
+  if (c.req.method === "OPTIONS" || c.req.path === "/health" || c.req.path === "/api/health" || c.req.path === "/api/parent/consent") {
     await next();
     return;
   }
 
   const devUser = c.req.header("x-dev-user");
-  if (devUser) {
+  const isNonProd = c.env.APP_ENV === "development" || c.env.APP_ENV === "staging";
+  if (devUser && isNonProd) {
     c.set("userId", devUser);
-    c.set("isOps", c.env.APP_ENV !== "production");
+    c.set("isOps", true);
     await next();
     return;
   }

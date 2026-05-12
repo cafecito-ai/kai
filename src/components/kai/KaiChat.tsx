@@ -23,7 +23,12 @@ export function KaiChat() {
         </div>
         <div className="mr-4 mt-4 grid size-11 place-items-center rounded-full bg-ink font-serif text-xl italic text-paper">k</div>
       </div>
-      <div className="mx-4 mb-4 space-y-3">
+      <div
+        className="mx-4 mb-4 space-y-3"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label="Chat with Kai"
+      >
         {messages.map((message) => (
           <div
             key={message.id}
@@ -31,16 +36,18 @@ export function KaiChat() {
               message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
             }`}
           >
+            <span className="sr-only">{message.role === "assistant" ? "Kai said: " : "You said: "}</span>
             {message.content}
           </div>
         ))}
       </div>
-      <div className="mx-4 mb-3 flex flex-wrap gap-2">
+      <div className="mx-4 mb-3 flex flex-wrap gap-2" role="group" aria-label="Topic suggestions">
         {["school", "friends", "body", "sleep"].map((item) => (
           <button
             key={item}
             type="button"
             onClick={() => setDraft(item)}
+            aria-label={`Use "${item}" as your message`}
             className="focus-ring rounded-full border border-line bg-paper px-3 py-1.5 text-xs font-bold text-muted hover:bg-white hover:text-ink"
           >
             {item}
@@ -48,7 +55,11 @@ export function KaiChat() {
         ))}
       </div>
       <form onSubmit={onSubmit} className="flex gap-2 border-t border-line bg-paper p-3">
+        <label htmlFor="kai-chat-input" className="sr-only">
+          Message to Kai
+        </label>
         <input
+          id="kai-chat-input"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           className="field min-w-0 flex-1"
@@ -56,7 +67,7 @@ export function KaiChat() {
           disabled={sending}
         />
         <Button aria-label="Send message" disabled={sending}>
-          {draft.trim() ? <Send size={18} /> : <Sparkles size={18} />}
+          {draft.trim() ? <Send size={18} aria-hidden="true" /> : <Sparkles size={18} aria-hidden="true" />}
         </Button>
       </form>
     </section>

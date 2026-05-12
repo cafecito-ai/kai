@@ -27,8 +27,11 @@ export function Crisis() {
       </section>
 
       <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-        <label className="block text-xs font-bold uppercase tracking-wider text-muted">Your region</label>
+        <label htmlFor="crisis-region" className="block text-xs font-bold uppercase tracking-wider text-muted">
+          Your region
+        </label>
         <select
+          id="crisis-region"
           className="field mt-2 w-full"
           value={region}
           onChange={(event) => setRegion(event.target.value as CrisisRegion)}

@@ -14,6 +14,7 @@ import { ForParents } from "./pages/ForParents";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
+import { Ops } from "./pages/Ops";
 import { PolicyPage } from "./pages/PolicyPage";
 import { Progress } from "./pages/Progress";
 import { Settings } from "./pages/Settings";
@@ -67,6 +68,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/design" element={<DesignPicker />} />
+          <Route path="/ops" element={protectedAuth(<Ops />)} />
           <Route path="/for-parents" element={<ForParents />} />
           <Route path="/terms" element={<PolicyPage kind="terms" />} />
           <Route path="/privacy" element={<PolicyPage kind="privacy" />} />

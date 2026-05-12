@@ -1,6 +1,7 @@
 import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
+import { RelationshipsPrimer } from "../components/physical/RelationshipsPrimer";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { localSafetyCheck } from "../lib/safety";
@@ -179,6 +180,16 @@ export function EnginePhysical() {
           }
         />
       </div>
+      <RelationshipsPrimer
+        onRead={({ articleId }) =>
+          addEvent({
+            engine: "physical",
+            eventType: "relationships_primer_read",
+            eventValue: 6,
+            payload: { articleId }
+          })
+        }
+      />
       <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>

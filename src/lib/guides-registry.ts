@@ -81,6 +81,15 @@ export const GUIDES: GuideEntry[] = [
     component: lazy(() =>
       import("../components/physical/DigitalWellbeing").then((m) => ({ default: m.DigitalWellbeing }))
     )
+  },
+  {
+    engine: "physical",
+    slug: "cycle",
+    title: "Cycle tracker",
+    summary: "If you have a cycle, the pattern is useful. Opt-in, on-device only — never sent anywhere.",
+    component: lazy(() =>
+      import("../components/physical/CycleTracker").then((m) => ({ default: m.CycleTracker }))
+    )
   }
 ];
 

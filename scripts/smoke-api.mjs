@@ -33,7 +33,7 @@ async function main() {
   console.log(`Smoke API: ${baseUrl}`);
   console.log(token ? "Auth: bearer token" : `Auth: x-dev-user ${devUser}`);
 
-  await request("/health", { headers: {} });
+  await request("/api/health", { headers: {} });
   const user = await request("/api/user/me");
   console.log(`User: ${user.kaiName} / ${user.primaryEngine}`);
 

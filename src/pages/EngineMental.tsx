@@ -1,6 +1,8 @@
-import { Brain, PenLine, RefreshCw, Wind } from "lucide-react";
+import { Brain, PenLine, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
+import { BreathingPlayer } from "../components/mental/BreathingPlayer";
+import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -15,7 +17,6 @@ export function EngineMental() {
   const [boundary, setBoundary] = useState("Mute one app until tomorrow morning");
   const [letter, setLetter] = useState("You got through the loud part. Do the next tiny thing.");
   const actions = [
-    { icon: Wind, title: "Contextual breathing", copy: "A short reset matched to the moment, not generic calm content.", eventType: "mental_breathing" },
     { icon: RefreshCw, title: "Social media reset", copy: "Pick one boundary that makes the next hour less loud.", eventType: "social_reset" },
     { icon: PenLine, title: "Future self letter", copy: "Write to the version of you that has a little more room.", eventType: "letter_written" }
   ];
@@ -50,6 +51,7 @@ export function EngineMental() {
 
   return (
     <EnginePanel title="Mental wellness" label="Reset" accent="text-coral" intro="Self-esteem, pressure, emotions, and resets. Always wellness. Never diagnosis.">
+      <ClinicalReviewBanner />
       <DisclosureBanner />
       <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
         <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
@@ -89,6 +91,16 @@ export function EngineMental() {
           </Button>
         </section>
       </div>
+      <BreathingPlayer
+        onSessionComplete={({ patternId, seconds }) =>
+          completeReset({
+            eventType: "mental_breathing",
+            title: `Breathing — ${patternId}`,
+            payload: { patternId, seconds },
+            eventValue: Math.min(40, 8 + Math.round(seconds / 10))
+          })
+        }
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         {actions.map(({ icon: Icon, title, copy, eventType }) => (
           <section key={eventType} className="rounded-kai border border-line bg-white p-5 shadow-sm">

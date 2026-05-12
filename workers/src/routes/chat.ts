@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import { callClaude } from "../lib/claude";
+import { buildKaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
-import { enginePrompt } from "../lib/prompts/engines";
-import { kaiSystemPrompt } from "../lib/prompts/kai";
+import { renderEnginePrompt } from "../lib/prompts/engines";
+import { renderKaiSystemPrompt } from "../lib/prompts/kai";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
@@ -26,7 +27,8 @@ chatRoutes.post("/kai/chat", async (c) => {
   const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
   if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
-  return handleChat(c.env, userId, body.conversationId, body.message, kaiSystemPrompt, "kai");
+  const context = await buildKaiContext(c.env, userId);
+  return handleChat(c.env, userId, body.conversationId, body.message, renderKaiSystemPrompt(context), "kai");
 });
 
 chatRoutes.post("/engines/:engineId/chat", async (c) => {
@@ -36,7 +38,8 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
   const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
   if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
-  return handleChat(c.env, userId, body.conversationId, body.message, enginePrompt(engineId), engineId);
+  const context = await buildKaiContext(c.env, userId);
+  return handleChat(c.env, userId, body.conversationId, body.message, renderEnginePrompt(engineId, context), engineId);
 });
 
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {

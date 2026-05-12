@@ -4,7 +4,7 @@ import { createMessage, getConversationMessages, getLatestConversation, getOrCre
 import { sendSafetyAlert } from "../lib/email";
 import { enginePrompt } from "../lib/prompts/engines";
 import { kaiSystemPrompt } from "../lib/prompts/kai";
-import { classifySafety, logSafetyEvent } from "../lib/safety";
+import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
 
 export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -33,7 +33,7 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
-  const safety = classifySafety(message);
+  const safety = await classifySafetyFull(env, message);
   if (!safety.safe) {
     const event = await logSafetyEvent(env.DB, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
     if (event && safety.category && safety.severity) {

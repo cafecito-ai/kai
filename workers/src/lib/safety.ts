@@ -33,6 +33,25 @@ export function classifySafety(text: string): SafetyClassification {
 }
 
 /**
+ * Build a privacy-preserving excerpt of a teen message for ops review.
+ *
+ * - Texts <=80 chars: returned as-is with a length prefix (already short, no truncation).
+ * - Longer texts: first 40 chars + ellipsis + last 40 chars, with length prefix.
+ *
+ * Spec Section 13: "No raw user text in error logs." Same intent applied to
+ * persisted safety_events.
+ */
+export function redactExcerpt(text: string | null | undefined): string {
+  const value = (text ?? "").toString();
+  const len = value.length;
+  if (len === 0) return "len:0|";
+  if (len <= 80) return `len:${len}|${value}`;
+  const head = value.slice(0, 40);
+  const tail = value.slice(-40);
+  return `len:${len}|${head}...${tail}`;
+}
+
+/**
  * Pure decision for whether to fire a parent notification for a safety event.
  *
  * Per spec Section 7: "Always notify for critical severity in suicide/self-harm/
@@ -73,7 +92,7 @@ export async function logSafetyEvent(
   const id = crypto.randomUUID();
   await db
     .prepare(
-      `INSERT INTO safety_events (id, user_id, trigger_category, severity, conversation_id, message_id, raw_text, resources_shown)
+      `INSERT INTO safety_events (id, user_id, trigger_category, severity, conversation_id, message_id, redacted_excerpt, resources_shown)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
@@ -83,7 +102,7 @@ export async function logSafetyEvent(
       input.classification.severity,
       input.conversationId ?? null,
       input.messageId ?? null,
-      input.rawText,
+      redactExcerpt(input.rawText),
       JSON.stringify(["988", "Crisis Text Line"])
     )
     .run();

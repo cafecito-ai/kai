@@ -18,6 +18,7 @@ app.use("*", cors());
 app.use("/api/*", requireAuth);
 
 app.get("/health", (c) => c.json({ ok: true, service: "kai" }));
+app.get("/api/health", (c) => c.json({ ok: true, service: "kai-api" }));
 app.route("/api", chatRoutes);
 app.route("/api", userRoutes);
 app.route("/api", progressRoutes);

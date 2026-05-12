@@ -67,13 +67,15 @@ for (const test of cases) {
       failed++;
       continue;
     }
+    let jsonFailed = false;
     for (const [key, value] of Object.entries(test.expectJsonField)) {
       if (body?.[key] !== value) {
         console.error(`✗ ${test.name} (${test.path}): body.${key} = ${JSON.stringify(body?.[key])}, expected ${JSON.stringify(value)}`);
         failed++;
-        continue;
+        jsonFailed = true;
       }
     }
+    if (jsonFailed) continue;
   }
 
   console.log(`✓ ${test.name}`);

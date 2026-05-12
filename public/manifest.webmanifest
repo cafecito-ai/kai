@@ -1,0 +1,11 @@
+{
+  "name": "Kai — teen wellness coaching",
+  "short_name": "Kai",
+  "description": "AI mentor for teenagers. Wellness coaching, not therapy.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF7",
+  "theme_color": "#5B47F0",
+  "icons": []
+}

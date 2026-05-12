@@ -111,6 +111,15 @@ export const GUIDES: GuideEntry[] = [
   },
   {
     engine: "physical",
+    slug: "stretching",
+    title: "Stretching flows",
+    summary: "Slow holds, no force. Pick a flow, breathe through it. Built for mornings, desk fatigue, post-sport, wind-down.",
+    component: lazy(() =>
+      import("../components/physical/StretchPlayer").then((m) => ({ default: m.StretchPlayer }))
+    )
+  },
+  {
+    engine: "physical",
     slug: "breath-recommender",
     title: "Breath recommender",
     summary: "Different breath for different feelings. Tap how you feel, get the pattern that fits, then run it guided.",

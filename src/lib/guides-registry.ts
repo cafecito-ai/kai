@@ -27,8 +27,18 @@ export type GuideEntry = {
   /** Persistent danger card shown when sensitive is true. The Crisis
    * page link is still always present in the AppShell footer. */
   sensitive?: boolean;
-  /** Lazy-loaded component to render in the guide page. */
-  component: LazyExoticComponent<ComponentType<unknown>>;
+  /** Medical-adjacent content (anatomy, puberty, nutrition, body
+   * function) that should sit behind a clinical-review notice until
+   * D5 review is complete. Codex review flagged body-literacy
+   * specifically; same banner pattern as the mental engine surfaces. */
+  clinicalReview?: boolean;
+  /** Lazy-loaded component to render in the guide page. Primer components
+   * are heterogeneous (each owns its own Props shape), but they're rendered
+   * without parent-supplied props inside `GuidePage`. We type the registry
+   * permissively so registry entries can hold any zero-required-prop
+   * component without each primer having to opt into a uniform shape. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  component: LazyExoticComponent<ComponentType<any>>;
 };
 
 /**
@@ -42,7 +52,18 @@ export type GuideEntry = {
  *      object to GUIDES.
  *   3. Done — the engine hub shows the card; the route resolves it.
  */
-export const GUIDES: GuideEntry[] = [];
+export const GUIDES: GuideEntry[] = [
+  {
+    engine: "physical",
+    slug: "body-literacy",
+    title: "Body literacy",
+    summary: "How the teen body actually works — growth, energy, hydration, hormones, body changes, recovery.",
+    clinicalReview: true,
+    component: lazy(() =>
+      import("../components/physical/BodyLiteracy").then((m) => ({ default: m.BodyLiteracy }))
+    )
+  }
+];
 
 export function findGuide(engine: string, slug: string): GuideEntry | undefined {
   return GUIDES.find((g) => g.engine === engine && g.slug === slug);

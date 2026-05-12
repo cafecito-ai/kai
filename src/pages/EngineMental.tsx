@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { BreathingPlayer } from "../components/mental/BreathingPlayer";
 import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
+import { FeelingsCheckIn } from "../components/mental/FeelingsCheckIn";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -12,7 +13,6 @@ import { useProgressStore } from "../stores/progressStore";
 export function EngineMental() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
-  const [feeling, setFeeling] = useState("Stressed, but not sure why yet");
   const [thought, setThought] = useState("If I mess this up, everyone will notice.");
   const [boundary, setBoundary] = useState("Mute one app until tomorrow morning");
   const [letter, setLetter] = useState("You got through the loud part. Do the next tiny thing.");
@@ -54,21 +54,19 @@ export function EngineMental() {
       <ClinicalReviewBanner />
       <DisclosureBanner />
       <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-        <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-          <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#FFE8DD] text-coral">
-            <Brain />
-          </div>
-          <p className="eyebrow">feelings check-in</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Name it without diagnosing it.</h2>
-          <textarea className="field mt-4 min-h-24" value={feeling} onChange={(event) => setFeeling(event.target.value)} />
-          <Button
-            className="mt-4"
-            variant="secondary"
-            onClick={() => completeReset({ eventType: "feelings_check_in", title: "Feelings check-in", payload: { feeling }, eventValue: 24 })}
-          >
-            Save check-in
-          </Button>
-        </section>
+        <FeelingsCheckIn
+          onComplete={(payload) => {
+            const peak = Math.max(...Object.values(payload.emotions));
+            completeReset({
+              eventType: "feelings_check_in",
+              title: "Feelings check-in",
+              payload,
+              // Event value scales with engagement: a teen who moves sliders + picks
+              // a body area + leaves a note earns the full bonus.
+              eventValue: 18 + (payload.bodyArea ? 4 : 0) + (payload.note.trim().length > 0 ? 4 : 0) + (peak > 0 ? 2 : 0)
+            });
+          }}
+        />
         <section className="rounded-kai border border-line bg-ink p-5 text-paper shadow-sm">
           <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#FFE8DD] text-coral">
             <RefreshCw />

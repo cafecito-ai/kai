@@ -36,7 +36,7 @@ for (const test of cases) {
   const url = `${baseUrl}${test.path}`;
   let res;
   try {
-    res = await fetch(url, { redirect: "manual" });
+    res = await fetchWithRetry(url);
   } catch (err) {
     console.error(`✗ ${test.name} (${test.path}): fetch threw — ${err.message}`);
     failed++;
@@ -87,3 +87,18 @@ if (failed > 0) {
 }
 
 console.log(`\nAll smoke checks passed against ${baseUrl}`);
+
+async function fetchWithRetry(url) {
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await fetch(url, { redirect: "manual" });
+    } catch (err) {
+      lastError = err;
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 250));
+      }
+    }
+  }
+  throw lastError;
+}

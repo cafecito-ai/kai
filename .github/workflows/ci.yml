@@ -1,8 +1,8 @@
 name: CI
 
+# Runs only on pull requests. The same test job is re-run inside the Deploy
+# workflow on push to main, so we don't duplicate work or race ourselves.
 on:
-  push:
-    branches: [main]
   pull_request:
 
 jobs:

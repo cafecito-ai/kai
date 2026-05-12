@@ -7,6 +7,7 @@ import { friendsRoutes } from "./routes/friends";
 import { goalsRoutes } from "./routes/goals";
 import { opsRoutes } from "./routes/ops";
 import { progressRoutes } from "./routes/progress";
+import { strengthsRoutes } from "./routes/strengths";
 import { userRoutes } from "./routes/user";
 import { requireAuth } from "./lib/auth";
 import { consumeConsentToken } from "./lib/consent";
@@ -18,6 +19,7 @@ app.use("*", cors());
 app.use("/api/*", requireAuth);
 
 app.get("/health", (c) => c.json({ ok: true, service: "kai" }));
+app.get("/api/health", (c) => c.json({ ok: true, service: "kai-api" }));
 app.route("/api", chatRoutes);
 app.route("/api", userRoutes);
 app.route("/api", progressRoutes);
@@ -26,6 +28,7 @@ app.route("/api", opsRoutes);
 app.route("/api", entriesRoutes);
 app.route("/api", foodRoutes);
 app.route("/api", friendsRoutes);
+app.route("/api", strengthsRoutes);
 app.post("/api/safety/log", async (c) => c.json({ event: await c.req.json() }));
 app.get("/api/parent/consent", async (c) => {
   const token = c.req.query("token");

@@ -57,7 +57,7 @@ export const api = {
     }),
   getCurrentConversation: (engine: EngineId | "kai" = "kai") =>
     request<{ conversationId: string | null; messages: ChatMessage[] }>(`/api/conversations/current?engine=${engine}`),
-  updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean }) =>
+  updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean; designPreference?: string }) =>
     request("/api/user/me", { method: "PATCH", body: JSON.stringify(body) }),
   submitIntake: (responses: Record<string, string>) =>
     request<{ summary: string; suggestedEngine: EngineId; reasoning: string }>("/api/onboarding/intake", {
@@ -97,5 +97,10 @@ export const api = {
         reviewedByOps: boolean;
         createdAt: string;
       }>;
-    }>("/api/ops/safety-events")
+    }>("/api/ops/safety-events"),
+  submitStrengthsDiscovery: (responses: Record<string, string>) =>
+    request<{ summary: string; answered: number; total: number }>("/api/engines/potential/strengths", {
+      method: "POST",
+      body: JSON.stringify({ responses })
+    })
 };

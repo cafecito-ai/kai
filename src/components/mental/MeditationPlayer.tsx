@@ -50,7 +50,9 @@ export function MeditationPlayer({ onSessionComplete }: Props) {
 
   function start() {
     firedRef.current = false;
-    setElapsed(0);
+    if (elapsed <= 0 || elapsed >= total) {
+      setElapsed(0);
+    }
     setRunning(true);
   }
 
@@ -59,6 +61,7 @@ export function MeditationPlayer({ onSessionComplete }: Props) {
     if (opts.save && !firedRef.current) {
       firedRef.current = true;
       onSessionComplete?.({ durationSeconds: total, elapsedSeconds: elapsed, completed: false });
+      setElapsed(0);
     }
   }
 
@@ -86,6 +89,7 @@ export function MeditationPlayer({ onSessionComplete }: Props) {
               aria-checked={active}
               onClick={() => {
                 if (running) stop();
+                setElapsed(0);
                 setDuration(choice.id);
               }}
               className={`focus-ring rounded-kai border p-3 text-left transition ${

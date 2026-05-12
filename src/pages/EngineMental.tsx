@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { BreathingPlayer } from "../components/mental/BreathingPlayer";
 import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
+import { MeditationPlayer } from "../components/mental/MeditationPlayer";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -98,6 +99,16 @@ export function EngineMental() {
             title: `Breathing — ${patternId}`,
             payload: { patternId, seconds },
             eventValue: Math.min(40, 8 + Math.round(seconds / 10))
+          })
+        }
+      />
+      <MeditationPlayer
+        onSessionComplete={({ durationSeconds, elapsedSeconds, completed }) =>
+          completeReset({
+            eventType: "meditation",
+            title: `Meditation — ${Math.round(durationSeconds / 60)} min`,
+            payload: { durationSeconds, elapsedSeconds, completed },
+            eventValue: Math.min(45, 10 + Math.round(elapsedSeconds / 12))
           })
         }
       />

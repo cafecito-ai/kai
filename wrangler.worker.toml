@@ -3,6 +3,13 @@ main = "workers/src/index.ts"
 compatibility_date = "2026-05-11"
 account_id = "f7a9b24f679e1d3952921ee5e72e677e"
 
+# Production: bind the Worker to kai.boostaisearch.ai/api/*.
+# Everything else on that hostname falls through to the Pages project (also named "kai").
+# Worker routes take precedence over Pages, so /api/* hits this Worker and the SPA stays untouched.
+routes = [
+  { pattern = "kai.boostaisearch.ai/api/*", zone_name = "boostaisearch.ai" }
+]
+
 [ai]
 binding = "AI"
 

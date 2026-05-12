@@ -5,8 +5,11 @@ import { createMessage, getConversationMessages, getLatestConversation, getOrCre
 import { sendSafetyAlert } from "../lib/email";
 import { renderEnginePrompt } from "../lib/prompts/engines";
 import { renderKaiSystemPrompt } from "../lib/prompts/kai";
-import { classifySafety, logSafetyEvent } from "../lib/safety";
+import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
+import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
+
+const CHAT_RATE_LIMIT = { route: "chat", limit: 30, periodSeconds: 60 } as const;
 
 export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -21,6 +24,8 @@ chatRoutes.get("/conversations/current", async (c) => {
 
 chatRoutes.post("/kai/chat", async (c) => {
   const userId = c.get("userId");
+  const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
+  if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
   const context = await buildKaiContext(c.env, userId);
   return handleChat(c.env, userId, body.conversationId, body.message, renderKaiSystemPrompt(context), "kai");
@@ -30,6 +35,8 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
   const engineId = c.req.param("engineId") as EngineId;
   if (!["physical", "potential", "mental"].includes(engineId)) return c.json({ error: "Unknown engine" }, 404);
   const userId = c.get("userId");
+  const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
+  if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
   const context = await buildKaiContext(c.env, userId);
   return handleChat(c.env, userId, body.conversationId, body.message, renderEnginePrompt(engineId, context), engineId);
@@ -38,9 +45,9 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
-  const safety = classifySafety(message);
+  const safety = await classifySafetyFull(env, message);
   if (!safety.safe) {
-    const event = await logSafetyEvent(env.DB, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
+    const event = await logSafetyEvent(env, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
     if (event && safety.category && safety.severity) {
       await sendSafetyAlert(env, { eventId: event.id, category: safety.category, severity: safety.severity });
     }

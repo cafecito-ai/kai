@@ -12,6 +12,32 @@ Kai is live at `https://kai.boostaisearch.ai` with:
 
 Design is now parked as an external decision. Until a direction is chosen, keep UI changes minimal and focus on product infrastructure and real workflows.
 
+## Decisions Owed
+
+Several P-tasks are blocked on a decision that lives outside engineering. Surface here so we can chase them in parallel with the build. Cross-link from PR descriptions when a task waits on one.
+
+| #  | Decision                                              | Owner             | Status   | Unblocks                                                            |
+|----|-------------------------------------------------------|-------------------|----------|---------------------------------------------------------------------|
+| D1 | Final design direction (A / B / C from `/design`)     | Lev               | Open     | Engine UI rebuild, Kai character visual, Phase 2+ UI work           |
+| D2 | Worker route binding for `kai.boostaisearch.ai/api/*` | Evan / Boost AI   | Open     | Everything live — `/api/*` currently returns SPA HTML in prod       |
+| D3 | Anthropic Claude API keys + budget approval           | Offy / Boost AI   | Deferred | Vendor swap from Cloudflare Workers AI (Llama) → Claude (Phase 4)   |
+| D4 | Source materials per engine (books / voices)          | Lev + Offy        | Open     | Real engine prompts (final tone, citations) for Body, Goals, Reset  |
+| D5 | Clinical / safety reviewer                            | Offy              | Open     | Mental engine launch (Phase 4 Gate G5) — required before friend-test|
+| D6 | Legal copy review (Terms, Privacy)                    | Offy + counsel    | Open     | Real teen testing — placeholder copy must be replaced               |
+| D7 | Ops alert email recipient (`SAFETY_ALERT_EMAIL`)      | Evan / Boost AI   | Open     | Critical safety alerts in production                                |
+| D8 | Staging domain strategy                               | Evan / Boost AI   | Open     | Deploy hygiene — branch-preview only vs. `staging.kai.boostaisearch.ai`|
+
+### Notes per decision
+
+- **D1 (design):** Direction C ("Calm Teen", light palette + plum/sage + Instrument Serif) is what the SPA currently renders. The spec's CLAUDE.md prescribes Direction A (dark + cyan); ignore that until Lev picks. While parked, route around UI rebuild work and ship design-agnostic plumbing.
+- **D2 (worker binding):** Tracked in PR #3 (P0-1 prep). Once the four prereqs in `docs/DEPLOY.md` are green (Email Service, secrets, DNS, ops recipient), one `npm run worker:deploy` finishes this. Until then, the production site can't persist anything.
+- **D3 (Anthropic):** Confirmed deferred. The classifier and Kai prompts are written to swap on a model-ID env var, so this is config-only when it lands.
+- **D4 (sources):** Engine prompts currently use generic guidance. Ship engine workflows with placeholder source-grounding blocks; replace the blocks in one batch once Lev/Offy lock the lists.
+- **D5 (clinical reviewer):** No teen sees the Mental engine until this person has reviewed the engine prompts + safety classifier behavior + parent-notification template. Build behind a feature flag in the meantime.
+- **D6 (legal):** Boost AI provides drafts of Terms and Privacy that name the safety architecture and parent-notification policy. Offy's counsel reviews. Block real teen testing until reviewed copy ships.
+- **D7 (ops email):** Without this, `sendSafetyAlert` silently no-ops in prod. Pick the recipient and set `SAFETY_ALERT_EMAIL` Worker secret. See `docs/DEPLOY.md` prereq 3.
+- **D8 (staging):** No blocker for engineering — staging works at `kai-staging.evan-ratner.workers.dev`. Decide whether QA needs a friendlier hostname for tester invites.
+
 ## P0 — Auth And Identity
 
 Goal: remove demo identity behavior and make every API write belong to a real user.
@@ -124,6 +150,4 @@ Acceptance:
 
 ## Parked Decisions
 
-- Final visual direction: Lev/Offy choose A, B, or C from `/design`.
-- Final Kai character treatment follows the selected direction.
-- Final production staging hostname: branch previews are acceptable until a custom staging domain is requested.
+See the [Decisions Owed](#decisions-owed) table at the top of this doc. D1 (visual direction), D8 (staging hostname), and D5 (clinical reviewer) are the parked items that block specific engineering work. The others are in flight.

@@ -3,6 +3,7 @@ import { createConsentRequest } from "../lib/consent";
 import { ensureUser } from "../lib/db";
 import { logAppEvent } from "../lib/events";
 import { deterministicSummary, keywordRouteEngine, routeEngineFromSummary, summarizeIntake } from "../lib/intake";
+import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import type { AppVariables, Env } from "../types";
 
 export const userRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -105,8 +106,12 @@ userRoutes.post("/onboarding/intake", async (c) => {
   return c.json({ summary, suggestedEngine: routing.engine, reasoning: routing.reasoning });
 });
 
+const CONSENT_RATE_LIMIT = { route: "consent_request", limit: 5, periodSeconds: 3600 } as const;
+
 userRoutes.post("/parent/consent/request", async (c) => {
   const userId = c.get("userId");
+  const limit = await rateLimit(c.env, userId, CONSENT_RATE_LIMIT);
+  if (!limit.allowed) return rateLimitedResponse(limit, CONSENT_RATE_LIMIT);
   const body = await c.req.json<{ parentEmail: string; teenName?: string }>();
   if (!body.parentEmail) return c.json({ error: "parentEmail is required" }, 400);
   await ensureUser(c.env.DB, userId);

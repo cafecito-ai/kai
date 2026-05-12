@@ -4,8 +4,11 @@ import { createMessage, getConversationMessages, getLatestConversation, getOrCre
 import { sendSafetyAlert } from "../lib/email";
 import { enginePrompt } from "../lib/prompts/engines";
 import { kaiSystemPrompt } from "../lib/prompts/kai";
+import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import { classifySafety, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
+
+const CHAT_RATE_LIMIT = { route: "chat", limit: 30, periodSeconds: 60 } as const;
 
 export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -19,15 +22,21 @@ chatRoutes.get("/conversations/current", async (c) => {
 });
 
 chatRoutes.post("/kai/chat", async (c) => {
+  const userId = c.get("userId");
+  const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
+  if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
-  return handleChat(c.env, c.get("userId"), body.conversationId, body.message, kaiSystemPrompt, "kai");
+  return handleChat(c.env, userId, body.conversationId, body.message, kaiSystemPrompt, "kai");
 });
 
 chatRoutes.post("/engines/:engineId/chat", async (c) => {
   const engineId = c.req.param("engineId") as EngineId;
   if (!["physical", "potential", "mental"].includes(engineId)) return c.json({ error: "Unknown engine" }, 404);
+  const userId = c.get("userId");
+  const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
+  if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
-  return handleChat(c.env, c.get("userId"), body.conversationId, body.message, enginePrompt(engineId), engineId);
+  return handleChat(c.env, userId, body.conversationId, body.message, enginePrompt(engineId), engineId);
 });
 
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {

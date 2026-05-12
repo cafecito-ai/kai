@@ -82,5 +82,20 @@ export const api = {
       body: JSON.stringify(body)
     }),
   sendParentConsent: (body: { parentEmail: string; teenName?: string }) =>
-    request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) })
+    request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) }),
+  getSafetyEvents: () =>
+    request<{
+      events: Array<{
+        id: string;
+        userId: string;
+        category: string;
+        severity: string;
+        conversationId: string | null;
+        messageId: string | null;
+        resourcesShown: string[];
+        parentNotified: boolean;
+        reviewedByOps: boolean;
+        createdAt: string;
+      }>;
+    }>("/api/ops/safety-events")
 };

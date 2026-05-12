@@ -83,6 +83,16 @@ export const api = {
     }),
   sendParentConsent: (body: { parentEmail: string; teenName?: string }) =>
     request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) }),
+  getFriendCompare: () =>
+    request<{
+      friends: Array<{
+        userId: string;
+        displayName: string;
+        level: number;
+        streakOverall: number;
+        totalScore: number;
+      }>;
+    }>("/api/friends/compare"),
   getSafetyEvents: () =>
     request<{
       events: Array<{

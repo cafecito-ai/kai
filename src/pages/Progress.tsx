@@ -1,3 +1,4 @@
+import { FriendCompare } from "../components/tracker/FriendCompare";
 import { ProgressSummary } from "../components/tracker/ProgressSummary";
 
 export function Progress() {
@@ -10,11 +11,7 @@ export function Progress() {
         </h1>
       </section>
       <ProgressSummary />
-      <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-        <p className="eyebrow">social layer</p>
-        <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Friend compare</h2>
-        <p className="mt-2 text-sm leading-6 text-muted">Opt-in only. Shows streaks, totals, and belts. Never private writing or chat content.</p>
-      </section>
+      <FriendCompare />
     </div>
   );
 }

@@ -82,5 +82,10 @@ export const api = {
       body: JSON.stringify(body)
     }),
   sendParentConsent: (body: { parentEmail: string; teenName?: string }) =>
-    request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) })
+    request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) }),
+  submitStrengthsDiscovery: (responses: Record<string, string>) =>
+    request<{ summary: string; answered: number; total: number }>("/api/engines/potential/strengths", {
+      method: "POST",
+      body: JSON.stringify({ responses })
+    })
 };

@@ -1,4 +1,4 @@
-import type { SafetyClassification } from "../types";
+import type { Env, SafetyClassification } from "../types";
 import { ensureUser } from "./db";
 
 const rules: Array<{ category: NonNullable<SafetyClassification["category"]>; severity: NonNullable<SafetyClassification["severity"]>; pattern: RegExp }> = [
@@ -23,13 +23,36 @@ export function classifySafety(text: string): SafetyClassification {
   };
 }
 
-export async function logSafetyEvent(db: D1Database, input: { userId: string; conversationId?: string; messageId?: string; rawText: string; classification: SafetyClassification }) {
+/**
+ * Build a privacy-preserving excerpt of a teen message for ops review.
+ *
+ * - Texts ≤80 chars: returned as-is with a length prefix (already short, no truncation).
+ * - Longer texts: first 40 chars + ellipsis + last 40 chars, with length prefix.
+ *
+ * Spec Section 13: "No raw user text in error logs." Same intent applied to
+ * persisted safety_events.
+ */
+export function redactExcerpt(text: string | null | undefined): string {
+  const value = (text ?? "").toString();
+  const len = value.length;
+  if (len === 0) return "len:0|";
+  if (len <= 80) return `len:${len}|${value}`;
+  const head = value.slice(0, 40);
+  const tail = value.slice(-40);
+  return `len:${len}|${head}…${tail}`;
+}
+
+export async function logSafetyEvent(
+  env: Env,
+  input: { userId: string; conversationId?: string; messageId?: string; rawText: string; classification: SafetyClassification }
+) {
   if (input.classification.safe || !input.classification.category || !input.classification.severity) return null;
+  const db = env.DB;
   await ensureUser(db, input.userId);
   const id = crypto.randomUUID();
   await db
     .prepare(
-      `INSERT INTO safety_events (id, user_id, trigger_category, severity, conversation_id, message_id, raw_text, resources_shown)
+      `INSERT INTO safety_events (id, user_id, trigger_category, severity, conversation_id, message_id, redacted_excerpt, resources_shown)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
@@ -39,7 +62,7 @@ export async function logSafetyEvent(db: D1Database, input: { userId: string; co
       input.classification.severity,
       input.conversationId ?? null,
       input.messageId ?? null,
-      input.rawText,
+      redactExcerpt(input.rawText),
       JSON.stringify(["988", "Crisis Text Line"])
     )
     .run();

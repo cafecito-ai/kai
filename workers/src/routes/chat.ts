@@ -35,7 +35,7 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
   const safety = classifySafety(message);
   if (!safety.safe) {
-    const event = await logSafetyEvent(env.DB, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
+    const event = await logSafetyEvent(env, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
     if (event && safety.category && safety.severity) {
       await sendSafetyAlert(env, { eventId: event.id, category: safety.category, severity: safety.severity });
     }

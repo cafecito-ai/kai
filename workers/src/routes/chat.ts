@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import { callClaude } from "../lib/claude";
+import { buildKaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
-import { enginePrompt } from "../lib/prompts/engines";
-import { kaiSystemPrompt } from "../lib/prompts/kai";
+import { renderEnginePrompt } from "../lib/prompts/engines";
+import { renderKaiSystemPrompt } from "../lib/prompts/kai";
 import { classifySafety, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
 
@@ -19,15 +20,19 @@ chatRoutes.get("/conversations/current", async (c) => {
 });
 
 chatRoutes.post("/kai/chat", async (c) => {
+  const userId = c.get("userId");
   const body = await c.req.json<{ conversationId?: string; message: string }>();
-  return handleChat(c.env, c.get("userId"), body.conversationId, body.message, kaiSystemPrompt, "kai");
+  const context = await buildKaiContext(c.env, userId);
+  return handleChat(c.env, userId, body.conversationId, body.message, renderKaiSystemPrompt(context), "kai");
 });
 
 chatRoutes.post("/engines/:engineId/chat", async (c) => {
   const engineId = c.req.param("engineId") as EngineId;
   if (!["physical", "potential", "mental"].includes(engineId)) return c.json({ error: "Unknown engine" }, 404);
+  const userId = c.get("userId");
   const body = await c.req.json<{ conversationId?: string; message: string }>();
-  return handleChat(c.env, c.get("userId"), body.conversationId, body.message, enginePrompt(engineId), engineId);
+  const context = await buildKaiContext(c.env, userId);
+  return handleChat(c.env, userId, body.conversationId, body.message, renderEnginePrompt(engineId, context), engineId);
 });
 
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {

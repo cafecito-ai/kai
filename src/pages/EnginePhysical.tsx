@@ -1,6 +1,7 @@
 import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
+import { MoodLogTracker } from "../components/physical/MoodLogTracker";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { localSafetyCheck } from "../lib/safety";
@@ -179,6 +180,16 @@ export function EnginePhysical() {
           }
         />
       </div>
+      <MoodLogTracker
+        onLog={({ mood, energy, date }) =>
+          addEvent({
+            engine: "physical",
+            eventType: "mood_logged",
+            eventValue: 10,
+            payload: { mood, energy, date }
+          })
+        }
+      />
       <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>

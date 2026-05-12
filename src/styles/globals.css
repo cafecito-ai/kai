@@ -50,3 +50,24 @@ select {
 .field {
   @apply focus-ring w-full rounded-kai border border-line bg-white px-3 py-2 text-ink placeholder:text-muted/70;
 }
+
+/*
+ * Spec Section 4 / P3-8: "Respect prefers-reduced-motion — replace all
+ * motion with instant transitions if set." Belt-and-suspenders approach
+ * — Tailwind's `motion-safe:` variant covers explicit animations, this
+ * MDN/WCAG-recommended sweep catches every transition + animation
+ * that isn't already gated. Important: this runs as the LAST rule in
+ * globals.css so it overrides anything else.
+ *
+ * Smooth-scrolling and parallax-style behaviors are also disabled.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

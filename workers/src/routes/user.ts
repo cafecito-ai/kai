@@ -22,13 +22,14 @@ userRoutes.get("/user/me", async (c) => {
     parentEmail: user?.parent_email ?? null,
     onboardingCompletedAt: user?.onboarding_completed_at ?? null,
     consentStatus: user?.consent_status ?? "not_required",
-    parentConsentAt: user?.parent_consent_at ?? null
+    parentConsentAt: user?.parent_consent_at ?? null,
+    designPreference: (user as Record<string, unknown> | null)?.design_preference ?? null
   });
 });
 
 userRoutes.patch("/user/me", async (c) => {
   const userId = c.get("userId");
-  const body = await c.req.json<{ kaiName?: string; kaiTone?: string; primaryEngine?: string; age?: number; parentEmail?: string; email?: string; displayName?: string; onboardingCompleted?: boolean }>();
+  const body = await c.req.json<{ kaiName?: string; kaiTone?: string; primaryEngine?: string; age?: number; parentEmail?: string; email?: string; displayName?: string; onboardingCompleted?: boolean; designPreference?: string }>();
   await c.env.DB.prepare(
     `INSERT INTO users (id, email, display_name, age, parent_email, kai_name, kai_tone, primary_engine, onboarding_completed_at, consent_status, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END, CASE WHEN ? < 18 THEN 'pending' ELSE 'not_required' END, CURRENT_TIMESTAMP)
@@ -62,6 +63,14 @@ userRoutes.patch("/user/me", async (c) => {
       body.onboardingCompleted ? 1 : 0
     )
     .run();
+  // Design preference is tracked separately so we don't have to thread it
+  // through the big upsert above. Tester analytics only — see plan D1.
+  if (typeof body.designPreference === "string" && body.designPreference.trim()) {
+    await c.env.DB
+      .prepare("UPDATE users SET design_preference = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .bind(body.designPreference.trim().slice(0, 16), userId)
+      .run();
+  }
   return c.json({ ok: true });
 });
 

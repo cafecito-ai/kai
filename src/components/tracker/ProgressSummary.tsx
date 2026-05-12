@@ -1,6 +1,7 @@
-import { Activity, Award, Brain, Flame, Sprout, Target } from "lucide-react";
+import { Activity, Award, Brain, Flame, Target } from "lucide-react";
 import { eventDisplayName, engineTotals, lastNDays } from "../../lib/tracker";
 import { useProgressStore } from "../../stores/progressStore";
+import { EvolvingCharacter } from "./EvolvingCharacter";
 
 export function ProgressSummary() {
   const level = useProgressStore((state) => state.level());
@@ -13,8 +14,14 @@ export function ProgressSummary() {
 
   return (
     <section className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Metric icon={<Sprout />} label="Character level" value={String(level)} />
+      <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_1fr]">
+        <div className="app-panel flex items-center gap-4 p-4">
+          <EvolvingCharacter level={level} />
+          <div>
+            <p className="eyebrow">Character level</p>
+            <p className="mt-1 font-display text-2xl font-black capitalize tracking-normal">{level}</p>
+          </div>
+        </div>
         <Metric icon={<Flame />} label="Current streak" value={`${streak} days`} />
         <Metric icon={<Award />} label="Belt" value={belt} />
       </div>

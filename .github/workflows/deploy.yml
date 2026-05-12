@@ -1,0 +1,67 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Don't run two deploys at once for the same branch — a slow Wrangler deploy
+# would otherwise race a hotfix push. Cancel the older run in favor of newer.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+
+  deploy-worker:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Wrangler reads CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID from env.
+      # Both must be configured as repo secrets:
+      #   - CLOUDFLARE_API_TOKEN: token with Workers Scripts: Edit on the
+      #     boost AI account. Same token used for `wrangler login` locally.
+      #   - CLOUDFLARE_ACCOUNT_ID: f7a9b24f679e1d3952921ee5e72e677e (also
+      #     hard-coded in wrangler.worker.toml; double-source for clarity).
+      - name: Deploy Worker (kai-api)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run worker:deploy
+
+      # Pages deploys via dashboard's Git integration — no CI step needed
+      # here. If we ever want CI-driven Pages too, add `wrangler pages
+      # deploy dist --project-name=kai` after the build step.
+
+      # Allow a few seconds for the Worker route + Pages handoff to settle
+      # before smoking.
+      - name: Wait for propagation
+        run: sleep 10
+
+      - name: Post-deploy smoke
+        env:
+          KAI_PROD_URL: https://kai.boostaisearch.ai
+        run: node scripts/smoke-deploy.mjs
+
+      # Fast follow: if the smoke failed we should know in the Actions tab
+      # and the deploy job goes red. No paging today; tracked as a follow-up
+      # to add a Slack/email webhook when SAFETY_ALERT_EMAIL recipient lands.

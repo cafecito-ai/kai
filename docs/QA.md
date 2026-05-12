@@ -96,6 +96,13 @@ curl -I https://kai.boostaisearch.ai/images/food-photo-examples.png
 - Which engine would you actually come back to tomorrow?
 - What did you expect to happen that did not happen?
 
+## Design Direction Pass (Lev / testers)
+
+- Open `/design` and click into each direction (A, B, C). Clicking is logged to `users.design_preference` so we can later correlate tester feedback with what they actually saw.
+- After spending time in each: "Which direction would you actually use? Why?"
+- Send the same three links to one trusted teen and capture their pick verbatim.
+- Decision lives in plan row D1; pick blocks any deep UI rebuild work downstream.
+
 ## Known Temporary Review Decisions
 
 - Login is disabled for now to allow full-site review.

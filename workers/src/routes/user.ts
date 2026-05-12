@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { createConsentRequest } from "../lib/consent";
 import { ensureUser } from "../lib/db";
 import { logAppEvent } from "../lib/events";
+import { deterministicSummary, keywordRouteEngine, routeEngineFromSummary, summarizeIntake } from "../lib/intake";
+import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import type { AppVariables, Env } from "../types";
 
 export const userRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -20,13 +22,14 @@ userRoutes.get("/user/me", async (c) => {
     parentEmail: user?.parent_email ?? null,
     onboardingCompletedAt: user?.onboarding_completed_at ?? null,
     consentStatus: user?.consent_status ?? "not_required",
-    parentConsentAt: user?.parent_consent_at ?? null
+    parentConsentAt: user?.parent_consent_at ?? null,
+    designPreference: (user as Record<string, unknown> | null)?.design_preference ?? null
   });
 });
 
 userRoutes.patch("/user/me", async (c) => {
   const userId = c.get("userId");
-  const body = await c.req.json<{ kaiName?: string; kaiTone?: string; primaryEngine?: string; age?: number; parentEmail?: string; email?: string; displayName?: string; onboardingCompleted?: boolean }>();
+  const body = await c.req.json<{ kaiName?: string; kaiTone?: string; primaryEngine?: string; age?: number; parentEmail?: string; email?: string; displayName?: string; onboardingCompleted?: boolean; designPreference?: string }>();
   await c.env.DB.prepare(
     `INSERT INTO users (id, email, display_name, age, parent_email, kai_name, kai_tone, primary_engine, onboarding_completed_at, consent_status, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END, CASE WHEN ? < 18 THEN 'pending' ELSE 'not_required' END, CURRENT_TIMESTAMP)
@@ -60,6 +63,14 @@ userRoutes.patch("/user/me", async (c) => {
       body.onboardingCompleted ? 1 : 0
     )
     .run();
+  // Design preference is tracked separately so we don't have to thread it
+  // through the big upsert above. Tester analytics only — see plan D1.
+  if (typeof body.designPreference === "string" && body.designPreference.trim()) {
+    await c.env.DB
+      .prepare("UPDATE users SET design_preference = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .bind(body.designPreference.trim().slice(0, 16), userId)
+      .run();
+  }
   return c.json({ ok: true });
 });
 
@@ -67,13 +78,15 @@ userRoutes.post("/onboarding/intake", async (c) => {
   const userId = c.get("userId");
   const body = await c.req.json<{ responses: Record<string, string> }>();
   await ensureUser(c.env.DB, userId);
-  const text = Object.values(body.responses).join(" ").toLowerCase();
-  const suggestedEngine = /goal|school|sport|business|future|music|instrument/.test(text)
-    ? "potential"
-    : /stress|sad|anxious|friend|social|identity|emotion/.test(text)
-      ? "mental"
-      : "physical";
-  const summary = Object.values(body.responses).filter(Boolean).slice(0, 3).join(" ");
+
+  // LLM-generated 3-sentence summary; fall back to first-3-answers if the
+  // model is unavailable.
+  const summary = (await summarizeIntake(c.env, body.responses)) ?? deterministicSummary(body.responses);
+
+  // LLM-routed engine pick from the summary; fall back to keyword router on
+  // any failure to keep behavior unchanged for the no-AI case.
+  const routing = (await routeEngineFromSummary(c.env, summary)) ?? keywordRouteEngine(body.responses);
+
   await c.env.DB.prepare(
     `INSERT INTO user_intake (user_id, raw_responses, summary)
      VALUES (?, ?, ?)
@@ -81,12 +94,33 @@ userRoutes.post("/onboarding/intake", async (c) => {
   )
     .bind(userId, JSON.stringify(body.responses), summary)
     .run();
-  await logAppEvent(c.env.DB, { userId, eventName: "onboarding_intake_submitted", payload: { suggestedEngine } });
-  return c.json({ summary, suggestedEngine, reasoning: "Based on the themes in your answers, this is the cleanest first step." });
+
+  // Persist the routing decision to users.primary_engine so the rest of the
+  // app reads it through the standard user record.
+  await c.env.DB.prepare("UPDATE users SET primary_engine = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+    .bind(routing.engine, userId)
+    .run();
+
+  // Cache the summary in KV for fast retrieval by chat handlers per spec
+  // Section 5. 24h TTL — refreshed next intake or aged out.
+  if (c.env.SESSIONS_KV) {
+    try {
+      await c.env.SESSIONS_KV.put(`intake:${userId}`, summary, { expirationTtl: 60 * 60 * 24 });
+    } catch (err) {
+      console.warn("intake KV cache write failed; continuing without cache", err);
+    }
+  }
+
+  await logAppEvent(c.env.DB, { userId, eventName: "onboarding_intake_submitted", payload: { suggestedEngine: routing.engine } });
+  return c.json({ summary, suggestedEngine: routing.engine, reasoning: routing.reasoning });
 });
+
+const CONSENT_RATE_LIMIT = { route: "consent_request", limit: 5, periodSeconds: 3600 } as const;
 
 userRoutes.post("/parent/consent/request", async (c) => {
   const userId = c.get("userId");
+  const limit = await rateLimit(c.env, userId, CONSENT_RATE_LIMIT);
+  if (!limit.allowed) return rateLimitedResponse(limit, CONSENT_RATE_LIMIT);
   const body = await c.req.json<{ parentEmail: string; teenName?: string }>();
   if (!body.parentEmail) return c.json({ error: "parentEmail is required" }, 400);
   await ensureUser(c.env.DB, userId);

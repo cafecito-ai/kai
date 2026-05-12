@@ -1,4 +1,5 @@
 import { ArrowUpRight, Bolt, Circle, Heart } from "lucide-react";
+import { api } from "../lib/api";
 
 const directions = [
   {
@@ -62,6 +63,12 @@ export function DesignPicker() {
           <a
             key={direction.key}
             href={direction.href}
+            onClick={() => {
+              // Fire-and-forget: log which direction this teen previewed so
+              // Lev can correlate tester feedback with what they actually saw.
+              // Failures are silent — this is analytics, not a hard gate.
+              api.updateUser({ designPreference: direction.key }).catch(() => {});
+            }}
             className={`focus-ring flex min-h-[430px] flex-col justify-between rounded-kai border p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft ${direction.className}`}
           >
             <div>

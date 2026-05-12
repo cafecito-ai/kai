@@ -7,13 +7,26 @@ const ENGINE_LABELS: Record<ProgressEvent["engine"], string> = {
   kai: "Kai"
 };
 
+// Section 9 cumulative-score ladder. Must match workers/src/lib/levels.ts —
+// frontend uses this for optimistic UI while the backend is the source of truth.
+const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 1750, 2750, 4000, 6000, 9000];
+
+const STREAK_DAY_MIN_VALUE = 5;
+
 export function calculateLevel(events: ProgressEvent[]): number {
   const total = events.reduce((sum, event) => sum + Math.max(0, event.eventValue), 0);
-  return Math.min(10, Math.max(1, Math.floor(total / 120) + 1));
+  let level = 1;
+  for (let i = 1; i < LEVEL_THRESHOLDS.length; i++) {
+    if (total >= LEVEL_THRESHOLDS[i]) level = i + 1;
+    else break;
+  }
+  return Math.min(10, Math.max(1, level));
 }
 
 export function calculateStreak(events: ProgressEvent[], now = new Date()): number {
-  const days = new Set(events.map((event) => event.occurredAt.slice(0, 10)));
+  const days = new Set(
+    events.filter((event) => Math.max(0, event.eventValue) >= STREAK_DAY_MIN_VALUE).map((event) => event.occurredAt.slice(0, 10))
+  );
   let streak = 0;
   const cursor = new Date(now);
   while (days.has(cursor.toISOString().slice(0, 10))) {

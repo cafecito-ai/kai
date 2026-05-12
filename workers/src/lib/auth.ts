@@ -5,7 +5,7 @@ import type { AppVariables, Env } from "../types";
 type AuthContext = Context<{ Bindings: Env; Variables: AppVariables }>;
 
 export async function requireAuth(c: AuthContext, next: Next) {
-  if (c.req.method === "OPTIONS" || c.req.path === "/health" || c.req.path === "/api/parent/consent") {
+  if (c.req.method === "OPTIONS" || c.req.path === "/health" || c.req.path === "/api/health" || c.req.path === "/api/parent/consent") {
     await next();
     return;
   }

@@ -108,13 +108,18 @@ curl -sI https://kai.boostaisearch.ai/api/user/me
 curl -sI https://kai.boostaisearch.ai/ | head -5
 # Expect: HTTP/2 200 + text/html
 
-# 4. Smoke against prod (requires a Clerk session or a non-prod env)
-# Staging is reachable directly at the workers.dev URL:
+# 4. Smoke against the deployed production API with a real Clerk bearer token.
+# Do not use KAI_DEV_USER for production; production rejects that path after P0-2.
+KAI_API_BASE_URL=https://kai.boostaisearch.ai \
+  KAI_AUTH_TOKEN="$CLERK_SESSION_JWT" \
+  npm run smoke:api
+
+# 5. Optional staging smoke against the workers.dev URL:
 KAI_API_BASE_URL=https://kai-staging.evan-ratner.workers.dev \
   KAI_DEV_USER=smoke-$(date +%s) \
   npm run smoke:api
 
-# 5. After P0-2 (PR #1) lands, confirm x-dev-user is rejected in prod:
+# 6. After P0-2 (PR #1) lands, confirm x-dev-user is rejected in prod:
 curl -sI -H 'x-dev-user: smoke-test' https://kai.boostaisearch.ai/api/user/me
 # Expect: HTTP/2 401
 ```

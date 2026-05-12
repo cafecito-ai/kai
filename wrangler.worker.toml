@@ -42,6 +42,7 @@ bucket_name = "kai-uploads-prod"
 
 [env.staging]
 name = "kai-staging"
+routes = []
 
 [env.staging.ai]
 binding = "AI"

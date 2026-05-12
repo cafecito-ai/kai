@@ -1,6 +1,7 @@
 import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnginePanel } from "../components/engines/EnginePanel";
+import { EmotionVocabulary } from "../components/physical/EmotionVocabulary";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { localSafetyCheck } from "../lib/safety";
@@ -179,6 +180,16 @@ export function EnginePhysical() {
           }
         />
       </div>
+      <EmotionVocabulary
+        onRead={({ articleId }) =>
+          addEvent({
+            engine: "physical",
+            eventType: "emotion_vocab_read",
+            eventValue: 6,
+            payload: { articleId }
+          })
+        }
+      />
       <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>

@@ -1,3 +1,8 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+
 // Slim post-deploy smoke. Verifies the Worker is bound to the prod hostname
 // and that auth is doing its job. Does NOT exercise DB writes (full
 // scripts/smoke-api.mjs does that; running it against prod would create
@@ -100,5 +105,34 @@ async function fetchWithRetry(url) {
       }
     }
   }
-  throw lastError;
+  return fetchWithCurl(url, lastError);
+}
+
+async function fetchWithCurl(url, originalError) {
+  try {
+    const { stdout } = await execFileAsync("curl", [
+      "-sS",
+      "-L",
+      "-o",
+      "-",
+      "-w",
+      "\n__KAI_SMOKE_STATUS__%{http_code}\n__KAI_SMOKE_CONTENT_TYPE__%{content_type}",
+      url
+    ]);
+    const statusMarker = "\n__KAI_SMOKE_STATUS__";
+    const typeMarker = "\n__KAI_SMOKE_CONTENT_TYPE__";
+    const statusAt = stdout.lastIndexOf(statusMarker);
+    const typeAt = stdout.lastIndexOf(typeMarker);
+    if (statusAt === -1 || typeAt === -1 || typeAt < statusAt) throw originalError;
+    const body = stdout.slice(0, statusAt);
+    const status = Number(stdout.slice(statusAt + statusMarker.length, typeAt));
+    const contentType = stdout.slice(typeAt + typeMarker.length).trim();
+    return {
+      status,
+      headers: { get: (key) => (key.toLowerCase() === "content-type" ? contentType : null) },
+      json: async () => JSON.parse(body)
+    };
+  } catch {
+    throw originalError;
+  }
 }

@@ -24,7 +24,26 @@ export default tseslint.config(
       globals: {
         console: "readonly",
         fetch: "readonly",
-        process: "readonly"
+        process: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly"
+      }
+    }
+  },
+  // Service-worker globals for the offline crisis-cache SW.
+  {
+    files: ["public/**/*.js"],
+    languageOptions: {
+      globals: {
+        self: "readonly",
+        caches: "readonly",
+        fetch: "readonly",
+        Request: "readonly",
+        Response: "readonly",
+        URL: "readonly",
+        console: "readonly"
       }
     }
   }

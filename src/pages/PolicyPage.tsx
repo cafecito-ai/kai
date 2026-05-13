@@ -1,14 +1,14 @@
+import { AppHero, AppPage, AppSurface } from "../components/ui/AppPrimitives";
+
 export function PolicyPage({ kind }: { kind: "terms" | "privacy" }) {
   const isTerms = kind === "terms";
   return (
-    <article className="mx-auto max-w-3xl space-y-5 rounded-kai border border-line bg-white p-5 shadow-sm sm:p-7">
-      <p className="eyebrow">Kai policy</p>
-      <h1 className="font-display text-5xl font-black leading-none tracking-normal">{isTerms ? "Terms of Service" : "Privacy Policy"}</h1>
-      <p className="leading-7 text-muted">
+    <AppPage className="max-w-3xl">
+      <AppHero eyebrow="Kai policy" title={isTerms ? "Terms of Service" : "Privacy Policy"}>
         Kai is a wellness coaching product. It does not provide medical care, mental health treatment, diagnosis, medication guidance, or emergency support.
-      </p>
-      {isTerms ? <TermsCopy /> : <PrivacyCopy />}
-    </article>
+      </AppHero>
+      <AppSurface className="space-y-5 p-5 sm:p-7">{isTerms ? <TermsCopy /> : <PrivacyCopy />}</AppSurface>
+    </AppPage>
   );
 }
 

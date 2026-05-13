@@ -34,8 +34,10 @@ const memoryStorage = {
 
 beforeEach(() => {
   memory.clear();
-  // @ts-expect-error — defensive override for non-jsdom env
-  globalThis.localStorage = memoryStorage;
+  Object.defineProperty(globalThis, "localStorage", {
+    value: memoryStorage,
+    configurable: true
+  });
 });
 
 afterEach(() => {

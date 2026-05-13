@@ -1,54 +1,76 @@
-import { FormEvent, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Activity, Brain, ChevronLeft, ShieldAlert, Target } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
+import { ChoiceCard, StepShell } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
-const questions = [
-  "What's been taking the most space in your head lately?",
-  "When do you feel most like yourself?",
-  "What do you want to feel better about first?",
-  "How are sleep, food, and movement going?",
-  "What goal keeps coming back to you?",
-  "Who do you want Kai to sound like?"
+const intakeQuestions = [
+  "Walk me into a normal day for you. What does it look like from wake-up to bed?",
+  "What's one thing you wish was different right now?",
+  "What's one thing you actually like about your life right now?",
+  "Where do you feel pressure these days, and where is it coming from?",
+  "If you had an extra hour every day for anything, no judgment, what would you do?",
+  "On a scale of 1 to 10, how are you actually doing this week?"
+];
+
+const engineChoices: Array<{ id: EngineId | "unsure"; title: string; copy: string; icon: typeof Activity; tone: string }> = [
+  { id: "physical", title: "Body", copy: "Food, sleep, movement, energy.", icon: Activity, tone: "bg-bodyWash text-body" },
+  { id: "potential", title: "Goals", copy: "School, sport, ideas, future.", icon: Target, tone: "bg-goalsWash text-goals" },
+  { id: "mental", title: "Reset", copy: "Stress, feelings, self-talk.", icon: Brain, tone: "bg-resetWash text-reset" },
+  { id: "unsure", title: "Not sure", copy: "Let Kai read the pattern.", icon: ShieldAlert, tone: "bg-careWash text-care" }
+];
+
+const toneChoices: Array<{ id: KaiTone; title: string; copy: string; preview: string }> = [
+  { id: "balanced", title: "Balanced", copy: "Asks questions, offers options, does not push.", preview: "We can keep this small. Pick the easiest next move and we will build from there." },
+  { id: "warm", title: "Warm", copy: "Gentler, more reflective, more feeling-aware.", preview: "That sounds like a lot to hold. We can slow it down and start with what feels most manageable." },
+  { id: "direct", title: "Direct", copy: "Faster, practical, clearer options sooner.", preview: "Here are two clean options. Pick one, do it for ten minutes, then reassess." }
 ];
 
 export function Onboarding() {
   const navigate = useNavigate();
   const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
+  const [step, setStep] = useState(0);
   const [age, setAge] = useState("16");
   const [parentEmail, setParentEmail] = useState("");
   const [kaiName, setKaiName] = useState("Kai");
   const [kaiTone, setKaiTone] = useState<KaiTone>("balanced");
-  const [responses, setResponses] = useState<string[]>(Array(questions.length).fill(""));
+  const [manualEngine, setManualEngine] = useState<EngineId | "unsure">("unsure");
+  const [responses, setResponses] = useState<string[]>(Array(intakeQuestions.length).fill(""));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const normalizedAge = Number(age) || undefined;
+  const isMinor = Boolean(normalizedAge && normalizedAge < 18);
   const suggestedEngine = useMemo<EngineId>(() => {
+    if (manualEngine !== "unsure") return manualEngine;
     const text = responses.join(" ").toLowerCase();
-    if (/goal|school|sport|business|future|music|instrument/.test(text)) return "potential";
-    if (/stress|sad|anxious|friend|social|identity|emotion/.test(text)) return "mental";
+    if (/goal|school|sport|business|future|music|instrument|college|project/.test(text)) return "potential";
+    if (/stress|sad|anxious|friend|social|identity|emotion|pressure|overthink/.test(text)) return "mental";
     return "physical";
-  }, [responses]);
+  }, [manualEngine, responses]);
+  const questionIndex = step - 4;
+  const totalSteps = 11;
+  const progress = ((step + 1) / totalSteps) * 100;
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  async function finish() {
     setSaving(true);
     setError("");
-    const normalizedAge = Number(age) || undefined;
     const normalizedParentEmail = parentEmail.trim();
-    if (normalizedAge && normalizedAge < 18 && !normalizedParentEmail) {
+    if (isMinor && !normalizedParentEmail) {
       setSaving(false);
+      setStep(0);
       setError("Parent email is required for teen accounts.");
       return;
     }
 
     try {
-      const keyedResponses = Object.fromEntries(questions.map((question, index) => [`q${index + 1}`, responses[index] || question]));
+      const keyedResponses = Object.fromEntries(intakeQuestions.map((question, index) => [`q${index + 1}`, responses[index] || question]));
       const intake = await api.submitIntake(keyedResponses);
-      const engine = intake.suggestedEngine || suggestedEngine;
+      const engine = manualEngine === "unsure" ? intake.suggestedEngine || suggestedEngine : manualEngine;
       await api.updateUser({
         kaiName: kaiName || "Kai",
         kaiTone,
@@ -57,7 +79,7 @@ export function Onboarding() {
         parentEmail: normalizedParentEmail || undefined,
         onboardingCompleted: true
       });
-      if (normalizedAge && normalizedAge < 18 && normalizedParentEmail) {
+      if (isMinor && normalizedParentEmail) {
         await api.sendParentConsent({
           parentEmail: normalizedParentEmail,
           teenName: kaiName || "Kai user"
@@ -77,60 +99,162 @@ export function Onboarding() {
     }
   }
 
-  return (
-    <form onSubmit={submit} className="mx-auto max-w-3xl space-y-6">
-      <section className="rounded-kai border border-line bg-white p-5 shadow-sm sm:p-7">
-        <p className="eyebrow">Onboarding</p>
-        <h1 className="mt-3 font-display text-5xl font-black leading-none tracking-normal">
-          Meet <span className="font-serif font-normal italic text-plum">Kai.</span>
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-muted">A few answers shape the first engine and the tone Kai uses with you.</p>
-      </section>
-      <DisclosureBanner />
-      <section className="grid gap-4 rounded-kai border border-line bg-white p-5 shadow-sm sm:grid-cols-2">
-        <label className="text-sm font-semibold">
-          Age
-          <input className="field mt-2" value={age} onChange={(event) => setAge(event.target.value)} />
-        </label>
-        <label className="text-sm font-semibold">
-          Parent email {Number(age) < 18 ? "(required)" : "(optional)"}
-          <input className="field mt-2" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} />
-        </label>
-        <label className="text-sm font-semibold">
-          Kai's name
-          <input className="field mt-2" value={kaiName} onChange={(event) => setKaiName(event.target.value)} />
-        </label>
-        <label className="text-sm font-semibold">
-          Tone
-          <select className="field mt-2" value={kaiTone} onChange={(event) => setKaiTone(event.target.value as KaiTone)}>
-            <option value="balanced">Balanced</option>
-            <option value="warm">Warm</option>
-            <option value="direct">Direct</option>
-          </select>
-        </label>
-      </section>
-      <section className="space-y-3">
-        {questions.map((question, index) => (
-          <label key={question} className="block rounded-kai border border-line bg-white p-4 text-sm font-semibold shadow-sm">
-            {question}
-            <textarea
-              className="field mt-2 min-h-20"
-              value={responses[index]}
-              onChange={(event) => setResponses((items) => items.map((item, i) => (i === index ? event.target.value : item)))}
-            />
+  if (step === 0) {
+    return (
+      <StepShell eyebrow="step 1 of 11" title="First, how old are you?" progress={progress} footer={<NextBack onNext={() => setStep(1)} nextDisabled={isMinor && !parentEmail.trim()} />}>
+        <div className="space-y-4">
+          <DisclosureBanner />
+          {error && <p className="rounded-kai border border-danger/25 bg-dangerWash p-3 text-sm font-bold text-danger">{error}</p>}
+          <label className="block text-sm font-black">
+            Age
+            <input className="field mt-2" inputMode="numeric" value={age} onChange={(event) => setAge(event.target.value)} />
           </label>
-        ))}
-      </section>
-      <div className="rounded-kai border border-line bg-lime p-4 text-sm">
-        Suggested start: <strong className="capitalize">{suggestedEngine}</strong>. You can switch any time.
-      </div>
-      {Number(age) < 18 && (
-        <div className="rounded-kai border border-line bg-white p-4 text-sm font-semibold leading-6 text-muted">
-          Kai will email a parent consent link before beta use. The parent view confirms consent only; it does not show private answers, goals, meals, or chats.
+          <label className="block text-sm font-black">
+            Parent email {isMinor ? "(required)" : "(optional)"}
+            <input className="field mt-2" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} placeholder="parent@example.com" />
+          </label>
+          {isMinor && (
+            <div className="rounded-kai border border-line bg-paper p-3 text-sm font-semibold leading-6 text-muted">
+              Kai sends a consent email for teen accounts. The parent view confirms consent only; it does not show private answers, goals, meals, or chats.
+            </div>
+          )}
         </div>
-      )}
-      {error && <p className="text-sm font-semibold text-danger">{error}</p>}
-      <Button disabled={saving}>{saving ? "Saving" : "Finish onboarding"}</Button>
-    </form>
+      </StepShell>
+    );
+  }
+
+  if (step === 1) {
+    return (
+      <StepShell eyebrow="step 2 of 11" title="What should Kai call you?" progress={progress} footer={<NextBack onBack={() => setStep(0)} onNext={() => setStep(2)} />}>
+        <label className="block text-sm font-black">
+          Mentor name
+          <input className="field mt-2" value={kaiName} maxLength={20} onChange={(event) => setKaiName(event.target.value)} />
+        </label>
+        <p className="mt-3 text-sm font-semibold leading-6 text-muted">Default is Kai. You can change this later in settings.</p>
+      </StepShell>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <StepShell eyebrow="step 3 of 11" title="How should Kai sound?" progress={progress} footer={<NextBack onBack={() => setStep(1)} onNext={() => setStep(3)} />}>
+        <div className="space-y-2">
+          {toneChoices.map((tone) => (
+            <ChoiceCard key={tone.id} selected={kaiTone === tone.id} onClick={() => setKaiTone(tone.id)}>
+              <span className="block text-base font-black">{tone.title}</span>
+              <span className={`mt-1 block text-sm leading-6 ${kaiTone === tone.id ? "text-paper/75" : "text-muted"}`}>{tone.copy}</span>
+            </ChoiceCard>
+          ))}
+        </div>
+        <div className="mt-4 rounded-kai border border-line bg-paper p-3 text-sm font-semibold leading-6">
+          "{toneChoices.find((tone) => tone.id === kaiTone)?.preview}"
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <StepShell eyebrow="step 4 of 11" title="What feels most useful today?" progress={progress} footer={<NextBack onBack={() => setStep(2)} onNext={() => setStep(4)} />}>
+        <div className="grid gap-2">
+          {engineChoices.map(({ id, title, copy, icon: Icon, tone }) => (
+            <ChoiceCard key={id} selected={manualEngine === id} onClick={() => setManualEngine(id)}>
+              <span className="flex items-start gap-3">
+                <span className={`grid size-10 shrink-0 place-items-center rounded-full ${manualEngine === id ? "bg-white/15 text-paper" : tone}`}>
+                  <Icon size={19} />
+                </span>
+                <span>
+                  <span className="block text-base font-black">{title}</span>
+                  <span className={`mt-1 block text-sm leading-6 ${manualEngine === id ? "text-paper/75" : "text-muted"}`}>{copy}</span>
+                </span>
+              </span>
+            </ChoiceCard>
+          ))}
+        </div>
+      </StepShell>
+    );
+  }
+
+  if (questionIndex >= 0 && questionIndex < intakeQuestions.length) {
+    return (
+      <StepShell eyebrow={`step ${step + 1} of 11`} title={intakeQuestions[questionIndex]} progress={progress} footer={<NextBack onBack={() => setStep(step - 1)} onNext={() => setStep(step + 1)} nextLabel={questionIndex === intakeQuestions.length - 1 ? "See Kai's read" : "Next"} />}>
+        <textarea
+          className="field min-h-40"
+          value={responses[questionIndex]}
+          onChange={(event) => setResponses((items) => items.map((item, index) => (index === questionIndex ? event.target.value : item)))}
+          placeholder="A messy sentence is enough."
+        />
+        <button type="button" className="mt-3 text-sm font-black text-muted" onClick={() => setStep(step + 1)}>
+          Skip for now
+        </button>
+      </StepShell>
+    );
+  }
+
+  return (
+    <StepShell eyebrow="step 11 of 11" title={`Let's start with ${labelForEngine(suggestedEngine)}.`} progress={100} footer={<NextBack onBack={() => setStep(9)} onNext={() => void finish()} nextLabel={saving ? "Saving" : "Sounds good. Start"} nextDisabled={saving} />}>
+      <div className="space-y-4">
+        <div className="rounded-kai border border-line bg-paper p-4 text-sm font-semibold leading-6">
+          {manualEngine === "unsure"
+            ? "Based on your answers, this is the lane most likely to help first. You can switch any time."
+            : "You picked this lane. Kai will use it as your starting point, and the other lanes stay one tap away."}
+        </div>
+        <div className="grid gap-2">
+          {engineChoices.filter((engine) => engine.id !== "unsure").map(({ id, title, copy, icon: Icon, tone }) => (
+            <ChoiceCard key={id} selected={suggestedEngine === id} onClick={() => setManualEngine(id as EngineId)}>
+              <span className="flex items-start gap-3">
+                <span className={`grid size-10 shrink-0 place-items-center rounded-full ${suggestedEngine === id ? "bg-white/15 text-paper" : tone}`}>
+                  <Icon size={19} />
+                </span>
+                <span>
+                  <span className="block text-base font-black">{title}</span>
+                  <span className={`mt-1 block text-sm leading-6 ${suggestedEngine === id ? "text-paper/75" : "text-muted"}`}>{copy}</span>
+                </span>
+              </span>
+            </ChoiceCard>
+          ))}
+        </div>
+        {isMinor && parentEmail.trim() && (
+          <div className="rounded-kai border border-line bg-careWash p-3 text-sm font-semibold leading-6 text-muted">
+            Parent consent email will be sent to {parentEmail.trim()}. Crisis resources remain available any time.
+          </div>
+        )}
+        <Link to="/crisis" className="inline-flex text-sm font-black text-danger">
+          Open crisis resources
+        </Link>
+      </div>
+    </StepShell>
   );
+}
+
+function NextBack({
+  onBack,
+  onNext,
+  nextLabel = "Next",
+  nextDisabled = false
+}: {
+  onBack?: () => void;
+  onNext: () => void;
+  nextLabel?: string;
+  nextDisabled?: boolean;
+}) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-[auto_1fr]">
+      {onBack && (
+        <Button type="button" variant="secondary" onClick={onBack} className="w-full sm:w-auto">
+          <ChevronLeft size={18} />
+          Back
+        </Button>
+      )}
+      <Button type="button" onClick={onNext} disabled={nextDisabled} className="w-full">
+        {nextLabel}
+      </Button>
+    </div>
+  );
+}
+
+function labelForEngine(engine: EngineId) {
+  if (engine === "physical") return "Body";
+  if (engine === "potential") return "Goals";
+  return "Reset";
 }

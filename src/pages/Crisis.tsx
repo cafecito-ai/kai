@@ -15,10 +15,10 @@ export function Crisis() {
   const block = CRISIS_RESOURCES[region];
 
   return (
-    <article className="mx-auto max-w-3xl space-y-5">
-      <section className="rounded-kai border border-danger/20 bg-white p-5 shadow-sm sm:p-7">
+    <article className="mx-auto max-w-xl space-y-4">
+      <section className="rounded-kai border border-danger/25 bg-white p-5 shadow-sm sm:p-7">
         <p className="eyebrow text-danger">Crisis resources</p>
-        <h1 className="mt-3 font-display text-5xl font-black leading-none tracking-normal">If this is immediate, get a human now</h1>
+        <h1 className="mt-3 font-display text-4xl font-black leading-none tracking-normal sm:text-5xl">If this is immediate, get a human now</h1>
       </section>
 
       <section className="rounded-kai border border-danger/40 bg-[#FFE8DD] p-5 shadow-sm">
@@ -57,13 +57,13 @@ export function Crisis() {
             <p className="mt-1 text-sm leading-6 text-muted">{resource.description}</p>
             <div className="mt-3 flex flex-wrap gap-2 text-sm font-semibold">
               {resource.phone && (
-                <a className="rounded-full bg-[#FFE8DD] px-3 py-1 text-danger" href={`tel:${resource.phone.replace(/\s+/g, "")}`}>
+                <a className="focus-ring inline-flex min-h-12 items-center rounded-full bg-danger px-4 py-2 text-white" href={`tel:${resource.phone.replace(/\s+/g, "")}`}>
                   Call {resource.phone}
                 </a>
               )}
-              {resource.text && <span className="rounded-full bg-paper px-3 py-1 text-ink">Text {resource.text}</span>}
+              {resource.text && <span className="inline-flex min-h-12 items-center rounded-full bg-paper px-4 py-2 text-ink">Text {resource.text}</span>}
               {resource.url && (
-                <a className="rounded-full bg-paper px-3 py-1 text-ink underline" href={resource.url} target="_blank" rel="noreferrer">
+                <a className="focus-ring inline-flex min-h-12 items-center rounded-full bg-paper px-4 py-2 text-ink underline" href={resource.url} target="_blank" rel="noreferrer">
                   Visit site
                 </a>
               )}

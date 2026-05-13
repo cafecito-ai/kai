@@ -110,6 +110,15 @@ export const GUIDES: GuideEntry[] = [
     )
   },
   {
+    engine: "physical",
+    slug: "daily-rhythm",
+    title: "Daily rhythm",
+    summary: "Lay out your day. School-day and weekend templates, editable durations, sleep-window math built in.",
+    component: lazy(() =>
+      import("../components/physical/RhythmBuilder").then((m) => ({ default: m.RhythmBuilder }))
+    )
+  },
+  {
     engine: "potential",
     slug: "focus-and-study",
     title: "Focus + study",

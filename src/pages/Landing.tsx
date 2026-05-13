@@ -1,6 +1,6 @@
 import { Activity, ArrowRight, Brain, ShieldAlert, Target } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ActionTile, AppPage, AppSurface } from "../components/ui/AppPrimitives";
+import { ActionTile, AppPage, AppSurface, FlowList, KaiMark, SessionHero } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { useUserStore } from "../stores/userStore";
 
@@ -16,16 +16,15 @@ export function Landing() {
 
   return (
     <AppPage className="max-w-5xl">
-      <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-stretch">
-        <AppSurface className="p-5 sm:p-7 lg:p-9">
-          <p className="eyebrow">{onboardingCompletedAt ? `today with ${kaiName}` : "start here"}</p>
-          <h1 className="mt-3 max-w-3xl font-display text-4xl font-black leading-[0.95] tracking-normal text-ink sm:text-6xl lg:text-7xl">
-            One check-in. One lane. One next move.
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-muted">
-            Tell Kai what is loud today. It helps you choose the right lane and turn it into one small move.
-          </p>
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+      <SessionHero
+        eyebrow={onboardingCompletedAt ? `today with ${kaiName}` : "start here"}
+        title={
+          <>
+            Start with what is <span className="font-serif font-normal italic text-plum">loud.</span>
+          </>
+        }
+        action={
+          <>
             <Link to={startPath}>
               <Button className="w-full sm:w-auto">
                 {onboardingCompletedAt ? "Open today's lane" : "Start with Kai"}
@@ -36,21 +35,28 @@ export function Landing() {
               <ShieldAlert size={17} />
               Crisis support
             </Link>
+          </>
+        }
+        aside={
+          <div className="flex h-full flex-col justify-between gap-7">
+            <div>
+              <KaiMark size="lg" />
+              <p className="mt-5 font-display text-3xl font-black leading-none">One next move, not a life overhaul.</p>
+            </div>
+            <FlowList
+              items={[
+                { label: "Say the loud part", copy: "A messy sentence is enough." },
+                { label: "Pick the lane", copy: "Body, Goals, or Reset." },
+                { label: "Do one rep", copy: "Small enough to finish today." }
+              ]}
+            />
           </div>
-        </AppSurface>
-
-        <AppSurface variant="soft" className="flex flex-col justify-between p-4 sm:p-5">
-          <div>
-            <p className="eyebrow text-plum">how it flows</p>
-            <ol className="mt-4 space-y-3">
-              <FlowStep n="1" title="Say the loud part" />
-              <FlowStep n="2" title="Pick the lane" />
-              <FlowStep n="3" title="Do one small rep" />
-            </ol>
-          </div>
-          <p className="mt-5 text-sm font-semibold leading-6 text-muted">You can switch lanes any time. The next move stays small.</p>
-        </AppSurface>
-      </section>
+        }
+      >
+        <p>
+            Tell Kai what is loud today. It helps you choose the right lane and turn it into one small move.
+        </p>
+      </SessionHero>
 
       <section aria-label="Choose a lane" className="grid gap-2 sm:grid-cols-3">
         {lanes.map((lane) => (
@@ -75,14 +81,5 @@ export function Landing() {
         </div>
       </AppSurface>
     </AppPage>
-  );
-}
-
-function FlowStep({ n, title }: { n: string; title: string }) {
-  return (
-    <li className="flex items-center gap-3">
-      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-ink text-sm font-black text-paper">{n}</span>
-      <span className="text-sm font-black text-ink">{title}</span>
-    </li>
   );
 }

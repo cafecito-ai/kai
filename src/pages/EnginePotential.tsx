@@ -65,14 +65,14 @@ export function EnginePotential() {
 
   return (
     <EnginePanel title="Potential and goals" label="Goals" accent="text-plum" intro="Find the thing you keep circling, then make it concrete enough to touch.">
-      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <StrengthsDiscoveryCard onComplete={(summary) => createEntry({ entryType: "strengths_discovery", title: "Strengths summary", payload: { summary }, eventType: "strengths_discovery", eventValue: 60 })} />
-        <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="rounded-calm border border-line bg-white p-5 shadow-calm sm:p-6">
           <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
             <Target />
           </div>
-          <p className="eyebrow">goals</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make the next move visible.</h2>
+          <p className="eyebrow">start here</p>
+          <h2 className="mt-2 font-display text-4xl font-black leading-none tracking-normal">Make the next move visible.</h2>
+          <p className="mt-3 max-w-xl text-sm font-semibold leading-6 text-muted">Name the thing, then shrink it until it can fit into the next ten minutes.</p>
           <form onSubmit={submit} className="mt-4 grid gap-2">
             <div className="grid gap-2 sm:grid-cols-[0.7fr_1.3fr]">
               <select className="field" value={category} onChange={(event) => setCategory(event.target.value as Goal["category"])}>
@@ -106,6 +106,7 @@ export function EnginePotential() {
             ))}
           </div>
         </section>
+        <StrengthsDiscoveryCard onComplete={(summary) => createEntry({ entryType: "strengths_discovery", title: "Strengths summary", payload: { summary }, eventType: "strengths_discovery", eventValue: 60 })} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
@@ -151,7 +152,7 @@ export function EnginePotential() {
 
 function History({ entries }: { entries: EngineEntry[] }) {
   return (
-    <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+    <section className="rounded-calm border border-line bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="eyebrow">goals history</p>

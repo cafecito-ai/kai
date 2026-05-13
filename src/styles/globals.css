@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #151323;
-  background: #fff8ee;
+  color: #0a0a0a;
+  background: #fafaf7;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -16,7 +16,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
-  background: #fff8ee;
+  background: #fafaf7;
 }
 
 button,
@@ -32,10 +32,10 @@ select {
 
 .noise {
   background:
-    radial-gradient(circle at 16px 16px, rgba(104, 68, 196, 0.08) 0 2px, transparent 2px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.76), transparent 320px),
-    #fff8ee;
-  background-size: 32px 32px, auto, auto;
+    linear-gradient(180deg, rgba(244, 241, 235, 0.86), transparent 360px),
+    linear-gradient(90deg, rgba(229, 226, 217, 0.42) 1px, transparent 1px),
+    #fafaf7;
+  background-size: auto, 64px 64px, auto;
 }
 
 .app-panel {
@@ -43,7 +43,7 @@ select {
 }
 
 .app-page {
-  @apply mx-auto w-full max-w-6xl min-w-0 space-y-3 overflow-hidden text-ink sm:space-y-4;
+  @apply mx-auto w-full max-w-6xl min-w-0 space-y-4 overflow-hidden text-ink sm:space-y-5;
 }
 
 .app-surface {
@@ -51,7 +51,7 @@ select {
 }
 
 .app-title {
-  @apply max-w-[20rem] font-display text-3xl font-black leading-none tracking-normal text-ink sm:max-w-3xl sm:text-5xl lg:text-6xl;
+  @apply max-w-[22rem] font-display text-4xl font-black leading-none tracking-normal text-ink sm:max-w-3xl sm:text-6xl lg:text-7xl;
 }
 
 .eyebrow {
@@ -63,7 +63,7 @@ select {
 }
 
 .field {
-  @apply focus-ring min-h-12 w-full rounded-kai border border-line bg-white px-3 py-2 text-base text-ink placeholder:text-muted/70;
+  @apply focus-ring min-h-12 w-full rounded-kai border border-line bg-white px-4 py-3 text-base text-ink placeholder:text-muted/70;
 }
 
 .mobile-safe-bottom {

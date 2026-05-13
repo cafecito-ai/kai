@@ -111,6 +111,15 @@ export const GUIDES: GuideEntry[] = [
   },
   {
     engine: "physical",
+    slug: "workouts",
+    title: "Guided workouts",
+    summary: "Bodyweight routines across warmup, mobility, strength, conditioning, reset. Run any one step-by-step.",
+    component: lazy(() =>
+      import("../components/physical/WorkoutPlayer").then((m) => ({ default: m.WorkoutPlayer }))
+    )
+  },
+  {
+    engine: "physical",
     slug: "sleep-wind-down",
     title: "Sleep + wind-down",
     summary: "Hand the body a path to sleep. Pick a 5/15/30/45-minute routine, run it step-by-step, plus 8 sleep tips.",

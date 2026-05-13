@@ -52,27 +52,21 @@ jobs:
       - name: Build SPA
         run: npm run build
 
-      # Deploy the built SPA to Cloudflare Pages. The Cloudflare dashboard's
-      # GitHub integration historically did this — it stopped picking up
-      # commits on 2026-05-13 (the /scope route shipped via #69 never
-      # reached production until a manual deploy), so we now own the deploy
-      # from CI explicitly.
-      #
-      # The deploy runs from /tmp/pages-deploy because the repo's
-      # wrangler.toml is a Worker config (with main / account_id / bindings)
-      # that `wrangler pages deploy` rejects. Running from a clean directory
-      # bypasses config discovery without touching the existing file.
+      # Deploy the built SPA to Cloudflare Pages. The dashboard's GitHub
+      # integration historically did this — it stopped picking up commits
+      # on 2026-05-13 (the /scope route shipped via #69 never reached
+      # production until a manual deploy), so we now own the deploy from
+      # CI explicitly. wrangler.toml is a Pages-only config (Worker config
+      # lives in wrangler.worker.toml), so this just works from the repo
+      # root with no config-discovery surprises.
       - name: Deploy SPA to Pages (kai)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          cp -r dist /tmp/pages-deploy
-          cd /tmp/pages-deploy
-          npx wrangler pages deploy . \
+          npx wrangler pages deploy dist \
             --project-name=kai \
             --branch=main \
-            --commit-dirty=true \
             --commit-hash="${GITHUB_SHA}"
 
       # Allow a few seconds for the Worker route + Pages handoff to settle

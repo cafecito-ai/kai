@@ -35,7 +35,8 @@ function TodayBar() {
 
   if (!appRoute) return null;
 
-  const lane = laneMeta(primaryEngine);
+  const activeEngine = engineFromPath(pathname) ?? primaryEngine;
+  const lane = laneMeta(activeEngine);
   const ActiveIcon = lane.icon;
 
   return (
@@ -53,13 +54,20 @@ function TodayBar() {
         <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 text-xs font-black">
           <span className="rounded-full border border-line bg-paper px-3 py-2 text-center text-muted">{todayCount} reps</span>
           <span className="rounded-full border border-line bg-paper px-3 py-2 text-center text-muted">{streak} day streak</span>
-          <Link to={`/engine/${primaryEngine}`} className="focus-ring rounded-full bg-ink px-4 py-2 text-paper">
+          <Link to={`/engine/${activeEngine}`} className="focus-ring rounded-full bg-ink px-4 py-2 text-paper">
             Continue
           </Link>
         </div>
       </div>
     </aside>
   );
+}
+
+function engineFromPath(pathname: string): "physical" | "potential" | "mental" | null {
+  if (pathname.startsWith("/engine/potential")) return "potential";
+  if (pathname.startsWith("/engine/mental")) return "mental";
+  if (pathname.startsWith("/engine/physical")) return "physical";
+  return null;
 }
 
 function laneMeta(engine: "physical" | "potential" | "mental") {

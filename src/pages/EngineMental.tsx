@@ -10,6 +10,7 @@ import { MeditationPlayer } from "../components/mental/MeditationPlayer";
 import { SocialMediaReset } from "../components/mental/SocialMediaReset";
 import { ThoughtReframe } from "../components/mental/ThoughtReframe";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
+import { SecondaryShelf } from "../components/ui/AppPrimitives";
 import { api } from "../lib/api";
 import type { EngineEntry } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
@@ -80,17 +81,7 @@ export function EngineMental() {
           }
         />
       </div>
-      <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
-        <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-4 rounded-kai p-2">
-          <span>
-            <span className="eyebrow block">more reset tools</span>
-            <span className="mt-2 block font-display text-2xl font-black leading-none tracking-normal">Breathing, meditation, social reset, letter.</span>
-            <span className="mt-2 block text-sm font-semibold leading-6 text-muted">Open these when the first check-in is not the right rep.</span>
-          </span>
-          <span className="shrink-0 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-muted group-open:bg-ink group-open:text-paper">
-            Open
-          </span>
-        </summary>
+      <SecondaryShelf eyebrow="more reset tools" title="Breathing, meditation, social reset, letter." summary="Open these when the first check-in is not the right rep." count="4 tools">
         <div className="mt-4 grid gap-4">
           <BreathingPlayer
             onSessionComplete={({ patternId, seconds }) =>
@@ -137,16 +128,9 @@ export function EngineMental() {
             }
           />
         </div>
-      </details>
-      <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
-        <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-3 rounded-kai p-2">
-          <div>
-            <p className="eyebrow">reset history</p>
-            <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent reset work</h2>
-          </div>
-          <span className="rounded-full bg-[#FFE8DD] px-3 py-2 text-xs font-black text-coral group-open:bg-ink group-open:text-paper">{entries.length} saved</span>
-        </summary>
-        <div className="mt-4 space-y-2">
+      </SecondaryShelf>
+      <SecondaryShelf eyebrow="reset history" title="Recent reset work" count={`${entries.length} saved`}>
+        <div className="space-y-2">
           {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Reset entries yet. Complete one check-in, breathing session, or letter.</p>}
           {entries.slice(0, 6).map((entry) => (
             <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
@@ -158,7 +142,7 @@ export function EngineMental() {
             </div>
           ))}
         </div>
-      </details>
+      </SecondaryShelf>
       <EngineGuidesIndex
         engine="mental"
         title="Mind + feelings guides"

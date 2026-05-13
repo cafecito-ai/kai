@@ -1,5 +1,6 @@
 import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
+import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -200,6 +201,11 @@ export function EnginePhysical() {
           ))}
         </div>
       </section>
+      <EngineGuidesIndex
+        engine="physical"
+        title="Body + safety guides"
+        intro="Quick reads on sleep, nutrition, body literacy, and the harder topics. Each one is 3-5 minutes. Kai links to these when relevant."
+      />
     </EnginePanel>
   );
 }

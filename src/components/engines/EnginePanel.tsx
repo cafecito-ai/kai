@@ -23,6 +23,7 @@ export function EnginePanel({ title, intro, label = "Engine", accent = "text-plu
             />
           </div>
         }
+        asideClassName="hidden lg:block"
       >
         {intro}
       </SessionHero>

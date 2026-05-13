@@ -28,10 +28,17 @@ export function EngineGuidesIndex({ engine, eyebrow = "guides", title = "Topic g
     "Short reads on specific topics. Each one is meant to be useful in 3-5 minutes, not exhaustive.";
 
   return (
-    <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-      <p className="eyebrow">{eyebrow}</p>
-      <h2 className="mt-2 font-display text-2xl font-black tracking-normal">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-muted">{introCopy}</p>
+    <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+      <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-4 rounded-kai p-2">
+        <span>
+          <span className="eyebrow block">{eyebrow}</span>
+          <span className="mt-2 block font-display text-2xl font-black tracking-normal">{title}</span>
+          <span className="mt-2 block text-sm leading-6 text-muted">{introCopy}</span>
+        </span>
+        <span className="shrink-0 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-muted group-open:bg-ink group-open:text-paper">
+          {guides.length} reads
+        </span>
+      </summary>
 
       <ul className="mt-4 grid gap-2 sm:grid-cols-2">
         {guides.map((g) => (
@@ -55,6 +62,6 @@ export function EngineGuidesIndex({ engine, eyebrow = "guides", title = "Topic g
           </li>
         ))}
       </ul>
-    </section>
+    </details>
   );
 }

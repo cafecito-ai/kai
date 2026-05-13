@@ -152,15 +152,15 @@ export function EnginePotential() {
 
 function History({ entries }: { entries: EngineEntry[] }) {
   return (
-    <section className="rounded-calm border border-line bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+      <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-3 rounded-kai p-2">
         <div>
           <p className="eyebrow">goals history</p>
           <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent goal work</h2>
         </div>
-        <span className="rounded-full bg-[#EEEAFF] px-3 py-1 text-xs font-black text-plum">{entries.length} saved</span>
-      </div>
-      <div className="space-y-2">
+        <span className="rounded-full bg-[#EEEAFF] px-3 py-2 text-xs font-black text-plum group-open:bg-ink group-open:text-paper">{entries.length} saved</span>
+      </summary>
+      <div className="mt-4 space-y-2">
         {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Goal entries yet. Complete discovery or add a goal.</p>}
         {entries.slice(0, 6).map((entry) => (
           <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
@@ -172,7 +172,7 @@ function History({ entries }: { entries: EngineEntry[] }) {
           </div>
         ))}
       </div>
-    </section>
+    </details>
   );
 }
 

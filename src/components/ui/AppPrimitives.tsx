@@ -53,13 +53,15 @@ export function SessionHero({
   title,
   children,
   action,
-  aside
+  aside,
+  asideClassName = ""
 }: {
   eyebrow: string;
   title: ReactNode;
   children?: ReactNode;
   action?: ReactNode;
   aside?: ReactNode;
+  asideClassName?: string;
 }) {
   return (
     <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-stretch">
@@ -69,7 +71,7 @@ export function SessionHero({
         {children && <div className="mt-4 max-w-2xl text-base font-medium leading-7 text-muted">{children}</div>}
         {action && <div className="mt-6 flex flex-col gap-2 sm:flex-row">{action}</div>}
       </div>
-      {aside && <div className="min-w-0 rounded-calm border border-line bg-warmPaper p-5 shadow-sm">{aside}</div>}
+      {aside && <div className={`min-w-0 rounded-calm border border-line bg-warmPaper p-5 shadow-sm ${asideClassName}`}>{aside}</div>}
     </section>
   );
 }

@@ -1,6 +1,5 @@
 import type { ChatMessage, EngineEntry, EngineId, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
-const PROD_API_BASE = "https://kai.evan-ratner.workers.dev";
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 type TokenGetter = () => Promise<string | null>;
 
@@ -13,7 +12,7 @@ export function setApiAuthTokenGetter(getter: TokenGetter | null) {
 function getApiBaseUrl() {
   if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "");
   if (typeof window === "undefined") return "";
-  if (window.location.hostname === "kai.boostaisearch.ai") return PROD_API_BASE;
+  if (window.location.hostname === "kai.boostaisearch.ai") return "";
   return STAGING_API_BASE;
 }
 

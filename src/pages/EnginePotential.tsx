@@ -1,5 +1,6 @@
 import { Award, CheckCircle2, RefreshCw, Target } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -138,6 +139,11 @@ export function EnginePotential() {
           </Button>
         </section>
       </div>
+      <EngineGuidesIndex
+        engine="potential"
+        title="Doing-things guides"
+        intro="Focus, motivation, money, decisions, conflict. The skills that pay off across decades."
+      />
       <History entries={entries} />
     </EnginePanel>
   );

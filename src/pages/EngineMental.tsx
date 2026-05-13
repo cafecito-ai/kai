@@ -1,5 +1,6 @@
 import { Brain, PenLine, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { BreathingPlayer } from "../components/mental/BreathingPlayer";
 import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
@@ -153,6 +154,11 @@ export function EngineMental() {
           ))}
         </div>
       </section>
+      <EngineGuidesIndex
+        engine="mental"
+        title="Mind + feelings guides"
+        intro="Specific topics across emotion, identity, stress, grief, trauma, purpose. Each is short. Kai links here in chat when topics come up."
+      />
     </EnginePanel>
   );
 }

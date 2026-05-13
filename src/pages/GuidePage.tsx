@@ -1,6 +1,7 @@
 import { ArrowLeft, LifeBuoy } from "lucide-react";
 import { Suspense } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
 import { CrisisLink } from "../components/shared/CrisisLink";
 import { findGuide, type GuideEngine } from "../lib/guides-registry";
 
@@ -46,6 +47,7 @@ export function GuidePage() {
         </Link>
       </nav>
 
+      {guide.clinicalReview && <ClinicalReviewBanner />}
       {guide.sensitive && <CrisisLink tone="danger" />}
 
       <Suspense fallback={<GuideLoading />}>

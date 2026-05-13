@@ -2,42 +2,68 @@ import { describe, expect, it } from "vitest";
 import { findGuide, GUIDES, guidesForEngine } from "./guides-registry";
 
 describe("guides-registry", () => {
-  it("starts with an empty GUIDES array on the scaffold PR", () => {
-    // Sanity check: this should grow as primer PRs land.
+  it("exposes GUIDES as an array", () => {
+    // Sanity check: this is the per-PR registration point.
     expect(Array.isArray(GUIDES)).toBe(true);
   });
 
+  it("every registered guide has the required fields", () => {
+    for (const guide of GUIDES) {
+      expect(["physical", "potential", "mental"]).toContain(guide.engine);
+      expect(typeof guide.slug).toBe("string");
+      expect(guide.slug.length).toBeGreaterThan(0);
+      expect(typeof guide.title).toBe("string");
+      expect(typeof guide.summary).toBe("string");
+      expect(guide.component).toBeDefined();
+    }
+  });
+
+  it("slugs are unique within each engine", () => {
+    const byEngine = new Map<string, Set<string>>();
+    for (const guide of GUIDES) {
+      const set = byEngine.get(guide.engine) ?? new Set<string>();
+      expect(set.has(guide.slug), `duplicate slug ${guide.slug} in ${guide.engine}`).toBe(false);
+      set.add(guide.slug);
+      byEngine.set(guide.engine, set);
+    }
+  });
+
   it("findGuide returns undefined when slug doesn't exist", () => {
-    expect(findGuide("physical", "nonexistent-slug")).toBeUndefined();
+    expect(findGuide("physical", "nonexistent-slug-xyz")).toBeUndefined();
   });
 
   it("findGuide returns undefined for unknown engines", () => {
     expect(findGuide("ghost-engine", "anything")).toBeUndefined();
   });
 
-  it("guidesForEngine returns empty arrays for engines with no entries", () => {
-    expect(guidesForEngine("physical")).toEqual([]);
-    expect(guidesForEngine("potential")).toEqual([]);
-    expect(guidesForEngine("mental")).toEqual([]);
+  it("guidesForEngine returns only entries matching the requested engine", () => {
+    for (const engine of ["physical", "potential", "mental"] as const) {
+      const guides = guidesForEngine(engine);
+      for (const g of guides) {
+        expect(g.engine).toBe(engine);
+      }
+    }
   });
 
-  it("once entries are added, findGuide matches on engine + slug", () => {
-    // This test simulates the per-PR contract without actually mutating
-    // the exported GUIDES (which would break parallelism). We add a
-    // fake entry, exercise the helpers, then pop it.
+  it("findGuide / guidesForEngine round-trip a registered entry", () => {
+    if (GUIDES.length === 0) return; // no guides registered yet, smoke test only
+    const sample = GUIDES[0];
+    expect(findGuide(sample.engine, sample.slug)).toBe(sample);
+    expect(guidesForEngine(sample.engine)).toContain(sample);
+  });
+
+  it("registry mutation (push/pop) works for ad-hoc test additions", () => {
     const fake = {
       engine: "physical" as const,
-      slug: "test-slug",
+      slug: "test-slug-xyz",
       title: "Test guide",
       summary: "Test",
       component: {} as never
     };
     GUIDES.push(fake);
     try {
-      expect(findGuide("physical", "test-slug")).toBe(fake);
-      expect(findGuide("mental", "test-slug")).toBeUndefined();
-      expect(guidesForEngine("physical")).toContain(fake);
-      expect(guidesForEngine("mental")).not.toContain(fake);
+      expect(findGuide("physical", "test-slug-xyz")).toBe(fake);
+      expect(findGuide("mental", "test-slug-xyz")).toBeUndefined();
     } finally {
       const idx = GUIDES.indexOf(fake);
       if (idx >= 0) GUIDES.splice(idx, 1);

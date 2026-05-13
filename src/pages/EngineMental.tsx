@@ -1,15 +1,15 @@
-import { Brain, PenLine, RefreshCw } from "lucide-react";
+import { Brain } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { BreathingPlayer } from "../components/mental/BreathingPlayer";
 import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
 import { FeelingsCheckIn } from "../components/mental/FeelingsCheckIn";
+import { FutureSelfLetter } from "../components/mental/FutureSelfLetter";
 import { MeditationPlayer } from "../components/mental/MeditationPlayer";
 import { SocialMediaReset } from "../components/mental/SocialMediaReset";
 import { ThoughtReframe } from "../components/mental/ThoughtReframe";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
-import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineEntry } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
@@ -17,13 +17,8 @@ import { useProgressStore } from "../stores/progressStore";
 export function EngineMental() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
-  const [letter, setLetter] = useState("You got through the loud part. Do the next tiny thing.");
-  // social_reset moves out of the actions[] array into its own dedicated
-  // SocialMediaReset card; letter_written stays as a single-field action
-  // until P2-3f rebuilds it.
-  const actions = [
-    { icon: PenLine, title: "Future self letter", copy: "Write to the version of you that has a little more room.", eventType: "letter_written" }
-  ];
+  // All four flows (feelings, thought, social, letter) are now structured
+  // components below. No remaining inline-action items.
 
   useEffect(() => {
     void api.getEngineEntries("mental").then((result) => setEntries(result.entries)).catch(() => undefined);
@@ -117,30 +112,18 @@ export function EngineMental() {
           })
         }
       />
-      <div className="grid gap-4 sm:grid-cols-2">
-        {actions.map(({ icon: Icon, title, copy, eventType }) => (
-          <section key={eventType} className="rounded-kai border border-line bg-white p-5 shadow-sm">
-            <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#FFE8DD] text-coral">
-              <Icon />
-            </div>
-            <h2 className="font-display text-2xl font-black tracking-normal">{title}</h2>
-            <p className="my-3 text-sm leading-6 text-muted">{copy}</p>
-            {eventType === "letter_written" && <textarea className="field mb-3 min-h-20" value={letter} onChange={(event) => setLetter(event.target.value)} />}
-            <Button
-              variant="secondary"
-              onClick={() =>
-                completeReset({
-                  eventType,
-                  title,
-                  payload: eventType === "letter_written" ? { letter } : { completed: true }
-                })
-              }
-            >
-              Complete
-            </Button>
-          </section>
-        ))}
-      </div>
+      <FutureSelfLetter
+        onComplete={(payload) =>
+          completeReset({
+            eventType: "letter_written",
+            title: `Letter to ${payload.direction} me`,
+            payload,
+            // Length-scaled event value: a teen who wrote >120 chars earns
+            // the full bonus over a one-line save.
+            eventValue: 18 + (payload.body.trim().length > 120 ? 8 : 4)
+          })
+        }
+      />
       <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>

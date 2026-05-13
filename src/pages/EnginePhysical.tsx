@@ -79,12 +79,12 @@ export function EnginePhysical() {
   return (
     <EnginePanel title="Physical wellness" label="Body" accent="text-sage" intro="Food, movement, sleep, stretching, and breathing. Useful, pattern-aware, never obsessive.">
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-kai border border-line bg-ink p-5 text-paper shadow-soft sm:p-6">
-          <p className="eyebrow text-soft">food tracking</p>
+        <section className="rounded-calm border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
+          <p className="eyebrow text-soft">start here</p>
           <h2 className="mt-3 max-w-xl font-display text-4xl font-black leading-none tracking-normal">
             Fuel notes, not calorie math.
           </h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-paper/70">
+          <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-paper/70">
             The first version captures what happened, how it felt, and what helped. It avoids good/bad meal labels, body scoring, and weight-loss loops.
           </p>
           <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
@@ -120,7 +120,7 @@ export function EnginePhysical() {
           </div>
         </section>
         <section className="grid gap-3">
-          <div className="overflow-hidden rounded-kai border border-line bg-white shadow-sm">
+          <div className="overflow-hidden rounded-calm border border-line bg-white shadow-sm">
             <img src="/images/food-photo-examples.png" alt="Example food photos for Kai food logging" className="h-48 w-full object-cover" />
             <div className="p-4">
               <p className="eyebrow">photo examples</p>

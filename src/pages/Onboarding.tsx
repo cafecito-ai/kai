@@ -101,7 +101,7 @@ export function Onboarding() {
 
   if (step === 0) {
     return (
-      <StepShell eyebrow="1 of 7" title="First, how old are you?" progress={progress} footer={<NextBack onNext={() => setStep(1)} nextDisabled={isMinor && !parentEmail.trim()} />}>
+      <StepShell eyebrow="step 1 of 11" title="First, how old are you?" progress={progress} footer={<NextBack onNext={() => setStep(1)} nextDisabled={isMinor && !parentEmail.trim()} />}>
         <div className="space-y-4">
           <DisclosureBanner />
           {error && <p className="rounded-kai border border-danger/25 bg-dangerWash p-3 text-sm font-bold text-danger">{error}</p>}
@@ -125,7 +125,7 @@ export function Onboarding() {
 
   if (step === 1) {
     return (
-      <StepShell eyebrow="2 of 7" title="What should Kai call you?" progress={progress} footer={<NextBack onBack={() => setStep(0)} onNext={() => setStep(2)} />}>
+      <StepShell eyebrow="step 2 of 11" title="What should Kai call you?" progress={progress} footer={<NextBack onBack={() => setStep(0)} onNext={() => setStep(2)} />}>
         <label className="block text-sm font-black">
           Mentor name
           <input className="field mt-2" value={kaiName} maxLength={20} onChange={(event) => setKaiName(event.target.value)} />
@@ -137,7 +137,7 @@ export function Onboarding() {
 
   if (step === 2) {
     return (
-      <StepShell eyebrow="3 of 7" title="How should Kai sound?" progress={progress} footer={<NextBack onBack={() => setStep(1)} onNext={() => setStep(3)} />}>
+      <StepShell eyebrow="step 3 of 11" title="How should Kai sound?" progress={progress} footer={<NextBack onBack={() => setStep(1)} onNext={() => setStep(3)} />}>
         <div className="space-y-2">
           {toneChoices.map((tone) => (
             <ChoiceCard key={tone.id} selected={kaiTone === tone.id} onClick={() => setKaiTone(tone.id)}>
@@ -155,7 +155,7 @@ export function Onboarding() {
 
   if (step === 3) {
     return (
-      <StepShell eyebrow="4 of 7" title="What feels most useful today?" progress={progress} footer={<NextBack onBack={() => setStep(2)} onNext={() => setStep(4)} />}>
+      <StepShell eyebrow="step 4 of 11" title="What feels most useful today?" progress={progress} footer={<NextBack onBack={() => setStep(2)} onNext={() => setStep(4)} />}>
         <div className="grid gap-2">
           {engineChoices.map(({ id, title, copy, icon: Icon, tone }) => (
             <ChoiceCard key={id} selected={manualEngine === id} onClick={() => setManualEngine(id)}>
@@ -177,7 +177,7 @@ export function Onboarding() {
 
   if (questionIndex >= 0 && questionIndex < intakeQuestions.length) {
     return (
-      <StepShell eyebrow={`intake ${questionIndex + 1} of ${intakeQuestions.length}`} title={intakeQuestions[questionIndex]} progress={progress} footer={<NextBack onBack={() => setStep(step - 1)} onNext={() => setStep(step + 1)} nextLabel={questionIndex === intakeQuestions.length - 1 ? "See Kai's read" : "Next"} />}>
+      <StepShell eyebrow={`step ${step + 1} of 11`} title={intakeQuestions[questionIndex]} progress={progress} footer={<NextBack onBack={() => setStep(step - 1)} onNext={() => setStep(step + 1)} nextLabel={questionIndex === intakeQuestions.length - 1 ? "See Kai's read" : "Next"} />}>
         <textarea
           className="field min-h-40"
           value={responses[questionIndex]}
@@ -192,7 +192,7 @@ export function Onboarding() {
   }
 
   return (
-    <StepShell eyebrow="7 of 7" title={`Let's start with ${labelForEngine(suggestedEngine)}.`} progress={100} footer={<NextBack onBack={() => setStep(9)} onNext={() => void finish()} nextLabel={saving ? "Saving" : "Sounds good. Start"} nextDisabled={saving} />}>
+    <StepShell eyebrow="step 11 of 11" title={`Let's start with ${labelForEngine(suggestedEngine)}.`} progress={100} footer={<NextBack onBack={() => setStep(9)} onNext={() => void finish()} nextLabel={saving ? "Saving" : "Sounds good. Start"} nextDisabled={saving} />}>
       <div className="space-y-4">
         <div className="rounded-kai border border-line bg-paper p-4 text-sm font-semibold leading-6">
           {manualEngine === "unsure"

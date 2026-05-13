@@ -1,5 +1,6 @@
 import { Activity, Brain, HeartPulse, Home, Settings, ShieldAlert, Target } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { KaiMark } from "../ui/AppPrimitives";
 
 const links = [
   { to: "/home", label: "Home", icon: Home },
@@ -13,10 +14,10 @@ const links = [
 export function Nav() {
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-line bg-paper/90 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-line bg-paper/88 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <NavLink to="/" className="flex items-center gap-2 text-lg font-black tracking-normal">
-            <span className="grid size-9 place-items-center rounded-full bg-ink font-serif text-xl italic text-paper shadow-sticker">k</span>
+          <NavLink to="/" className="flex items-center gap-2 text-lg font-black tracking-normal" aria-label="Kai home">
+            <KaiMark size="sm" />
             <span className="font-display text-xl">Kai</span>
           </NavLink>
           <nav className="hidden items-center gap-1 overflow-x-auto md:flex" aria-label="Main navigation">
@@ -45,7 +46,7 @@ export function Nav() {
         </div>
       </header>
       <nav
-        className="fixed inset-x-3 bottom-3 z-20 grid grid-cols-5 gap-1 rounded-[20px] border border-line bg-white/95 p-1 shadow-soft backdrop-blur md:hidden"
+        className="fixed inset-x-3 bottom-3 z-20 grid grid-cols-5 gap-1 rounded-[24px] border border-line bg-white/95 p-1 shadow-soft backdrop-blur md:hidden"
         style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
         aria-label="Primary mobile navigation"
       >
@@ -54,7 +55,7 @@ export function Nav() {
               key={`${to}-${label}`}
               to={to}
               className={({ isActive }) =>
-                `focus-ring flex h-12 flex-col items-center justify-center rounded-kai text-[11px] font-bold ${
+                `focus-ring flex h-12 flex-col items-center justify-center rounded-[18px] text-[11px] font-bold ${
                   isActive ? "bg-ink text-paper" : "text-muted hover:bg-paper"
                 }`
               }

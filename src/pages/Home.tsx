@@ -1,8 +1,8 @@
 import { Activity, Brain, CheckCircle2, Target, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { KaiChat } from "../components/kai/KaiChat";
-import { ProgressSummary } from "../components/tracker/ProgressSummary";
-import { ActionTile, AppPage, AppSurface, MetricPill } from "../components/ui/AppPrimitives";
+import { EvolvingCharacter } from "../components/tracker/EvolvingCharacter";
+import { ActionTile, AppPage, AppSurface, FlowList, MetricPill, SessionHero } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { engineTotals } from "../lib/tracker";
 import { useProgressStore } from "../stores/progressStore";
@@ -11,6 +11,7 @@ import { useUserStore } from "../stores/userStore";
 export function Home() {
   const { kaiName, primaryEngine } = useUserStore();
   const events = useProgressStore((state) => state.events);
+  const level = useProgressStore((state) => state.level());
   const streak = useProgressStore((state) => state.streak());
   const belt = useProgressStore((state) => state.belt());
   const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
@@ -18,30 +19,39 @@ export function Home() {
 
   return (
     <AppPage className="max-w-5xl">
-      <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <AppSurface className="p-5 sm:p-7">
-          <p className="eyebrow">today</p>
-          <h1 className="mt-3 max-w-3xl font-display text-4xl font-black leading-[0.95] tracking-normal sm:text-6xl">
-            {kaiName}: start with {labelForEngine(primaryEngine)}.
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-muted">One primary lane, one chat, one small rep. Switch only if today asks for it.</p>
-          <div className="mt-6">
-            <Link to={`/engine/${primaryEngine}`}>
-              <Button>
-                Open {labelForEngine(primaryEngine)}
-              </Button>
-            </Link>
+      <SessionHero
+        eyebrow="today"
+        title={
+          <>
+            {kaiName}, start with <span className="font-serif font-normal italic text-plum">{labelForEngine(primaryEngine)}.</span>
+          </>
+        }
+        action={
+          <Link to={`/engine/${primaryEngine}`}>
+            <Button>
+              Open {labelForEngine(primaryEngine)}
+            </Button>
+          </Link>
+        }
+        aside={
+          <div className="grid h-full content-between gap-5">
+            <div className="grid grid-cols-3 gap-2">
+              <MetricPill label="streak" value={String(streak)} tone="care" />
+              <MetricPill label="belt" value={belt} tone="goals" />
+              <MetricPill label="today" value={String(todayCount)} tone="body" />
+            </div>
+            <FlowList
+              items={[
+                { label: "Check in", copy: "Say what is taking up space." },
+                { label: "Stay in one lane", copy: `Top lane: ${topEngine}.` },
+                { label: "Close the loop", copy: "Finish one rep before browsing." }
+              ]}
+            />
           </div>
-        </AppSurface>
-        <AppSurface variant="soft" className="grid content-center gap-2 p-3">
-          <div className="grid grid-cols-3 gap-2">
-            <MetricPill label="streak" value={String(streak)} tone="care" />
-            <MetricPill label="belt" value={belt} tone="goals" />
-            <MetricPill label="today" value={String(todayCount)} tone="body" />
-          </div>
-          <p className="px-1 text-xs font-bold uppercase tracking-wider text-muted">top lane: {topEngine}</p>
-        </AppSurface>
-      </section>
+        }
+      >
+        <p>One primary lane, one chat, one small rep. Switch only if today asks for it.</p>
+      </SessionHero>
 
       <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="space-y-3">
@@ -65,8 +75,26 @@ export function Home() {
         </div>
       </section>
 
-      <ProgressSummary />
+      <RewardStrip level={level} streak={streak} belt={belt} todayCount={todayCount} />
     </AppPage>
+  );
+}
+
+function RewardStrip({ level, streak, belt, todayCount }: { level: number; streak: number; belt: string; todayCount: number }) {
+  return (
+    <AppSurface className="p-4 sm:p-5">
+      <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+        <EvolvingCharacter level={level} />
+        <div>
+          <p className="eyebrow">after one rep</p>
+          <h2 className="mt-1 font-display text-2xl font-black leading-none tracking-normal">Progress stays quiet until it helps.</h2>
+          <p className="mt-2 text-sm font-semibold leading-6 text-muted">Today has {todayCount} saved reps. Streak {streak}. Belt {belt}.</p>
+        </div>
+        <Link to="/progress" className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-4 text-sm font-black hover:border-ink/35">
+          See progress
+        </Link>
+      </div>
+    </AppSurface>
   );
 }
 

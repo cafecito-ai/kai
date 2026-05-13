@@ -2,6 +2,7 @@ import { Send, Sparkles } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
+import { KaiMark } from "../ui/AppPrimitives";
 
 export function KaiChat() {
   const { messages, send, sending } = useKaiStore();
@@ -15,13 +16,15 @@ export function KaiChat() {
   }
 
   return (
-    <section className="app-panel overflow-hidden">
-      <div className="mb-4 flex items-center justify-between border-b border-line">
-        <div className="p-4 pb-0">
+    <section className="overflow-hidden rounded-calm border border-line bg-white shadow-calm">
+      <div className="mb-4 flex items-center justify-between border-b border-line bg-warmPaper/70">
+        <div className="p-5 pb-4">
           <p className="eyebrow">kai check-in</p>
-          <h2 className="mt-1 font-display text-3xl font-black tracking-normal">What needs care?</h2>
+          <h2 className="mt-1 font-display text-3xl font-black tracking-normal">What is taking up space?</h2>
         </div>
-        <div className="mr-4 mt-4 grid size-11 place-items-center rounded-full bg-ink font-serif text-xl italic text-paper">k</div>
+        <div className="mr-5">
+          <KaiMark size="md" />
+        </div>
       </div>
       <div
         className="mx-4 mb-4 space-y-3"
@@ -32,7 +35,7 @@ export function KaiChat() {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`max-w-[88%] rounded-kai px-4 py-3 text-sm ${
+            className={`max-w-[88%] rounded-[22px] px-4 py-3 text-sm font-medium leading-6 ${
               message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
             }`}
           >

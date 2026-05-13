@@ -1,4 +1,5 @@
 import type { Env } from "../types";
+import { extractJsonObject } from "./json-utils";
 
 export type VisionItem = { name: string; estimated_grams: number };
 export type VisionConfidence = "high" | "medium" | "low";
@@ -25,39 +26,7 @@ const VISION_PROMPT = [
   "- Names should be everyday plain language (\"grilled chicken\", \"white rice\", \"broccoli\") not brand or recipe names."
 ].join("\n");
 
-/**
- * Pull the first balanced {...} JSON object out of a model response.
- * Duplicated from P1-1; consolidate to a shared util once both land.
- */
-function extractJsonObject(raw: string): string | null {
-  const start = raw.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let inString = false;
-  let escape = false;
-  for (let i = start; i < raw.length; i++) {
-    const char = raw[i];
-    if (escape) {
-      escape = false;
-      continue;
-    }
-    if (char === "\\" && inString) {
-      escape = true;
-      continue;
-    }
-    if (char === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (inString) continue;
-    if (char === "{") depth++;
-    else if (char === "}") {
-      depth--;
-      if (depth === 0) return raw.slice(start, i + 1);
-    }
-  }
-  return null;
-}
+const VISION_TIMEOUT_MS = 12_000;
 
 export function parseVisionResponse(raw: string): VisionResult | null {
   const jsonText = extractJsonObject(raw);
@@ -112,16 +81,35 @@ export async function analyzeFoodPhoto(env: Env, r2Key: string): Promise<VisionR
   }
 
   try {
-    const result = (await env.AI.run(model, {
-      image: Array.from(image),
-      prompt: VISION_PROMPT,
-      max_tokens: 400,
-      temperature: 0.1
-    })) as { response?: string; description?: string };
+    const result = (await withTimeout(
+      env.AI.run(model, {
+        image: Array.from(image),
+        prompt: VISION_PROMPT,
+        max_tokens: 400,
+        temperature: 0.1
+      }),
+      VISION_TIMEOUT_MS
+    )) as { response?: string; description?: string };
     const raw = result.response || result.description || "";
     return parseVisionResponse(raw);
   } catch (err) {
     console.warn("vision: model call failed", err);
     return null;
   }
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("vision timeout")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
 }

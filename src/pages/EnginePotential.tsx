@@ -1,6 +1,8 @@
 import { Award, CheckCircle2, RefreshCw, Target } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
+import { SecondaryShelf } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { STRENGTHS_DISCOVERY_QUESTIONS } from "../lib/strengths-questions";
@@ -64,14 +66,14 @@ export function EnginePotential() {
 
   return (
     <EnginePanel title="Potential and goals" label="Goals" accent="text-plum" intro="Find the thing you keep circling, then make it concrete enough to touch.">
-      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <StrengthsDiscoveryCard onComplete={(summary) => createEntry({ entryType: "strengths_discovery", title: "Strengths summary", payload: { summary }, eventType: "strengths_discovery", eventValue: 60 })} />
-        <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="rounded-calm border border-line bg-white p-5 shadow-calm sm:p-6">
           <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
             <Target />
           </div>
-          <p className="eyebrow">goals</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make the next move visible.</h2>
+          <p className="eyebrow">start here</p>
+          <h2 className="mt-2 font-display text-4xl font-black leading-none tracking-normal">Make the next move visible.</h2>
+          <p className="mt-3 max-w-xl text-sm font-semibold leading-6 text-muted">Name the thing, then shrink it until it can fit into the next ten minutes.</p>
           <form onSubmit={submit} className="mt-4 grid gap-2">
             <div className="grid gap-2 sm:grid-cols-[0.7fr_1.3fr]">
               <select className="field" value={category} onChange={(event) => setCategory(event.target.value as Goal["category"])}>
@@ -106,38 +108,46 @@ export function EnginePotential() {
           </div>
         </section>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-          <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
-            <Target />
-          </div>
-          <p className="eyebrow">next step planner</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make it small enough to start.</h2>
-          <textarea className="field mt-4 min-h-24" value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
-          <Button
-            className="mt-4"
-            variant="secondary"
-            onClick={() => createEntry({ entryType: "next_step_planned", title: "Next step", payload: { nextStep }, eventType: "next_step_planned", eventValue: 22 })}
-          >
-            Save next step
-          </Button>
-        </section>
-        <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-          <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
-            <RefreshCw />
-          </div>
-          <p className="eyebrow">release or reframe</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">A goal can change without becoming a failure.</h2>
-          <textarea className="field mt-4 min-h-24" value={reframe} onChange={(event) => setReframe(event.target.value)} />
-          <Button
-            className="mt-4"
-            variant="secondary"
-            onClick={() => createEntry({ entryType: "goal_reframed", title: "Goal reframe", payload: { reframe }, eventType: "goal_reframed", eventValue: 24 })}
-          >
-            Save reframe
-          </Button>
-        </section>
-      </div>
+      <SecondaryShelf eyebrow="more goals reps" title="Discovery, planning, and reframing." summary="Open these when the first goal card is not the right rep." count="3 tools">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <StrengthsDiscoveryCard onComplete={(summary) => createEntry({ entryType: "strengths_discovery", title: "Strengths summary", payload: { summary }, eventType: "strengths_discovery", eventValue: 60 })} />
+          <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+            <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
+              <Target />
+            </div>
+            <p className="eyebrow">next step planner</p>
+            <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make it small enough to start.</h2>
+            <textarea className="field mt-4 min-h-24" value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
+            <Button
+              className="mt-4"
+              variant="secondary"
+              onClick={() => createEntry({ entryType: "next_step_planned", title: "Next step", payload: { nextStep }, eventType: "next_step_planned", eventValue: 22 })}
+            >
+              Save next step
+            </Button>
+          </section>
+          <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+            <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">
+              <RefreshCw />
+            </div>
+            <p className="eyebrow">release or reframe</p>
+            <h2 className="mt-2 font-display text-3xl font-black tracking-normal">A goal can change without becoming a failure.</h2>
+            <textarea className="field mt-4 min-h-24" value={reframe} onChange={(event) => setReframe(event.target.value)} />
+            <Button
+              className="mt-4"
+              variant="secondary"
+              onClick={() => createEntry({ entryType: "goal_reframed", title: "Goal reframe", payload: { reframe }, eventType: "goal_reframed", eventValue: 24 })}
+            >
+              Save reframe
+            </Button>
+          </section>
+        </div>
+      </SecondaryShelf>
+      <EngineGuidesIndex
+        engine="potential"
+        title="Doing-things guides"
+        intro="Focus, motivation, money, decisions, conflict. The skills that pay off across decades."
+      />
       <History entries={entries} />
     </EnginePanel>
   );
@@ -145,14 +155,7 @@ export function EnginePotential() {
 
 function History({ entries }: { entries: EngineEntry[] }) {
   return (
-    <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="eyebrow">goals history</p>
-          <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent goal work</h2>
-        </div>
-        <span className="rounded-full bg-[#EEEAFF] px-3 py-1 text-xs font-black text-plum">{entries.length} saved</span>
-      </div>
+    <SecondaryShelf eyebrow="goals history" title="Recent goal work" count={`${entries.length} saved`}>
       <div className="space-y-2">
         {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Goal entries yet. Complete discovery or add a goal.</p>}
         {entries.slice(0, 6).map((entry) => (
@@ -165,7 +168,7 @@ function History({ entries }: { entries: EngineEntry[] }) {
           </div>
         ))}
       </div>
-    </section>
+    </SecondaryShelf>
   );
 }
 

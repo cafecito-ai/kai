@@ -111,6 +111,15 @@ export const GUIDES: GuideEntry[] = [
   },
   {
     engine: "physical",
+    slug: "breath-recommender",
+    title: "Breath recommender",
+    summary: "Different breath for different feelings. Tap how you feel, get the pattern that fits, then run it guided.",
+    component: lazy(() =>
+      import("../components/physical/BreathRecommender").then((m) => ({ default: m.BreathRecommender }))
+    )
+  },
+  {
+    engine: "physical",
     slug: "daily-rhythm",
     title: "Daily rhythm",
     summary: "Lay out your day. School-day and weekend templates, editable durations, sleep-window math built in.",

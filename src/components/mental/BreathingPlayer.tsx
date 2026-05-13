@@ -1,5 +1,6 @@
 import { Wind } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { BREATH_PATTERNS, currentPhase, DEFAULT_SESSION_SECONDS, type BreathPattern } from "../../lib/breathing";
 
@@ -7,6 +8,20 @@ type Props = {
   /** Called once when a breathing session reaches the end of its timer. */
   onSessionComplete?: (input: { patternId: BreathPattern["id"]; seconds: number }) => void;
 };
+
+/**
+ * Resolve the initial pattern. If the caller deep-linked with
+ * `?breath=<id>` (the BreathRecommender's "Run guided" path), open on
+ * that pattern instead of the default 4-7-8.
+ */
+function resolveInitialPattern(params: URLSearchParams): BreathPattern {
+  const requested = params.get("breath");
+  if (requested) {
+    const match = BREATH_PATTERNS.find((p) => p.id === requested);
+    if (match) return match;
+  }
+  return BREATH_PATTERNS[0];
+}
 
 /**
  * Contextual breathing player per spec Section 6 / Phase 4 Task 6. Lets the
@@ -17,7 +32,8 @@ type Props = {
  * a static label-only update.
  */
 export function BreathingPlayer({ onSessionComplete }: Props) {
-  const [pattern, setPattern] = useState<BreathPattern>(BREATH_PATTERNS[0]);
+  const [searchParams] = useSearchParams();
+  const [pattern, setPattern] = useState<BreathPattern>(() => resolveInitialPattern(searchParams));
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const completedRef = useRef(false);
@@ -60,7 +76,7 @@ export function BreathingPlayer({ onSessionComplete }: Props) {
   const scale = phase.label === "Inhale" ? 1 : phase.label === "Exhale" ? 0.6 : 0.85;
 
   return (
-    <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+    <section id="breathing-player" className="rounded-kai border border-line bg-white p-5 shadow-sm">
       <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#FFE8DD] text-coral">
         <Wind />
       </div>

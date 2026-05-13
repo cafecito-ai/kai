@@ -99,6 +99,15 @@ export const GUIDES: GuideEntry[] = [
     component: lazy(() =>
       import("../components/physical/HydrationTracker").then((m) => ({ default: m.HydrationTracker }))
     )
+  },
+  {
+    engine: "physical",
+    slug: "screen-time",
+    title: "Screen time",
+    summary: "Your pattern, not a target. Log daily; we'll show shifts week-over-week without scoring you.",
+    component: lazy(() =>
+      import("../components/physical/ScreenTimeTracker").then((m) => ({ default: m.ScreenTimeTracker }))
+    )
   }
 ];
 

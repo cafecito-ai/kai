@@ -33,8 +33,10 @@ export const SENSITIVE_EVENT_TYPES = new Set<string>([
   "relationships_primer_read",
   "identity_primer_read",
   "emotion_vocab_read",
-  // Cycle / hydration / screen-time tracker logs already stay on-device
-  // and aren't routed through this module; if that changes, add them here.
+  "screen_time_logged"
+  // Cycle and hydration tracker logs are scoped to localStorage and do not
+  // route through this scrubber. If they're ever routed through addEvent,
+  // add them here too.
 ]);
 
 /**

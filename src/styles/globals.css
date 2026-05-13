@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #0a0a0a;
-  background: #fafaf7;
+  color: #151323;
+  background: #fff8ee;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,7 +15,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #fafaf7;
+  overflow-x: hidden;
+  background: #fff8ee;
 }
 
 button,
@@ -31,16 +32,30 @@ select {
 
 .noise {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 280px),
-    #fafaf7;
+    radial-gradient(circle at 16px 16px, rgba(104, 68, 196, 0.08) 0 2px, transparent 2px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), transparent 320px),
+    #fff8ee;
+  background-size: 32px 32px, auto, auto;
 }
 
 .app-panel {
   @apply rounded-kai border border-line bg-white shadow-sm;
 }
 
+.app-page {
+  @apply mx-auto w-full max-w-6xl min-w-0 space-y-3 overflow-hidden text-ink sm:space-y-4;
+}
+
+.app-surface {
+  @apply min-w-0 overflow-hidden rounded-kai border border-line bg-white shadow-sm;
+}
+
+.app-title {
+  @apply max-w-[20rem] font-display text-3xl font-black leading-none tracking-normal text-ink sm:max-w-3xl sm:text-5xl lg:text-6xl;
+}
+
 .eyebrow {
-  @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-muted;
+  @apply text-[11px] font-black uppercase tracking-[0.14em] text-muted;
 }
 
 .display-title {
@@ -48,7 +63,11 @@ select {
 }
 
 .field {
-  @apply focus-ring w-full rounded-kai border border-line bg-white px-3 py-2 text-ink placeholder:text-muted/70;
+  @apply focus-ring min-h-12 w-full rounded-kai border border-line bg-white px-3 py-2 text-base text-ink placeholder:text-muted/70;
+}
+
+.mobile-safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 5.75rem);
 }
 
 /*

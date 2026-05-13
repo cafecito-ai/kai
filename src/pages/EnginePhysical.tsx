@@ -2,6 +2,7 @@ import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-rea
 import { useEffect, useState } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
+import { MoodLogTracker } from "../components/physical/MoodLogTracker";
 import { SecondaryShelf } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -258,6 +259,16 @@ export function EnginePhysical() {
           />
         </div>
       </SecondaryShelf>
+      <MoodLogTracker
+        onLog={({ mood, energy, date }) =>
+          addEvent({
+            engine: "physical",
+            eventType: "mood_logged",
+            eventValue: 10,
+            payload: { mood, energy, date }
+          })
+        }
+      />
       <SecondaryShelf eyebrow="body history" title="Recent physical entries" count={`${entries.length} saved`}>
         <div className="space-y-2">
           {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Body entries yet. Log one fuel, movement, sleep, or recovery note.</p>}

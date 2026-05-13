@@ -26,6 +26,7 @@ export default {
         coral: "#FF6B45",
         plum: "#5B47F0",
         amber: "#B76618",
+        warning: "#B76618",
         lime: "#DCEEDF",
         danger: "#B42318",
         dangerWash: "#FFF0EC",

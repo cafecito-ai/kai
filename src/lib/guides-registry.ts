@@ -108,6 +108,15 @@ export const GUIDES: GuideEntry[] = [
     component: lazy(() =>
       import("../components/physical/ScreenTimeTracker").then((m) => ({ default: m.ScreenTimeTracker }))
     )
+  },
+  {
+    engine: "potential",
+    slug: "focus-and-study",
+    title: "Focus + study",
+    summary: "Multitasking myth, time blocks, study environment, retrieval practice + spaced repetition.",
+    component: lazy(() =>
+      import("../components/physical/FocusStudyPrimer").then((m) => ({ default: m.FocusStudyPrimer }))
+    )
   }
 ];
 

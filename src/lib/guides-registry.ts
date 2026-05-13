@@ -111,6 +111,15 @@ export const GUIDES: GuideEntry[] = [
   },
   {
     engine: "physical",
+    slug: "sleep-wind-down",
+    title: "Sleep + wind-down",
+    summary: "Hand the body a path to sleep. Pick a 5/15/30/45-minute routine, run it step-by-step, plus 8 sleep tips.",
+    component: lazy(() =>
+      import("../components/physical/SleepGuide").then((m) => ({ default: m.SleepGuide }))
+    )
+  },
+  {
+    engine: "physical",
     slug: "stretching",
     title: "Stretching flows",
     summary: "Slow holds, no force. Pick a flow, breathe through it. Built for mornings, desk fatigue, post-sport, wind-down.",

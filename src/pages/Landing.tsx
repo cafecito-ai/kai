@@ -1,171 +1,167 @@
-import { Activity, ArrowRight, Brain, CheckCircle2, ClipboardList, Dumbbell, MessageCircle, Moon, ShieldCheck, Sparkles, Target, Utensils, Wind } from "lucide-react";
+import { Activity, ArrowRight, Brain, CheckCircle2, Flame, HeartPulse, ShieldAlert, Sparkles, Target, Trophy, Utensils, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
+import { engineTotals } from "../lib/tracker";
+import { useProgressStore } from "../stores/progressStore";
+import { useUserStore } from "../stores/userStore";
 
-const engines = [
+const engineCards = [
   {
-    title: "Physical health",
-    label: "Body",
+    title: "Body",
     path: "/engine/physical",
     icon: Activity,
-    accent: "bg-[#DCEEDF] text-[#2D7A3E]",
-    summary: "Food, movement, sleep, recovery, breathing.",
-    operational: ["Meal and photo logs", "Movement and practice check-ins", "Sleep and recovery notes"],
-    lev: "Customize the food vocabulary, sport examples, recovery prompts, and the exact no-calorie guardrails."
+    tone: "bg-[#DCEEDF] text-[#2D7A3E]",
+    description: "Food, movement, sleep, recovery",
+    prompt: "Log what happened without judging it."
   },
   {
-    title: "Potential",
-    label: "Goals",
+    title: "Goals",
     path: "/engine/potential",
     icon: Target,
-    accent: "bg-[#EEEAFF] text-[#5B47F0]",
-    summary: "School, sport, music, money, projects, identity.",
-    operational: ["Goal creation", "Tiny next step planner", "Progress proof and wins"],
-    lev: "Customize the goal categories, achievement language, examples, and mentor-style prompt sets."
+    tone: "bg-[#EEEAFF] text-[#5B47F0]",
+    description: "School, sport, money, projects",
+    prompt: "Pick the next ten-minute move."
   },
   {
-    title: "Mental wellness",
-    label: "Reset",
+    title: "Reset",
     path: "/engine/mental",
     icon: Brain,
-    accent: "bg-[#FFE8DD] text-[#C94A2B]",
-    summary: "Pressure, self-talk, friends, emotions, social reset.",
-    operational: ["Feelings check-ins", "Breathing and grounding", "Safety-aware AI responses"],
-    lev: "Customize tone, escalation copy, teen-safe reset flows, and the boundaries between coaching and care."
+    tone: "bg-[#FFE8DD] text-[#C94A2B]",
+    description: "Pressure, self-talk, emotions",
+    prompt: "Name the feeling. Take one steady step."
   }
 ];
 
-const blueprint = [
-  { step: "1", title: "Define the teen moment", copy: "Name the exact after-school situation the engine helps with, then write the first prompt in teen language." },
-  { step: "2", title: "Pick the inputs", copy: "Choose what the engine collects: text, taps, photo, rating, duration, goal, or completion proof." },
-  { step: "3", title: "Set the response rules", copy: "Write what Kai can say, what it must avoid, and when it must route to safety support." },
-  { step: "4", title: "Choose the proof", copy: "Decide what gets stored as progress: a meal logged, a reset finished, a goal moved forward." }
-];
-
-const physicalStarter = [
-  { icon: Utensils, title: "Food tracking", copy: "Log what was eaten, how it felt, and energy after. No weight-loss framing." },
-  { icon: Dumbbell, title: "Movement", copy: "Practice, walks, lifts, games, stretching, and recovery minutes." },
-  { icon: Moon, title: "Sleep", copy: "Bedtime, wake time, quality, and what made rest easier or harder." },
-  { icon: Wind, title: "Reset", copy: "Breathing, soreness check, hydration, and short recovery prompts." }
+const quickActions = [
+  { to: "/engine/physical", label: "Food log", icon: Utensils },
+  { to: "/engine/physical", label: "Breath", icon: Wind },
+  { to: "/engine/mental", label: "Feelings", icon: HeartPulse },
+  { to: "/engine/potential", label: "Next step", icon: Trophy }
 ];
 
 export function Landing() {
+  const { kaiName, primaryEngine, onboardingCompletedAt } = useUserStore();
+  const events = useProgressStore((state) => state.events);
+  const streak = useProgressStore((state) => state.streak());
+  const belt = useProgressStore((state) => state.belt());
+  const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
+  const topEngine = topEngineLabel(events);
+  const primaryPath = `/engine/${primaryEngine}`;
+
   return (
-    <div className="space-y-4 bg-[#FAFAF7] text-[#0A0A0A]">
-      <section className="rounded-kai border border-[#E5E2D9] bg-[#FAFAF7] shadow-soft">
-        <div className="grid gap-8 px-4 py-6 sm:px-7 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:items-center lg:px-10 lg:py-10 xl:gap-12">
-          <div className="flex min-w-0 max-w-[19.5rem] flex-col justify-between gap-8 sm:max-w-none">
-            <div>
-              <div className="mb-8 flex items-center justify-between border-b border-[#E5E2D9] pb-5 lg:mb-10">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">Kai framework</p>
-                  <p className="mt-1 font-display text-3xl font-black tracking-normal">Calm teen</p>
-                </div>
-                <p className="hidden font-serif text-lg italic text-[#6B6B65] sm:block">direction 3</p>
+    <div className="mx-auto w-[calc(100vw-1.5rem)] max-w-6xl overflow-hidden space-y-3 text-ink sm:w-full sm:space-y-4">
+      <section className="min-w-0 overflow-hidden rounded-kai border border-line bg-white p-4 shadow-sm sm:p-6 lg:p-7">
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(18rem,0.58fr)] lg:items-end">
+          <div className="min-w-0">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="eyebrow">today with {kaiName}</p>
+                <h1 className="mt-2 max-w-[18rem] font-display text-3xl font-black leading-[1] tracking-normal sm:max-w-xl sm:text-5xl lg:text-6xl">
+                  What needs care today?
+                </h1>
               </div>
-              <p className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65] before:h-px before:w-8 before:bg-[#0A0A0A]">
-                private beta shell
-              </p>
-              <h1 className="max-w-xl text-wrap font-display text-4xl font-black leading-[0.98] tracking-normal text-[#0A0A0A] sm:text-5xl lg:text-6xl">
-                <span className="block">Build teen</span>
-                <span className="block">wellness</span>
-                <span className="block">around</span>
-                <span className="block font-serif font-normal italic text-[#5B47F0]">one useful moment.</span>
-              </h1>
-              <p className="mt-6 max-w-[19rem] text-base leading-7 text-[#6B6B65] sm:max-w-xl sm:text-lg">
-                Kai gives teens a quiet place to check in, choose the right engine, and turn the day into one small action across body, goals, and reset.
-              </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-[auto_auto] sm:items-center">
-              <Link to="/onboarding">
-                <Button className="h-14 rounded-full bg-[#0A0A0A] px-6 text-[#FAFAF7] hover:bg-[#5B47F0]">
-                  Start onboarding <ArrowRight size={18} />
-                </Button>
-              </Link>
-              <Link to="/home">
-                <Button variant="secondary" className="h-14 rounded-full border-[#D8D4CA] bg-white px-6 text-[#0A0A0A]">
-                  Open app shell
-                </Button>
-              </Link>
-              <p className="max-w-[19rem] text-sm leading-5 text-[#6B6B65] sm:col-span-2 sm:max-w-lg">Operational today: onboarding, engine pages, goals, progress, safety copy, and design direction.</p>
-            </div>
+            <p className="max-w-[18.5rem] text-base leading-7 text-muted sm:max-w-2xl">
+              Start with one honest check-in. Choose Body, Goals, or Reset, then finish one small rep before the day gets louder.
+            </p>
           </div>
-          <HeroPhones />
+
+          <div className="grid min-w-0 max-w-full grid-cols-[repeat(3,minmax(0,1fr))] gap-2 overflow-hidden rounded-kai border border-line bg-paper p-2 text-center">
+            <Metric icon={<Flame size={16} />} label="streak" value={String(streak)} />
+            <Metric icon={<Trophy size={16} />} label="belt" value={belt} />
+            <Metric icon={<CheckCircle2 size={16} />} label="today" value={String(todayCount)} />
+          </div>
+        </div>
+
+        <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-[auto_auto] sm:items-center">
+          <Link to={onboardingCompletedAt ? primaryPath : "/onboarding"} className="block">
+            <Button className="h-13 w-full rounded-full px-5 sm:w-auto">
+              {onboardingCompletedAt ? "Open today’s lane" : "Start onboarding"}
+              <ArrowRight size={18} />
+            </Button>
+          </Link>
+          <Link to="/home" className="block">
+            <Button variant="secondary" className="h-13 w-full rounded-full px-5 sm:w-auto">
+              Full dashboard
+            </Button>
+          </Link>
         </div>
       </section>
 
-      <section className="grid gap-3 lg:grid-cols-3">
-        {engines.map((engine) => (
-          <Link key={engine.title} to={engine.path} className="group rounded-kai border border-[#E5E2D9] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
-            <div className="flex items-start justify-between gap-4">
-              <div className={`grid size-12 place-items-center rounded-full ${engine.accent}`}>
-                <engine.icon size={22} />
+      <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+        <div className="min-w-0 space-y-3">
+          <section className="min-w-0 overflow-hidden rounded-kai border border-line bg-ink p-4 text-paper shadow-sm sm:p-5">
+            <div className="flex items-start gap-3">
+              <Sparkles className="mt-1 text-lime" size={20} />
+              <div>
+                <p className="eyebrow text-soft">quick check-in</p>
+                <h2 className="mt-1 font-display text-3xl font-black leading-none tracking-normal">Say it messy.</h2>
+                <p className="mt-2 max-w-[18rem] text-sm leading-6 text-paper/72 sm:max-w-none">
+                  “I’m tired and annoyed” is enough. Kai turns that into the next small action.
+                </p>
               </div>
-              <ArrowRight className="mt-2 text-[#A8A8A0] transition group-hover:translate-x-1 group-hover:text-[#5B47F0]" size={19} />
             </div>
-            <p className="mt-7 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">{engine.label}</p>
-            <h2 className="mt-2 font-display text-3xl font-black tracking-normal">{engine.title}</h2>
-            <p className="mt-3 min-h-12 text-sm leading-6 text-[#6B6B65]">{engine.summary}</p>
-            <div className="mt-5 space-y-2">
-              {engine.operational.map((item) => (
-                <div key={item} className="flex items-center gap-2 text-sm font-semibold text-[#2A2A28]">
-                  <CheckCircle2 size={16} className="text-[#2D7A3E]" />
-                  {item}
-                </div>
+            <div className="mt-4 grid min-w-0 grid-cols-2 gap-2">
+              {quickActions.map(({ to, label, icon: Icon }) => (
+                <Link key={label} to={to} className="focus-ring flex min-h-12 items-center gap-2 rounded-kai border border-white/10 bg-white/8 px-3 text-sm font-bold text-paper">
+                  <Icon size={17} className="text-lime" />
+                  {label}
+                </Link>
               ))}
             </div>
-            <div className="mt-5 rounded-kai bg-[#FAFAF7] p-3 text-sm leading-6 text-[#6B6B65]">
-              <span className="font-bold text-[#0A0A0A]">Lev starts here:</span> {engine.lev}
-            </div>
-          </Link>
-        ))}
-      </section>
+          </section>
 
-      <section className="grid gap-4 rounded-kai border border-[#E5E2D9] bg-white p-5 shadow-sm lg:grid-cols-[0.86fr_1.14fr] lg:p-7">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">engine blueprint</p>
-          <h2 className="mt-3 max-w-lg font-display text-4xl font-black leading-none tracking-normal sm:text-5xl">
-            A repeatable framework for every custom engine.
-          </h2>
-          <p className="mt-4 max-w-lg text-sm leading-6 text-[#6B6B65]">
-            Each engine should be customized through the same product loop: teen moment, inputs, response rules, stored proof. This keeps Kai coherent while letting each lane feel specific.
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {blueprint.map((item) => (
-            <div key={item.step} className="rounded-kai border border-[#E5E2D9] bg-[#FAFAF7] p-4">
-              <div className="mb-5 grid size-9 place-items-center rounded-full bg-[#0A0A0A] font-display text-sm font-black text-[#FAFAF7]">{item.step}</div>
-              <h3 className="font-display text-xl font-black tracking-normal">{item.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[#6B6B65]">{item.copy}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-kai border border-[#E5E2D9] bg-[#0A0A0A] p-5 text-[#FAFAF7] shadow-soft lg:p-7">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#A8A8A0]">physical engine example</p>
-          <h2 className="mt-3 max-w-xl font-display text-4xl font-black leading-none tracking-normal sm:text-5xl">
-            Food tracking should read as fuel and patterns, not dieting.
-          </h2>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {physicalStarter.map((item) => (
-              <div key={item.title} className="rounded-kai border border-white/10 bg-white/7 p-4">
-                <item.icon className="mb-4 text-[#DCEEDF]" size={24} />
-                <h3 className="font-display text-xl font-black tracking-normal">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#D8D4CA]">{item.copy}</p>
+          <section className="min-w-0 overflow-hidden rounded-kai border border-danger/20 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-full bg-[#FFE8DD] text-danger">
+                <ShieldAlert size={20} />
               </div>
-            ))}
+              <div>
+                <p className="eyebrow text-danger">always available</p>
+                <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Crisis resources</h2>
+                <p className="mt-1 text-sm leading-6 text-muted">No login. No waiting. Clear support links when the moment is bigger than coaching.</p>
+                <Link to="/crisis" className="mt-3 inline-flex text-sm font-black text-danger">
+                  Open crisis support
+                </Link>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section className="grid min-w-0 gap-3 sm:grid-cols-3 lg:grid-cols-3">
+          {engineCards.map((engine) => (
+            <EngineCard key={engine.title} {...engine} active={engine.path.endsWith(primaryEngine)} />
+          ))}
+        </section>
+      </section>
+
+      <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.72fr)]">
+        <div className="min-w-0 overflow-hidden rounded-kai border border-line bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="eyebrow">next three reps</p>
+              <h2 className="mt-1 font-display text-3xl font-black tracking-normal">Keep it concrete.</h2>
+            </div>
+            <span className="rounded-full bg-lime px-3 py-1 text-xs font-black text-sage">top: {topEngine}</span>
+          </div>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+            <PlanItem title="Body" copy="Log one meal, sleep note, or movement rep." />
+            <PlanItem title="Goals" copy="Choose the next task, not the whole plan." />
+            <PlanItem title="Reset" copy="Use a breathing or feelings check-in." />
           </div>
         </div>
-        <div className="rounded-kai border border-[#E5E2D9] bg-white p-5 shadow-sm lg:p-7">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">implementation note for Lev</p>
-          <h2 className="mt-3 font-display text-3xl font-black leading-none tracking-normal">Customize content before changing structure.</h2>
-          <div className="mt-5 space-y-3 text-sm leading-6 text-[#6B6B65]">
-            <Guidance icon={<ClipboardList size={18} />} title="Start with copy" copy="Write 8 to 12 prompts per engine in the voice teens should actually see." />
-            <Guidance icon={<ShieldCheck size={18} />} title="Set safety boundaries" copy="For food, avoid calories, body scoring, weight-loss plans, guilt language, and comparison loops." />
-            <Guidance icon={<MessageCircle size={18} />} title="Define Kai responses" copy="Use one helpful question, one reflection, and one next action. Keep responses short enough for a phone." />
-            <Guidance icon={<Sparkles size={18} />} title="Tune rewards" copy="Reward consistency, honesty, and completion. Do not reward restriction or intensity." />
+
+        <div className="min-w-0 overflow-hidden rounded-kai border border-line bg-paper p-4 shadow-sm sm:p-5">
+          <p className="eyebrow">parent and safety</p>
+          <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Wellness coaching, not therapy.</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">Kai keeps the product bounded: no diagnosis, no diet culture, and escalation when safety language appears.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link to="/for-parents" className="focus-ring rounded-full border border-line bg-white px-4 py-2 text-sm font-black">
+              For parents
+            </Link>
+            <Link to="/privacy" className="focus-ring rounded-full border border-line bg-white px-4 py-2 text-sm font-black">
+              Privacy
+            </Link>
           </div>
         </div>
       </section>
@@ -173,80 +169,71 @@ export function Landing() {
   );
 }
 
-function HeroPhones() {
+function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="hidden min-w-0 content-center sm:grid">
-      <div className="mx-auto grid w-full max-w-xl gap-4 sm:grid-cols-[0.9fr_1.05fr] sm:items-center lg:max-w-none">
-        <div className="hidden rounded-[32px] border border-[#E5E2D9] bg-white p-3 shadow-soft sm:block">
-          <div className="rounded-[24px] bg-[#FAFAF7] p-4 xl:p-5">
-            <div className="mb-8 flex items-center justify-between text-xs font-bold xl:mb-10">
-              <span>4:18</span>
-              <span>Kai</span>
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">check-in</p>
-            <h2 className="mt-3 font-display text-3xl font-black leading-none tracking-normal xl:text-4xl">
-              What needs care <span className="font-serif font-normal italic text-[#5B47F0]">today?</span>
-            </h2>
-            <div className="mt-6 space-y-3 xl:mt-8">
-              <PhoneRow title="Body" copy="food, movement, sleep" tone="bg-[#DCEEDF] text-[#2D7A3E]" />
-              <PhoneRow title="Goals" copy="one next move" tone="bg-[#EEEAFF] text-[#5B47F0]" />
-              <PhoneRow title="Reset" copy="pressure and overthinking" tone="bg-[#FFE8DD] text-[#C94A2B]" />
-            </div>
-          </div>
-        </div>
-        <div className="rounded-[34px] border border-[#E5E2D9] bg-white p-3 shadow-soft">
-          <div className="rounded-[26px] bg-[#FAFAF7] p-4 xl:p-5">
-            <div className="mb-6 flex items-center justify-between text-xs font-bold xl:mb-8">
-              <span>8:42</span>
-              <span className="rounded-full bg-[#0A0A0A] px-3 py-1 text-[#FAFAF7]">kai</span>
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">today</p>
-            <h2 className="mt-3 font-display text-3xl font-black leading-none tracking-normal xl:text-4xl">One small rep is enough.</h2>
-            <div className="mt-5 rounded-kai bg-white p-4 shadow-sm xl:mt-6">
-              <p className="text-sm font-bold">Kai</p>
-              <p className="mt-2 text-sm leading-6 text-[#6B6B65]">Log dinner without judging it. Then tell me if your energy changed.</p>
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <PhoneStat label="streak" value="3" />
-              <PhoneStat label="belt" value="green" />
-              <PhoneStat label="next" value="8m" />
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-w-0 rounded-kai bg-white px-2 py-3">
+      <div className="mx-auto mb-1 grid size-5 place-items-center text-plum">{icon}</div>
+      <p className="text-[10px] font-black uppercase tracking-wider text-muted">{label}</p>
+      <p className="truncate text-sm font-black capitalize">{value}</p>
     </div>
   );
 }
 
-function PhoneRow({ title, copy, tone }: { title: string; copy: string; tone: string }) {
+function EngineCard({
+  title,
+  path,
+  icon: Icon,
+  tone,
+  description,
+  prompt,
+  active
+}: {
+  title: string;
+  path: string;
+  icon: typeof Activity;
+  tone: string;
+  description: string;
+  prompt: string;
+  active: boolean;
+}) {
   return (
-    <div className="flex items-center gap-3 rounded-kai bg-white p-3 shadow-sm">
-      <span className={`grid size-9 place-items-center rounded-full text-xs font-black ${tone}`}>{title.slice(0, 1)}</span>
+    <Link
+      to={path}
+      className={`focus-ring flex min-h-[11.5rem] flex-col justify-between rounded-kai border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${
+        active ? "border-ink bg-white" : "border-line bg-white"
+      }`}
+    >
       <div>
-        <p className="text-sm font-black">{title}</p>
-        <p className="text-xs text-[#6B6B65]">{copy}</p>
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div className={`grid size-12 place-items-center rounded-full ${tone}`}>
+            <Icon size={22} />
+          </div>
+          <ArrowRight size={19} className="mt-2 text-muted" />
+        </div>
+        <p className="eyebrow">{active ? "start here" : description}</p>
+        <h2 className="mt-2 font-display text-3xl font-black tracking-normal">{title}</h2>
       </div>
+      <p className="mt-4 text-sm font-semibold leading-6 text-muted">{prompt}</p>
+    </Link>
+  );
+}
+
+function PlanItem({ title, copy }: { title: string; copy: string }) {
+  return (
+    <div className="rounded-kai border border-line bg-paper p-3">
+      <p className="text-[11px] font-black uppercase tracking-wider text-muted">{title}</p>
+      <p className="mt-1 text-sm font-semibold leading-6">{copy}</p>
     </div>
   );
 }
 
-function PhoneStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-kai border border-[#E5E2D9] bg-white p-2">
-      <p className="text-[10px] font-black uppercase tracking-wider text-[#A8A8A0]">{label}</p>
-      <p className="text-sm font-black">{value}</p>
-    </div>
-  );
-}
-
-function Guidance({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {
-  return (
-    <div className="flex gap-3 rounded-kai bg-[#FAFAF7] p-3">
-      <div className="mt-0.5 text-[#5B47F0]">{icon}</div>
-      <div>
-        <p className="font-bold text-[#0A0A0A]">{title}</p>
-        <p>{copy}</p>
-      </div>
-    </div>
-  );
+function topEngineLabel(events: ReturnType<typeof useProgressStore.getState>["events"]) {
+  const totals = engineTotals(events);
+  const [engine] = Object.entries(totals)
+    .filter(([key]) => key !== "kai")
+    .sort((a, b) => b[1] - a[1])[0] ?? ["new", 0];
+  if (engine === "physical") return "body";
+  if (engine === "potential") return "goals";
+  if (engine === "mental") return "reset";
+  return "new";
 }

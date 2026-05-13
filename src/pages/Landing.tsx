@@ -52,11 +52,11 @@ const physicalStarter = [
 export function Landing() {
   return (
     <div className="space-y-4 bg-[#FAFAF7] text-[#0A0A0A]">
-      <section className="overflow-hidden rounded-kai border border-[#E5E2D9] bg-[#FAFAF7] shadow-soft">
-        <div className="grid min-h-[78vh] gap-8 px-4 py-6 sm:px-7 lg:grid-cols-[0.92fr_1.08fr] lg:px-10 lg:py-10">
-          <div className="flex flex-col justify-between gap-10">
+      <section className="rounded-kai border border-[#E5E2D9] bg-[#FAFAF7] shadow-soft">
+        <div className="grid gap-8 px-4 py-6 sm:px-7 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:items-center lg:px-10 lg:py-10 xl:gap-12">
+          <div className="flex min-w-0 max-w-[19.5rem] flex-col justify-between gap-8 sm:max-w-none">
             <div>
-              <div className="mb-12 flex items-center justify-between border-b border-[#E5E2D9] pb-5">
+              <div className="mb-8 flex items-center justify-between border-b border-[#E5E2D9] pb-5 lg:mb-10">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">Kai framework</p>
                   <p className="mt-1 font-display text-3xl font-black tracking-normal">Calm teen</p>
@@ -66,14 +66,17 @@ export function Landing() {
               <p className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65] before:h-px before:w-8 before:bg-[#0A0A0A]">
                 private beta shell
               </p>
-              <h1 className="max-w-3xl font-display text-6xl font-black leading-[0.9] tracking-normal text-[#0A0A0A] sm:text-7xl lg:text-8xl">
-                Build the teen wellness app around <span className="font-serif font-normal italic text-[#5B47F0]">one useful moment.</span>
+              <h1 className="max-w-xl text-wrap font-display text-4xl font-black leading-[0.98] tracking-normal text-[#0A0A0A] sm:text-5xl lg:text-6xl">
+                <span className="block">Build teen</span>
+                <span className="block">wellness</span>
+                <span className="block">around</span>
+                <span className="block font-serif font-normal italic text-[#5B47F0]">one useful moment.</span>
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-7 text-[#6B6B65] sm:text-lg">
+              <p className="mt-6 max-w-[19rem] text-base leading-7 text-[#6B6B65] sm:max-w-xl sm:text-lg">
                 Kai gives teens a quiet place to check in, choose the right engine, and turn the day into one small action across body, goals, and reset.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr] sm:items-center">
+            <div className="grid gap-3 sm:grid-cols-[auto_auto] sm:items-center">
               <Link to="/onboarding">
                 <Button className="h-14 rounded-full bg-[#0A0A0A] px-6 text-[#FAFAF7] hover:bg-[#5B47F0]">
                   Start onboarding <ArrowRight size={18} />
@@ -84,7 +87,7 @@ export function Landing() {
                   Open app shell
                 </Button>
               </Link>
-              <p className="text-sm leading-5 text-[#6B6B65]">Operational today: onboarding, engine pages, goals, progress, safety copy, and design direction.</p>
+              <p className="max-w-[19rem] text-sm leading-5 text-[#6B6B65] sm:col-span-2 sm:max-w-lg">Operational today: onboarding, engine pages, goals, progress, safety copy, and design direction.</p>
             </div>
           </div>
           <HeroPhones />
@@ -172,19 +175,19 @@ export function Landing() {
 
 function HeroPhones() {
   return (
-    <div className="grid content-center">
-      <div className="mx-auto grid w-full max-w-2xl gap-4 sm:grid-cols-[0.9fr_1.05fr] sm:items-center">
+    <div className="hidden min-w-0 content-center sm:grid">
+      <div className="mx-auto grid w-full max-w-xl gap-4 sm:grid-cols-[0.9fr_1.05fr] sm:items-center lg:max-w-none">
         <div className="hidden rounded-[32px] border border-[#E5E2D9] bg-white p-3 shadow-soft sm:block">
-          <div className="rounded-[24px] bg-[#FAFAF7] p-5">
-            <div className="mb-10 flex items-center justify-between text-xs font-bold">
+          <div className="rounded-[24px] bg-[#FAFAF7] p-4 xl:p-5">
+            <div className="mb-8 flex items-center justify-between text-xs font-bold xl:mb-10">
               <span>4:18</span>
               <span>Kai</span>
             </div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">check-in</p>
-            <h2 className="mt-3 font-display text-4xl font-black leading-none tracking-normal">
+            <h2 className="mt-3 font-display text-3xl font-black leading-none tracking-normal xl:text-4xl">
               What needs care <span className="font-serif font-normal italic text-[#5B47F0]">today?</span>
             </h2>
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 space-y-3 xl:mt-8">
               <PhoneRow title="Body" copy="food, movement, sleep" tone="bg-[#DCEEDF] text-[#2D7A3E]" />
               <PhoneRow title="Goals" copy="one next move" tone="bg-[#EEEAFF] text-[#5B47F0]" />
               <PhoneRow title="Reset" copy="pressure and overthinking" tone="bg-[#FFE8DD] text-[#C94A2B]" />
@@ -192,14 +195,14 @@ function HeroPhones() {
           </div>
         </div>
         <div className="rounded-[34px] border border-[#E5E2D9] bg-white p-3 shadow-soft">
-          <div className="rounded-[26px] bg-[#FAFAF7] p-5">
-            <div className="mb-8 flex items-center justify-between text-xs font-bold">
+          <div className="rounded-[26px] bg-[#FAFAF7] p-4 xl:p-5">
+            <div className="mb-6 flex items-center justify-between text-xs font-bold xl:mb-8">
               <span>8:42</span>
               <span className="rounded-full bg-[#0A0A0A] px-3 py-1 text-[#FAFAF7]">kai</span>
             </div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B6B65]">today</p>
-            <h2 className="mt-3 font-display text-4xl font-black leading-none tracking-normal">One small rep is enough.</h2>
-            <div className="mt-6 rounded-kai bg-white p-4 shadow-sm">
+            <h2 className="mt-3 font-display text-3xl font-black leading-none tracking-normal xl:text-4xl">One small rep is enough.</h2>
+            <div className="mt-5 rounded-kai bg-white p-4 shadow-sm xl:mt-6">
               <p className="text-sm font-bold">Kai</p>
               <p className="mt-2 text-sm leading-6 text-[#6B6B65]">Log dinner without judging it. Then tell me if your energy changed.</p>
             </div>

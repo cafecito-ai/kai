@@ -5,6 +5,7 @@ import { BreathingPlayer } from "../components/mental/BreathingPlayer";
 import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
 import { FeelingsCheckIn } from "../components/mental/FeelingsCheckIn";
 import { MeditationPlayer } from "../components/mental/MeditationPlayer";
+import { ThoughtReframe } from "../components/mental/ThoughtReframe";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -14,7 +15,6 @@ import { useProgressStore } from "../stores/progressStore";
 export function EngineMental() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
-  const [thought, setThought] = useState("If I mess this up, everyone will notice.");
   const [boundary, setBoundary] = useState("Mute one app until tomorrow morning");
   const [letter, setLetter] = useState("You got through the loud part. Do the next tiny thing.");
   const actions = [
@@ -68,27 +68,19 @@ export function EngineMental() {
             });
           }}
         />
-        <section className="rounded-kai border border-line bg-ink p-5 text-paper shadow-sm">
-          <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#FFE8DD] text-coral">
-            <RefreshCw />
-          </div>
-          <p className="eyebrow text-soft">thought reframe</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Take one scary thought down a notch.</h2>
-          <textarea className="field mt-4 min-h-24 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={thought} onChange={(event) => setThought(event.target.value)} />
-          <Button
-            className="mt-4"
-            onClick={() =>
-              completeReset({
-                eventType: "thought_reframe",
-                title: "Thought reframe",
-                payload: { thought, reframe: "What is one boring, realistic next step?" },
-                eventValue: 28
-              })
-            }
-          >
-            Save reframe
-          </Button>
-        </section>
+        <ThoughtReframe
+          onComplete={(payload) =>
+            completeReset({
+              eventType: "thought_reframe",
+              title: "Thought reframe",
+              payload,
+              // Bonus for completing both evidence sides — the contrast IS the
+              // work, so engagement there gets rewarded more than a one-step
+              // textarea would.
+              eventValue: 22 + (payload.evidenceFor.trim() ? 4 : 0) + (payload.evidenceAgainst.trim() ? 4 : 0)
+            })
+          }
+        />
       </div>
       <BreathingPlayer
         onSessionComplete={({ patternId, seconds }) =>

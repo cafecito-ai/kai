@@ -24,8 +24,7 @@ const memoryStorage = {
 
 beforeEach(() => {
   memory.clear();
-  // @ts-expect-error - shim for non-jsdom envs
-  globalThis.localStorage = memoryStorage;
+  globalThis.localStorage = memoryStorage as unknown as Storage;
 });
 
 afterEach(() => {

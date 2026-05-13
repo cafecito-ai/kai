@@ -13,7 +13,7 @@ export function AppShell() {
         Skip to content
       </a>
       <Nav />
-      <main id="main" className="mx-auto w-full max-w-6xl px-3 pb-24 pt-4 sm:px-6 sm:pt-6 lg:px-8">
+      <main id="main" className="mobile-safe-bottom mx-auto w-full max-w-6xl px-3 pt-3 sm:px-5 sm:pt-5 lg:px-8">
         <Outlet />
       </main>
       <Footer />

@@ -1,7 +1,8 @@
-import { Activity, Brain, CheckCircle2, Flame, Moon, Trophy, Wind } from "lucide-react";
+import { Activity, Brain, CheckCircle2, Target, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { KaiChat } from "../components/kai/KaiChat";
 import { ProgressSummary } from "../components/tracker/ProgressSummary";
+import { ActionTile, AppHero, AppPage, AppSurface, MetricPill } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { engineTotals } from "../lib/tracker";
 import { useProgressStore } from "../stores/progressStore";
@@ -16,59 +17,54 @@ export function Home() {
   const topEngine = topEngineLabel(events);
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-kai border border-line bg-white p-5 shadow-sm sm:p-7">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="eyebrow">after school check-in</p>
-            <h1 className="mt-3 max-w-3xl font-display text-5xl font-black leading-none tracking-normal sm:text-7xl">
-              {kaiName} is ready for <span className="font-serif font-normal italic text-plum">one small rep.</span>
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-              Start with <span className="font-bold capitalize text-ink">{primaryEngine}</span>, or switch if today is asking for something else.
-            </p>
+    <AppPage>
+      <AppHero
+        eyebrow="today"
+        title={
+          <>
+            {kaiName} is ready for <span className="font-serif font-normal italic text-plum">one small rep.</span>
+          </>
+        }
+        action={
+          <div className="grid grid-cols-3 gap-2 rounded-kai border border-line bg-paper p-2">
+            <MetricPill label="streak" value={String(streak)} tone="care" />
+            <MetricPill label="belt" value={belt} tone="goals" />
+            <MetricPill label="today" value={String(todayCount)} tone="body" />
           </div>
-          <div className="grid grid-cols-3 gap-2 rounded-kai border border-line bg-paper p-2 text-center">
-            <MiniMetric icon={<Flame size={15} />} label="streak" value={String(streak)} />
-            <MiniMetric icon={<Moon size={15} />} label="top" value={topEngine} />
-            <MiniMetric icon={<CheckCircle2 size={15} />} label="today" value={String(todayCount)} />
-          </div>
-        </div>
-      </section>
-      <div className="grid gap-4 lg:grid-cols-[1fr_0.82fr]">
-        <div className="space-y-4">
+        }
+      >
+        Start with {labelForEngine(primaryEngine)}, or switch lanes if today is asking for something else.
+      </AppHero>
+
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.72fr)]">
+        <div className="space-y-3">
           <KaiChat />
-          <section className="grid gap-3 sm:grid-cols-3" aria-label="Kai modes">
-            <EngineLink to="/engine/physical" icon={<Activity />} title="Body" copy="food, movement, sleep" tone="bg-[#DCEEDF] text-[#2D7A3E]" />
-            <EngineLink to="/engine/potential" icon={<Trophy />} title="Goals" copy="one next move" tone="bg-[#EEEAFF] text-[#5B47F0]" />
-            <EngineLink to="/engine/mental" icon={<Brain />} title="Reset" copy="pressure and overthinking" tone="bg-[#FFE8DD] text-[#C94A2B]" />
+          <section className="grid gap-2 sm:grid-cols-3" aria-label="Kai modes">
+            <ActionTile as={Link} to="/engine/physical" icon={Activity} title="Body" copy="Food, movement, sleep." tone="body" active={primaryEngine === "physical"} />
+            <ActionTile as={Link} to="/engine/potential" icon={Target} title="Goals" copy="One next move." tone="goals" active={primaryEngine === "potential"} />
+            <ActionTile as={Link} to="/engine/mental" icon={Brain} title="Reset" copy="Pressure and self-talk." tone="reset" active={primaryEngine === "mental"} />
           </section>
         </div>
         <div className="space-y-3">
           <Link to={`/engine/${primaryEngine}`}>
-            <Button className="w-full">Open today’s lane</Button>
+            <Button className="w-full">Open {labelForEngine(primaryEngine)}</Button>
           </Link>
           <TodayPlan belt={belt} todayCount={todayCount} />
-          <ProgressSummary />
-          <section className="rounded-kai border border-line bg-ink p-4 text-paper shadow-sm">
-            <Wind className="mb-3 text-lime" />
+          <AppSurface variant="dark" className="p-4">
+            <Wind className="mb-3 text-careWash" />
             <p className="eyebrow text-soft">60-second reset</p>
             <h2 className="mt-1 font-display text-2xl font-black tracking-normal">In 4. Hold 4. Out 4.</h2>
             <p className="mt-2 text-sm text-paper/70">Twice is enough to change the next minute.</p>
-          </section>
+            <Link to="/engine/mental" className="mt-3 inline-flex text-sm font-black text-careWash">
+              Start reset
+            </Link>
+          </AppSurface>
         </div>
       </div>
-    </div>
-  );
-}
 
-function MiniMetric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="min-w-16 rounded-kai bg-white px-3 py-2 text-ink">
-      <div className="mx-auto mb-1 grid size-5 place-items-center text-plum">{icon}</div>
-      <p className="text-[10px] font-black uppercase tracking-wider text-muted">{label}</p>
-      <p className="text-sm font-black">{value}</p>
-    </div>
+      <ProgressSummary />
+      <p className="sr-only">Top engine this week: {topEngine}</p>
+    </AppPage>
   );
 }
 
@@ -79,15 +75,15 @@ function TodayPlan({ belt, todayCount }: { belt: string; todayCount: number }) {
     ["Reset", "Mute one app until tomorrow"]
   ];
   return (
-    <section className="app-panel p-4">
+    <AppSurface className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-display text-2xl font-black tracking-normal">Today</h2>
-        <span className="rounded-full bg-lime px-3 py-1 text-xs font-black text-sage">{todayCount} reps</span>
+        <span className="rounded-full bg-bodyWash px-3 py-1 text-xs font-black text-body">{todayCount} reps</span>
       </div>
       <div className="space-y-2">
         {rows.map(([label, copy]) => (
           <div key={label} className="flex items-center gap-3 rounded-kai border border-line bg-paper px-3 py-2">
-            <CheckCircle2 size={17} className="text-sage" />
+            <CheckCircle2 size={17} className="text-body" />
             <div>
               <p className="text-[11px] font-black uppercase tracking-wider text-muted">{label}</p>
               <p className="text-sm font-semibold">{copy}</p>
@@ -96,7 +92,7 @@ function TodayPlan({ belt, todayCount }: { belt: string; todayCount: number }) {
         ))}
       </div>
       <p className="mt-3 text-xs font-bold uppercase tracking-wider text-muted">Current belt: {belt}</p>
-    </section>
+    </AppSurface>
   );
 }
 
@@ -105,18 +101,12 @@ function topEngineLabel(events: ReturnType<typeof useProgressStore.getState>["ev
   const [engine] = Object.entries(totals)
     .filter(([key]) => key !== "kai")
     .sort((a, b) => b[1] - a[1])[0] ?? ["none", 0];
-  if (engine === "physical") return "body";
-  if (engine === "potential") return "goals";
-  if (engine === "mental") return "reset";
-  return "new";
+  return labelForEngine(engine as "physical" | "potential" | "mental" | "none").toLowerCase();
 }
 
-function EngineLink({ to, icon, title, copy, tone }: { to: string; icon: React.ReactNode; title: string; copy: string; tone: string }) {
-  return (
-    <Link to={to} className="block rounded-kai border border-line bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
-      <div className={`mb-5 grid size-11 place-items-center rounded-full ${tone}`}>{icon}</div>
-      <h2 className="font-display text-2xl font-black tracking-normal">{title}</h2>
-      <p className="mt-1 text-sm leading-6 text-muted">{copy}</p>
-    </Link>
-  );
+function labelForEngine(engine: "physical" | "potential" | "mental" | "none") {
+  if (engine === "physical") return "Body";
+  if (engine === "potential") return "Goals";
+  if (engine === "mental") return "Reset";
+  return "new";
 }

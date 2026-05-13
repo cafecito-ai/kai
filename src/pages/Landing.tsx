@@ -1,5 +1,6 @@
-import { Activity, ArrowRight, Brain, CheckCircle2, Flame, HeartPulse, ShieldAlert, Sparkles, Target, Trophy, Utensils, Wind } from "lucide-react";
+import { Activity, ArrowRight, Brain, CheckCircle2, HeartPulse, ShieldAlert, Sparkles, Target } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ActionTile, AppHero, AppPage, AppSurface, MetricPill } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { engineTotals } from "../lib/tracker";
 import { useProgressStore } from "../stores/progressStore";
@@ -10,33 +11,23 @@ const engineCards = [
     title: "Body",
     path: "/engine/physical",
     icon: Activity,
-    tone: "bg-[#DCEEDF] text-[#2D7A3E]",
-    description: "Food, movement, sleep, recovery",
-    prompt: "Log what happened without judging it."
+    tone: "body" as const,
+    copy: "Food, movement, sleep, recovery."
   },
   {
     title: "Goals",
     path: "/engine/potential",
     icon: Target,
-    tone: "bg-[#EEEAFF] text-[#5B47F0]",
-    description: "School, sport, money, projects",
-    prompt: "Pick the next ten-minute move."
+    tone: "goals" as const,
+    copy: "School, sport, projects, next moves."
   },
   {
     title: "Reset",
     path: "/engine/mental",
     icon: Brain,
-    tone: "bg-[#FFE8DD] text-[#C94A2B]",
-    description: "Pressure, self-talk, emotions",
-    prompt: "Name the feeling. Take one steady step."
+    tone: "reset" as const,
+    copy: "Pressure, feelings, breathing, self-talk."
   }
-];
-
-const quickActions = [
-  { to: "/engine/physical", label: "Food log", icon: Utensils },
-  { to: "/engine/physical", label: "Breath", icon: Wind },
-  { to: "/engine/mental", label: "Feelings", icon: HeartPulse },
-  { to: "/engine/potential", label: "Next step", icon: Trophy }
 ];
 
 export function Landing() {
@@ -45,116 +36,102 @@ export function Landing() {
   const streak = useProgressStore((state) => state.streak());
   const belt = useProgressStore((state) => state.belt());
   const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
-  const topEngine = topEngineLabel(events);
   const primaryPath = `/engine/${primaryEngine}`;
+  const topEngine = topEngineLabel(events);
 
   return (
-    <div className="mx-auto w-[calc(100vw-1.5rem)] max-w-6xl overflow-hidden space-y-3 text-ink sm:w-full sm:space-y-4">
-      <section className="min-w-0 overflow-hidden rounded-kai border border-line bg-white p-4 shadow-sm sm:p-6 lg:p-7">
-        <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(18rem,0.58fr)] lg:items-end">
-          <div className="min-w-0">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="eyebrow">today with {kaiName}</p>
-                <h1 className="mt-2 max-w-[18rem] font-display text-3xl font-black leading-[1] tracking-normal sm:max-w-xl sm:text-5xl lg:text-6xl">
-                  What needs care today?
-                </h1>
-              </div>
+    <AppPage>
+      <AppHero
+        eyebrow={onboardingCompletedAt ? `today with ${kaiName}` : "start here"}
+        title={
+          <>
+            What do you want help with <span className="font-serif font-normal italic text-plum">today?</span>
+          </>
+        }
+        action={
+          <div className="grid grid-cols-3 gap-2 rounded-kai border border-line bg-paper p-2">
+            <MetricPill label="streak" value={String(streak)} tone="care" />
+            <MetricPill label="belt" value={belt} tone="goals" />
+            <MetricPill label="today" value={String(todayCount)} tone="body" />
+          </div>
+        }
+      >
+        Open Kai, pick the lane that matches the moment, and finish one small rep. No long tour before the product starts working.
+      </AppHero>
+
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(20rem,0.68fr)]">
+        <AppSurface variant="dark" className="p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white/10 text-careWash">
+              <Sparkles size={22} />
+            </span>
+            <div className="min-w-0">
+              <p className="eyebrow text-soft">fast first win</p>
+              <h2 className="mt-1 font-display text-3xl font-black leading-none tracking-normal sm:text-4xl">Say it messy.</h2>
+              <p className="mt-2 text-sm leading-6 text-paper/75">"I am tired and annoyed" is enough. Kai turns the check-in into the next small action.</p>
             </div>
-            <p className="max-w-[18.5rem] text-base leading-7 text-muted sm:max-w-2xl">
-              Start with one honest check-in. Choose Body, Goals, or Reset, then finish one small rep before the day gets louder.
-            </p>
           </div>
-
-          <div className="grid min-w-0 max-w-full grid-cols-[repeat(3,minmax(0,1fr))] gap-2 overflow-hidden rounded-kai border border-line bg-paper p-2 text-center">
-            <Metric icon={<Flame size={16} />} label="streak" value={String(streak)} />
-            <Metric icon={<Trophy size={16} />} label="belt" value={belt} />
-            <Metric icon={<CheckCircle2 size={16} />} label="today" value={String(todayCount)} />
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <Link to={onboardingCompletedAt ? primaryPath : "/onboarding"}>
+              <Button className="w-full">
+                {onboardingCompletedAt ? "Open my lane" : "Meet Kai"}
+                <ArrowRight size={18} />
+              </Button>
+            </Link>
+            <Link to="/home">
+              <Button variant="secondary" className="w-full border-white/20 bg-white/10 text-paper hover:border-white/50">
+                Full dashboard
+              </Button>
+            </Link>
           </div>
-        </div>
+        </AppSurface>
 
-        <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-[auto_auto] sm:items-center">
-          <Link to={onboardingCompletedAt ? primaryPath : "/onboarding"} className="block">
-            <Button className="h-13 w-full rounded-full px-5 sm:w-auto">
-              {onboardingCompletedAt ? "Open today’s lane" : "Start onboarding"}
-              <ArrowRight size={18} />
-            </Button>
-          </Link>
-          <Link to="/home" className="block">
-            <Button variant="secondary" className="h-13 w-full rounded-full px-5 sm:w-auto">
-              Full dashboard
-            </Button>
-          </Link>
-        </div>
+        <AppSurface variant="danger" className="p-4 sm:p-5">
+          <div className="flex gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-danger">
+              <ShieldAlert size={22} />
+            </span>
+            <div>
+              <p className="eyebrow text-danger">always available</p>
+              <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Crisis support</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">No login, no coaching wrapper, no waiting when the moment is bigger than the app.</p>
+              <Link to="/crisis" className="mt-3 inline-flex text-sm font-black text-danger">
+                Open crisis resources
+              </Link>
+            </div>
+          </div>
+        </AppSurface>
       </section>
 
-      <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-        <div className="min-w-0 space-y-3">
-          <section className="min-w-0 overflow-hidden rounded-kai border border-line bg-ink p-4 text-paper shadow-sm sm:p-5">
-            <div className="flex items-start gap-3">
-              <Sparkles className="mt-1 text-lime" size={20} />
-              <div>
-                <p className="eyebrow text-soft">quick check-in</p>
-                <h2 className="mt-1 font-display text-3xl font-black leading-none tracking-normal">Say it messy.</h2>
-                <p className="mt-2 max-w-[18rem] text-sm leading-6 text-paper/72 sm:max-w-none">
-                  “I’m tired and annoyed” is enough. Kai turns that into the next small action.
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 grid min-w-0 grid-cols-2 gap-2">
-              {quickActions.map(({ to, label, icon: Icon }) => (
-                <Link key={label} to={to} className="focus-ring flex min-h-12 items-center gap-2 rounded-kai border border-white/10 bg-white/8 px-3 text-sm font-bold text-paper">
-                  <Icon size={17} className="text-lime" />
-                  {label}
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="min-w-0 overflow-hidden rounded-kai border border-danger/20 bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-full bg-[#FFE8DD] text-danger">
-                <ShieldAlert size={20} />
-              </div>
-              <div>
-                <p className="eyebrow text-danger">always available</p>
-                <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Crisis resources</h2>
-                <p className="mt-1 text-sm leading-6 text-muted">No login. No waiting. Clear support links when the moment is bigger than coaching.</p>
-                <Link to="/crisis" className="mt-3 inline-flex text-sm font-black text-danger">
-                  Open crisis support
-                </Link>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <section className="grid min-w-0 gap-3 sm:grid-cols-3 lg:grid-cols-3">
-          {engineCards.map((engine) => (
-            <EngineCard key={engine.title} {...engine} active={engine.path.endsWith(primaryEngine)} />
-          ))}
-        </section>
+      <section className="grid gap-3 sm:grid-cols-3">
+        {engineCards.map((engine) => (
+          <ActionTile key={engine.path} as={Link} to={engine.path} icon={engine.icon} title={engine.title} copy={engine.copy} tone={engine.tone} active={engine.path.endsWith(primaryEngine)} />
+        ))}
       </section>
 
-      <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.72fr)]">
-        <div className="min-w-0 overflow-hidden rounded-kai border border-line bg-white p-4 shadow-sm sm:p-5">
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.72fr)]">
+        <AppSurface className="p-4 sm:p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="eyebrow">next three reps</p>
               <h2 className="mt-1 font-display text-3xl font-black tracking-normal">Keep it concrete.</h2>
             </div>
-            <span className="rounded-full bg-lime px-3 py-1 text-xs font-black text-sage">top: {topEngine}</span>
+            <span className="rounded-full bg-bodyWash px-3 py-1 text-xs font-black text-body">top: {topEngine}</span>
           </div>
-          <div className="grid min-w-0 gap-2 sm:grid-cols-3">
-            <PlanItem title="Body" copy="Log one meal, sleep note, or movement rep." />
-            <PlanItem title="Goals" copy="Choose the next task, not the whole plan." />
-            <PlanItem title="Reset" copy="Use a breathing or feelings check-in." />
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Rep title="Body" copy="Log one meal, sleep note, or movement rep." />
+            <Rep title="Goals" copy="Choose the next task, not the whole plan." />
+            <Rep title="Reset" copy="Use a breathing or feelings check-in." />
           </div>
-        </div>
+        </AppSurface>
 
-        <div className="min-w-0 overflow-hidden rounded-kai border border-line bg-paper p-4 shadow-sm sm:p-5">
-          <p className="eyebrow">parent and safety</p>
-          <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Wellness coaching, not therapy.</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">Kai keeps the product bounded: no diagnosis, no diet culture, and escalation when safety language appears.</p>
+        <AppSurface variant="soft" className="p-4 sm:p-5">
+          <div className="mb-3 flex items-center gap-2 text-plum">
+            <HeartPulse size={19} />
+            <p className="eyebrow text-plum">parent and safety</p>
+          </div>
+          <h2 className="font-display text-2xl font-black tracking-normal">Wellness coaching, not therapy.</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">Kai is built with consent, crisis escalation, and no diagnosis or diet-culture loops.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link to="/for-parents" className="focus-ring rounded-full border border-line bg-white px-4 py-2 text-sm font-black">
               For parents
@@ -163,64 +140,16 @@ export function Landing() {
               Privacy
             </Link>
           </div>
-        </div>
+        </AppSurface>
       </section>
-    </div>
+    </AppPage>
   );
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-kai bg-white px-2 py-3">
-      <div className="mx-auto mb-1 grid size-5 place-items-center text-plum">{icon}</div>
-      <p className="text-[10px] font-black uppercase tracking-wider text-muted">{label}</p>
-      <p className="truncate text-sm font-black capitalize">{value}</p>
-    </div>
-  );
-}
-
-function EngineCard({
-  title,
-  path,
-  icon: Icon,
-  tone,
-  description,
-  prompt,
-  active
-}: {
-  title: string;
-  path: string;
-  icon: typeof Activity;
-  tone: string;
-  description: string;
-  prompt: string;
-  active: boolean;
-}) {
-  return (
-    <Link
-      to={path}
-      className={`focus-ring flex min-h-[11.5rem] flex-col justify-between rounded-kai border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${
-        active ? "border-ink bg-white" : "border-line bg-white"
-      }`}
-    >
-      <div>
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div className={`grid size-12 place-items-center rounded-full ${tone}`}>
-            <Icon size={22} />
-          </div>
-          <ArrowRight size={19} className="mt-2 text-muted" />
-        </div>
-        <p className="eyebrow">{active ? "start here" : description}</p>
-        <h2 className="mt-2 font-display text-3xl font-black tracking-normal">{title}</h2>
-      </div>
-      <p className="mt-4 text-sm font-semibold leading-6 text-muted">{prompt}</p>
-    </Link>
-  );
-}
-
-function PlanItem({ title, copy }: { title: string; copy: string }) {
+function Rep({ title, copy }: { title: string; copy: string }) {
   return (
     <div className="rounded-kai border border-line bg-paper p-3">
+      <CheckCircle2 className="mb-2 text-body" size={18} />
       <p className="text-[11px] font-black uppercase tracking-wider text-muted">{title}</p>
       <p className="mt-1 text-sm font-semibold leading-6">{copy}</p>
     </div>

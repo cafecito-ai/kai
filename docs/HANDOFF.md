@@ -12,7 +12,7 @@
 ## Production Setup
 
 1. Create Cloudflare D1, KV namespaces, R2 bucket, Pages project, and Worker.
-2. Replace placeholder IDs in `wrangler.toml`.
+2. Replace placeholder IDs in `wrangler.worker.toml` (D1 / KV / R2 bindings) and ensure the Cloudflare Pages project name in `wrangler.toml` matches the actual project.
 3. Configure Clerk and set `VITE_CLERK_PUBLISHABLE_KEY` plus Worker `CLERK_SECRET_KEY`.
 4. Configure Workers AI, Cloudflare Email Service, `EMAIL_FROM`, `USDA_API_KEY`, and `SAFETY_ALERT_EMAIL`.
 5. Run D1 migration `workers/migrations/0001_initial.sql`.

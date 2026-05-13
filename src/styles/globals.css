@@ -90,3 +90,95 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+/* Internal scope review doc at /scope. Keep typography readable for a
+ * long-form markdown render. Headings tighten as they nest. Tables get
+ * predictable cell padding so the decisions table doesn't crush. */
+.scope-doc h1 {
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0 0 1.25rem;
+  letter-spacing: -0.01em;
+}
+.scope-doc h2 {
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 2.25rem 0 0.75rem;
+  border-top: 1px solid var(--color-line, #e7e0d2);
+  padding-top: 1.5rem;
+}
+.scope-doc h2:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 1.5rem;
+}
+.scope-doc h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.5rem 0 0.5rem;
+}
+.scope-doc h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 1.25rem 0 0.5rem;
+}
+.scope-doc p,
+.scope-doc li {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  margin: 0 0 0.75rem;
+}
+.scope-doc ul,
+.scope-doc ol {
+  margin: 0 0 1rem 1.5rem;
+}
+.scope-doc ul { list-style: disc; }
+.scope-doc ol { list-style: decimal; }
+.scope-doc a {
+  color: #2d6a4f;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.scope-doc a:hover { text-decoration-thickness: 2px; }
+.scope-doc code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: #f2ede0;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+.scope-doc pre {
+  background: #f2ede0;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+.scope-doc pre code { background: transparent; padding: 0; }
+.scope-doc hr {
+  border: 0;
+  border-top: 1px solid var(--color-line, #e7e0d2);
+  margin: 2.5rem 0;
+}
+.scope-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.9rem;
+}
+.scope-doc th,
+.scope-doc td {
+  border: 1px solid var(--color-line, #e7e0d2);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.scope-doc th {
+  background: #f5efe2;
+  font-weight: 700;
+}
+.scope-doc strong { font-weight: 700; }
+.scope-doc em { font-style: italic; }

@@ -11,6 +11,7 @@ import { EngineMental } from "./pages/EngineMental";
 import { EnginePhysical } from "./pages/EnginePhysical";
 import { EnginePotential } from "./pages/EnginePotential";
 import { ForParents } from "./pages/ForParents";
+import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
@@ -64,6 +65,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={protectedOnboarding(<EnginePotential />)} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />
+          <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />

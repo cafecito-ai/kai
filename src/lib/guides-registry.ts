@@ -62,6 +62,16 @@ export const GUIDES: GuideEntry[] = [
     component: lazy(() =>
       import("../components/physical/BodyLiteracy").then((m) => ({ default: m.BodyLiteracy }))
     )
+  },
+  {
+    engine: "physical",
+    slug: "nutrition",
+    title: "Nutrition + fueling",
+    summary: "Real-food framing, sport fueling, intuitive eating, debunking diet-culture myths.",
+    clinicalReview: true,
+    component: lazy(() =>
+      import("../components/physical/NutritionPrimer").then((m) => ({ default: m.NutritionPrimer }))
+    )
   }
 ];
 

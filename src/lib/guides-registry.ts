@@ -117,6 +117,15 @@ export const GUIDES: GuideEntry[] = [
     component: lazy(() =>
       import("../components/physical/FocusStudyPrimer").then((m) => ({ default: m.FocusStudyPrimer }))
     )
+  },
+  {
+    engine: "potential",
+    slug: "money",
+    title: "Money + financial pressure",
+    summary: "Real money skills the school skipped — plus an honest look at family stress, college costs, and predatory products.",
+    component: lazy(() =>
+      import("../components/physical/MoneyPrimer").then((m) => ({ default: m.MoneyPrimer }))
+    )
   }
 ];
 

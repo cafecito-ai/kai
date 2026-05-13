@@ -20,10 +20,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${getApiBaseUrl()}${path}`;
   const token = await apiAuthTokenGetter?.();
   const devUser = getDevUser();
+  const isFormData = init?.body instanceof FormData;
   const res = await fetch(url, {
     ...init,
     headers: {
-      "content-type": "application/json",
+      ...(isFormData ? {} : { "content-type": "application/json" }),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...(!token && devUser ? { "x-dev-user": devUser } : {}),
       ...init?.headers
@@ -80,6 +81,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body)
     }),
+  uploadFoodPhoto: (file: File, note?: string) => {
+    const body = new FormData();
+    body.set("photo", file);
+    if (note?.trim()) body.set("note", note.trim());
+    return request<{ mealId: string; r2Key: string; items: Array<{ name: string; source?: string }>; totals: null; confidence: string; notes: string }>("/api/food-photo-upload", {
+      method: "POST",
+      body
+    });
+  },
   sendParentConsent: (body: { parentEmail: string; teenName?: string }) =>
     request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) }),
   getFriendCompare: () =>

@@ -26,6 +26,8 @@ const VISION_PROMPT = [
   "- Names should be everyday plain language (\"grilled chicken\", \"white rice\", \"broccoli\") not brand or recipe names."
 ].join("\n");
 
+const VISION_TIMEOUT_MS = 12_000;
+
 export function parseVisionResponse(raw: string): VisionResult | null {
   const jsonText = extractJsonObject(raw);
   if (!jsonText) return null;
@@ -79,16 +81,35 @@ export async function analyzeFoodPhoto(env: Env, r2Key: string): Promise<VisionR
   }
 
   try {
-    const result = (await env.AI.run(model, {
-      image: Array.from(image),
-      prompt: VISION_PROMPT,
-      max_tokens: 400,
-      temperature: 0.1
-    })) as { response?: string; description?: string };
+    const result = (await withTimeout(
+      env.AI.run(model, {
+        image: Array.from(image),
+        prompt: VISION_PROMPT,
+        max_tokens: 400,
+        temperature: 0.1
+      }),
+      VISION_TIMEOUT_MS
+    )) as { response?: string; description?: string };
     const raw = result.response || result.description || "";
     return parseVisionResponse(raw);
   } catch (err) {
     console.warn("vision: model call failed", err);
     return null;
   }
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("vision timeout")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
 }

@@ -67,8 +67,8 @@ export function SessionHero({
     <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-stretch">
       <div className="min-w-0 rounded-calm border border-line bg-white p-5 shadow-calm sm:p-7 lg:p-9">
         <p className="eyebrow">{eyebrow}</p>
-        <h1 className="mt-3 max-w-4xl font-display text-4xl font-black leading-[0.92] tracking-normal text-ink sm:text-6xl lg:text-7xl">{title}</h1>
-        {children && <div className="mt-4 max-w-2xl text-base font-medium leading-7 text-muted">{children}</div>}
+        <h1 className="mt-3 max-w-4xl break-words font-display text-3xl font-black leading-[0.96] tracking-normal text-ink sm:text-6xl lg:text-7xl">{title}</h1>
+        {children && <div className="mt-4 max-w-2xl break-words text-base font-medium leading-7 text-muted">{children}</div>}
         {action && <div className="mt-6 flex flex-col gap-2 sm:flex-row">{action}</div>}
       </div>
       {aside && <div className={`min-w-0 rounded-calm border border-line bg-warmPaper p-5 shadow-sm ${asideClassName}`}>{aside}</div>}

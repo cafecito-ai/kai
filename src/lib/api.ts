@@ -1,6 +1,5 @@
-import type { ChatMessage, EngineEntry, EngineId, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { ChatMessage, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
-const PROD_API_BASE = "https://kai.evan-ratner.workers.dev";
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 type TokenGetter = () => Promise<string | null>;
 
@@ -13,7 +12,7 @@ export function setApiAuthTokenGetter(getter: TokenGetter | null) {
 function getApiBaseUrl() {
   if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "");
   if (typeof window === "undefined") return "";
-  if (window.location.hostname === "kai.boostaisearch.ai") return PROD_API_BASE;
+  if (window.location.hostname === "kai.boostaisearch.ai") return "";
   return STAGING_API_BASE;
 }
 
@@ -21,10 +20,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${getApiBaseUrl()}${path}`;
   const token = await apiAuthTokenGetter?.();
   const devUser = getDevUser();
+  const isFormData = init?.body instanceof FormData;
   const res = await fetch(url, {
     ...init,
     headers: {
-      "content-type": "application/json",
+      ...(isFormData ? {} : { "content-type": "application/json" }),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...(!token && devUser ? { "x-dev-user": devUser } : {}),
       ...init?.headers
@@ -77,10 +77,19 @@ export const api = {
   createEngineEntry: (engine: EngineId, body: { entryType: string; title?: string; payload?: unknown; completed?: boolean }) =>
     request<{ entry: EngineEntry }>(`/api/engines/${engine}/entries`, { method: "POST", body: JSON.stringify(body) }),
   analyzeFoodPhoto: (body: { r2Key?: string; note?: string }) =>
-    request<{ mealId: string; items: Array<{ name: string; source?: string }>; totals: null; confidence: string; notes: string }>("/api/food-photo", {
+    request<FoodPhotoResult>("/api/food-photo", {
       method: "POST",
       body: JSON.stringify(body)
     }),
+  uploadFoodPhoto: (file: File, note?: string) => {
+    const body = new FormData();
+    body.set("photo", file);
+    if (note?.trim()) body.set("note", note.trim());
+    return request<FoodPhotoResult>("/api/food-photo-upload", {
+      method: "POST",
+      body
+    });
+  },
   sendParentConsent: (body: { parentEmail: string; teenName?: string }) =>
     request<{ ok: boolean; expiresAt: string; emailSent: boolean }>("/api/parent/consent/request", { method: "POST", body: JSON.stringify(body) }),
   getFriendCompare: () =>

@@ -13,6 +13,13 @@ routes = [
 [ai]
 binding = "AI"
 
+# Nightly streak/level recompute. Cron fires the `scheduled` handler in
+# workers/src/index.ts which walks every user with a progress event and
+# refreshes the cached summary. Without this, streaks only update when a
+# user opens the app — inactive users keep a stale (inflated) streak.
+[triggers]
+crons = ["0 7 * * *"]
+
 [[send_email]]
 name = "EMAIL"
 allowed_sender_addresses = ["hello@kai.boostaisearch.ai", "safety@kai.boostaisearch.ai", "noreply@kai.boostaisearch.ai"]

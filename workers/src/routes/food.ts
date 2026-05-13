@@ -16,8 +16,54 @@ type AnalyzedItem = {
   nutritionSource?: "usda" | null;
 };
 
+type FoodPhotoResponse = {
+  mealId: string;
+  r2Key?: string;
+  items: AnalyzedItem[];
+  totals: Nutrition | null;
+  confidence: "high" | "medium" | "low" | "photo_stub" | "manual_stub";
+  notes: string;
+};
+
 foodRoutes.post("/food-photo", async (c) => {
   const body = await c.req.json<{ r2Key?: string; note?: string }>();
+  return c.json(await analyzeAndSaveMeal(c.env, c.get("userId"), { r2Key: body.r2Key, note: body.note }));
+});
+
+foodRoutes.post("/food-photo-upload", async (c) => {
+  const form = await c.req.parseBody();
+  const photo = form.photo;
+  const note = typeof form.note === "string" ? form.note : undefined;
+
+  if (!(photo instanceof File)) {
+    return c.json({ error: "photo file is required" }, 400);
+  }
+  if (!photo.type.startsWith("image/")) {
+    return c.json({ error: "photo must be an image" }, 400);
+  }
+  if (photo.size > 8 * 1024 * 1024) {
+    return c.json({ error: "photo must be 8MB or smaller" }, 413);
+  }
+
+  const ext = extensionForContentType(photo.type);
+  const r2Key = `food-photos/${c.get("userId")}/${crypto.randomUUID()}${ext}`;
+  await c.env.UPLOADS.put(r2Key, await photo.arrayBuffer(), {
+    httpMetadata: { contentType: photo.type }
+  });
+
+  return c.json(await analyzeAndSaveMeal(c.env, c.get("userId"), { r2Key, note }));
+});
+
+foodRoutes.patch("/meals/:mealId", async (c) => {
+  const body = await c.req.json<{ items: unknown; notes?: string }>();
+  await c.env.DB
+    .prepare("UPDATE meals SET items = ?, notes = ? WHERE id = ? AND user_id = ?")
+    .bind(JSON.stringify(body.items), body.notes ?? null, c.req.param("mealId"), c.get("userId"))
+    .run();
+  return c.json({ meal: { id: c.req.param("mealId"), ...body } });
+});
+
+async function analyzeAndSaveMeal(env: Env, userId: string, body: { r2Key?: string; note?: string }): Promise<FoodPhotoResponse> {
   const id = crypto.randomUUID();
 
   let items: AnalyzedItem[] = [];
@@ -25,11 +71,11 @@ foodRoutes.post("/food-photo", async (c) => {
   let visionNotes = "";
 
   if (body.r2Key) {
-    const vision = await analyzeFoodPhoto(c.env, body.r2Key);
+    const vision = await analyzeFoodPhoto(env, body.r2Key);
     if (vision) {
       confidence = vision.confidence;
       visionNotes = vision.notes;
-      items = await enrichItemsWithNutrition(c.env, vision.items);
+      items = await enrichItemsWithNutrition(env, vision.items);
     } else {
       // Vision failed or returned nothing parseable. Fall back to the
       // photo_stub behavior so callers get a stable response shape, and
@@ -45,13 +91,13 @@ foodRoutes.post("/food-photo", async (c) => {
 
   const totals = aggregateTotals(items);
 
-  await c.env.DB
+  await env.DB
     .prepare(
       "INSERT INTO meals (id, user_id, photo_r2_key, items, total_calories, total_protein) VALUES (?, ?, ?, ?, ?, ?)"
     )
     .bind(
       id,
-      c.get("userId"),
+      userId,
       body.r2Key ?? null,
       JSON.stringify(items),
       totals ? totals.calories : null,
@@ -59,23 +105,22 @@ foodRoutes.post("/food-photo", async (c) => {
     )
     .run();
 
-  return c.json({
+  return {
     mealId: id,
+    r2Key: body.r2Key,
     items,
     totals,
     confidence,
     notes: visionNotes ? `${visionNotes} ${DESCRIPTIVE_NOTE}` : DESCRIPTIVE_NOTE
-  });
-});
+  };
+}
 
-foodRoutes.patch("/meals/:mealId", async (c) => {
-  const body = await c.req.json<{ items: unknown; notes?: string }>();
-  await c.env.DB
-    .prepare("UPDATE meals SET items = ?, notes = ? WHERE id = ? AND user_id = ?")
-    .bind(JSON.stringify(body.items), body.notes ?? null, c.req.param("mealId"), c.get("userId"))
-    .run();
-  return c.json({ meal: { id: c.req.param("mealId"), ...body } });
-});
+function extensionForContentType(contentType: string) {
+  if (contentType === "image/png") return ".png";
+  if (contentType === "image/webp") return ".webp";
+  if (contentType === "image/heic") return ".heic";
+  return ".jpg";
+}
 
 async function enrichItemsWithNutrition(env: Env, visionItems: VisionItem[]): Promise<AnalyzedItem[]> {
   const enriched = await Promise.all(

@@ -1,19 +1,32 @@
 import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
-import { IdentityPrimer } from "../components/physical/IdentityPrimer";
+import { SecondaryShelf } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { localSafetyCheck } from "../lib/safety";
 import type { EngineEntry } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
+const StressPrimer = lazy(() =>
+  import("../components/physical/StressPrimer").then((module) => ({ default: module.StressPrimer }))
+);
+const IdentityPrimer = lazy(() =>
+  import("../components/physical/IdentityPrimer").then((module) => ({ default: module.IdentityPrimer }))
+);
+const RelationshipsPrimer = lazy(() =>
+  import("../components/physical/RelationshipsPrimer").then((module) => ({ default: module.RelationshipsPrimer }))
+);
+
 export function EnginePhysical() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
   const [entries, setEntries] = useState<EngineEntry[]>([]);
   const [saving, setSaving] = useState("");
+  const [foodPhoto, setFoodPhoto] = useState<File | null>(null);
   const [foodSafetyMessage, setFoodSafetyMessage] = useState("");
+  const [foodPhotoMessage, setFoodPhotoMessage] = useState("");
 
   useEffect(() => {
     void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
@@ -76,19 +89,72 @@ export function EnginePhysical() {
     });
   }
 
+  async function uploadFoodPhoto() {
+    setFoodSafetyMessage("");
+    setFoodPhotoMessage("");
+    if (!foodPhoto) {
+      setFoodPhotoMessage("Choose or take a food photo first.");
+      return;
+    }
+    const safety = localSafetyCheck(meal);
+    if (!safety.safe) {
+      setFoodSafetyMessage(
+        "This sounds bigger than a normal food note. Kai will not score, reward, or optimize restriction. If eating or body thoughts feel hard to control, bring in a trusted adult or clinician."
+      );
+      return;
+    }
+
+    setSaving("food_photo_upload");
+    try {
+      const photoResult = await api.uploadFoodPhoto(foodPhoto, meal);
+      setFoodPhotoMessage(photoResult.items.length > 0 ? `Photo saved. Kai saw: ${photoResult.items.map((item) => item.name).join(", ")}.` : "Photo saved. Add a note if Kai could not read the food clearly.");
+      await completeEntry({
+        entryType: "food_photo",
+        title: "Food photo",
+        payload: {
+          meal,
+          mealId: photoResult.mealId,
+          r2Key: photoResult.r2Key,
+          items: photoResult.items,
+          notes: photoResult.notes,
+          labels: ["meal", "photo", "editable", "no calorie target"]
+        },
+        eventType: "food_photo",
+        eventValue: 28
+      });
+      setFoodPhoto(null);
+    } catch {
+      setFoodPhotoMessage("Could not upload that photo yet. The fuel note still works.");
+    } finally {
+      setSaving("");
+    }
+  }
+
   return (
     <EnginePanel title="Physical wellness" label="Body" accent="text-sage" intro="Food, movement, sleep, stretching, and breathing. Useful, pattern-aware, never obsessive.">
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-kai border border-line bg-ink p-5 text-paper shadow-soft sm:p-6">
-          <p className="eyebrow text-soft">food tracking</p>
+        <section className="rounded-calm border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
+          <p className="eyebrow text-soft">start here</p>
           <h2 className="mt-3 max-w-xl font-display text-4xl font-black leading-none tracking-normal">
             Fuel notes, not calorie math.
           </h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-paper/70">
+          <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-paper/70">
             The first version captures what happened, how it felt, and what helped. It avoids good/bad meal labels, body scoring, and weight-loss loops.
           </p>
           <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
           {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
+          <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-black text-paper hover:border-white/40">
+            <Camera size={18} aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate">{foodPhoto ? foodPhoto.name : "Take or choose a food photo"}</span>
+            <input
+              className="sr-only"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(event) => setFoodPhoto(event.target.files?.[0] ?? null)}
+            />
+          </label>
+          {foodPhotoMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodPhotoMessage}</p>}
           <div className="mt-4 grid grid-cols-3 gap-2">
             {foodExamples.map((example) => (
               <button
@@ -112,6 +178,14 @@ export function EnginePhysical() {
             <Button
               variant="secondary"
               className="border-white/20 bg-white/10 text-paper hover:border-white/50"
+              disabled={!foodPhoto || saving === "food_photo_upload"}
+              onClick={() => void uploadFoodPhoto()}
+            >
+              {saving === "food_photo_upload" ? "Uploading" : "Analyze selected photo"}
+            </Button>
+            <Button
+              variant="secondary"
+              className="border-white/20 bg-white/10 text-paper hover:border-white/50"
               disabled={saving === "food_photo_stub"}
               onClick={() => void logMeal("food_photo_stub")}
             >
@@ -119,85 +193,114 @@ export function EnginePhysical() {
             </Button>
           </div>
         </section>
-        <section className="grid gap-3">
-          <div className="overflow-hidden rounded-kai border border-line bg-white shadow-sm">
-            <img src="/images/food-photo-examples.png" alt="Example food photos for Kai food logging" className="h-48 w-full object-cover" />
-            <div className="p-4">
-              <p className="eyebrow">photo examples</p>
-              <h3 className="mt-2 font-display text-xl font-black tracking-normal">Descriptive, not judgmental.</h3>
-              <p className="mt-2 text-sm leading-6 text-muted">Kai can use photos as context, then asks what helped and how it felt. No calorie targets or food scores.</p>
+        <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+          <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-4 rounded-kai p-2">
+            <span>
+              <span className="eyebrow block">how body works</span>
+              <span className="mt-2 block font-display text-2xl font-black leading-none tracking-normal">Descriptive, not judgmental.</span>
+              <span className="mt-2 block text-sm font-semibold leading-6 text-muted">Kai keeps context, patterns, and guardrails behind the first rep.</span>
+            </span>
+            <span className="shrink-0 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-muted group-open:bg-ink group-open:text-paper">
+              Open
+            </span>
+          </summary>
+          <div className="mt-4 grid gap-3">
+            <div className="overflow-hidden rounded-calm border border-line bg-white shadow-sm">
+              <img src="/images/food-photo-examples.png" alt="Example food photos for Kai food logging" className="h-48 w-full object-cover" />
+              <div className="p-4">
+                <p className="eyebrow">photo examples</p>
+                <h3 className="mt-2 font-display text-xl font-black tracking-normal">Photos are context.</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">Kai can use photos as context, then asks what helped and how it felt. No calorie targets or food scores.</p>
+              </div>
             </div>
+            <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, hunger/fullness, energy after, and any useful context." />
+            <PhysicalModule icon={<Camera />} title="Photo flow" copy="R2 upload and Workers AI vision slot. Output stays soft: sandwich, fruit, water." />
+            <PhysicalModule icon={<Wind />} title="Guardrail" copy="Risk language redirects to support. No restriction rewards or body comparison." />
           </div>
-          <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, hunger/fullness, energy after, and any useful context." />
-          <PhysicalModule icon={<Camera />} title="Photo flow" copy="R2 upload and Workers AI vision slot. Output stays soft: sandwich, fruit, water." />
-          <PhysicalModule icon={<Wind />} title="Guardrail" copy="Risk language redirects to support. No restriction rewards or body comparison." />
-        </section>
+        </details>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <ActionCard
-          icon={<Dumbbell />}
-          title="Movement"
-          copy="Practice, sport, walk, lift, stretch."
-          action={saving === "movement_log" ? "Logging" : "Log 35 min"}
-          onClick={() =>
-            completeEntry({
-              entryType: "movement_log",
-              title: "Movement",
-              payload: { type: "sport", duration: 35 },
-              eventType: "workout",
-              eventValue: 30
-            })
-          }
-        />
-        <ActionCard
-          icon={<Moon />}
-          title="Sleep"
-          copy="Quality, blockers, and one experiment."
-          action={saving === "sleep_log" ? "Logging" : "Log sleep"}
-          onClick={() =>
-            completeEntry({
-              entryType: "sleep_log",
-              title: "Sleep check",
-              payload: { quality: 7 },
-              eventType: "sleep_log",
-              eventValue: 18
-            })
-          }
-        />
-        <ActionCard
-          icon={<Wind />}
-          title="Recovery"
-          copy="Breathing, soreness, hydration, reset."
-          action={saving === "recovery_reset" ? "Saving" : "Complete reset"}
-          onClick={() =>
-            completeEntry({
-              entryType: "recovery_reset",
-              title: "Recovery reset",
-              payload: { pattern: "box" },
-              eventType: "breathing_session",
-              eventValue: 20
-            })
-          }
-        />
-      </div>
-      <IdentityPrimer
-        onRead={({ articleId }) =>
-          addEvent({
-            engine: "physical",
-            eventType: "identity_primer_read",
-            eventValue: 6,
-            payload: { articleId }
-          })
-        }
-      />
-      <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="eyebrow">body history</p>
-            <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent physical entries</h2>
-          </div>
-          <span className="rounded-full bg-lime px-3 py-1 text-xs font-black text-sage">{entries.length} saved</span>
+      <SecondaryShelf eyebrow="more body reps" title="Movement, sleep, and recovery." summary="Use these when fuel is not the right first rep." count="3 tools">
+        <div className="grid gap-4 md:grid-cols-3">
+          <ActionCard
+            icon={<Dumbbell />}
+            title="Movement (manual)"
+            copy="Practice, sport, walk, lift, stretch — log any session that wasn't a guided routine."
+            action={saving === "movement_log" ? "Logging" : "Log 35 min"}
+            onClick={() =>
+              completeEntry({
+                entryType: "movement_log",
+                title: "Movement",
+                payload: { type: "sport", duration: 35 },
+                eventType: "workout",
+                eventValue: 30
+              })
+            }
+          />
+          <ActionCard
+            icon={<Moon />}
+            title="Sleep"
+            copy="Quality, blockers, and one experiment."
+            action={saving === "sleep_log" ? "Logging" : "Log sleep"}
+            onClick={() =>
+              completeEntry({
+                entryType: "sleep_log",
+                title: "Sleep check",
+                payload: { quality: 7 },
+                eventType: "sleep_log",
+                eventValue: 18
+              })
+            }
+          />
+          <ActionCard
+            icon={<Wind />}
+            title="Recovery"
+            copy="Breathing, soreness, hydration, reset."
+            action={saving === "recovery_reset" ? "Saving" : "Complete reset"}
+            onClick={() =>
+              completeEntry({
+                entryType: "recovery_reset",
+                title: "Recovery reset",
+                payload: { pattern: "box" },
+                eventType: "breathing_session",
+                eventValue: 20
+              })
+            }
+          />
         </div>
+      </SecondaryShelf>
+      <Suspense fallback={null}>
+        <StressPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "physical",
+              eventType: "stress_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+        <IdentityPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "physical",
+              eventType: "identity_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+        <RelationshipsPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "physical",
+              eventType: "relationships_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+      </Suspense>
+      <SecondaryShelf eyebrow="body history" title="Recent physical entries" count={`${entries.length} saved`}>
         <div className="space-y-2">
           {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Body entries yet. Log one fuel, movement, sleep, or recovery note.</p>}
           {entries.slice(0, 6).map((entry) => (
@@ -210,7 +313,12 @@ export function EnginePhysical() {
             </div>
           ))}
         </div>
-      </section>
+      </SecondaryShelf>
+      <EngineGuidesIndex
+        engine="physical"
+        title="Body + safety guides"
+        intro="Quick reads on sleep, nutrition, body literacy, and the harder topics. Each one is 3-5 minutes. Kai links to these when relevant."
+      />
     </EnginePanel>
   );
 }

@@ -1,7 +1,10 @@
+/* global AbortController, Blob, Buffer, FormData */
+
 const baseUrl = (process.env.KAI_API_BASE_URL || "https://kai-staging.evan-ratner.workers.dev").replace(/\/$/, "");
 const devUser = process.env.KAI_DEV_USER || `smoke-${Date.now()}`;
 const token = process.env.KAI_AUTH_TOKEN || "";
 const runChat = process.env.KAI_SMOKE_CHAT === "1";
+const runFoodUpload = process.env.KAI_SMOKE_FOOD_UPLOAD === "1";
 
 const headers = {
   "content-type": "application/json",
@@ -25,6 +28,30 @@ async function request(path, init = {}) {
   }
   if (!response.ok) {
     throw new Error(`${init.method || "GET"} ${path} failed with ${response.status}: ${text}`);
+  }
+  return body;
+}
+
+async function requestForm(path, form) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 35_000);
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    signal: controller.signal,
+    headers: {
+      ...(token ? { authorization: `Bearer ${token}` } : { "x-dev-user": devUser })
+    },
+    body: form
+  }).finally(() => clearTimeout(timeout));
+  const text = await response.text();
+  let body;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = text;
+  }
+  if (!response.ok) {
+    throw new Error(`POST ${path} failed with ${response.status}: ${text}`);
   }
   return body;
 }
@@ -99,6 +126,18 @@ async function main() {
     throw new Error("Food photo smoke expected no calorie totals by default");
   }
   console.log(`Food photo meal: ${foodPhoto.mealId}`);
+
+  if (runFoodUpload) {
+    const pngBytes = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64");
+    const form = new FormData();
+    form.set("photo", new Blob([pngBytes], { type: "image/png" }), "smoke-food.png");
+    form.set("note", "smoke test food photo");
+    const uploadedFoodPhoto = await requestForm("/api/food-photo-upload", form);
+    if (!uploadedFoodPhoto.r2Key || !uploadedFoodPhoto.mealId) {
+      throw new Error("Food photo upload smoke did not return r2Key and mealId");
+    }
+    console.log(`Food photo upload: ${uploadedFoodPhoto.mealId} / ${uploadedFoodPhoto.r2Key}`);
+  }
 
   const entries = await request("/api/engines/physical/entries");
   if (!entries.entries.some((item) => item.id === entry.entry.id)) {

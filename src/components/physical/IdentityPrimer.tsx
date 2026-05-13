@@ -6,6 +6,7 @@ import {
   type IdentityArticle,
   type IdentityCategory
 } from "../../lib/identity-primer";
+import { ArticleBody } from "../shared/ArticleBody";
 
 type Props = {
   onRead?: (input: { articleId: string }) => void;
@@ -97,11 +98,7 @@ export function IdentityPrimer({ onRead }: Props) {
                       </button>
                       {isOpen && (
                         <div className="border-t border-line p-4">
-                          <div className="space-y-3 text-sm leading-6 text-ink">
-                            {article.body.split("\n\n").map((paragraph, idx) => (
-                              <p key={idx}>{paragraph}</p>
-                            ))}
-                          </div>
+                          <ArticleBody body={article.body} />
                           {article.takeaways.length > 0 && (
                             <div className="mt-4 rounded-kai border border-sage/30 bg-lime p-3">
                               <p className="text-xs font-bold uppercase tracking-wider text-sage">Takeaways</p>

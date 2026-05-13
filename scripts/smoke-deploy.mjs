@@ -33,6 +33,16 @@ const cases = [
     path: "/",
     expectStatus: 200,
     expectContentTypeStartsWith: "text/html"
+  },
+  {
+    // /scope is an SPA route added in PR #69. Including it here means any
+    // future Pages deploy that doesn't pick up the latest bundle will fail
+    // the smoke and turn the deploy red — exactly the gap that let the
+    // 2026-05-13 stale deploy land silently.
+    name: "/scope SPA route reachable",
+    path: "/scope",
+    expectStatus: 200,
+    expectContentTypeStartsWith: "text/html"
   }
 ];
 

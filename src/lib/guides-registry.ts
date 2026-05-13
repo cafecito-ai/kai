@@ -72,6 +72,15 @@ export const GUIDES: GuideEntry[] = [
     component: lazy(() =>
       import("../components/physical/NutritionPrimer").then((m) => ({ default: m.NutritionPrimer }))
     )
+  },
+  {
+    engine: "physical",
+    slug: "digital-wellbeing",
+    title: "Digital wellbeing",
+    summary: "Screens, scrolling, sleep, focus, social comparison — and what helps reclaim agency.",
+    component: lazy(() =>
+      import("../components/physical/DigitalWellbeing").then((m) => ({ default: m.DigitalWellbeing }))
+    )
   }
 ];
 

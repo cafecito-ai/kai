@@ -90,6 +90,15 @@ export const GUIDES: GuideEntry[] = [
     component: lazy(() =>
       import("../components/physical/CycleTracker").then((m) => ({ default: m.CycleTracker }))
     )
+  },
+  {
+    engine: "physical",
+    slug: "hydration",
+    title: "Hydration",
+    summary: "A nudge to sip. No streaks, no goals. Pee color is the real signal.",
+    component: lazy(() =>
+      import("../components/physical/HydrationTracker").then((m) => ({ default: m.HydrationTracker }))
+    )
   }
 ];
 

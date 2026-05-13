@@ -171,6 +171,48 @@ export function MetricPill({ label, value, tone = "neutral" }: { label: string; 
   );
 }
 
+export function AppWorkspace({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <section className={`min-w-0 overflow-hidden rounded-calm border border-line bg-white shadow-calm ${className}`}>
+      {children}
+    </section>
+  );
+}
+
+export function SecondaryShelf({
+  eyebrow,
+  title,
+  summary,
+  count,
+  children,
+  defaultOpen = false
+}: {
+  eyebrow: string;
+  title: ReactNode;
+  summary?: ReactNode;
+  count?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details open={defaultOpen} className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+      <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-4 rounded-kai p-2">
+        <span className="min-w-0">
+          <span className="eyebrow block">{eyebrow}</span>
+          <span className="mt-2 block font-display text-2xl font-black leading-none tracking-normal">{title}</span>
+          {summary && <span className="mt-2 block text-sm font-semibold leading-6 text-muted">{summary}</span>}
+        </span>
+        {count && (
+          <span className="shrink-0 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-muted group-open:bg-ink group-open:text-paper">
+            {count}
+          </span>
+        )}
+      </summary>
+      <div className="mt-4">{children}</div>
+    </details>
+  );
+}
+
 export function StepShell({
   eyebrow,
   title,

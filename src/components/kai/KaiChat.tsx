@@ -4,7 +4,7 @@ import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
 
-export function KaiChat() {
+export function KaiChat({ embedded = false }: { embedded?: boolean }) {
   const { messages, send, sending } = useKaiStore();
   const [draft, setDraft] = useState("");
 
@@ -15,8 +15,10 @@ export function KaiChat() {
     setDraft("");
   }
 
+  const shellClass = embedded ? "overflow-hidden rounded-[24px] border border-line bg-white" : "overflow-hidden rounded-calm border border-line bg-white shadow-calm";
+
   return (
-    <section className="overflow-hidden rounded-calm border border-line bg-white shadow-calm">
+    <section className={shellClass}>
       <div className="mb-4 flex items-center justify-between border-b border-line bg-warmPaper/70">
         <div className="p-5 pb-4">
           <p className="eyebrow">kai check-in</p>

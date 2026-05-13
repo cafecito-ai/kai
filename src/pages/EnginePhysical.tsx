@@ -136,8 +136,8 @@ export function EnginePhysical() {
       <div className="grid gap-4 md:grid-cols-3">
         <ActionCard
           icon={<Dumbbell />}
-          title="Movement"
-          copy="Practice, sport, walk, lift, stretch."
+          title="Movement (manual)"
+          copy="Practice, sport, walk, lift, stretch — log any session that wasn't a guided routine."
           action={saving === "movement_log" ? "Logging" : "Log 35 min"}
           onClick={() =>
             completeEntry({

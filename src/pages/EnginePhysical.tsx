@@ -14,7 +14,9 @@ export function EnginePhysical() {
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
   const [entries, setEntries] = useState<EngineEntry[]>([]);
   const [saving, setSaving] = useState("");
+  const [foodPhoto, setFoodPhoto] = useState<File | null>(null);
   const [foodSafetyMessage, setFoodSafetyMessage] = useState("");
+  const [foodPhotoMessage, setFoodPhotoMessage] = useState("");
 
   useEffect(() => {
     void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
@@ -77,6 +79,47 @@ export function EnginePhysical() {
     });
   }
 
+  async function uploadFoodPhoto() {
+    setFoodSafetyMessage("");
+    setFoodPhotoMessage("");
+    if (!foodPhoto) {
+      setFoodPhotoMessage("Choose or take a food photo first.");
+      return;
+    }
+    const safety = localSafetyCheck(meal);
+    if (!safety.safe) {
+      setFoodSafetyMessage(
+        "This sounds bigger than a normal food note. Kai will not score, reward, or optimize restriction. If eating or body thoughts feel hard to control, bring in a trusted adult or clinician."
+      );
+      return;
+    }
+
+    setSaving("food_photo_upload");
+    try {
+      const photoResult = await api.uploadFoodPhoto(foodPhoto, meal);
+      setFoodPhotoMessage(photoResult.items.length > 0 ? `Photo saved. Kai saw: ${photoResult.items.map((item) => item.name).join(", ")}.` : "Photo saved. Add a note if Kai could not read the food clearly.");
+      await completeEntry({
+        entryType: "food_photo",
+        title: "Food photo",
+        payload: {
+          meal,
+          mealId: photoResult.mealId,
+          r2Key: photoResult.r2Key,
+          items: photoResult.items,
+          notes: photoResult.notes,
+          labels: ["meal", "photo", "editable", "no calorie target"]
+        },
+        eventType: "food_photo",
+        eventValue: 28
+      });
+      setFoodPhoto(null);
+    } catch {
+      setFoodPhotoMessage("Could not upload that photo yet. The fuel note still works.");
+    } finally {
+      setSaving("");
+    }
+  }
+
   return (
     <EnginePanel title="Physical wellness" label="Body" accent="text-sage" intro="Food, movement, sleep, stretching, and breathing. Useful, pattern-aware, never obsessive.">
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
@@ -90,6 +133,18 @@ export function EnginePhysical() {
           </p>
           <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
           {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
+          <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-black text-paper hover:border-white/40">
+            <Camera size={18} aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate">{foodPhoto ? foodPhoto.name : "Take or choose a food photo"}</span>
+            <input
+              className="sr-only"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(event) => setFoodPhoto(event.target.files?.[0] ?? null)}
+            />
+          </label>
+          {foodPhotoMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodPhotoMessage}</p>}
           <div className="mt-4 grid grid-cols-3 gap-2">
             {foodExamples.map((example) => (
               <button
@@ -109,6 +164,14 @@ export function EnginePhysical() {
               onClick={() => logMeal("meal_log")}
             >
               {saving === "meal_log" ? "Logging" : "Log fuel note"}
+            </Button>
+            <Button
+              variant="secondary"
+              className="border-white/20 bg-white/10 text-paper hover:border-white/50"
+              disabled={!foodPhoto || saving === "food_photo_upload"}
+              onClick={() => void uploadFoodPhoto()}
+            >
+              {saving === "food_photo_upload" ? "Uploading" : "Analyze selected photo"}
             </Button>
             <Button
               variant="secondary"

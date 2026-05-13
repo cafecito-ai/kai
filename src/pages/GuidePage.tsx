@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
 import { CrisisLink } from "../components/shared/CrisisLink";
+import { AppPage } from "../components/ui/AppPrimitives";
 import { findGuide, type GuideEngine } from "../lib/guides-registry";
 
 const ENGINE_LABELS: Record<GuideEngine, string> = {
@@ -29,7 +30,7 @@ export function GuidePage() {
   const Component = guide.component;
 
   return (
-    <article className="mx-auto max-w-3xl space-y-4">
+    <AppPage className="max-w-3xl">
       <nav className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted">
         <Link
           to={`/engine/${guide.engine}`}
@@ -53,7 +54,7 @@ export function GuidePage() {
       <Suspense fallback={<GuideLoading />}>
         <Component />
       </Suspense>
-    </article>
+    </AppPage>
   );
 }
 

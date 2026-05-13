@@ -2,6 +2,7 @@ import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-rea
 import { useEffect, useState } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
+import { RelationshipsPrimer } from "../components/physical/RelationshipsPrimer";
 import { StressPrimer } from "../components/physical/StressPrimer";
 import { SecondaryShelf } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
@@ -264,6 +265,16 @@ export function EnginePhysical() {
           addEvent({
             engine: "physical",
             eventType: "stress_primer_read",
+            eventValue: 6,
+            payload: { articleId }
+          })
+        }
+      />
+      <RelationshipsPrimer
+        onRead={({ articleId }) =>
+          addEvent({
+            engine: "physical",
+            eventType: "relationships_primer_read",
             eventValue: 6,
             payload: { articleId }
           })

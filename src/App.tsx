@@ -18,6 +18,7 @@ import { Onboarding } from "./pages/Onboarding";
 import { Ops } from "./pages/Ops";
 import { PolicyPage } from "./pages/PolicyPage";
 import { Progress } from "./pages/Progress";
+import { Scope } from "./pages/Scope";
 import { Settings } from "./pages/Settings";
 
 export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
@@ -70,6 +71,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/design" element={<DesignPicker />} />
+          <Route path="/scope" element={<Scope />} />
           <Route path="/ops" element={protectedAuth(<Ops />)} />
           <Route path="/for-parents" element={<ForParents />} />
           <Route path="/terms" element={<PolicyPage kind="terms" />} />

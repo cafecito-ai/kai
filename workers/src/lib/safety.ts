@@ -1,6 +1,11 @@
 import type { Env, SafetyClassification } from "../types";
 import { ensureUser } from "./db";
 import { sendParentSafetyAlert } from "./email";
+import { extractJsonObject } from "./json-utils";
+
+// Re-export so existing imports (workers/test/safety.test.ts) keep working
+// without touching every caller. Single source of truth lives in json-utils.
+export { extractJsonObject };
 
 const PARENT_NOTIFIABLE_CATEGORIES = new Set<NonNullable<SafetyClassification["category"]>>([
   "suicide_ideation",
@@ -48,43 +53,6 @@ export function classifySafety(text: string): SafetyClassification {
     severity: match.severity,
     response: STANDARD_SAFETY_RESPONSE
   };
-}
-
-/**
- * Pull the first balanced {...} JSON object out of a model response. Llama
- * 3.1 8B often prefixes JSON with chatty preamble or wraps it in a markdown
- * code fence; this finds the JSON regardless.
- *
- * Returns the JSON substring or null if nothing balanced was found.
- */
-export function extractJsonObject(raw: string): string | null {
-  const start = raw.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let inString = false;
-  let escape = false;
-  for (let i = start; i < raw.length; i++) {
-    const char = raw[i];
-    if (escape) {
-      escape = false;
-      continue;
-    }
-    if (char === "\\" && inString) {
-      escape = true;
-      continue;
-    }
-    if (char === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (inString) continue;
-    if (char === "{") depth++;
-    else if (char === "}") {
-      depth--;
-      if (depth === 0) return raw.slice(start, i + 1);
-    }
-  }
-  return null;
 }
 
 /**

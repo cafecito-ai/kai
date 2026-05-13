@@ -1,43 +1,8 @@
 import type { EngineId, Env } from "../types";
+import { extractJsonObject } from "./json-utils";
 import { ENGINE_ROUTING_PROMPT, INTAKE_SUMMARY_PROMPT } from "./prompts/intake";
 
 const VALID_ENGINES = new Set<EngineId>(["physical", "potential", "mental"]);
-
-/**
- * Pull the first balanced {...} JSON object out of a model response. Llama
- * 3.1 8B often prefixes JSON with chatty preamble or wraps it in a markdown
- * code fence. Duplicated here so this PR is independent of P1-1; consolidate
- * into a shared util when both land.
- */
-function extractJsonObject(raw: string): string | null {
-  const start = raw.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let inString = false;
-  let escape = false;
-  for (let i = start; i < raw.length; i++) {
-    const char = raw[i];
-    if (escape) {
-      escape = false;
-      continue;
-    }
-    if (char === "\\" && inString) {
-      escape = true;
-      continue;
-    }
-    if (char === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (inString) continue;
-    if (char === "{") depth++;
-    else if (char === "}") {
-      depth--;
-      if (depth === 0) return raw.slice(start, i + 1);
-    }
-  }
-  return null;
-}
 
 export type EngineRouting = { engine: EngineId; reasoning: string };
 

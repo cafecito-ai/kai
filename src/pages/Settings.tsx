@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AppHero, AppPage, AppSurface } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { KaiTone } from "../lib/types";
@@ -51,12 +52,9 @@ export function Settings() {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
-      <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-        <p className="eyebrow">Settings</p>
-        <h1 className="mt-2 font-display text-4xl font-black tracking-normal">Tune Kai’s voice.</h1>
-      </section>
-      <section className="space-y-4 rounded-kai border border-line bg-white p-5 shadow-sm">
+    <AppPage className="max-w-xl">
+      <AppHero eyebrow="settings" title="Tune Kai's voice." />
+      <AppSurface className="space-y-4 p-5">
         <label className="block text-sm font-semibold">
           Kai name
           <input className="field mt-2" value={name} onChange={(event) => setName(event.target.value)} />
@@ -74,8 +72,8 @@ export function Settings() {
           {saved && <span className="text-sm font-semibold text-sage">Saved</span>}
         </div>
         {error && <p className="text-sm font-semibold text-muted">{error}</p>}
-      </section>
-      <section className="space-y-4 rounded-kai border border-line bg-white p-5 shadow-sm">
+      </AppSurface>
+      <AppSurface className="space-y-4 p-5">
         <div>
           <p className="eyebrow">Parent consent</p>
           <h2 className="mt-2 font-display text-2xl font-black tracking-normal">{consentLabel(consentStatus)}</h2>
@@ -94,8 +92,8 @@ export function Settings() {
           </Button>
           {consentMessage && <span className="text-sm font-semibold text-muted">{consentMessage}</span>}
         </div>
-      </section>
-    </div>
+      </AppSurface>
+    </AppPage>
   );
 }
 

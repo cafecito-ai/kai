@@ -13,7 +13,7 @@ export function Button({ children, variant = "primary", className = "", ...props
   };
   return (
     <button
-      className={`focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-bold transition ${variants[variant]} ${className}`}
+      className={`focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 ${variants[variant]} ${className}`}
       {...props}
     >
       {children}

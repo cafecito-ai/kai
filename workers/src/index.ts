@@ -11,6 +11,7 @@ import { strengthsRoutes } from "./routes/strengths";
 import { userRoutes } from "./routes/user";
 import { requireAuth } from "./lib/auth";
 import { consumeConsentToken } from "./lib/consent";
+import { recomputeAllProgressSummaries } from "./lib/progress";
 import type { AppVariables, Env } from "./types";
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -42,4 +43,29 @@ function consentHtml(message: string) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kai parent consent</title><style>body{margin:0;font-family:Inter,ui-sans-serif,system-ui;background:#f7f3ea;color:#161616;display:grid;min-height:100vh;place-items:center;padding:24px}.card{max-width:460px;background:white;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:24px;box-shadow:0 14px 45px rgba(0,0,0,.08)}p{line-height:1.5}</style></head><body><main class="card"><p style="font-weight:800;text-transform:uppercase;font-size:12px;color:#e35d4f">Kai</p><h1>Parent consent</h1><p>${message}</p></main></body></html>`;
 }
 
-export default app;
+/**
+ * Cron-driven nightly recompute of progress summaries. Without this, a
+ * teen's streak only refreshes when they open the app — meaning a stale
+ * streak count can persist in KV (and in the Kai system prompt context)
+ * for inactive users. Running at 07:00 UTC means most teens see correct
+ * numbers by the time they wake up locally; the choice is arbitrary —
+ * the only requirement is "once per day."
+ *
+ * Spec hook: P1-4 nightly streak recompute from
+ * `/home/eratner/.claude/plans/lets-review-kai-boostaisearch-ai-and-imperative-dove.md`.
+ */
+export default {
+  fetch: app.fetch.bind(app),
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(
+      (async () => {
+        try {
+          const report = await recomputeAllProgressSummaries(env);
+          console.log("nightly progress recompute", report);
+        } catch (err) {
+          console.error("nightly progress recompute fatal", err);
+        }
+      })()
+    );
+  }
+} satisfies ExportedHandler<Env>;

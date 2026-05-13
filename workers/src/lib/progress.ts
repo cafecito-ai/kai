@@ -82,3 +82,41 @@ export async function computeProgressSummary(env: Env, userId: string): Promise<
 
   return summary;
 }
+
+/**
+ * Walks every user with at least one progress event and recomputes their
+ * cached summary. Intended for the nightly scheduled trigger so streaks
+ * decay even when the user hasn't opened the app today (the on-demand
+ * cache otherwise only refreshes on visit).
+ *
+ * Returns a small report so the scheduled handler can log a one-line
+ * summary. Failures on individual users are caught and counted, not
+ * rethrown — one bad user shouldn't poison the rest of the batch.
+ */
+export async function recomputeAllProgressSummaries(env: Env): Promise<{
+  total: number;
+  ok: number;
+  failed: number;
+}> {
+  const { results } = await env.DB
+    .prepare("SELECT DISTINCT user_id FROM progress_events")
+    .all<{ user_id: string }>();
+  const userIds = (results ?? []).map((r) => r.user_id).filter(Boolean);
+  let ok = 0;
+  let failed = 0;
+  for (const userId of userIds) {
+    try {
+      // Invalidate first so computeProgressSummary recomputes from D1
+      // rather than returning the stale cache.
+      if (env.PROGRESS_KV) {
+        await env.PROGRESS_KV.delete(summaryCacheKey(userId));
+      }
+      await computeProgressSummary(env, userId);
+      ok += 1;
+    } catch (err) {
+      failed += 1;
+      console.warn("nightly progress recompute failed for user", userId, err);
+    }
+  }
+  return { total: userIds.length, ok, failed };
+}

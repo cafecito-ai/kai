@@ -80,59 +80,73 @@ export function EngineMental() {
           }
         />
       </div>
-      <BreathingPlayer
-        onSessionComplete={({ patternId, seconds }) =>
-          completeReset({
-            eventType: "mental_breathing",
-            title: `Breathing — ${patternId}`,
-            payload: { patternId, seconds },
-            eventValue: Math.min(40, 8 + Math.round(seconds / 10))
-          })
-        }
-      />
-      <MeditationPlayer
-        onSessionComplete={({ durationSeconds, elapsedSeconds, completed }) =>
-          completeReset({
-            eventType: "meditation",
-            title: `Meditation — ${Math.round(durationSeconds / 60)} min`,
-            payload: { durationSeconds, elapsedSeconds, completed },
-            eventValue: Math.min(45, 10 + Math.round(elapsedSeconds / 12))
-          })
-        }
-      />
-      <SocialMediaReset
-        onComplete={(payload) =>
-          completeReset({
-            eventType: "social_reset",
-            title: "Social media reset",
-            payload,
-            // Full three-step engagement gets the bonus; bailing after step 2
-            // still saves but earns the base.
-            eventValue: 18 + (payload.replacement.trim() ? 6 : 0)
-          })
-        }
-      />
-      <FutureSelfLetter
-        onComplete={(payload) =>
-          completeReset({
-            eventType: "letter_written",
-            title: `Letter to ${payload.direction} me`,
-            payload,
-            // Length-scaled event value: a teen who wrote >120 chars earns
-            // the full bonus over a one-line save.
-            eventValue: 18 + (payload.body.trim().length > 120 ? 8 : 4)
-          })
-        }
-      />
-      <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+        <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-4 rounded-kai p-2">
+          <span>
+            <span className="eyebrow block">more reset tools</span>
+            <span className="mt-2 block font-display text-2xl font-black leading-none tracking-normal">Breathing, meditation, social reset, letter.</span>
+            <span className="mt-2 block text-sm font-semibold leading-6 text-muted">Open these when the first check-in is not the right rep.</span>
+          </span>
+          <span className="shrink-0 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-muted group-open:bg-ink group-open:text-paper">
+            Open
+          </span>
+        </summary>
+        <div className="mt-4 grid gap-4">
+          <BreathingPlayer
+            onSessionComplete={({ patternId, seconds }) =>
+              completeReset({
+                eventType: "mental_breathing",
+                title: `Breathing — ${patternId}`,
+                payload: { patternId, seconds },
+                eventValue: Math.min(40, 8 + Math.round(seconds / 10))
+              })
+            }
+          />
+          <MeditationPlayer
+            onSessionComplete={({ durationSeconds, elapsedSeconds, completed }) =>
+              completeReset({
+                eventType: "meditation",
+                title: `Meditation — ${Math.round(durationSeconds / 60)} min`,
+                payload: { durationSeconds, elapsedSeconds, completed },
+                eventValue: Math.min(45, 10 + Math.round(elapsedSeconds / 12))
+              })
+            }
+          />
+          <SocialMediaReset
+            onComplete={(payload) =>
+              completeReset({
+                eventType: "social_reset",
+                title: "Social media reset",
+                payload,
+                // Full three-step engagement gets the bonus; bailing after step 2
+                // still saves but earns the base.
+                eventValue: 18 + (payload.replacement.trim() ? 6 : 0)
+              })
+            }
+          />
+          <FutureSelfLetter
+            onComplete={(payload) =>
+              completeReset({
+                eventType: "letter_written",
+                title: `Letter to ${payload.direction} me`,
+                payload,
+                // Length-scaled event value: a teen who wrote >120 chars earns
+                // the full bonus over a one-line save.
+                eventValue: 18 + (payload.body.trim().length > 120 ? 8 : 4)
+              })
+            }
+          />
+        </div>
+      </details>
+      <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+        <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-3 rounded-kai p-2">
           <div>
             <p className="eyebrow">reset history</p>
             <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent reset work</h2>
           </div>
-          <span className="rounded-full bg-[#FFE8DD] px-3 py-1 text-xs font-black text-coral">{entries.length} saved</span>
-        </div>
-        <div className="space-y-2">
+          <span className="rounded-full bg-[#FFE8DD] px-3 py-2 text-xs font-black text-coral group-open:bg-ink group-open:text-paper">{entries.length} saved</span>
+        </summary>
+        <div className="mt-4 space-y-2">
           {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Reset entries yet. Complete one check-in, breathing session, or letter.</p>}
           {entries.slice(0, 6).map((entry) => (
             <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
@@ -144,7 +158,7 @@ export function EngineMental() {
             </div>
           ))}
         </div>
-      </section>
+      </details>
       <EngineGuidesIndex
         engine="mental"
         title="Mind + feelings guides"

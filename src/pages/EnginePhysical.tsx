@@ -119,19 +119,31 @@ export function EnginePhysical() {
             </Button>
           </div>
         </section>
-        <section className="grid gap-3">
-          <div className="overflow-hidden rounded-calm border border-line bg-white shadow-sm">
-            <img src="/images/food-photo-examples.png" alt="Example food photos for Kai food logging" className="h-48 w-full object-cover" />
-            <div className="p-4">
-              <p className="eyebrow">photo examples</p>
-              <h3 className="mt-2 font-display text-xl font-black tracking-normal">Descriptive, not judgmental.</h3>
-              <p className="mt-2 text-sm leading-6 text-muted">Kai can use photos as context, then asks what helped and how it felt. No calorie targets or food scores.</p>
+        <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+          <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-4 rounded-kai p-2">
+            <span>
+              <span className="eyebrow block">how body works</span>
+              <span className="mt-2 block font-display text-2xl font-black leading-none tracking-normal">Descriptive, not judgmental.</span>
+              <span className="mt-2 block text-sm font-semibold leading-6 text-muted">Kai keeps context, patterns, and guardrails behind the first rep.</span>
+            </span>
+            <span className="shrink-0 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-muted group-open:bg-ink group-open:text-paper">
+              Open
+            </span>
+          </summary>
+          <div className="mt-4 grid gap-3">
+            <div className="overflow-hidden rounded-calm border border-line bg-white shadow-sm">
+              <img src="/images/food-photo-examples.png" alt="Example food photos for Kai food logging" className="h-48 w-full object-cover" />
+              <div className="p-4">
+                <p className="eyebrow">photo examples</p>
+                <h3 className="mt-2 font-display text-xl font-black tracking-normal">Photos are context.</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">Kai can use photos as context, then asks what helped and how it felt. No calorie targets or food scores.</p>
+              </div>
             </div>
+            <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, hunger/fullness, energy after, and any useful context." />
+            <PhysicalModule icon={<Camera />} title="Photo flow" copy="R2 upload and Workers AI vision slot. Output stays soft: sandwich, fruit, water." />
+            <PhysicalModule icon={<Wind />} title="Guardrail" copy="Risk language redirects to support. No restriction rewards or body comparison." />
           </div>
-          <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, hunger/fullness, energy after, and any useful context." />
-          <PhysicalModule icon={<Camera />} title="Photo flow" copy="R2 upload and Workers AI vision slot. Output stays soft: sandwich, fruit, water." />
-          <PhysicalModule icon={<Wind />} title="Guardrail" copy="Risk language redirects to support. No restriction rewards or body comparison." />
-        </section>
+        </details>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <ActionCard
@@ -180,15 +192,15 @@ export function EnginePhysical() {
           }
         />
       </div>
-      <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+        <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-3 rounded-kai p-2">
           <div>
             <p className="eyebrow">body history</p>
             <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent physical entries</h2>
           </div>
-          <span className="rounded-full bg-lime px-3 py-1 text-xs font-black text-sage">{entries.length} saved</span>
-        </div>
-        <div className="space-y-2">
+          <span className="rounded-full bg-lime px-3 py-2 text-xs font-black text-sage group-open:bg-ink group-open:text-paper">{entries.length} saved</span>
+        </summary>
+        <div className="mt-4 space-y-2">
           {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Body entries yet. Log one fuel, movement, sleep, or recovery note.</p>}
           {entries.slice(0, 6).map((entry) => (
             <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
@@ -200,7 +212,7 @@ export function EnginePhysical() {
             </div>
           ))}
         </div>
-      </section>
+      </details>
       <EngineGuidesIndex
         engine="physical"
         title="Body + safety guides"

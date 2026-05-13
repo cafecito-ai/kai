@@ -2,6 +2,7 @@ import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-rea
 import { useEffect, useState } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
+import { SecondaryShelf } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { localSafetyCheck } from "../lib/safety";
@@ -145,62 +146,57 @@ export function EnginePhysical() {
           </div>
         </details>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <ActionCard
-          icon={<Dumbbell />}
-          title="Movement (manual)"
-          copy="Practice, sport, walk, lift, stretch — log any session that wasn't a guided routine."
-          action={saving === "movement_log" ? "Logging" : "Log 35 min"}
-          onClick={() =>
-            completeEntry({
-              entryType: "movement_log",
-              title: "Movement",
-              payload: { type: "sport", duration: 35 },
-              eventType: "workout",
-              eventValue: 30
-            })
-          }
-        />
-        <ActionCard
-          icon={<Moon />}
-          title="Sleep"
-          copy="Quality, blockers, and one experiment."
-          action={saving === "sleep_log" ? "Logging" : "Log sleep"}
-          onClick={() =>
-            completeEntry({
-              entryType: "sleep_log",
-              title: "Sleep check",
-              payload: { quality: 7 },
-              eventType: "sleep_log",
-              eventValue: 18
-            })
-          }
-        />
-        <ActionCard
-          icon={<Wind />}
-          title="Recovery"
-          copy="Breathing, soreness, hydration, reset."
-          action={saving === "recovery_reset" ? "Saving" : "Complete reset"}
-          onClick={() =>
-            completeEntry({
-              entryType: "recovery_reset",
-              title: "Recovery reset",
-              payload: { pattern: "box" },
-              eventType: "breathing_session",
-              eventValue: 20
-            })
-          }
-        />
-      </div>
-      <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
-        <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-3 rounded-kai p-2">
-          <div>
-            <p className="eyebrow">body history</p>
-            <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Recent physical entries</h2>
-          </div>
-          <span className="rounded-full bg-lime px-3 py-2 text-xs font-black text-sage group-open:bg-ink group-open:text-paper">{entries.length} saved</span>
-        </summary>
-        <div className="mt-4 space-y-2">
+      <SecondaryShelf eyebrow="more body reps" title="Movement, sleep, and recovery." summary="Use these when fuel is not the right first rep." count="3 tools">
+        <div className="grid gap-4 md:grid-cols-3">
+          <ActionCard
+            icon={<Dumbbell />}
+            title="Movement (manual)"
+            copy="Practice, sport, walk, lift, stretch — log any session that wasn't a guided routine."
+            action={saving === "movement_log" ? "Logging" : "Log 35 min"}
+            onClick={() =>
+              completeEntry({
+                entryType: "movement_log",
+                title: "Movement",
+                payload: { type: "sport", duration: 35 },
+                eventType: "workout",
+                eventValue: 30
+              })
+            }
+          />
+          <ActionCard
+            icon={<Moon />}
+            title="Sleep"
+            copy="Quality, blockers, and one experiment."
+            action={saving === "sleep_log" ? "Logging" : "Log sleep"}
+            onClick={() =>
+              completeEntry({
+                entryType: "sleep_log",
+                title: "Sleep check",
+                payload: { quality: 7 },
+                eventType: "sleep_log",
+                eventValue: 18
+              })
+            }
+          />
+          <ActionCard
+            icon={<Wind />}
+            title="Recovery"
+            copy="Breathing, soreness, hydration, reset."
+            action={saving === "recovery_reset" ? "Saving" : "Complete reset"}
+            onClick={() =>
+              completeEntry({
+                entryType: "recovery_reset",
+                title: "Recovery reset",
+                payload: { pattern: "box" },
+                eventType: "breathing_session",
+                eventValue: 20
+              })
+            }
+          />
+        </div>
+      </SecondaryShelf>
+      <SecondaryShelf eyebrow="body history" title="Recent physical entries" count={`${entries.length} saved`}>
+        <div className="space-y-2">
           {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Body entries yet. Log one fuel, movement, sleep, or recovery note.</p>}
           {entries.slice(0, 6).map((entry) => (
             <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
@@ -212,7 +208,7 @@ export function EnginePhysical() {
             </div>
           ))}
         </div>
-      </details>
+      </SecondaryShelf>
       <EngineGuidesIndex
         engine="physical"
         title="Body + safety guides"

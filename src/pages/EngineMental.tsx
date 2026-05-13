@@ -6,6 +6,7 @@ import { BreathingPlayer } from "../components/mental/BreathingPlayer";
 import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
 import { FeelingsCheckIn } from "../components/mental/FeelingsCheckIn";
 import { MeditationPlayer } from "../components/mental/MeditationPlayer";
+import { SocialMediaReset } from "../components/mental/SocialMediaReset";
 import { ThoughtReframe } from "../components/mental/ThoughtReframe";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { Button } from "../components/ui/Button";
@@ -16,10 +17,11 @@ import { useProgressStore } from "../stores/progressStore";
 export function EngineMental() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
-  const [boundary, setBoundary] = useState("Mute one app until tomorrow morning");
   const [letter, setLetter] = useState("You got through the loud part. Do the next tiny thing.");
+  // social_reset moves out of the actions[] array into its own dedicated
+  // SocialMediaReset card; letter_written stays as a single-field action
+  // until P2-3f rebuilds it.
   const actions = [
-    { icon: RefreshCw, title: "Social media reset", copy: "Pick one boundary that makes the next hour less loud.", eventType: "social_reset" },
     { icon: PenLine, title: "Future self letter", copy: "Write to the version of you that has a little more room.", eventType: "letter_written" }
   ];
 
@@ -103,6 +105,18 @@ export function EngineMental() {
           })
         }
       />
+      <SocialMediaReset
+        onComplete={(payload) =>
+          completeReset({
+            eventType: "social_reset",
+            title: "Social media reset",
+            payload,
+            // Full three-step engagement gets the bonus; bailing after step 2
+            // still saves but earns the base.
+            eventValue: 18 + (payload.replacement.trim() ? 6 : 0)
+          })
+        }
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         {actions.map(({ icon: Icon, title, copy, eventType }) => (
           <section key={eventType} className="rounded-kai border border-line bg-white p-5 shadow-sm">
@@ -111,7 +125,6 @@ export function EngineMental() {
             </div>
             <h2 className="font-display text-2xl font-black tracking-normal">{title}</h2>
             <p className="my-3 text-sm leading-6 text-muted">{copy}</p>
-            {eventType === "social_reset" && <input className="field mb-3" value={boundary} onChange={(event) => setBoundary(event.target.value)} />}
             {eventType === "letter_written" && <textarea className="field mb-3 min-h-20" value={letter} onChange={(event) => setLetter(event.target.value)} />}
             <Button
               variant="secondary"
@@ -119,12 +132,7 @@ export function EngineMental() {
                 completeReset({
                   eventType,
                   title,
-                  payload:
-                    eventType === "social_reset"
-                      ? { boundary }
-                      : eventType === "letter_written"
-                        ? { letter }
-                        : { completed: true }
+                  payload: eventType === "letter_written" ? { letter } : { completed: true }
                 })
               }
             >

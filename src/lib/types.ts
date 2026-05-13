@@ -53,3 +53,42 @@ export interface ChatMessage {
   content: string;
   createdAt?: string;
 }
+
+/**
+ * Macro totals for a meal item. Mirrors `Nutrition` in
+ * workers/src/lib/usda.ts. The worker fills these from USDA FoodData
+ * Central when a vision-identified item matches; missing on manual
+ * entries until the teen opts into macro tracking.
+ *
+ * Per spec Section 10, the UI default is descriptive — these numbers
+ * are NOT shown as a daily target unless the teen explicitly asks to
+ * track macros.
+ */
+export interface FoodNutrition {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface FoodPhotoItem {
+  name: string;
+  source: "vision" | "manual";
+  estimatedGrams?: number;
+  nutrition?: FoodNutrition;
+  nutritionSource?: "usda" | null;
+}
+
+/** Confidence values emitted by `/api/food-photo` + `/api/food-photo-upload`. */
+export type FoodPhotoConfidence = "high" | "medium" | "low" | "photo_stub" | "manual_stub";
+
+export interface FoodPhotoResult {
+  mealId: string;
+  /** Present on the upload variant — the R2 key for the saved photo. */
+  r2Key?: string;
+  items: FoodPhotoItem[];
+  /** Aggregate macros across items that had USDA data; null if no items did. */
+  totals: FoodNutrition | null;
+  confidence: FoodPhotoConfidence;
+  notes: string;
+}

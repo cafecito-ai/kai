@@ -1,4 +1,4 @@
-import type { ChatMessage, EngineEntry, EngineId, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { ChatMessage, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 type TokenGetter = () => Promise<string | null>;
@@ -77,7 +77,7 @@ export const api = {
   createEngineEntry: (engine: EngineId, body: { entryType: string; title?: string; payload?: unknown; completed?: boolean }) =>
     request<{ entry: EngineEntry }>(`/api/engines/${engine}/entries`, { method: "POST", body: JSON.stringify(body) }),
   analyzeFoodPhoto: (body: { r2Key?: string; note?: string }) =>
-    request<{ mealId: string; items: Array<{ name: string; source?: string }>; totals: null; confidence: string; notes: string }>("/api/food-photo", {
+    request<FoodPhotoResult>("/api/food-photo", {
       method: "POST",
       body: JSON.stringify(body)
     }),
@@ -85,7 +85,7 @@ export const api = {
     const body = new FormData();
     body.set("photo", file);
     if (note?.trim()) body.set("note", note.trim());
-    return request<{ mealId: string; r2Key: string; items: Array<{ name: string; source?: string }>; totals: null; confidence: string; notes: string }>("/api/food-photo-upload", {
+    return request<FoodPhotoResult>("/api/food-photo-upload", {
       method: "POST",
       body
     });

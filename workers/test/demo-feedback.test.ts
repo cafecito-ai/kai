@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app from "../src/index";
-import { parseDemoFeedback } from "../src/routes/demo";
+import { parseDemoFeedback, parseScopeFeedback } from "../src/routes/demo";
 
 const validPayload = {
   sessionId: "demo-session",
@@ -29,6 +29,36 @@ describe("parseDemoFeedback", () => {
       choices: { ...validPayload.choices, habit: "Calorie scoreboard" }
     });
     expect(parsed).toEqual({ ok: false, error: "Invalid habit choice" });
+  });
+});
+
+describe("parseScopeFeedback", () => {
+  it("accepts co-builder mission answers", () => {
+    const parsed = parseScopeFeedback({
+      sessionId: "lev-mission",
+      answers: {
+        vibe: "Quest Mode",
+        sources: "Andrew Huberman, my trainer, short videos",
+        cringe: "Do not sound like school."
+      },
+      completedMissions: 3,
+      summary: "Lev picked Quest Mode and named source material."
+    });
+
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.completedMissions).toBe(3);
+      expect(parsed.answers.cringe).toBe("Do not sound like school.");
+    }
+  });
+
+  it("rejects empty co-builder answers", () => {
+    const parsed = parseScopeFeedback({
+      sessionId: "lev-mission",
+      answers: {},
+      summary: "No answers"
+    });
+    expect(parsed).toEqual({ ok: false, error: "Missing answers" });
   });
 });
 
@@ -96,6 +126,29 @@ describe("demo feedback routes", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { feedback: Array<{ choices: { ui: string } }> };
     expect(body.feedback[0].choices.ui).toBe("Calm Coach");
+  });
+
+  it("lets public demo visitors save scope mission answers", async () => {
+    const statements: Array<{ sql: string; values: unknown[] }> = [];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/scope-feedback", {
+        method: "POST",
+        body: JSON.stringify({
+          sessionId: "scope-session",
+          answers: { vibe: "Quest Mode", sources: "coach, YouTube, friends" },
+          completedMissions: 2,
+          summary: "Scope mission snapshot"
+        }),
+        headers: { "content-type": "application/json" }
+      }),
+      makeEnv({ statements })
+    );
+
+    expect(res.status).toBe(200);
+    const insert = statements.find((statement) => statement.sql.includes("INSERT INTO scope_feedback"));
+    expect(insert).toBeTruthy();
+    expect(insert?.values[1]).toBe("scope-session");
+    expect(JSON.parse(insert?.values[2] as string).sources).toContain("coach");
   });
 });
 

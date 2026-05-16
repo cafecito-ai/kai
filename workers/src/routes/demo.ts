@@ -45,6 +45,30 @@ demoRoutes.post("/demo-feedback", async (c) => {
   return c.json({ ok: true, id });
 });
 
+demoRoutes.post("/scope-feedback", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = parseScopeFeedback(body);
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+
+  const id = crypto.randomUUID();
+  await ensureScopeFeedbackTable(c.env.DB);
+  await c.env.DB.prepare(
+    `INSERT INTO scope_feedback (id, session_id, answers_json, completed_missions, summary, user_agent)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  )
+    .bind(
+      id,
+      parsed.sessionId,
+      JSON.stringify(parsed.answers),
+      parsed.completedMissions,
+      parsed.summary,
+      c.req.header("user-agent") ?? null
+    )
+    .run();
+
+  return c.json({ ok: true, id });
+});
+
 export async function ensureDemoFeedbackTable(db: D1Database) {
   await db
     .prepare(
@@ -60,6 +84,23 @@ export async function ensureDemoFeedbackTable(db: D1Database) {
     )
     .run();
   await db.prepare("CREATE INDEX IF NOT EXISTS idx_demo_feedback_created_at ON demo_feedback(created_at)").run();
+}
+
+export async function ensureScopeFeedbackTable(db: D1Database) {
+  await db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS scope_feedback (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        answers_json TEXT NOT NULL,
+        completed_missions INTEGER NOT NULL DEFAULT 0,
+        summary TEXT NOT NULL,
+        user_agent TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`
+    )
+    .run();
+  await db.prepare("CREATE INDEX IF NOT EXISTS idx_scope_feedback_created_at ON scope_feedback(created_at)").run();
 }
 
 export function parseDemoFeedback(body: unknown):
@@ -103,4 +144,31 @@ export function parseDemoFeedback(body: unknown):
 function cleanText(value: unknown, max: number) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, max);
+}
+
+export function parseScopeFeedback(body: unknown):
+  | { ok: true; sessionId: string; answers: Record<string, string>; completedMissions: number; summary: string }
+  | { ok: false; error: string } {
+  if (!body || typeof body !== "object") return { ok: false, error: "Invalid payload" };
+  const input = body as Record<string, unknown>;
+  const sessionId = cleanText(input.sessionId, 120);
+  const summary = cleanText(input.summary, 1200);
+  if (!sessionId) return { ok: false, error: "Missing sessionId" };
+  if (!summary) return { ok: false, error: "Missing summary" };
+  if (!input.answers || typeof input.answers !== "object") return { ok: false, error: "Missing answers" };
+
+  const answers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input.answers as Record<string, unknown>)) {
+    const cleanKey = cleanText(key, 80);
+    const cleanValue = cleanText(value, 600);
+    if (cleanKey && cleanValue) answers[cleanKey] = cleanValue;
+  }
+  if (Object.keys(answers).length === 0) return { ok: false, error: "Missing answers" };
+
+  const completedMissions =
+    typeof input.completedMissions === "number" && Number.isFinite(input.completedMissions)
+      ? Math.max(0, Math.min(20, Math.floor(input.completedMissions)))
+      : Object.keys(answers).length;
+
+  return { ok: true, sessionId, answers, completedMissions, summary };
 }

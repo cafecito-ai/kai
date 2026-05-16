@@ -7,7 +7,7 @@ import { Nav } from "./Nav";
 
 export function AppShell() {
   const { pathname } = useLocation();
-  const immersiveRoute = pathname === "/demo";
+  const immersiveRoute = pathname === "/demo" || pathname === "/scope";
 
   if (immersiveRoute) {
     return (

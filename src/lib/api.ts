@@ -133,5 +133,15 @@ export const api = {
     request<{ ok: boolean; id: string }>("/api/demo-feedback", {
       method: "POST",
       body: JSON.stringify(body)
+    }),
+  submitScopeFeedback: (body: {
+    sessionId: string;
+    answers: Record<string, string>;
+    completedMissions: number;
+    summary: string;
+  }) =>
+    request<{ ok: boolean; id: string }>("/api/scope-feedback", {
+      method: "POST",
+      body: JSON.stringify(body)
     })
 };

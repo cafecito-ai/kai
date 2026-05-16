@@ -116,6 +116,7 @@ const uiDirections = [
 export function Demo() {
   const [activeId, setActiveId] = useState<(typeof walkthrough)[number]["id"]>("start");
   const [uiDirectionId, setUiDirectionId] = useState<(typeof uiDirections)[number]["id"]>("coach");
+  const [copied, setCopied] = useState(false);
   const [choices, setChoices] = useState<Record<(typeof choiceGroups)[number]["id"], string>>({
     vibe: "Calm coach",
     habit: "Food camera",
@@ -123,7 +124,14 @@ export function Demo() {
   });
   const active = walkthrough.find((item) => item.id === activeId) ?? walkthrough[0];
   const uiDirection = uiDirections.find((item) => item.id === uiDirectionId) ?? uiDirections[0];
+  const phoneAction = getPhoneAction(active.id, uiDirection.id, active.action);
   const choiceSummary = `UI: ${uiDirection.label}. Vibe: ${choices.vibe}. Habit: ${choices.habit}. Parents: ${choices.parent}.`;
+
+  const copyChoices = async () => {
+    await navigator.clipboard?.writeText(choiceSummary);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
 
   useEffect(() => {
     const tag = document.createElement("meta");
@@ -276,8 +284,19 @@ export function Demo() {
               ))}
             </div>
             <div className="mt-5 rounded-kai border border-line bg-paper p-4">
-              <p className="text-[11px] font-black uppercase tracking-wider text-muted">send this back</p>
-              <p className="mt-2 text-sm font-black leading-6">{choiceSummary}</p>
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-muted">send this back</p>
+                  <p className="mt-2 break-words text-sm font-black leading-6">{choiceSummary}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyChoices}
+                  className="focus-ring min-h-11 rounded-full border border-line bg-white px-4 text-sm font-black hover:border-ink/35"
+                >
+                  {copied ? "Copied" : "Copy picks"}
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -296,11 +315,11 @@ export function Demo() {
                 </div>
                 <div className={`mt-5 rounded-[1.2rem] p-3 sm:p-4 ${uiDirection.wash}`}>
                   <p className="text-[11px] font-black uppercase tracking-wider text-muted">{uiDirection.tagline}</p>
-                  <p className="mt-2 font-display text-xl font-black leading-none sm:text-2xl">{uiDirection.screen}</p>
-                  <p className="mt-3 text-sm font-semibold leading-6 text-muted">{uiDirection.detail}</p>
+                  <p className="mt-2 font-display text-xl font-black leading-none sm:text-2xl">{active.screen}</p>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-muted">{active.detail}</p>
                 </div>
                 <div className="mt-3 rounded-[1.2rem] border border-line bg-white p-3 sm:p-4">
-                  <p className="text-sm font-black">{uiDirection.action}</p>
+                  <p className="text-sm font-black">{phoneAction}</p>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <PhoneStat label="streak" value="3" />
@@ -310,9 +329,9 @@ export function Demo() {
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <MiniAction icon={Camera} label={uiDirection.id === "quest" ? "Quest" : "Photo"} />
-                <MiniAction icon={uiDirection.id === "social" ? UsersRound : MessageCircle} label={uiDirection.id === "social" ? "Share" : "Chat"} />
-                <MiniAction icon={uiDirection.id === "quest" ? Trophy : uiDirection.id === "social" ? Flame : UserRoundCheck} label={uiDirection.id === "quest" ? "XP" : uiDirection.id === "social" ? "Streak" : "Win"} />
+                <MiniAction icon={Camera} label={uiDirection.id === "quest" ? "Quest" : "Photo"} onClick={() => setActiveId("camera")} active={active.id === "camera"} />
+                <MiniAction icon={uiDirection.id === "social" ? UsersRound : MessageCircle} label={uiDirection.id === "social" ? "Share" : "Chat"} onClick={() => setActiveId(uiDirection.id === "social" ? "feedback" : "start")} active={active.id === "start" || active.id === "feedback"} />
+                <MiniAction icon={uiDirection.id === "quest" ? Trophy : uiDirection.id === "social" ? Flame : UserRoundCheck} label={uiDirection.id === "quest" ? "XP" : uiDirection.id === "social" ? "Streak" : "Win"} onClick={() => setActiveId("progress")} active={active.id === "progress"} />
               </div>
             </div>
           </div>
@@ -386,11 +405,32 @@ function PhoneStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MiniAction({ icon: Icon, label }: { icon: typeof Camera; label: string }) {
+function MiniAction({ icon: Icon, label, onClick, active }: { icon: typeof Camera; label: string; onClick: () => void; active: boolean }) {
   return (
-    <div className="grid min-h-16 place-items-center rounded-[1.1rem] border border-line bg-white p-2 text-center">
+    <button
+      type="button"
+      onClick={onClick}
+      className={`focus-ring grid min-h-16 place-items-center rounded-[1.1rem] border p-2 text-center transition ${
+        active ? "border-ink bg-ink text-paper" : "border-line bg-white hover:border-ink/35"
+      }`}
+    >
       <Icon size={17} aria-hidden="true" />
       <p className="mt-1 text-[10px] font-black">{label}</p>
-    </div>
+    </button>
   );
+}
+
+function getPhoneAction(step: (typeof walkthrough)[number]["id"], direction: (typeof uiDirections)[number]["id"], fallback: string) {
+  if (step === "camera") {
+    if (direction === "quest") return "Save the food-photo rep and earn progress.";
+    if (direction === "social") return "Turn this into a private lifestyle card.";
+    return "Kai asks one context question before remembering it.";
+  }
+  if (step === "progress") {
+    if (direction === "quest") return "+40 XP, streak protected, next belt closer.";
+    if (direction === "social") return "Kai notices the pattern without making it public.";
+    return "Progress stays quiet until it helps.";
+  }
+  if (step === "feedback") return "Pick the direction before we harden the next sprint.";
+  return fallback;
 }

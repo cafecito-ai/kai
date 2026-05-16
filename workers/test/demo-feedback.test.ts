@@ -15,9 +15,12 @@ const validPayload = {
 
 describe("parseDemoFeedback", () => {
   it("accepts the guided sprint payload", () => {
-    const parsed = parseDemoFeedback(validPayload);
+    const parsed = parseDemoFeedback({ ...validPayload, stepId: "habit", stepIndex: 1, source: "auto" });
     expect(parsed.ok).toBe(true);
-    if (parsed.ok) expect(parsed.choices.habit).toBe("Food Camera");
+    if (parsed.ok) {
+      expect(parsed.choices.habit).toBe("Food Camera");
+      expect(parsed.meta).toEqual({ stepId: "habit", stepIndex: 1, source: "auto" });
+    }
   });
 
   it("rejects unknown choices", () => {
@@ -50,6 +53,7 @@ describe("demo feedback routes", () => {
     expect(insert).toBeTruthy();
     expect(insert?.values[1]).toBeNull();
     expect(insert?.values[2]).toBe("demo-session");
+    expect(JSON.parse(insert?.values[3] as string).meta.source).toBe("manual");
   });
 
   it("rejects invalid public feedback before writing", async () => {

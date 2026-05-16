@@ -13,6 +13,12 @@ type DemoChoices = {
   parent: string;
 };
 
+type DemoFeedbackMeta = {
+  stepId: string | null;
+  stepIndex: number | null;
+  source: "auto" | "manual";
+};
+
 export const demoRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 demoRoutes.post("/demo-feedback", async (c) => {
@@ -30,7 +36,7 @@ demoRoutes.post("/demo-feedback", async (c) => {
       id,
       null,
       parsed.sessionId,
-      JSON.stringify(parsed.choices),
+      JSON.stringify({ ...parsed.choices, meta: parsed.meta }),
       parsed.summary,
       c.req.header("user-agent") ?? null
     )
@@ -57,7 +63,7 @@ export async function ensureDemoFeedbackTable(db: D1Database) {
 }
 
 export function parseDemoFeedback(body: unknown):
-  | { ok: true; sessionId: string; choices: DemoChoices; summary: string }
+  | { ok: true; sessionId: string; choices: DemoChoices; summary: string; meta: DemoFeedbackMeta }
   | { ok: false; error: string } {
   if (!body || typeof body !== "object") return { ok: false, error: "Invalid payload" };
   const input = body as Record<string, unknown>;
@@ -81,7 +87,17 @@ export function parseDemoFeedback(body: unknown):
   if (!VALID_ONBOARDING.has(parsedChoices.onboarding)) return { ok: false, error: "Invalid onboarding choice" };
   if (!VALID_PARENT.has(parsedChoices.parent)) return { ok: false, error: "Invalid parent choice" };
 
-  return { ok: true, sessionId, choices: parsedChoices, summary };
+  return {
+    ok: true,
+    sessionId,
+    choices: parsedChoices,
+    summary,
+    meta: {
+      stepId: cleanText(input.stepId, 40) || null,
+      stepIndex: typeof input.stepIndex === "number" && Number.isFinite(input.stepIndex) ? Math.max(0, Math.min(20, Math.floor(input.stepIndex))) : null,
+      source: input.source === "auto" ? "auto" : "manual"
+    }
+  };
 }
 
 function cleanText(value: unknown, max: number) {

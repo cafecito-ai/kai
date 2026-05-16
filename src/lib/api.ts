@@ -122,7 +122,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ responses })
     }),
-  submitDemoFeedback: (body: { sessionId: string; choices: DemoFeedbackChoices; summary: string }) =>
+  submitDemoFeedback: (body: {
+    sessionId: string;
+    choices: DemoFeedbackChoices;
+    summary: string;
+    stepId?: string;
+    stepIndex?: number;
+    source?: "auto" | "manual";
+  }) =>
     request<{ ok: boolean; id: string }>("/api/demo-feedback", {
       method: "POST",
       body: JSON.stringify(body)

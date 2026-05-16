@@ -1,5 +1,5 @@
 import { Activity, Brain, HeartPulse, Home, Settings, ShieldAlert, Target } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { KaiMark } from "../ui/AppPrimitives";
 
 const links = [
@@ -12,6 +12,9 @@ const links = [
 ];
 
 export function Nav() {
+  const { pathname } = useLocation();
+  const appRoute = pathname.startsWith("/engine") || pathname === "/home" || pathname === "/progress" || pathname === "/settings";
+
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-line bg-paper/88 backdrop-blur">
@@ -45,12 +48,13 @@ export function Nav() {
           </nav>
         </div>
       </header>
-      <nav
-        className="fixed inset-x-3 bottom-3 z-20 grid grid-cols-5 gap-1 rounded-[24px] border border-line bg-white/95 p-1 shadow-soft backdrop-blur md:hidden"
-        style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
-        aria-label="Primary mobile navigation"
-      >
-        {links.slice(0, 5).map(({ to, label, icon: Icon }) => (
+      {appRoute && (
+        <nav
+          className="fixed inset-x-3 bottom-3 z-20 grid grid-cols-5 gap-1 rounded-[24px] border border-line bg-white/95 p-1 shadow-soft backdrop-blur md:hidden"
+          style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
+          aria-label="Primary mobile navigation"
+        >
+          {links.slice(0, 5).map(({ to, label, icon: Icon }) => (
             <NavLink
               key={`${to}-${label}`}
               to={to}
@@ -64,7 +68,8 @@ export function Nav() {
               {label}
             </NavLink>
           ))}
-      </nav>
+        </nav>
+      )}
     </>
   );
 }

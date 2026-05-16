@@ -6,6 +6,7 @@ import { RequireAuth } from "./components/auth/RequireAuth";
 import { RequireOnboarding } from "./components/auth/RequireOnboarding";
 import { AppShell } from "./components/layout/AppShell";
 import { Crisis } from "./pages/Crisis";
+import { Demo } from "./pages/Demo";
 import { DesignPicker } from "./pages/DesignPicker";
 import { EngineMental } from "./pages/EngineMental";
 import { EnginePhysical } from "./pages/EnginePhysical";
@@ -70,6 +71,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
+          <Route path="/demo" element={<Demo />} />
           <Route path="/design" element={<DesignPicker />} />
           <Route path="/scope" element={<Scope />} />
           <Route path="/ops" element={protectedAuth(<Ops />)} />

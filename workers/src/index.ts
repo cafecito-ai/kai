@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { chatRoutes } from "./routes/chat";
+import { demoRoutes } from "./routes/demo";
 import { foodRoutes } from "./routes/food";
 import { entriesRoutes } from "./routes/entries";
 import { friendsRoutes } from "./routes/friends";
@@ -22,6 +23,7 @@ app.use("/api/*", requireAuth);
 app.get("/health", (c) => c.json({ ok: true, service: "kai" }));
 app.get("/api/health", (c) => c.json({ ok: true, service: "kai-api" }));
 app.route("/api", chatRoutes);
+app.route("/api", demoRoutes);
 app.route("/api", userRoutes);
 app.route("/api", progressRoutes);
 app.route("/api", goalsRoutes);

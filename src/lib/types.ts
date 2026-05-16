@@ -92,3 +92,10 @@ export interface FoodPhotoResult {
   confidence: FoodPhotoConfidence;
   notes: string;
 }
+
+export interface DemoFeedbackChoices {
+  ui: "Calm Coach" | "Quest Mode" | "Lifestyle Feed";
+  habit: "Food Camera" | "Emotional Check-in" | "Streaks + Belts" | "Home-screen Character";
+  onboarding: "Fast Start" | "Personality Setup" | "Goal Setup";
+  parent: "Safety-only" | "Weekly Summary" | "Shared Wins";
+}

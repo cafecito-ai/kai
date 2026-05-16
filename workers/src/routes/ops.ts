@@ -28,6 +28,28 @@ opsRoutes.get("/ops/safety-events", async (c) => {
   });
 });
 
+opsRoutes.get("/ops/demo-feedback", async (c) => {
+  if (!c.get("isOps")) return c.json({ error: "Forbidden" }, 403);
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, user_id, session_id, choices_json, summary, user_agent, created_at
+     FROM demo_feedback
+     ORDER BY created_at DESC
+     LIMIT 100`
+  ).all();
+
+  return c.json({
+    feedback: (results as Array<Record<string, unknown>>).map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      sessionId: row.session_id,
+      choices: parseJson(row.choices_json),
+      summary: row.summary,
+      userAgent: row.user_agent,
+      createdAt: row.created_at
+    }))
+  });
+});
+
 function parseJson(value: unknown) {
   if (typeof value !== "string") return [];
   try {

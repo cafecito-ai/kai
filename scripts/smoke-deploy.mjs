@@ -43,6 +43,19 @@ const cases = [
     path: "/scope",
     expectStatus: 200,
     expectContentTypeStartsWith: "text/html"
+  },
+  {
+    name: "/demo SPA route reachable",
+    path: "/demo",
+    expectStatus: 200,
+    expectContentTypeStartsWith: "text/html"
+  },
+  {
+    name: "public demo feedback route validates payloads",
+    path: "/api/demo-feedback",
+    method: "POST",
+    body: JSON.stringify({}),
+    expectStatus: 400
   }
 ];
 
@@ -51,7 +64,7 @@ for (const test of cases) {
   const url = `${baseUrl}${test.path}`;
   let res;
   try {
-    res = await fetchWithRetry(url);
+    res = await fetchWithRetry(url, test);
   } catch (err) {
     console.error(`✗ ${test.name} (${test.path}): fetch threw — ${err.message}`);
     failed++;
@@ -103,11 +116,16 @@ if (failed > 0) {
 
 console.log(`\nAll smoke checks passed against ${baseUrl}`);
 
-async function fetchWithRetry(url) {
+async function fetchWithRetry(url, test = {}) {
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      return await fetch(url, { redirect: "manual" });
+      return await fetch(url, {
+        method: test.method ?? "GET",
+        body: test.body,
+        headers: test.body ? { "content-type": "application/json" } : undefined,
+        redirect: "manual"
+      });
     } catch (err) {
       lastError = err;
       if (attempt < 3) {
@@ -115,12 +133,12 @@ async function fetchWithRetry(url) {
       }
     }
   }
-  return fetchWithCurl(url, lastError);
+  return fetchWithCurl(url, lastError, test);
 }
 
-async function fetchWithCurl(url, originalError) {
+async function fetchWithCurl(url, originalError, test = {}) {
   try {
-    const { stdout } = await execFileAsync("curl", [
+    const args = [
       "-sS",
       "-L",
       "-o",
@@ -128,7 +146,10 @@ async function fetchWithCurl(url, originalError) {
       "-w",
       "\n__KAI_SMOKE_STATUS__%{http_code}\n__KAI_SMOKE_CONTENT_TYPE__%{content_type}",
       url
-    ]);
+    ];
+    if (test.method) args.unshift("-X", test.method);
+    if (test.body) args.unshift("-H", "content-type: application/json", "--data", test.body);
+    const { stdout } = await execFileAsync("curl", args);
     const statusMarker = "\n__KAI_SMOKE_STATUS__";
     const typeMarker = "\n__KAI_SMOKE_CONTENT_TYPE__";
     const statusAt = stdout.lastIndexOf(statusMarker);

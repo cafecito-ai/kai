@@ -28,7 +28,7 @@ Use the Boost AI account (`f7a9b24f679e1d3952921ee5e72e677e`). The current OAuth
 wrangler d1 migrations apply kai-prod --remote --config wrangler.worker.toml
 ```
 
-This applies all four migrations under `workers/migrations/` (0001 initial schema, 0002 product buildout, 0003 redacted safety, 0004 design pref) against the `kai-prod` D1 instance (id `31687ec8-ec8e-4151-86d9-ef39951474f9`). Idempotent — safe to re-run. The Worker config carries the `[[d1_databases]]` binding wrangler needs to find the right DB.
+This applies all migrations under `migrations/` against the `kai-prod` D1 instance (id `31687ec8-ec8e-4151-86d9-ef39951474f9`). Idempotent — safe to re-run. The Worker config carries the `[[d1_databases]]` binding wrangler needs to find the right DB.
 
 Sanity check the schema:
 

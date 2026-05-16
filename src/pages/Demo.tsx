@@ -198,15 +198,16 @@ export function Demo() {
   };
 
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <section className="mx-auto grid w-full max-w-[calc(100vw-1.5rem)] gap-4 py-3 sm:max-w-6xl sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+    <main className="min-h-screen bg-paper text-ink sm:pb-8">
+      <section className="mx-auto grid w-full max-w-[calc(100vw-1rem)] gap-3 py-2 sm:max-w-6xl sm:gap-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
         <div className="min-w-0">
+          <MobileHeader stepIndex={stepIndex} />
           <Hero />
           <ProgressRail stepIndex={stepIndex} onJump={setStepIndex} />
 
-          <section className="mt-4 rounded-calm border border-line bg-white p-5 shadow-calm sm:p-7">
+          <section className="mt-3 rounded-[1.35rem] border border-line bg-white p-4 shadow-calm sm:mt-4 sm:rounded-calm sm:p-7">
             <p className="eyebrow">{activeStep.eyebrow}</p>
-            <h1 className="mt-2 break-words font-display text-[2rem] font-black leading-none tracking-normal sm:text-5xl">
+            <h1 className="mt-2 break-words font-display text-[1.85rem] font-black leading-none tracking-normal sm:text-5xl">
               {activeStep.title}
             </h1>
             <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-muted sm:text-base sm:leading-7">
@@ -230,7 +231,7 @@ export function Demo() {
               )}
             </div>
 
-            <div className="mt-6 grid gap-2 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:grid-cols-[auto_1fr_auto] sm:items-center">
               <button
                 type="button"
                 onClick={back}
@@ -249,7 +250,8 @@ export function Demo() {
                   onClick={next}
                   className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-5 text-sm font-black text-paper"
                 >
-                  Next decision
+                  <span className="sm:hidden">Next</span>
+                  <span className="hidden sm:inline">Next decision</span>
                   <ArrowRight size={17} />
                 </button>
               ) : (
@@ -263,13 +265,17 @@ export function Demo() {
             </div>
           </section>
 
-          <section className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="mt-3 lg:hidden">
+            <PhonePreview choices={choices} preview={preview} activeStep={activeStep.id} onJump={setStepIndex} />
+          </div>
+
+          <section className="mt-4 hidden gap-4 lg:grid lg:grid-cols-2">
             <StatusList title="What is already built" items={["Mobile app shell", "Food-photo analysis path", "Progress streaks and belts", "Mental reset and primer flows"]} />
             <StatusList title="What this decides" items={["First habit loop", "Product tone", "Onboarding shape", "Parent visibility model"]} />
           </section>
         </div>
 
-        <aside className="order-first min-w-0 lg:order-none lg:sticky lg:top-6">
+        <aside className="hidden min-w-0 lg:sticky lg:top-6 lg:block">
           <PhonePreview choices={choices} preview={preview} activeStep={activeStep.id} onJump={setStepIndex} />
           <PathSoFar choices={choices} />
         </aside>
@@ -278,15 +284,33 @@ export function Demo() {
   );
 }
 
+function MobileHeader({ stepIndex }: { stepIndex: number }) {
+  return (
+    <section className="rounded-[1.35rem] border border-line bg-white p-4 shadow-sm sm:hidden">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-muted">Lev's demo sprint</p>
+          <h1 className="mt-1 font-display text-[1.75rem] font-black leading-none tracking-normal">Design Kai in 5 taps.</h1>
+        </div>
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-ink font-serif text-2xl italic text-paper">k</span>
+      </div>
+      <p className="mt-3 text-sm font-semibold leading-5 text-muted">Make one call at a time. The preview updates as you choose.</p>
+      <p className="mt-3 text-xs font-black uppercase tracking-wider text-ink">Decision {stepIndex + 1} of {steps.length}</p>
+    </section>
+  );
+}
+
 function Hero() {
   return (
-    <section className="rounded-calm border border-line bg-white p-5 shadow-calm sm:p-7 lg:p-9">
+    <section className="hidden rounded-calm border border-line bg-white p-4 shadow-calm sm:block sm:p-7 lg:p-9">
       <p className="eyebrow">demo sprint for Lev + Offy</p>
-      <h1 className="mt-3 max-w-3xl break-words font-display text-[1.8rem] font-black leading-none tracking-normal sm:text-6xl">
-        Choose the app path as you go.
+      <h1 className="mt-3 max-w-3xl break-words font-display text-[1.65rem] font-black leading-none tracking-normal sm:text-6xl">
+        <span className="sm:hidden">Design Kai in 5 taps.</span>
+        <span className="hidden sm:inline">Choose the app path as you go.</span>
       </h1>
-      <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-muted">
-        Each click changes the preview and turns into a build direction. No document reading required.
+      <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-muted sm:mt-4 sm:text-base sm:leading-7">
+        <span className="sm:hidden">Pick what feels right. The app changes with you.</span>
+        <span className="hidden sm:inline">Each click changes the preview and turns into a build direction. No document reading required.</span>
       </p>
     </section>
   );
@@ -294,7 +318,7 @@ function Hero() {
 
 function ProgressRail({ stepIndex, onJump }: { stepIndex: number; onJump: (index: number) => void }) {
   return (
-    <nav className="mt-4 grid gap-2 sm:grid-cols-5" aria-label="Demo sprint steps">
+    <nav className="mt-3 grid grid-cols-5 gap-1 sm:mt-4 sm:gap-2" aria-label="Demo sprint steps">
       {steps.map((step, index) => {
         const complete = index < stepIndex;
         const active = index === stepIndex;
@@ -303,14 +327,14 @@ function ProgressRail({ stepIndex, onJump }: { stepIndex: number; onJump: (index
             key={step.id}
             type="button"
             onClick={() => onJump(index)}
-            className={`focus-ring min-h-16 rounded-kai border px-3 py-3 text-left transition ${
+            className={`focus-ring min-h-12 rounded-[14px] border px-2 py-2 text-center transition sm:min-h-16 sm:rounded-kai sm:px-3 sm:py-3 sm:text-left ${
               active ? "border-ink bg-ink text-paper shadow-soft" : "border-line bg-white text-ink hover:border-ink/35"
             }`}
           >
-            <span className={`block text-[10px] font-black uppercase tracking-wider ${active ? "text-paper/65" : "text-muted"}`}>
+            <span className={`block text-[8px] font-black uppercase tracking-wider sm:text-[10px] ${active ? "text-paper/65" : "text-muted"}`}>
               {complete ? "picked" : step.eyebrow}
             </span>
-            <span className="mt-1 flex items-center gap-2 text-sm font-black">
+            <span className="mt-1 flex items-center justify-center gap-1 text-[11px] font-black sm:justify-start sm:gap-2 sm:text-sm">
               {complete && <CheckCircle2 size={15} />}
               {labelForStep(step.id)}
             </span>
@@ -331,7 +355,7 @@ function OptionGrid<T extends string>({
   onChoose: (value: T) => void;
 }) {
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className="grid gap-2 md:grid-cols-3 md:gap-3">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -339,14 +363,14 @@ function OptionGrid<T extends string>({
             key={option.value}
             type="button"
             onClick={() => onChoose(option.value)}
-            className={`focus-ring min-h-40 rounded-calm border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-soft ${
+            className={`focus-ring min-h-24 rounded-[20px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-soft md:min-h-40 md:rounded-calm ${
               selected ? "border-ink bg-ink text-paper shadow-soft" : "border-line bg-paper text-ink"
             }`}
           >
             <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selected ? "bg-white/15 text-paper/75" : "bg-white text-muted"}`}>
               {selected ? "selected" : "option"}
             </span>
-            <span className="mt-4 block font-display text-2xl font-black leading-none">{option.title}</span>
+            <span className="mt-3 block font-display text-xl font-black leading-none md:mt-4 md:text-2xl">{option.title}</span>
             <span className={`mt-2 block text-sm font-semibold leading-5 ${selected ? "text-paper/72" : "text-muted"}`}>
               {option.copy}
             </span>
@@ -374,7 +398,7 @@ function ReviewPanel({
 }) {
   return (
     <div className="grid gap-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
         {Object.entries(choices).map(([key, value]) => (
           <div key={key} className="rounded-kai border border-line bg-paper p-4">
             <p className="text-[11px] font-black uppercase tracking-wider text-muted">{key}</p>
@@ -382,7 +406,8 @@ function ReviewPanel({
           </div>
         ))}
       </div>
-      <div className="rounded-calm border border-ink bg-ink p-5 text-paper">
+      <div className="rounded-calm border border-ink bg-ink p-4 text-paper sm:p-5">
+        <p className="font-display text-2xl font-black leading-none sm:text-3xl">You designed this version of Kai.</p>
         <p className="text-[11px] font-black uppercase tracking-wider text-paper/60">build direction</p>
         <p className="mt-2 text-sm font-black leading-6 sm:text-base">{summary}</p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -415,10 +440,10 @@ function PhonePreview({
 }) {
   const style = styleForUi(choices.ui);
   return (
-    <div className={`mx-auto w-full max-w-[18rem] rounded-[2rem] border border-ink p-2 shadow-calm sm:max-w-sm sm:p-3 ${style.frame}`}>
+    <div className={`mx-auto w-full max-w-[17.5rem] rounded-[2rem] border border-ink p-2 shadow-calm min-[380px]:max-w-[18rem] sm:max-w-sm sm:p-3 ${style.frame}`}>
       <div className="rounded-[1.55rem] bg-white/96 p-3 sm:p-4">
         <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-ink/20" />
-        <div className="rounded-[1.35rem] border border-line bg-white p-4 shadow-sm">
+        <div className="rounded-[1.35rem] border border-line bg-white p-3 shadow-sm sm:p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider text-muted">{choices.ui}</p>
@@ -426,7 +451,7 @@ function PhonePreview({
             </div>
             <span className={`grid size-10 place-items-center rounded-full font-serif text-2xl italic ${style.accent}`}>k</span>
           </div>
-          <div className={`mt-5 rounded-[1.2rem] p-3 sm:p-4 ${style.wash}`}>
+          <div className={`mt-4 rounded-[1.2rem] p-3 sm:mt-5 sm:p-4 ${style.wash}`}>
             <p className="text-[11px] font-black uppercase tracking-wider text-muted">{choices.habit}</p>
             <p className="mt-2 font-display text-xl font-black leading-none sm:text-2xl">{preview.title}</p>
             <p className="mt-3 text-sm font-semibold leading-6 text-muted">{preview.detail}</p>
@@ -452,7 +477,7 @@ function PhonePreview({
 
 function PathSoFar({ choices }: { choices: DemoFeedbackChoices }) {
   return (
-    <section className="mx-auto mt-3 max-w-sm rounded-calm border border-line bg-white p-4 shadow-sm">
+    <section className="mx-auto mt-3 max-w-sm rounded-[22px] border border-line bg-white p-4 shadow-sm sm:rounded-calm">
       <p className="eyebrow">path so far</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {Object.values(choices).map((choice) => (

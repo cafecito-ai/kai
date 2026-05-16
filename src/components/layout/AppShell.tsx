@@ -6,6 +6,25 @@ import { Footer } from "./Footer";
 import { Nav } from "./Nav";
 
 export function AppShell() {
+  const { pathname } = useLocation();
+  const immersiveRoute = pathname === "/demo";
+
+  if (immersiveRoute) {
+    return (
+      <div className="noise min-h-screen bg-paper text-ink">
+        <a
+          href="#main"
+          className="focus-ring sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-kai focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-paper"
+        >
+          Skip to content
+        </a>
+        <div id="main">
+          <Outlet />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="noise min-h-screen bg-paper text-ink">
       {/* WCAG SC 2.4.1 Bypass Blocks: keyboard-only users skip the nav. */}

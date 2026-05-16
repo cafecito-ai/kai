@@ -21,6 +21,7 @@ demoRoutes.post("/demo-feedback", async (c) => {
   if (!parsed.ok) return c.json({ error: parsed.error }, 400);
 
   const id = crypto.randomUUID();
+  await ensureDemoFeedbackTable(c.env.DB);
   await c.env.DB.prepare(
     `INSERT INTO demo_feedback (id, user_id, session_id, choices_json, summary, user_agent)
      VALUES (?, ?, ?, ?, ?, ?)`
@@ -37,6 +38,23 @@ demoRoutes.post("/demo-feedback", async (c) => {
 
   return c.json({ ok: true, id });
 });
+
+export async function ensureDemoFeedbackTable(db: D1Database) {
+  await db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS demo_feedback (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        session_id TEXT NOT NULL,
+        choices_json TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        user_agent TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`
+    )
+    .run();
+  await db.prepare("CREATE INDEX IF NOT EXISTS idx_demo_feedback_created_at ON demo_feedback(created_at)").run();
+}
 
 export function parseDemoFeedback(body: unknown):
   | { ok: true; sessionId: string; choices: DemoChoices; summary: string }

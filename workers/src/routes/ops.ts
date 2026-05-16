@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { ensureDemoFeedbackTable } from "./demo";
 import type { AppVariables, Env } from "../types";
 
 export const opsRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -30,6 +31,7 @@ opsRoutes.get("/ops/safety-events", async (c) => {
 
 opsRoutes.get("/ops/demo-feedback", async (c) => {
   if (!c.get("isOps")) return c.json({ error: "Forbidden" }, 403);
+  await ensureDemoFeedbackTable(c.env.DB);
   const { results } = await c.env.DB.prepare(
     `SELECT id, user_id, session_id, choices_json, summary, user_agent, created_at
      FROM demo_feedback

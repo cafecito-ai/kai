@@ -46,9 +46,10 @@ describe("demo feedback routes", () => {
     const body = (await res.json()) as { ok: boolean; id: string };
     expect(body.ok).toBe(true);
     expect(body.id).toBeTruthy();
-    expect(statements[0].sql).toContain("INSERT INTO demo_feedback");
-    expect(statements[0].values[1]).toBeNull();
-    expect(statements[0].values[2]).toBe("demo-session");
+    const insert = statements.find((statement) => statement.sql.includes("INSERT INTO demo_feedback"));
+    expect(insert).toBeTruthy();
+    expect(insert?.values[1]).toBeNull();
+    expect(insert?.values[2]).toBe("demo-session");
   });
 
   it("rejects invalid public feedback before writing", async () => {
@@ -110,6 +111,10 @@ function makeEnv(opts: { statements?: Array<{ sql: string; values: unknown[] }>;
                 return { results: opts.rows ?? [] };
               }
             };
+          },
+          async run() {
+            opts.statements?.push({ sql, values: [] });
+            return {};
           },
           async all() {
             return { results: opts.rows ?? [] };

@@ -5,8 +5,17 @@ import { EnginePanel } from "../components/engines/EnginePanel";
 import { SecondaryShelf } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
+import {
+  describeFoodPhotoResult,
+  formatFoodNutrition,
+  getFoodPhotoFollowups,
+  getFoodPhotoConfidenceLabel,
+  getNutritionEstimateCaption,
+  MEAL_CONTEXTS,
+  type MealContextId
+} from "../lib/food-photo";
 import { localSafetyCheck } from "../lib/safety";
-import type { EngineEntry } from "../lib/types";
+import type { EngineEntry, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
 const StressPrimer = lazy(() =>
@@ -27,6 +36,8 @@ export function EnginePhysical() {
   const [foodPhoto, setFoodPhoto] = useState<File | null>(null);
   const [foodSafetyMessage, setFoodSafetyMessage] = useState("");
   const [foodPhotoMessage, setFoodPhotoMessage] = useState("");
+  const [foodPhotoResult, setFoodPhotoResult] = useState<FoodPhotoResult | null>(null);
+  const [mealContext, setMealContext] = useState<MealContextId>("school_lunch");
 
   useEffect(() => {
     void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
@@ -61,6 +72,7 @@ export function EnginePhysical() {
   }
 
   async function logMeal(mode: "meal_log" | "food_photo_stub") {
+    setFoodPhotoResult(null);
     const safety = localSafetyCheck(meal);
     if (!safety.safe) {
       setFoodSafetyMessage(
@@ -70,17 +82,21 @@ export function EnginePhysical() {
     }
 
     const photoResult = mode === "food_photo_stub" ? await api.analyzeFoodPhoto({ note: meal }) : null;
+    if (photoResult) setFoodPhotoResult(photoResult);
 
     await completeEntry({
       entryType: mode,
       title: mode === "meal_log" ? "Fuel note" : "Food photo stub",
       payload:
         mode === "meal_log"
-          ? { meal, mode: "fuel_note" }
+          ? { meal, mealContext, mode: "fuel_note" }
           : {
               meal,
+              mealContext,
               mealId: photoResult?.mealId,
               items: photoResult?.items ?? [],
+              totals: photoResult?.totals ?? null,
+              confidence: photoResult?.confidence,
               notes: photoResult?.notes,
               labels: ["meal", "editable", "no calorie target"]
             },
@@ -92,6 +108,7 @@ export function EnginePhysical() {
   async function uploadFoodPhoto() {
     setFoodSafetyMessage("");
     setFoodPhotoMessage("");
+    setFoodPhotoResult(null);
     if (!foodPhoto) {
       setFoodPhotoMessage("Choose or take a food photo first.");
       return;
@@ -107,15 +124,19 @@ export function EnginePhysical() {
     setSaving("food_photo_upload");
     try {
       const photoResult = await api.uploadFoodPhoto(foodPhoto, meal);
+      setFoodPhotoResult(photoResult);
       setFoodPhotoMessage(photoResult.items.length > 0 ? `Photo saved. Kai saw: ${photoResult.items.map((item) => item.name).join(", ")}.` : "Photo saved. Add a note if Kai could not read the food clearly.");
       await completeEntry({
         entryType: "food_photo",
         title: "Food photo",
         payload: {
           meal,
+          mealContext,
           mealId: photoResult.mealId,
           r2Key: photoResult.r2Key,
           items: photoResult.items,
+          totals: photoResult.totals,
+          confidence: photoResult.confidence,
           notes: photoResult.notes,
           labels: ["meal", "photo", "editable", "no calorie target"]
         },
@@ -142,6 +163,22 @@ export function EnginePhysical() {
             The first version captures what happened, how it felt, and what helped. It avoids good/bad meal labels, body scoring, and weight-loss loops.
           </p>
           <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Meal context">
+            {MEAL_CONTEXTS.map((context) => (
+              <button
+                key={context.id}
+                type="button"
+                onClick={() => setMealContext(context.id)}
+                className={`focus-ring shrink-0 rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wider ${
+                  mealContext === context.id
+                    ? "border-white bg-white text-ink"
+                    : "border-white/15 bg-white/10 text-paper/70"
+                }`}
+              >
+                {context.label}
+              </button>
+            ))}
+          </div>
           {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
           <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-black text-paper hover:border-white/40">
             <Camera size={18} aria-hidden="true" />
@@ -192,6 +229,7 @@ export function EnginePhysical() {
               Use photo example
             </Button>
           </div>
+          {foodPhotoResult && <FoodPhotoResultCard result={foodPhotoResult} mealContext={mealContext} />}
         </section>
         <details className="group rounded-calm border border-line bg-white p-5 shadow-sm">
           <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-4 rounded-kai p-2">
@@ -213,8 +251,8 @@ export function EnginePhysical() {
                 <p className="mt-2 text-sm leading-6 text-muted">Kai can use photos as context, then asks what helped and how it felt. No calorie targets or food scores.</p>
               </div>
             </div>
-            <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, hunger/fullness, energy after, and any useful context." />
-            <PhysicalModule icon={<Camera />} title="Photo flow" copy="R2 upload and Workers AI vision slot. Output stays soft: sandwich, fruit, water." />
+            <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, when it happened, hunger/fullness, energy after, and any useful context." />
+            <PhysicalModule icon={<Camera />} title="Camera tracker" copy="R2 upload, Workers AI vision, USDA estimate, and a review step before it becomes a remembered pattern." />
             <PhysicalModule icon={<Wind />} title="Guardrail" copy="Risk language redirects to support. No restriction rewards or body comparison." />
           </div>
         </details>
@@ -339,6 +377,69 @@ function PhysicalModule({ icon, title, copy }: { icon: React.ReactNode; title: s
       <div className="mb-3 text-sage">{icon}</div>
       <h3 className="font-display text-xl font-black tracking-normal">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
+    </div>
+  );
+}
+
+function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult; mealContext: MealContextId }) {
+  const itemsWithNutrition = result.items.filter((item) => item.nutrition);
+  const followups = getFoodPhotoFollowups(result, mealContext);
+  return (
+    <div className="mt-4 rounded-kai border border-white/15 bg-white/10 p-4 text-paper">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="eyebrow text-soft">camera read</p>
+          <h3 className="mt-1 font-display text-2xl font-black tracking-normal">Review what Kai saw.</h3>
+        </div>
+        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-paper/75">
+          {getFoodPhotoConfidenceLabel(result.confidence)}
+        </span>
+      </div>
+      <p className="mt-3 text-sm font-semibold leading-6 text-paper/75">{describeFoodPhotoResult(result)}</p>
+      {result.items.length > 0 && (
+        <div className="mt-3 grid gap-2">
+          {result.items.map((item, idx) => (
+            <FoodPhotoItemRow key={`${item.name}-${idx}`} item={item} />
+          ))}
+        </div>
+      )}
+      {itemsWithNutrition.length > 0 && (
+        <details className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3">
+          <summary className="focus-ring cursor-pointer list-none text-sm font-black text-paper">
+            Show nutrition estimate
+          </summary>
+          <p className="mt-2 text-xs font-semibold leading-5 text-paper/65">{getNutritionEstimateCaption()}</p>
+          {result.totals && (
+            <p className="mt-2 rounded-kai border border-white/15 bg-ink/30 p-3 text-sm font-black text-paper">
+              {formatFoodNutrition(result.totals)}
+            </p>
+          )}
+        </details>
+      )}
+      <div className="mt-3 rounded-kai border border-white/15 bg-ink/25 p-3">
+        <p className="text-xs font-black uppercase tracking-wider text-paper/60">next time Kai can ask</p>
+        <div className="mt-2 grid gap-2">
+          {followups.map((prompt) => (
+            <p key={prompt} className="rounded-kai border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-paper/75">
+              {prompt}
+            </p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
+  return (
+    <div className="rounded-kai border border-white/15 bg-ink/25 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-black capitalize">{item.name}</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-paper/60">
+          {item.estimatedGrams ? `about ${item.estimatedGrams}g` : "portion unknown"}
+        </p>
+      </div>
+      {item.nutrition && <p className="mt-1 text-xs font-semibold text-paper/65">{formatFoodNutrition(item.nutrition)}</p>}
     </div>
   );
 }

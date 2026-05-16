@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, Camera, CheckCircle2, LockKeyhole, MessageCircle, Sparkles, Target, UserRoundCheck } from "lucide-react";
+import { Activity, ArrowRight, Camera, CheckCircle2, Flame, LockKeyhole, MessageCircle, Sparkles, Target, Trophy, UserRoundCheck, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
@@ -56,9 +56,74 @@ const blockerItems = [
   "Pick the first wow demo: food camera, home-screen character, streak/belts, or emotional check-in"
 ];
 
+const choiceGroups = [
+  {
+    id: "vibe",
+    title: "Kai's vibe",
+    options: ["Calm coach", "Supportive friend", "Game guide"]
+  },
+  {
+    id: "habit",
+    title: "First daily habit",
+    options: ["Food camera", "Emotional check-in", "Streaks + belts", "Home-screen character"]
+  },
+  {
+    id: "parent",
+    title: "Parent visibility",
+    options: ["Safety alerts only", "Weekly summary", "Shared wins"]
+  }
+] as const;
+
+const uiDirections = [
+  {
+    id: "coach",
+    label: "Calm Coach",
+    tagline: "quiet, trusted, daily guidance",
+    bestFor: "A wellness companion parents trust and kids do not find cringe.",
+    background: "bg-paper",
+    accent: "bg-ink text-paper",
+    wash: "bg-warmPaper",
+    screen: "What feels loud today?",
+    detail: "Practice ran late. I still have homework. I need a food plan.",
+    action: "Kai: start with one body rep."
+  },
+  {
+    id: "quest",
+    label: "Quest Mode",
+    tagline: "streaks, belts, character growth",
+    bestFor: "Making the habit loop feel more like progress and less like homework.",
+    background: "bg-[#101828]",
+    accent: "bg-goals text-white",
+    wash: "bg-goalsWash",
+    screen: "Level 3: pre-practice fuel",
+    detail: "Snap food, save the rep, keep the 3-day streak alive.",
+    action: "Reward: +40 XP toward green belt."
+  },
+  {
+    id: "social",
+    label: "Lifestyle Feed",
+    tagline: "wins, photos, identity, optional sharing",
+    bestFor: "A teen-led product where Kai remembers the lifestyle they are building.",
+    background: "bg-[#12372A]",
+    accent: "bg-body text-white",
+    wash: "bg-bodyWash",
+    screen: "Today's lifestyle card",
+    detail: "Lunch photo, practice win, reset note. Private unless shared.",
+    action: "Kai: this is becoming your pattern."
+  }
+] as const;
+
 export function Demo() {
   const [activeId, setActiveId] = useState<(typeof walkthrough)[number]["id"]>("start");
+  const [uiDirectionId, setUiDirectionId] = useState<(typeof uiDirections)[number]["id"]>("coach");
+  const [choices, setChoices] = useState<Record<(typeof choiceGroups)[number]["id"], string>>({
+    vibe: "Calm coach",
+    habit: "Food camera",
+    parent: "Safety alerts only"
+  });
   const active = walkthrough.find((item) => item.id === activeId) ?? walkthrough[0];
+  const uiDirection = uiDirections.find((item) => item.id === uiDirectionId) ?? uiDirections[0];
+  const choiceSummary = `UI: ${uiDirection.label}. Vibe: ${choices.vibe}. Habit: ${choices.habit}. Parents: ${choices.parent}.`;
 
   useEffect(() => {
     const tag = document.createElement("meta");
@@ -79,11 +144,13 @@ export function Demo() {
         <div className="min-w-0 overflow-hidden">
           <div className="min-w-0 overflow-hidden rounded-calm border border-line bg-white p-5 shadow-calm sm:p-7 lg:p-9">
             <p className="eyebrow">demo for Lev + Offy</p>
-            <h1 className="mt-3 max-w-full break-words font-display text-[2rem] font-black leading-[0.98] tracking-normal sm:max-w-3xl sm:text-6xl lg:text-7xl">
-              Kai is becoming a daily companion, not a document.
+            <h1 className="mt-3 max-w-full break-words font-display text-[1.65rem] font-black leading-[0.98] tracking-normal min-[380px]:text-[1.85rem] sm:max-w-3xl sm:text-6xl lg:text-7xl">
+              <span className="sm:hidden">Pick Kai's feel.</span>
+              <span className="hidden sm:inline">Pick the Kai they actually want to use.</span>
             </h1>
             <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-muted">
-              This page is the walkthrough for tonight: what is live, what is close, and what we need them to choose before the next sprint.
+              <span className="sm:hidden">Tap, try, send picks.</span>
+              <span className="hidden sm:inline">Tonight should be a product reaction, not a document review. Tap the UI directions, try the app flow, then pick what should drive the next sprint.</span>
             </p>
             <div className="mt-6 flex min-w-0 flex-col gap-2 sm:flex-row">
               <Link to="/onboarding" className="min-w-0 sm:inline-flex">
@@ -97,6 +164,60 @@ export function Demo() {
               </a>
             </div>
           </div>
+
+          <section className="mt-4 rounded-calm border border-line bg-white p-5 shadow-sm sm:p-6">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
+              <div>
+                <p className="eyebrow">choose the feel</p>
+                <h2 className="mt-2 break-words font-display text-[1.65rem] font-black leading-none tracking-normal min-[380px]:text-[1.85rem] sm:text-4xl">
+                  <span className="sm:hidden">Pick a UI direction.</span>
+                  <span className="hidden sm:inline">Three UI directions to react to.</span>
+                </h2>
+                <p className="mt-3 text-sm font-semibold leading-6 text-muted sm:text-base sm:leading-7">
+                  <span className="sm:hidden">Which one feels most like Kai?</span>
+                  <span className="hidden sm:inline">They do not need to approve a roadmap. They need to say which version feels like Kai.</span>
+                </p>
+              </div>
+              <div className="rounded-kai border border-line bg-paper p-4">
+                <p className="text-[11px] font-black uppercase tracking-wider text-muted">current pick</p>
+                <p className="mt-1 text-xl font-black">{uiDirection.label}</p>
+                <p className="mt-1 text-sm font-semibold leading-5 text-muted">{uiDirection.tagline}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {uiDirections.map((direction) => (
+                <button
+                  key={direction.id}
+                  type="button"
+                  onClick={() => setUiDirectionId(direction.id)}
+                  className={`focus-ring min-h-40 rounded-calm border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-soft ${
+                    uiDirection.id === direction.id ? "border-ink bg-ink text-paper shadow-soft" : "border-line bg-paper text-ink"
+                  }`}
+                >
+                  <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${uiDirection.id === direction.id ? "bg-white/15 text-paper/75" : "bg-white text-muted"}`}>
+                    option
+                  </span>
+                  <span className="mt-4 block font-display text-2xl font-black leading-none">{direction.label}</span>
+                  <span className={`mt-2 block text-sm font-semibold leading-5 ${uiDirection.id === direction.id ? "text-paper/72" : "text-muted"}`}>{direction.bestFor}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-4 rounded-calm border border-ink bg-ink p-5 text-paper shadow-calm sm:p-6">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-center">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-paper/60">how to use this preview</p>
+                <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Tap, pick, send the answer back.</h2>
+              </div>
+              <div className="grid gap-2 text-sm font-black">
+                <span className="rounded-full bg-white/10 px-4 py-3">1. Pick a UI direction</span>
+                <span className="rounded-full bg-white/10 px-4 py-3">2. Tap the walkthrough steps</span>
+                <span className="rounded-full bg-white/10 px-4 py-3">3. Send the choices</span>
+              </div>
+            </div>
+          </section>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-4" aria-label="Demo walkthrough">
             {walkthrough.map((item, index) => (
@@ -128,9 +249,9 @@ export function Demo() {
 
             <aside className="rounded-calm border border-line bg-warmPaper p-5 shadow-sm">
               <p className="eyebrow">tonight ask</p>
-              <p className="mt-2 font-display text-2xl font-black leading-none">React to the product, then pick the blockers.</p>
+              <p className="mt-2 font-display text-2xl font-black leading-none">Choose a direction, then pick the blockers.</p>
               <p className="mt-3 text-sm font-semibold leading-6 text-muted">
-                The fastest useful feedback is not another doc review. It is Lev tapping through this and saying what feels exciting, weird, or missing.
+                The fastest useful feedback is Lev saying which UI direction feels exciting, weird, or missing.
               </p>
             </aside>
           </section>
@@ -142,34 +263,44 @@ export function Demo() {
 
           <section id="choices" className="mt-4 rounded-calm border border-line bg-white p-5 shadow-sm sm:p-6">
             <p className="eyebrow">three decisions</p>
-            <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">What they need to pick tonight</h2>
-            <div className="mt-5 grid gap-3">
-              <DecisionRow number="1" title="Kai's vibe" copy="Should Kai feel like a coach, a supportive friend, or a game guide?" />
-              <DecisionRow number="2" title="The first daily habit" copy="Should the first habit be food photo, emotional check-in, streak/belt quest, or home-screen character?" />
-              <DecisionRow number="3" title="Parent visibility" copy="What should parents see by default: safety-only alerts, weekly summaries, or shared wins?" />
+            <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Make the next sprint concrete.</h2>
+            <div className="mt-5 grid gap-4">
+              {choiceGroups.map((group) => (
+                <ChoiceGroup
+                  key={group.id}
+                  title={group.title}
+                  options={[...group.options]}
+                  value={choices[group.id]}
+                  onChange={(value) => setChoices((current) => ({ ...current, [group.id]: value }))}
+                />
+              ))}
+            </div>
+            <div className="mt-5 rounded-kai border border-line bg-paper p-4">
+              <p className="text-[11px] font-black uppercase tracking-wider text-muted">send this back</p>
+              <p className="mt-2 text-sm font-black leading-6">{choiceSummary}</p>
             </div>
           </section>
         </div>
 
-        <aside className="lg:sticky lg:top-6">
-          <div className="mx-auto max-w-sm rounded-[2rem] border border-ink bg-ink p-3 shadow-calm">
-            <div className="rounded-[1.55rem] bg-paper p-4">
+        <aside className="order-first min-w-0 overflow-hidden lg:order-none lg:sticky lg:top-6">
+          <div className={`mx-auto w-full max-w-[17rem] rounded-[2rem] border border-ink p-2 shadow-calm min-[380px]:max-w-[18rem] sm:max-w-sm sm:p-3 ${uiDirection.background}`}>
+            <div className="rounded-[1.55rem] bg-white/96 p-3 sm:p-4">
               <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-ink/20" />
               <div className="rounded-[1.35rem] border border-line bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-muted">Kai</p>
-                    <p className="mt-1 text-sm font-black">Today</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-muted">{uiDirection.label}</p>
+                    <p className="mt-1 text-sm font-black">{active.label}</p>
                   </div>
-                  <span className="grid size-10 place-items-center rounded-full bg-ink font-serif text-2xl italic text-paper">k</span>
+                  <span className={`grid size-10 place-items-center rounded-full font-serif text-2xl italic ${uiDirection.accent}`}>k</span>
                 </div>
-                <div className="mt-5 rounded-[1.2rem] bg-warmPaper p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-muted">{active.label}</p>
-                  <p className="mt-2 font-display text-2xl font-black leading-none">{active.screen}</p>
-                  <p className="mt-3 text-sm font-semibold leading-6 text-muted">{active.detail}</p>
+                <div className={`mt-5 rounded-[1.2rem] p-3 sm:p-4 ${uiDirection.wash}`}>
+                  <p className="text-[11px] font-black uppercase tracking-wider text-muted">{uiDirection.tagline}</p>
+                  <p className="mt-2 font-display text-xl font-black leading-none sm:text-2xl">{uiDirection.screen}</p>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-muted">{uiDirection.detail}</p>
                 </div>
-                <div className="mt-3 rounded-[1.2rem] border border-line bg-white p-4">
-                  <p className="text-sm font-black">{active.action}</p>
+                <div className="mt-3 rounded-[1.2rem] border border-line bg-white p-3 sm:p-4">
+                  <p className="text-sm font-black">{uiDirection.action}</p>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <PhoneStat label="streak" value="3" />
@@ -179,9 +310,9 @@ export function Demo() {
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <MiniAction icon={Camera} label="Photo" />
-                <MiniAction icon={MessageCircle} label="Chat" />
-                <MiniAction icon={UserRoundCheck} label="Win" />
+                <MiniAction icon={Camera} label={uiDirection.id === "quest" ? "Quest" : "Photo"} />
+                <MiniAction icon={uiDirection.id === "social" ? UsersRound : MessageCircle} label={uiDirection.id === "social" ? "Share" : "Chat"} />
+                <MiniAction icon={uiDirection.id === "quest" ? Trophy : uiDirection.id === "social" ? Flame : UserRoundCheck} label={uiDirection.id === "quest" ? "XP" : uiDirection.id === "social" ? "Streak" : "Win"} />
               </div>
             </div>
           </div>
@@ -224,15 +355,25 @@ function StatusList({ title, tone, items }: { title: string; tone: "done" | "blo
   );
 }
 
-function DecisionRow({ number, title, copy }: { number: string; title: string; copy: string }) {
+function ChoiceGroup({ title, options, value, onChange }: { title: string; options: string[]; value: string; onChange: (value: string) => void }) {
   return (
-    <div className="grid grid-cols-[2.5rem_1fr] gap-3 rounded-kai border border-line bg-paper p-4">
-      <span className="grid size-10 place-items-center rounded-full bg-ink text-sm font-black text-paper">{number}</span>
-      <span>
-        <span className="block text-base font-black">{title}</span>
-        <span className="mt-1 block text-sm font-semibold leading-6 text-muted">{copy}</span>
-      </span>
-    </div>
+    <fieldset className="rounded-kai border border-line bg-paper p-4">
+      <legend className="px-1 text-sm font-black">{title}</legend>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(option)}
+            className={`focus-ring min-h-11 rounded-full border px-4 text-sm font-black transition ${
+              value === option ? "border-ink bg-ink text-paper shadow-sm" : "border-line bg-white text-ink hover:border-ink/35"
+            }`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 

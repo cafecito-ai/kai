@@ -1,4 +1,4 @@
-import type { ChatMessage, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { ChatMessage, DemoFeedbackChoices, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 type TokenGetter = () => Promise<string | null>;
@@ -121,5 +121,10 @@ export const api = {
     request<{ summary: string; answered: number; total: number }>("/api/engines/potential/strengths", {
       method: "POST",
       body: JSON.stringify({ responses })
+    }),
+  submitDemoFeedback: (body: { sessionId: string; choices: DemoFeedbackChoices; summary: string }) =>
+    request<{ ok: boolean; id: string }>("/api/demo-feedback", {
+      method: "POST",
+      body: JSON.stringify(body)
     })
 };

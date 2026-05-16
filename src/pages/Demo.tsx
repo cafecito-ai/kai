@@ -12,7 +12,7 @@ type Mission = {
   title: string;
   prompt: string;
   blocker?: string;
-  options?: Array<{ value: string; title: string; copy: string }>;
+  options?: Array<{ value: string; title: string; copy: string; demo?: string[] }>;
   placeholder?: string;
 };
 
@@ -25,9 +25,9 @@ const missions: Mission[] = [
     prompt: "If Kai opens on your phone, what lane makes you not instantly close it?",
     blocker: "Unblocks D1 design direction.",
     options: [
-      { value: "Quest Mode", title: "Quest Mode", copy: "XP, belts, unlocks, character growth." },
-      { value: "Lifestyle Feed", title: "Lifestyle Feed", copy: "Photos, wins, identity, friend energy." },
-      { value: "Calm Coach", title: "Calm Coach", copy: "Clean, trusted, private, less noisy." }
+      { value: "Quest Mode", title: "Quest Mode", copy: "XP, belts, unlocks, character growth.", demo: ["Home opens with level + belt progress", "Daily actions become XP", "Comeback is a challenge unlock"] },
+      { value: "Lifestyle Feed", title: "Lifestyle Feed", copy: "Photos, wins, identity, friend energy.", demo: ["Home opens like a private story feed", "Food and wins become cards", "Comeback is a prompt or recap"] },
+      { value: "Calm Coach", title: "Calm Coach", copy: "Clean, trusted, private, less noisy.", demo: ["Home opens with one quiet prompt", "Actions stay private by default", "Comeback is Kai remembering context"] }
     ]
   },
   {
@@ -191,6 +191,9 @@ export function Demo() {
         <div className="min-w-0">
           <Hero completed={completed} saveState={saveState} answers={answers} skin={skin} />
           <MissionRail missionIndex={missionIndex} onJump={setMissionIndex} answers={answers} skin={skin} />
+          <div className="mt-3 lg:hidden">
+            <KaiPrototype answers={answers} mission={liveMission} skin={skin} />
+          </div>
           <section className={`mt-3 overflow-hidden rounded-[1.35rem] border ${skin.panelBorder} ${skin.panel} shadow-[0_24px_90px_rgba(0,0,0,0.5)]`}>
             <div className={`border-b border-white/10 ${skin.header} p-4 sm:p-6`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -231,6 +234,9 @@ export function Demo() {
         </div>
 
         <aside className="min-w-0 lg:sticky lg:top-6">
+          <div className="hidden lg:block">
+            <KaiPrototype answers={answers} mission={liveMission} skin={skin} />
+          </div>
           <BuildConsole answers={answers} completed={completed} skin={skin} />
         </aside>
       </section>
@@ -291,6 +297,16 @@ function ChoiceMission({ mission, value, onChoose, skin }: { mission: Mission; v
             <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selected ? "bg-white/18 text-paper" : "bg-[#050505]/8 text-muted"}`}>{selected ? "locked" : "pick"}</span>
             <span className="mt-4 block font-display text-2xl font-black leading-none">{option.title}</span>
             <span className={`mt-2 block text-sm font-bold leading-5 ${selected ? "text-paper/75" : "text-muted"}`}>{option.copy}</span>
+            {option.demo && (
+              <span className={`mt-4 grid gap-1.5 text-xs font-black leading-4 ${selected ? "text-paper/78" : "text-ink/62"}`}>
+                {option.demo.map((item) => (
+                  <span key={item} className="flex gap-2">
+                    <span className={selected ? "text-paper" : "text-ink"}>+</span>
+                    <span>{item}</span>
+                  </span>
+                ))}
+              </span>
+            )}
           </button>
         );
       })}
@@ -338,6 +354,55 @@ function ReviewMission({ answers, summary, copied, onCopy, onSave, saveState, sk
         </button>
       </div>
     </div>
+  );
+}
+
+function KaiPrototype({ answers, mission, skin }: { answers: Record<string, string>; mission: Mission; skin: Skin }) {
+  const demo = prototypeForAnswers(answers, mission.id);
+  return (
+    <section className={`overflow-hidden rounded-[2rem] border ${skin.panelBorder} ${skin.panel} p-3 shadow-[0_24px_90px_rgba(0,0,0,0.42)]`}>
+      <div className="rounded-[1.65rem] border border-white/12 bg-[#070707] p-2">
+        <div className={`rounded-[1.35rem] ${skin.header} p-4`}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${skin.accentText}`}>{demo.mode}</p>
+              <h2 className="mt-1 font-display text-2xl font-black leading-none">{demo.title}</h2>
+            </div>
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-paper font-serif text-2xl italic text-[#050505]">k</span>
+          </div>
+          <p className="mt-3 text-sm font-bold leading-5 text-paper/72">{demo.subtitle}</p>
+        </div>
+
+        <div className="mt-2 rounded-[1.35rem] bg-white p-3 text-ink">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted">{demo.primaryLabel}</p>
+              <p className="mt-1 font-display text-2xl font-black leading-none">{demo.primary}</p>
+            </div>
+            <div className={`rounded-full px-3 py-2 text-xs font-black ${demo.badgeTone}`}>{demo.badge}</div>
+          </div>
+          <div className="mt-4 grid gap-2">
+            {demo.cards.map((card) => (
+              <div key={card.title} className={`rounded-[18px] border p-3 ${card.tone}`}>
+                <p className="text-[10px] font-black uppercase tracking-wider opacity-55">{card.label}</p>
+                <p className="mt-1 text-base font-black">{card.title}</p>
+                <p className="mt-1 text-xs font-bold leading-5 opacity-70">{card.copy}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {demo.nav.map((item) => (
+            <div key={item} className={`rounded-[18px] border border-white/12 p-3 text-center text-xs font-black ${skin.previewBadge}`}>{item}</div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 rounded-[20px] border border-white/10 bg-white/6 p-3">
+        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${skin.accentText}`}>what changed</p>
+        <p className="mt-1 text-sm font-bold leading-5 text-paper/72">{demo.change}</p>
+      </div>
+    </section>
   );
 }
 
@@ -604,6 +669,130 @@ function testerNudge(answers: Record<string, string>) {
   if (answers.vibe === "Quest Mode") return "Example: athlete, gamer, competitive student, friend group captain, someone who loves streaks...";
   if (answers.vibe === "Lifestyle Feed") return "Example: creator, athlete, social teen, private teen, someone who tracks outfits/food/wins...";
   return "Example: athlete, honors student, gamer, someone anxious, someone trying to eat better...";
+}
+
+function prototypeForAnswers(answers: Record<string, string>, missionId: MissionId) {
+  const vibe = answers.vibe;
+  const loop = answers.firstLoop;
+  const parent = answers.parents;
+
+  if (vibe === "Lifestyle Feed") {
+    return {
+      mode: "Lifestyle Feed demo",
+      title: loop ? `${railLabelFromText(loop)} card` : "Private story home",
+      subtitle: "Kai feels like a private feed of wins, prompts, photos, and identity signals.",
+      primaryLabel: "today's prompt",
+      primary: loop === "Food Camera" ? "Snap lunch before practice" : loop === "Streaks + Belts" ? "Post a win to your streak" : "Add one real moment",
+      badge: parent === "Shared Wins" ? "shareable" : "private",
+      badgeTone: "bg-[#DCFCE7] text-[#065F46]",
+      cards: [
+        {
+          label: "feed card",
+          title: loop === "Food Camera" ? "Fuel check" : "Today card",
+          copy: loop ? `${loop} becomes a visual card, not a form.` : "Choosing a first loop changes this card.",
+          tone: "border-[#A7F3D0] bg-[#ECFDF5]"
+        },
+        {
+          label: "comeback",
+          title: answers.comeback || "Daily recap",
+          copy: "The return hook should feel like opening a private story, not completing homework.",
+          tone: "border-[#FBCFE8] bg-[#FDF2F8]"
+        },
+        {
+          label: "parent mode",
+          title: parent || "Pick visibility",
+          copy: parent ? parentCopy(parent) : "Parent settings change the share and privacy controls.",
+          tone: "border-[#BFDBFE] bg-[#EFF6FF]"
+        }
+      ],
+      nav: ["Feed", "Camera", "Wins"],
+      change: changeCopy(answers, missionId, "feed")
+    };
+  }
+
+  if (vibe === "Calm Coach") {
+    return {
+      mode: "Calm Coach demo",
+      title: loop ? `One ${railLabelFromText(loop)} next step` : "One clean next move",
+      subtitle: "Kai feels quiet, private, and useful without trying to be entertaining.",
+      primaryLabel: "kai asks",
+      primary: loop === "Emotional Check-in" ? "What feels loud right now?" : loop === "Food Camera" ? "Want a quick read on this meal?" : "What is one small win today?",
+      badge: parent === "Safety-only" ? "private" : "low-noise",
+      badgeTone: "bg-[#F4F4F5] text-[#18181B]",
+      cards: [
+        {
+          label: "coach prompt",
+          title: loop || "Choose first action",
+          copy: loop ? `${loop} is framed as one calm step.` : "Picking a loop changes Kai's first question.",
+          tone: "border-[#E4E4E7] bg-[#FAFAFA]"
+        },
+        {
+          label: "memory",
+          title: answers.comeback || "Kai remembers context",
+          copy: "The comeback mechanic should feel helpful, not needy.",
+          tone: "border-[#DBEAFE] bg-[#EFF6FF]"
+        },
+        {
+          label: "guardrails",
+          title: parent || "Choose visibility",
+          copy: parent ? parentCopy(parent) : "Parent settings stay clear without taking over the teen experience.",
+          tone: "border-[#E9D5FF] bg-[#FAF5FF]"
+        }
+      ],
+      nav: ["Today", "Chat", "Progress"],
+      change: changeCopy(answers, missionId, "coach")
+    };
+  }
+
+  return {
+    mode: vibe ? "Quest Mode demo" : "Live Kai demo",
+    title: loop ? `${railLabelFromText(loop)} quest` : "Choose a world",
+    subtitle: vibe ? "Kai feels like levels, belts, daily missions, and visible character growth." : "Pick a vibe to load a real Kai prototype.",
+    primaryLabel: "active quest",
+    primary: loop === "Streaks + Belts" ? "+40 XP to green belt" : loop === "Food Camera" ? "Scan fuel, earn XP" : loop || "No quest loaded yet",
+    badge: vibe ? "level 3" : "locked",
+    badgeTone: "bg-[#ECFCCB] text-[#365314]",
+    cards: [
+      {
+        label: "mission",
+        title: loop || "Pick first loop",
+        copy: loop ? `${loop} becomes the core XP action.` : "The first loop decides the first playable mission.",
+        tone: "border-[#D9F99D] bg-[#F7FEE7]"
+      },
+      {
+        label: "unlock",
+        title: answers.comeback || "Tomorrow challenge",
+        copy: "The comeback hook becomes the next unlock or streak mechanic.",
+        tone: "border-[#BAE6FD] bg-[#F0F9FF]"
+      },
+      {
+        label: "safety",
+        title: parent || "Parent visibility",
+        copy: parent ? parentCopy(parent) : "Parent mode changes what gets surfaced outside the teen app.",
+        tone: "border-[#DDD6FE] bg-[#F5F3FF]"
+      }
+    ],
+    nav: ["Quest", "Kai", "Belts"],
+    change: changeCopy(answers, missionId, "quest")
+  };
+}
+
+function changeCopy(answers: Record<string, string>, missionId: MissionId, mode: "quest" | "feed" | "coach") {
+  if (missionId === "vibe" && answers.vibe) return `${answers.vibe} loaded: the prototype, missions, and prompts now use this product direction.`;
+  if (missionId === "firstLoop" && answers.firstLoop) return `${answers.firstLoop} is now the first real action in the ${mode} demo.`;
+  if (missionId === "comeback" && answers.comeback) return `The comeback mechanic now shows as: ${answers.comeback}`;
+  if (missionId === "voice" && answers.voice) return "The voice rules will shape the content review and Kai prompts.";
+  if (missionId === "parents" && answers.parents) return `${answers.parents} is now reflected in the parent visibility area.`;
+  if (missionId === "sources" && answers.sources) return "Source material will become the grounded prompt direction.";
+  if (missionId === "safety" && answers.safety) return "Safety red lines are now part of the launch blocker list.";
+  if (missionId === "testers" && answers.testers) return "The tester squad is now part of the friend-test plan.";
+  return "Answer this mission to update the live Kai demo.";
+}
+
+function parentCopy(parent: string) {
+  if (parent === "Safety-only") return "Parents only hear about serious safety boundaries.";
+  if (parent === "Weekly Summary") return "Parents see a light recap without private details.";
+  return "Wins can be shared only when the teen chooses.";
 }
 
 function previewTitle(answers: Record<string, string>) {

@@ -70,6 +70,12 @@ select {
   padding-bottom: calc(env(safe-area-inset-bottom) + 5.75rem);
 }
 
+/* Demo: HomeCard reveal */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /*
  * Spec Section 4 / P3-8: "Respect prefers-reduced-motion — replace all
  * motion with instant transitions if set." Belt-and-suspenders approach

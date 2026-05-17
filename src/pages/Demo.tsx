@@ -107,21 +107,25 @@ export function Demo() {
     setThinking(true);
     setChatError(null);
     try {
-      const result = await api.demoKai({
-        message: userTurn.content,
-        history: chat,
-        vibes: build.vibes,
-        kaiName: build.kaiName,
-        kaiTone: build.kaiTone,
-        firstName: build.firstName || undefined
-      });
+      const result = await withDemoKaiFallback(
+        api.demoKai({
+          message: userTurn.content,
+          history: chat,
+          vibes: build.vibes,
+          kaiName: build.kaiName,
+          kaiTone: build.kaiTone,
+          firstName: build.firstName || undefined
+        }),
+        build,
+        userTurn.content
+      );
       setChat([...nextChat, { role: "assistant", content: result.reply }]);
       // After 2 user turns, reveal the "home card" moment
       if (nextChat.filter((m) => m.role === "user").length >= 2) {
         setTimeout(() => setSeenHomeCard(true), 350);
       }
     } catch {
-      setChatError("Kai stalled. Try again in a sec.");
+      setChat([...nextChat, { role: "assistant", content: fallbackKaiReply(build, userTurn.content) }]);
     } finally {
       setThinking(false);
     }
@@ -977,6 +981,44 @@ function openingFromVibes(build: Build) {
   if (v.includes("hyped") && v.includes("locked-in")) return `${name}you're firing — what are you actually trying to do today?`;
   if (v.includes("bored"))                            return `${name}bored is a signal, not a verdict. what would you do if no one was watching?`;
   return `${name}${v.slice(0, 2).join(" + ")} energy. say more — what's behind it?`;
+}
+
+async function withDemoKaiFallback(
+  request: Promise<{ reply: string; capped?: boolean; turnsRemaining?: number; safetyEvent?: { category?: string; severity?: string } }>,
+  build: Build,
+  message: string
+) {
+  let timedOut = false;
+  const timeout = new Promise<{ reply: string }>((resolve) => {
+    window.setTimeout(() => {
+      timedOut = true;
+      resolve({ reply: fallbackKaiReply(build, message) });
+    }, 3600);
+  });
+  const result = await Promise.race([request, timeout]);
+  if (timedOut) request.catch(() => undefined);
+  return result;
+}
+
+function fallbackKaiReply(build: Build, message: string) {
+  const lower = message.toLowerCase();
+  const name = build.firstName ? `${build.firstName}, ` : "";
+  if (/(kill myself|suicide|self harm|hurt myself|end it)/i.test(message)) {
+    return `${name}that sounds serious. This demo is not enough for that moment. If you might hurt yourself, call or text 988 now, and tell a real person near you.`;
+  }
+  if (lower.includes("food") || lower.includes("eat") || lower.includes("calorie")) {
+    return `${name}food stuff can get loaded fast. I would keep this simple: what did you eat, and did it help your energy or make you feel worse?`;
+  }
+  if (lower.includes("school") || lower.includes("homework") || lower.includes("test")) {
+    return `${name}school being loud makes sense. Pick one piece of it: the deadline, the people, or the pressure. Which one is actually hitting hardest?`;
+  }
+  if (lower.includes("reset") || lower.includes("stress") || lower.includes("anxious")) {
+    return `${name}quick reset: unclench your jaw, drop your shoulders, and name the one thing you can do in the next 10 minutes.`;
+  }
+  if (build.kaiTone === "direct") {
+    return `${name}got it. Give me the real version in one sentence: what is the problem, and what would make the next 10 minutes easier?`;
+  }
+  return `${name}I hear you. Say the part you would normally skip over. That is usually where the useful answer starts.`;
 }
 
 function getOrMakeSession(): string {

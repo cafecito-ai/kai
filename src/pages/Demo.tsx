@@ -37,6 +37,10 @@ type Build = {
   goalText: string;
   feelingsSummary: string;
   mealSummary: string;
+  // Optional self-ID on Act 5 Ship — lets ops tell whose session is whose
+  // (especially Lev's) without coupling the demo to Clerk auth.
+  reviewerName: string;
+  reviewerEmail: string;
 };
 
 const VIBE_CHIPS: { id: string; label: string; emoji: string }[] = [
@@ -85,6 +89,11 @@ export function Demo() {
   const [chatError, setChatError] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [seenHomeCard, setSeenHomeCard] = useState(false);
+  // Try-act detail blobs lifted out of the Minis so the autosave hook below
+  // can ship them to the server. NOT persisted to localStorage — they're
+  // verbose, and refresh resets the Try act anyway.
+  const [feelingsTranscript, setFeelingsTranscript] = useState<ChatTurn[] | null>(null);
+  const [mealResult, setMealResult] = useState<unknown>(null);
 
   // Lock title + noindex
   useEffect(() => {
@@ -99,6 +108,32 @@ export function Demo() {
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(build)); } catch { /* ignore */ }
   }, [build]);
+
+  // Server-side autosave. Debounced 800ms so a burst of typing or rapid act
+  // navigation collapses into one POST. Skips the first "just landed" state
+  // (act === 1 with empty vibes) so we don't pollute the table with every
+  // page view; the first real save fires after the user advances past Meet.
+  useEffect(() => {
+    const meaningful = act > 1 || build.vibes.length > 0 || build.firstName.length > 0;
+    if (!meaningful) return;
+    const timer = window.setTimeout(() => {
+      void api.saveDemoSession({
+        sessionId: getOrMakeSession(),
+        reviewerName: build.reviewerName.trim() || undefined,
+        reviewerEmail: build.reviewerEmail.trim() || undefined,
+        build,
+        chat,
+        feelings: feelingsTranscript ? { transcript: feelingsTranscript, summary: build.feelingsSummary } : undefined,
+        meal: mealResult ?? undefined,
+        tried: build.tried,
+        lastAct: act,
+        completed: act === 6
+      }).catch(() => {
+        // Silent failure — autosave is best-effort. Don't block the demo on a save retry.
+      });
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [act, build, chat, feelingsTranscript, mealResult]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -202,11 +237,20 @@ export function Demo() {
             onNext={() => goAct(4)}
           />
         )}
-        {act === 4 && <ActTry build={build} update={update} onNext={() => goAct(5)} />}
+        {act === 4 && (
+          <ActTry
+            build={build}
+            update={update}
+            onNext={() => goAct(5)}
+            onFeelingsDetail={setFeelingsTranscript}
+            onMealDetail={setMealResult}
+          />
+        )}
         {act === 5 && <ActBuild build={build} update={update} onNext={() => goAct(6)} />}
         {act === 6 && (
           <ActShip
             build={build}
+            update={update}
             shareLink={shareLink}
             shareCopied={shareCopied}
             onShare={copyShare}
@@ -602,7 +646,19 @@ function summarizeTry(build: Build, key: TriedKey): string {
   return "done";
 }
 
-function ActTry({ build, update, onNext }: { build: Build; update: (p: Partial<Build>) => void; onNext: () => void }) {
+function ActTry({
+  build,
+  update,
+  onNext,
+  onFeelingsDetail,
+  onMealDetail
+}: {
+  build: Build;
+  update: (p: Partial<Build>) => void;
+  onNext: () => void;
+  onFeelingsDetail: (transcript: ChatTurn[]) => void;
+  onMealDetail: (result: unknown) => void;
+}) {
   const [openMini, setOpenMini] = useState<MiniKey>(null);
   const canContinue = build.tried.length >= 1;
 
@@ -714,8 +770,9 @@ function ActTry({ build, update, onNext }: { build: Build; update: (p: Partial<B
                   {tile.key === "feelings" && (
                     <FeelingsCheckMini
                       build={build}
-                      onComplete={(summary) => {
+                      onComplete={(summary, transcript) => {
                         update({ feelingsSummary: summary });
+                        onFeelingsDetail(transcript);
                         markTried("feelings");
                         window.setTimeout(() => setOpenMini(null), 1800);
                       }}
@@ -723,8 +780,9 @@ function ActTry({ build, update, onNext }: { build: Build; update: (p: Partial<B
                   )}
                   {tile.key === "fuel" && (
                     <FuelSnapMini
-                      onComplete={(summary) => {
+                      onComplete={(summary, result) => {
                         update({ mealSummary: summary });
+                        onMealDetail(result);
                         markTried("fuel");
                         window.setTimeout(() => setOpenMini(null), 1800);
                       }}
@@ -818,7 +876,7 @@ function OneWinMini({ build, onLock }: { build: Build; onLock: (text: string) =>
 
 type FuelSnapResult = Awaited<ReturnType<typeof api.demoFoodPhoto>>;
 
-function FuelSnapMini({ onComplete }: { onComplete: (summary: string) => void }) {
+function FuelSnapMini({ onComplete }: { onComplete: (summary: string, result: FuelSnapResult) => void }) {
   const [result, setResult] = useState<FuelSnapResult | null>(null);
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -956,7 +1014,7 @@ function FuelSnapMini({ onComplete }: { onComplete: (summary: string) => void })
           type="button"
           onClick={() => {
             const names = result.items.map((i) => i.name).filter(Boolean).slice(0, 5).join(", ");
-            onComplete(names ? `snapped: ${names}` : "fuel snap completed");
+            onComplete(names ? `snapped: ${names}` : "fuel snap completed", result);
           }}
           className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#A3FF12] px-4 text-[12px] font-black text-[#0B1419]"
         >
@@ -972,7 +1030,7 @@ function feelingsOpener(firstName: string): string {
   return `${hi}Quick check-in. Where in your body do you notice something right now — tight jaw, heavy chest, buzzing hands? One sentence works.`;
 }
 
-function FeelingsCheckMini({ build, onComplete }: { build: Build; onComplete: (summary: string) => void }) {
+function FeelingsCheckMini({ build, onComplete }: { build: Build; onComplete: (summary: string, transcript: ChatTurn[]) => void }) {
   // Local chat state — feelings flow doesn't share with the Act 3 free chat
   const [chat, setChat] = useState<ChatTurn[]>(() => [
     { role: "assistant", content: feelingsOpener(build.firstName.trim()) }
@@ -1030,7 +1088,7 @@ function FeelingsCheckMini({ build, onComplete }: { build: Build; onComplete: (s
         // Build a compact summary: what they shared, joined.
         const userText = finalChat.filter((m) => m.role === "user").map((m) => m.content).join(" | ").slice(0, 240);
         setDone(true);
-        window.setTimeout(() => onComplete(userText || "feelings check-in completed"), 1200);
+        window.setTimeout(() => onComplete(userText || "feelings check-in completed", finalChat), 1200);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
@@ -1283,13 +1341,14 @@ function ActBuild({ build, update, onNext }: { build: Build; update: (p: Partial
 
 function ActShip(props: {
   build: Build;
+  update: (p: Partial<Build>) => void;
   shareLink: string;
   shareCopied: boolean;
   onShare: () => void;
   onSave: () => Promise<void>;
   onRestart: () => void;
 }) {
-  const { build, shareLink, shareCopied, onShare, onSave, onRestart } = props;
+  const { build, update, shareLink, shareCopied, onShare, onSave, onRestart } = props;
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const savedOnce = useRef(false);
 
@@ -1333,6 +1392,40 @@ function ActShip(props: {
             <p className="mt-0.5 text-[11px] font-bold text-white/55">first move: {FIRST_MOVES.find((m) => m.id === build.firstMove)?.label}</p>
           </div>
           {saveState === "saved" && <span className="rounded-full bg-[#A3FF12]/15 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-[#A3FF12]">saved</span>}
+        </div>
+      </div>
+
+      {/* Optional self-ID so the build team knows whose session this is.
+          Lev (and anyone else doing a real review) can drop their name here
+          instead of doing a separate sync call. Anonymous teens skip it. */}
+      <div className="rounded-[22px] border border-white/12 bg-white/4 p-4">
+        <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#4FC3F7]">
+          <UserPlus size={12} /> who's reviewing?
+        </p>
+        <p className="mt-1 text-[12px] font-medium leading-5 text-white/65">
+          Optional. Lets the team tag your feedback to you instead of guessing.
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">name</span>
+            <input
+              type="text"
+              value={build.reviewerName}
+              onChange={(e) => update({ reviewerName: e.target.value.slice(0, 60) })}
+              placeholder="e.g. Lev"
+              className="mt-1 w-full rounded-2xl border border-white/12 bg-[#0B1419]/75 px-3 py-2 text-[13px] font-bold text-white outline-none placeholder:text-white/30 focus:border-[#4FC3F7]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">email</span>
+            <input
+              type="email"
+              value={build.reviewerEmail}
+              onChange={(e) => update({ reviewerEmail: e.target.value.slice(0, 80) })}
+              placeholder="optional"
+              className="mt-1 w-full rounded-2xl border border-white/12 bg-[#0B1419]/75 px-3 py-2 text-[13px] font-bold text-white outline-none placeholder:text-white/30 focus:border-[#4FC3F7]"
+            />
+          </label>
         </div>
       </div>
 
@@ -1588,7 +1681,9 @@ function defaultBuild(): Build {
     tried: [],
     goalText: "",
     feelingsSummary: "",
-    mealSummary: ""
+    mealSummary: "",
+    reviewerName: "",
+    reviewerEmail: ""
   };
 }
 
@@ -1614,11 +1709,19 @@ function loadSeedOrSaved(): Build {
 
 function buildShareLink(build: Build) {
   if (typeof window === "undefined") return "";
-  // Strip session-specific fields — sharing is about the character build,
-  // not what the original user typed into their One Win or Feelings check.
-  // Recipients should start their own Try act fresh.
-  const { tried: _t, goalText: _g, feelingsSummary: _f, mealSummary: _m, ...shareable } = build;
-  void _t; void _g; void _f; void _m;
+  // Strip session-specific fields AND reviewer PII — sharing is about the
+  // character build, not what the original user typed into their One Win or
+  // who they identified themselves as. Recipients start their Try act fresh.
+  const {
+    tried: _t,
+    goalText: _g,
+    feelingsSummary: _f,
+    mealSummary: _m,
+    reviewerName: _rn,
+    reviewerEmail: _re,
+    ...shareable
+  } = build;
+  void _t; void _g; void _f; void _m; void _rn; void _re;
   const seed = btoa(JSON.stringify(shareable)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return `${window.location.origin}/demo?seed=${seed}`;
 }

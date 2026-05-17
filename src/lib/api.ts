@@ -6,6 +6,7 @@ const PUBLIC_DEMO_API_PATHS = new Set([
   "/api/demo-kai",
   "/api/demo-food-photo",
   "/api/demo-food-photo-upload",
+  "/api/demo-session",
   "/api/scope-feedback",
   "/api/demo-feedback"
 ]);
@@ -111,6 +112,41 @@ export const api = {
         totalScore: number;
       }>;
     }>("/api/friends/compare"),
+  getDemoSessions: () =>
+    request<{
+      sessions: Array<{
+        sessionId: string;
+        reviewerName: string | null;
+        reviewerEmail: string | null;
+        kaiName: string | null;
+        kaiTone: string | null;
+        firstName: string | null;
+        vibes: string[];
+        tried: string[];
+        lastAct: number;
+        completedAt: string | null;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+    }>("/api/ops/demo-sessions"),
+  getDemoSession: (sessionId: string) =>
+    request<{
+      session: {
+        sessionId: string;
+        reviewerName: string | null;
+        reviewerEmail: string | null;
+        build: Record<string, unknown> | null;
+        chat: Array<{ role: "user" | "assistant"; content: string }> | null;
+        feelings: { transcript?: Array<{ role: "user" | "assistant"; content: string }>; summary?: string } | null;
+        meal: Record<string, unknown> | null;
+        tried: string[];
+        lastAct: number;
+        completedAt: string | null;
+        userAgent: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/api/ops/demo-sessions/${encodeURIComponent(sessionId)}`),
   getSafetyEvents: () =>
     request<{
       events: Array<{
@@ -140,6 +176,22 @@ export const api = {
     source?: "auto" | "manual";
   }) =>
     request<{ ok: boolean; id: string }>("/api/demo-feedback", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  saveDemoSession: (body: {
+    sessionId: string;
+    reviewerName?: string;
+    reviewerEmail?: string;
+    build: unknown;
+    chat?: unknown;
+    feelings?: unknown;
+    meal?: unknown;
+    tried: string[];
+    lastAct: number;
+    completed: boolean;
+  }) =>
+    request<{ ok: boolean; sessionId: string }>("/api/demo-session", {
       method: "POST",
       body: JSON.stringify(body)
     }),

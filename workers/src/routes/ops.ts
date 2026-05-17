@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { ensureDemoFeedbackTable, ensureScopeFeedbackTable } from "./demo";
+import { ensureDemoFeedbackTable, ensureDemoSessionsTable, ensureScopeFeedbackTable } from "./demo";
 import type { AppVariables, Env } from "../types";
 
 export const opsRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -83,3 +83,81 @@ function parseJson(value: unknown) {
     return [];
   }
 }
+
+// Same as parseJson but returns null instead of [] when missing — for the
+// optional Try blobs (chat, feelings, meal) on demo sessions.
+function parseJsonOrNull(value: unknown) {
+  if (typeof value !== "string" || value.length === 0) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+opsRoutes.get("/ops/demo-sessions", async (c) => {
+  if (!c.get("isOps")) return c.json({ error: "Forbidden" }, 403);
+  await ensureDemoSessionsTable(c.env.DB);
+  const { results } = await c.env.DB.prepare(
+    `SELECT session_id, reviewer_name, reviewer_email, build_json, tried_json,
+            last_act, completed_at, user_agent, created_at, updated_at
+     FROM demo_sessions
+     ORDER BY updated_at DESC
+     LIMIT 100`
+  ).all();
+
+  return c.json({
+    sessions: (results as Array<Record<string, unknown>>).map((row) => {
+      const build = parseJsonOrNull(row.build_json) as Record<string, unknown> | null;
+      return {
+        sessionId: row.session_id,
+        reviewerName: row.reviewer_name,
+        reviewerEmail: row.reviewer_email,
+        kaiName: build?.kaiName ?? null,
+        kaiTone: build?.kaiTone ?? null,
+        firstName: build?.firstName ?? null,
+        vibes: Array.isArray(build?.vibes) ? build.vibes : [],
+        tried: parseJsonOrNull(row.tried_json) ?? [],
+        lastAct: row.last_act,
+        completedAt: row.completed_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    })
+  });
+});
+
+opsRoutes.get("/ops/demo-sessions/:sessionId", async (c) => {
+  if (!c.get("isOps")) return c.json({ error: "Forbidden" }, 403);
+  await ensureDemoSessionsTable(c.env.DB);
+  const sessionId = c.req.param("sessionId");
+  const row = await c.env.DB.prepare(
+    `SELECT session_id, reviewer_name, reviewer_email,
+            build_json, chat_json, feelings_json, meal_json, tried_json,
+            last_act, completed_at, user_agent, created_at, updated_at
+     FROM demo_sessions
+     WHERE session_id = ?`
+  )
+    .bind(sessionId)
+    .first<Record<string, unknown>>();
+
+  if (!row) return c.json({ error: "Not found" }, 404);
+
+  return c.json({
+    session: {
+      sessionId: row.session_id,
+      reviewerName: row.reviewer_name,
+      reviewerEmail: row.reviewer_email,
+      build: parseJsonOrNull(row.build_json),
+      chat: parseJsonOrNull(row.chat_json),
+      feelings: parseJsonOrNull(row.feelings_json),
+      meal: parseJsonOrNull(row.meal_json),
+      tried: parseJsonOrNull(row.tried_json) ?? [],
+      lastAct: row.last_act,
+      completedAt: row.completed_at,
+      userAgent: row.user_agent,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }
+  });
+});

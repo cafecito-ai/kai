@@ -11,7 +11,8 @@ export async function requireAuth(c: AuthContext, next: Next) {
     c.req.path === "/api/health" ||
     c.req.path === "/api/parent/consent" ||
     c.req.path === "/api/demo-feedback" ||
-    c.req.path === "/api/scope-feedback"
+    c.req.path === "/api/scope-feedback" ||
+    c.req.path === "/api/demo-kai"
   ) {
     await next();
     return;

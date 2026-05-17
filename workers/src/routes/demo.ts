@@ -1,5 +1,14 @@
 import { Hono } from "hono";
+import { callClaude } from "../lib/claude";
+import { classifySafetyFull } from "../lib/safety";
 import type { AppVariables, Env } from "../types";
+
+const DEMO_MAX_TURNS = 6;
+const DEMO_MAX_MESSAGE_CHARS = 600;
+const DEMO_ALLOWED_VIBES = new Set([
+  "tired","hyped","stuck","curious","hungry","locked-in","anxious","bored",
+  "funny","quiet","plotting","moving","wired","slow","fired-up","numb"
+]);
 
 const VALID_UI = new Set(["Calm Coach", "Quest Mode", "Lifestyle Feed"]);
 const VALID_HABIT = new Set(["Food Camera", "Emotional Check-in", "Streaks + Belts", "Home-screen Character"]);
@@ -44,6 +53,97 @@ demoRoutes.post("/demo-feedback", async (c) => {
 
   return c.json({ ok: true, id });
 });
+
+// Live Kai chat for the public /demo flow. No auth, no DB writes, no history persisted.
+// Hard cap of 6 turns. Safety classifier always runs first.
+demoRoutes.post("/demo-kai", async (c) => {
+  const body = await c.req.json().catch(() => null) as null | {
+    message?: unknown;
+    history?: unknown;
+    vibes?: unknown;
+    kaiName?: unknown;
+    kaiTone?: unknown;
+    firstName?: unknown;
+  };
+  if (!body) return c.json({ error: "Invalid payload" }, 400);
+
+  const message = typeof body.message === "string" ? body.message.trim().slice(0, DEMO_MAX_MESSAGE_CHARS) : "";
+  if (!message) return c.json({ error: "Missing message" }, 400);
+
+  // History clamp — last 5 exchanges max, both roles
+  const rawHistory = Array.isArray(body.history) ? body.history : [];
+  const history = rawHistory
+    .filter((m): m is { role: string; content: string } =>
+      !!m && typeof m === "object" &&
+      ((m as { role?: unknown }).role === "user" || (m as { role?: unknown }).role === "assistant") &&
+      typeof (m as { content?: unknown }).content === "string"
+    )
+    .slice(-DEMO_MAX_TURNS * 2)
+    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content.slice(0, DEMO_MAX_MESSAGE_CHARS) }));
+
+  const userTurns = history.filter((m) => m.role === "user").length;
+  if (userTurns >= DEMO_MAX_TURNS) {
+    return c.json({
+      reply: "Cool — that's where the demo wraps. Sign up to keep going for real.",
+      capped: true
+    });
+  }
+
+  // Safety always runs first
+  const safety = await classifySafetyFull(c.env, message);
+  if (!safety.safe) {
+    return c.json({
+      reply: safety.response ?? "Hey. What you're carrying is bigger than this demo. 988 (call or text) is real people, real fast. I'm still right here.",
+      safetyEvent: { category: safety.category, severity: safety.severity }
+    });
+  }
+
+  const vibes = Array.isArray(body.vibes)
+    ? body.vibes.filter((v): v is string => typeof v === "string").map((v) => v.toLowerCase().trim()).filter((v) => DEMO_ALLOWED_VIBES.has(v)).slice(0, 4)
+    : [];
+  const kaiName = typeof body.kaiName === "string" ? body.kaiName.trim().slice(0, 24).replace(/[^A-Za-z0-9 _.-]/g, "") || "Kai" : "Kai";
+  const kaiTone = body.kaiTone === "warm" || body.kaiTone === "direct" ? body.kaiTone : "balanced";
+  const firstName = typeof body.firstName === "string" ? body.firstName.trim().slice(0, 24).replace(/[^A-Za-z0-9 _.-]/g, "") : "";
+
+  const system = buildDemoKaiSystemPrompt({ vibes, kaiName, kaiTone, firstName });
+  const reply = (await callClaude(c.env, system, [...history, { role: "user", content: message }])) || "I'm here. What's the smallest next move?";
+
+  return c.json({ reply, turnsRemaining: DEMO_MAX_TURNS - userTurns - 1 });
+});
+
+function buildDemoKaiSystemPrompt(opts: { vibes: string[]; kaiName: string; kaiTone: "warm" | "balanced" | "direct"; firstName: string }) {
+  const toneLine =
+    opts.kaiTone === "warm"
+      ? "Lean warm — gentle, reflective, leave room for feeling."
+      : opts.kaiTone === "direct"
+      ? "Lean direct — short, practical, get to the option fast."
+      : "Balanced — ask, reflect, offer one option.";
+  const vibesLine = opts.vibes.length ? `They just said their vibe today is: ${opts.vibes.join(", ")}.` : "";
+  const nameLine = opts.firstName ? `Their name is ${opts.firstName}.` : "";
+  return `You are ${opts.kaiName}, an AI mentor for a teenager. This is a 90-second product DEMO — keep replies under 60 words, no lists.
+
+${nameLine}
+${vibesLine}
+
+VOICE
+- Warm, real, slightly irreverent. Cool older sibling, not a guidance counselor.
+- Short sentences. Active voice. Plain words. No emoji unless they used one first.
+- No corporate words ("leverage", "synergy", "journey", "transform").
+- Never preachy. Never tell them what they should feel.
+- ${toneLine}
+
+NEVER
+- Diagnose anything.
+- Recommend drugs, supplements, dosages.
+- Claim to be human. If asked, say: "I'm an AI named ${opts.kaiName}."
+- Agree with self-harm, suicide, eating-disorder behavior, substance abuse, or violence.
+
+DEMO MODE RULES
+- Reference their vibes if relevant, naturally — not like a quiz.
+- After 2 of their messages, you'll be hit with a final wrap from the UI. Don't force a goodbye yourself.
+- If they ask "what is this app" — give a one-sentence honest answer: "A coach you can text when teen life is loud."
+- Don't list features. Make one specific observation about what they wrote and one small offer.`;
+}
 
 demoRoutes.post("/scope-feedback", async (c) => {
   const body = await c.req.json().catch(() => null);

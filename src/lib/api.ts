@@ -1,6 +1,8 @@
 import type { ChatMessage, DemoFeedbackChoices, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
+const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
+const PUBLIC_DEMO_API_PATHS = new Set(["/api/demo-kai", "/api/scope-feedback", "/api/demo-feedback"]);
 type TokenGetter = () => Promise<string | null>;
 
 let apiAuthTokenGetter: TokenGetter | null = null;
@@ -9,15 +11,16 @@ export function setApiAuthTokenGetter(getter: TokenGetter | null) {
   apiAuthTokenGetter = getter;
 }
 
-function getApiBaseUrl() {
+function getApiBaseUrl(path: string) {
   if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "");
   if (typeof window === "undefined") return "";
   if (window.location.hostname === "kai.boostaisearch.ai") return "";
+  if (PUBLIC_DEMO_API_PATHS.has(path)) return PRODUCTION_API_BASE;
   return STAGING_API_BASE;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const url = `${getApiBaseUrl()}${path}`;
+  const url = `${getApiBaseUrl(path)}${path}`;
   const token = await apiAuthTokenGetter?.();
   const devUser = getDevUser();
   const isFormData = init?.body instanceof FormData;
@@ -141,6 +144,18 @@ export const api = {
     summary: string;
   }) =>
     request<{ ok: boolean; id: string }>("/api/scope-feedback", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  demoKai: (body: {
+    message: string;
+    history: { role: "user" | "assistant"; content: string }[];
+    vibes: string[];
+    kaiName: string;
+    kaiTone: "warm" | "balanced" | "direct";
+    firstName?: string;
+  }) =>
+    request<{ reply: string; capped?: boolean; turnsRemaining?: number; safetyEvent?: { category?: string; severity?: string } }>("/api/demo-kai", {
       method: "POST",
       body: JSON.stringify(body)
     })

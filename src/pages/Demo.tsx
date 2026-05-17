@@ -1,850 +1,992 @@
-import { ArrowLeft, ArrowRight, CheckCircle2, Clipboard, Flame, Gamepad2, LockKeyhole, Rocket, ShieldCheck, Sparkles, Target, Trophy, UsersRound } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Check, Flame, Loader2, MessageCircle, Send, Share2, Sparkles, Trophy, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
-import type { DemoFeedbackChoices } from "../lib/types";
 
-type MissionId = "vibe" | "firstLoop" | "comeback" | "voice" | "parents" | "sources" | "safety" | "testers" | "review";
+/**
+ * /demo — 5-act guided experience that lets Lev (or any teen) feel Kai land
+ * in their hands in ~3 minutes. Saves nothing to a backend except the
+ * existing scope/demo feedback rows at the end. Real Kai chat in Act 3
+ * hits /api/demo-kai which calls the safety classifier + Claude.
+ *
+ * Acts: 1) Meet  2) Read  3) Chat  4) Build  5) Ship
+ */
 
-type Mission = {
-  id: MissionId;
-  kind: "choice" | "text" | "review";
-  level: string;
-  title: string;
-  prompt: string;
-  blocker?: string;
-  options?: Array<{ value: string; title: string; copy: string; demo?: string[] }>;
-  placeholder?: string;
+type Act = 1 | 2 | 3 | 4 | 5;
+
+type ArtStyle = "chibi" | "silhouette" | "pixel" | "minimal";
+type KaiTone = "warm" | "balanced" | "direct";
+type FirstMove = "fuel" | "pressure" | "win" | "breath";
+
+type ChatTurn = { role: "user" | "assistant"; content: string };
+
+type Build = {
+  firstName: string;
+  vibes: string[];
+  art: ArtStyle;
+  kaiName: string;
+  kaiTone: KaiTone;
+  firstMove: FirstMove;
+  mustHave: string;
+  hardNo: string;
+  tester: string;
 };
 
-const missions: Mission[] = [
-  {
-    id: "vibe",
-    kind: "choice",
-    level: "Level 1",
-    title: "Choose the world.",
-    prompt: "If Kai opens on your phone, what lane makes you not instantly close it?",
-    blocker: "Unblocks D1 design direction.",
-    options: [
-      { value: "Quest Mode", title: "Quest Mode", copy: "XP, belts, unlocks, character growth.", demo: ["Home opens with level + belt progress", "Daily actions become XP", "Comeback is a challenge unlock"] },
-      { value: "Lifestyle Feed", title: "Lifestyle Feed", copy: "Photos, wins, identity, friend energy.", demo: ["Home opens like a private story feed", "Food and wins become cards", "Comeback is a prompt or recap"] },
-      { value: "Calm Coach", title: "Calm Coach", copy: "Clean, trusted, private, less noisy.", demo: ["Home opens with one quiet prompt", "Actions stay private by default", "Comeback is Kai remembering context"] }
-    ]
-  },
-  {
-    id: "firstLoop",
-    kind: "choice",
-    level: "Level 2",
-    title: "Pick the first daily loop.",
-    prompt: "What should a teen do first that feels useful in under 30 seconds?",
-    blocker: "Unblocks the first daily habit we polish.",
-    options: [
-      { value: "Food Camera", title: "Food Camera", copy: "Snap food and get a useful read, not a calorie lecture." },
-      { value: "Streaks + Belts", title: "Streaks + Belts", copy: "Turn small wins into visible progress." },
-      { value: "Emotional Check-in", title: "Pressure Check", copy: "Name the pressure and get one reset move." },
-      { value: "Home-screen Character", title: "Character Buddy", copy: "A companion that changes because you came back." }
-    ]
-  },
-  {
-    id: "comeback",
-    kind: "text",
-    level: "Level 3",
-    title: "Design tomorrow.",
-    prompt: "What would make you come back tomorrow without an adult reminding you?",
-    blocker: "Unblocks the retention loop.",
-    placeholder: "Example: streak freeze, friend challenge, Kai remembers my goal, funny daily mission..."
-  },
-  {
-    id: "voice",
-    kind: "text",
-    level: "Level 4",
-    title: "Kill the cringe.",
-    prompt: "What should Kai never say or do because it would feel fake, corny, school-ish, or annoying?",
-    blocker: "Unblocks voice review for the open content PRs.",
-    placeholder: "Write the exact stuff that would make a 16-year-old roll their eyes."
-  },
-  {
-    id: "parents",
-    kind: "choice",
-    level: "Level 5",
-    title: "Set parent visibility.",
-    prompt: "What parent mode would feel safe without making the app feel like surveillance?",
-    blocker: "Unblocks parent-safety defaults.",
-    options: [
-      { value: "Safety-only", title: "Safety-only", copy: "Parents only get notified for serious safety boundaries." },
-      { value: "Weekly Summary", title: "Weekly Summary", copy: "Light recap: reps, streaks, no private journal details." },
-      { value: "Shared Wins", title: "Shared Wins", copy: "Teen chooses wins to share when they want." }
-    ]
-  },
-  {
-    id: "sources",
-    kind: "text",
-    level: "Boss 1",
-    title: "Pick Kai's brain.",
-    prompt: "Who or what should Kai learn from so it sounds legit to you?",
-    blocker: "Unblocks D4 source materials.",
-    placeholder: "Books, creators, coaches, athletes, therapists, apps, YouTube channels, podcasts, anything."
-  },
-  {
-    id: "safety",
-    kind: "text",
-    level: "Boss 2",
-    title: "Draw the red lines.",
-    prompt: "Which topics need an adult expert before friends test this?",
-    blocker: "Unblocks D5 clinical/safety review.",
-    placeholder: "Example: body image, substances, trauma, sex ed, eating, self-harm, anxiety..."
-  },
-  {
-    id: "testers",
-    kind: "text",
-    level: "Boss 3",
-    title: "Build the test squad.",
-    prompt: "Who are 3-5 types of teens who should test Kai first, and what would they honestly care about?",
-    blocker: "Unblocks friend-test cohort plan.",
-    placeholder: "Example: athlete, honors student, gamer, someone anxious, someone trying to eat better..."
-  },
-  {
-    id: "review",
-    kind: "review",
-    level: "Final",
-    title: "Ship Lev's build brief.",
-    prompt: "This turns your answers into the next sprint list.",
-    blocker: "Saves the full co-builder brief for the team."
-  }
+const VIBE_CHIPS: { id: string; label: string; emoji: string }[] = [
+  { id: "tired",     label: "Tired",     emoji: "😴" },
+  { id: "hyped",     label: "Hyped",     emoji: "⚡" },
+  { id: "stuck",     label: "Stuck",     emoji: "🪨" },
+  { id: "curious",   label: "Curious",   emoji: "👀" },
+  { id: "hungry",    label: "Hungry",    emoji: "🍜" },
+  { id: "locked-in", label: "Locked-in", emoji: "🎯" },
+  { id: "anxious",   label: "Anxious",   emoji: "🌀" },
+  { id: "bored",     label: "Bored",     emoji: "🥱" },
+  { id: "funny",     label: "Funny",     emoji: "😂" },
+  { id: "quiet",     label: "Quiet",     emoji: "🌙" },
+  { id: "plotting",  label: "Plotting",  emoji: "🧠" },
+  { id: "moving",    label: "Moving",    emoji: "🏃" }
 ];
 
-const defaultAnswers: Record<string, string> = {};
-const buildMissionCount = missions.filter((mission) => mission.kind !== "review").length;
+const ART_STYLES: { id: ArtStyle; label: string; desc: string }[] = [
+  { id: "chibi",      label: "Chibi",      desc: "Big head, soft edges, color pop" },
+  { id: "pixel",      label: "Pixel",      desc: "16-bit, blocky, game-feel" },
+  { id: "minimal",    label: "Minimal",    desc: "One line, mostly white" },
+  { id: "silhouette", label: "Silhouette", desc: "Mystery cut-out, all attitude" }
+];
+
+const TONES: { id: KaiTone; label: string; sample: string }[] = [
+  { id: "warm",     label: "Warm",     sample: "Hey. That sounds heavy. I'm not going anywhere — what's actually loud right now?" },
+  { id: "balanced", label: "Balanced", sample: "Got it. Couple options — talk it through, or try one quick reset. Pick what fits." },
+  { id: "direct",   label: "Direct",   sample: "OK. 60-second move: name the one thing pulling on you, then we cut it in half." }
+];
+
+const FIRST_MOVES: { id: FirstMove; label: string; desc: string; teaser: string }[] = [
+  { id: "fuel",     label: "Fuel snap",     desc: "Quick photo read, no calorie lecture",   teaser: "Snap lunch, get a real read" },
+  { id: "pressure", label: "Pressure check", desc: "Name what's loud, get one reset move",   teaser: "Name the pressure" },
+  { id: "win",      label: "One win",       desc: "Log one thing that went right today",   teaser: "Name one thing that went right" },
+  { id: "breath",   label: "60-sec reset",  desc: "One short guided breath",                teaser: "60 seconds. Reset." }
+];
+
+const STORAGE_KEY = "kai_demo_build_v1";
 
 export function Demo() {
-  const [missionIndex, setMissionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>(defaultAnswers);
-  const [sessionId] = useState(() => makeSessionId());
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [copied, setCopied] = useState(false);
-  const mission = missions[missionIndex];
-  const liveMission = useMemo(() => missionForAnswers(mission, answers), [mission, answers]);
-  const skin = useMemo(() => skinForVibe(answers.vibe), [answers.vibe]);
-  const completed = useMemo(() => missions.filter((item) => item.kind !== "review" && answers[item.id]?.trim()).length, [answers]);
-  const summary = useMemo(() => buildScopeSummary(answers), [answers]);
-  const canGoBack = missionIndex > 0;
-  const canGoNext = missionIndex < missions.length - 1;
+  const [act, setAct] = useState<Act>(1);
+  const [build, setBuild] = useState<Build>(() => loadSeedOrSaved());
+  const [chat, setChat] = useState<ChatTurn[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [seenHomeCard, setSeenHomeCard] = useState(false);
 
+  // Lock title + noindex
   useEffect(() => {
-    const tag = document.createElement("meta");
-    tag.name = "robots";
-    tag.content = "noindex, nofollow";
-    document.head.appendChild(tag);
-    const prevTitle = document.title;
-    document.title = "Kai Co-Builder Quest";
-    return () => {
-      tag.remove();
-      document.title = prevTitle;
-    };
+    document.title = "Kai — meet your coach";
+    const meta = document.createElement("meta");
+    meta.name = "robots"; meta.content = "noindex, nofollow";
+    document.head.appendChild(meta);
+    return () => { meta.remove(); };
   }, []);
 
-  const save = async (nextAnswers = answers) => {
-    const answerCount = Object.values(nextAnswers).filter(Boolean).length;
-    if (!answerCount) return;
-    setSaveState("saving");
+  // Persist build (so refresh + share links work)
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(build)); } catch { /* ignore */ }
+  }, [build]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [act]);
+
+  const update = (patch: Partial<Build>) => setBuild((b) => ({ ...b, ...patch }));
+
+  const sendKaiTurn = async (text: string) => {
+    if (!text.trim() || thinking) return;
+    const userTurn: ChatTurn = { role: "user", content: text.trim() };
+    const nextChat = [...chat, userTurn];
+    setChat(nextChat);
+    setChatInput("");
+    setThinking(true);
+    setChatError(null);
     try {
-      await api.submitScopeFeedback({ sessionId, answers: nextAnswers, completedMissions: answerCount, summary: buildScopeSummary(nextAnswers) });
-      await api.submitDemoFeedback({
-        sessionId,
-        choices: choicesFromAnswers(nextAnswers),
-        summary: buildScopeSummary(nextAnswers),
-        stepId: mission.id,
-        stepIndex: missionIndex,
-        source: "auto"
+      const result = await api.demoKai({
+        message: userTurn.content,
+        history: chat,
+        vibes: build.vibes,
+        kaiName: build.kaiName,
+        kaiTone: build.kaiTone,
+        firstName: build.firstName || undefined
       });
-      setSaveState("saved");
+      setChat([...nextChat, { role: "assistant", content: result.reply }]);
+      // After 2 user turns, reveal the "home card" moment
+      if (nextChat.filter((m) => m.role === "user").length >= 2) {
+        setTimeout(() => setSeenHomeCard(true), 350);
+      }
     } catch {
-      setSaveState("error");
+      setChatError("Kai stalled. Try again in a sec.");
+    } finally {
+      setThinking(false);
     }
   };
 
-  const answerMission = (value: string) => {
-    const nextAnswers = { ...answers, [mission.id]: value };
-    setAnswers(nextAnswers);
-    void save(nextAnswers);
-  };
+  const goAct = (a: Act) => setAct(a);
 
-  const next = () => {
-    void save(answers);
-    setMissionIndex((current) => Math.min(missions.length - 1, current + 1));
-  };
+  const shareLink = useMemo(() => buildShareLink(build), [build]);
 
-  const back = () => setMissionIndex((current) => Math.max(0, current - 1));
+  const saveBuildBrief = useCallback(async () => {
+    await api.submitScopeFeedback({
+      sessionId: getOrMakeSession(),
+      answers: {
+        vibes: build.vibes.join(", "),
+        art: build.art,
+        kaiName: build.kaiName,
+        kaiTone: build.kaiTone,
+        firstMove: build.firstMove,
+        mustHave: build.mustHave,
+        hardNo: build.hardNo,
+        tester: build.tester,
+        chatSnippet: chat.map((t) => `${t.role}: ${t.content}`).join(" | ").slice(0, 600)
+      },
+      completedMissions: 5,
+      summary: `Demo build by ${build.firstName || "anon"}: ${build.kaiName} (${build.kaiTone}), art=${build.art}, first move=${build.firstMove}, vibes=[${build.vibes.join(", ")}], mustHave=${build.mustHave}, hardNo=${build.hardNo}, tester=${build.tester}`
+    });
+  }, [build, chat]);
 
-  const copySummary = async () => {
+  const copyShare = async () => {
     try {
-      await navigator.clipboard?.writeText(summary);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setCopied(false);
-    }
+      await navigator.clipboard.writeText(shareLink);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1800);
+    } catch { /* ignore */ }
   };
 
   return (
-    <main className={`min-h-screen text-paper ${skin.page}`}>
-      <section className="mx-auto grid w-full max-w-[calc(100vw-1rem)] gap-3 py-2 sm:max-w-6xl sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_23rem] lg:gap-5">
-        <div className="min-w-0">
-          <Hero completed={completed} saveState={saveState} answers={answers} skin={skin} />
-          <MissionRail missionIndex={missionIndex} onJump={setMissionIndex} answers={answers} skin={skin} />
-          <div className="mt-3 lg:hidden">
-            <KaiPrototype answers={answers} mission={liveMission} skin={skin} />
-          </div>
-          <section className={`mt-3 overflow-hidden rounded-[1.35rem] border ${skin.panelBorder} ${skin.panel} shadow-[0_24px_90px_rgba(0,0,0,0.5)]`}>
-            <div className={`border-b border-white/10 ${skin.header} p-4 sm:p-6`}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className={`text-[11px] font-black uppercase tracking-[0.22em] ${skin.accentText}`}>{liveMission.level}</p>
-                <StatusPill saveState={saveState} />
-              </div>
-              <h1 className="mt-3 max-w-3xl font-display text-[2.15rem] font-black leading-none tracking-normal sm:text-6xl">{liveMission.title}</h1>
-              <p className="mt-3 max-w-2xl text-base font-bold leading-7 text-paper/72">{liveMission.prompt}</p>
-              {liveMission.blocker && <p className={`mt-4 inline-flex rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wider ${skin.blocker}`}>{liveMission.blocker}</p>}
-            </div>
-
-            <div className="p-4 sm:p-6">
-              {liveMission.kind === "choice" && <ChoiceMission mission={liveMission} value={answers[liveMission.id] ?? ""} onChoose={answerMission} skin={skin} />}
-              {liveMission.kind === "text" && <TextMission mission={liveMission} value={answers[liveMission.id] ?? ""} onChange={answerMission} skin={skin} />}
-              {liveMission.kind === "review" && <ReviewMission answers={answers} summary={summary} copied={copied} onCopy={copySummary} onSave={() => save(answers)} saveState={saveState} skin={skin} />}
-              <ImpactPreview answers={answers} mission={liveMission} skin={skin} />
-
-              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-[auto_1fr_auto] sm:items-center">
-                <button type="button" onClick={back} disabled={!canGoBack} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 text-sm font-black text-paper disabled:cursor-not-allowed disabled:opacity-40">
-                  <ArrowLeft size={17} />
-                  Back
-                </button>
-                <p className="hidden text-center text-xs font-black uppercase tracking-wider text-paper/45 sm:block">{missionIndex + 1} of {missions.length}</p>
-                {canGoNext ? (
-                  <button type="button" onClick={next} className={`focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full ${skin.cta} px-5 text-sm font-black shadow-[0_12px_36px_rgba(34,211,238,0.28)]`}>
-                    Next mission
-                    <ArrowRight size={17} />
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => save(answers)} className={`focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full ${skin.cta} px-5 text-sm font-black`}>
-                    Save brief
-                    <ShieldCheck size={17} />
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <aside className="min-w-0 lg:sticky lg:top-6">
-          <div className="hidden lg:block">
-            <KaiPrototype answers={answers} mission={liveMission} skin={skin} />
-          </div>
-          <BuildConsole answers={answers} completed={completed} skin={skin} />
-        </aside>
-      </section>
+    <main className="min-h-[100svh] bg-gradient-to-b from-[#0B1419] via-[#0F1419] to-[#0C1218] text-white">
+      <ProgressDots act={act} />
+      <div className="mx-auto flex max-w-[460px] flex-col gap-5 px-4 pb-14 pt-3 sm:max-w-[520px]">
+        {act === 1 && <ActMeet onNext={() => goAct(2)} />}
+        {act === 2 && (
+          <ActRead
+            build={build}
+            update={update}
+            onNext={() => {
+              if (chat.length === 0) {
+                // Seed an opening Kai line so Act 3 lands warm — generated from vibes
+                const intro = openingFromVibes(build);
+                setChat([{ role: "assistant", content: intro }]);
+              }
+              goAct(3);
+            }}
+          />
+        )}
+        {act === 3 && (
+          <ActChat
+            build={build}
+            chat={chat}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+            send={sendKaiTurn}
+            thinking={thinking}
+            error={chatError}
+            seenHomeCard={seenHomeCard}
+            onNext={() => goAct(4)}
+          />
+        )}
+        {act === 4 && <ActBuild build={build} update={update} onNext={() => goAct(5)} />}
+        {act === 5 && (
+          <ActShip
+            build={build}
+            shareLink={shareLink}
+            shareCopied={shareCopied}
+            onShare={copyShare}
+            onSave={saveBuildBrief}
+            onRestart={() => { setAct(1); setChat([]); setSeenHomeCard(false); }}
+          />
+        )}
+      </div>
     </main>
   );
 }
 
-type Skin = ReturnType<typeof skinForVibe>;
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Layout chrome                                                             */
+/* ────────────────────────────────────────────────────────────────────────── */
 
-function Hero({ completed, saveState, answers, skin }: { completed: number; saveState: "idle" | "saving" | "saved" | "error"; answers: Record<string, string>; skin: Skin }) {
+function ProgressDots({ act }: { act: Act }) {
+  const labels = ["meet", "read", "chat", "build", "ship"];
+  const xp = act * 20;
   return (
-    <section className={`relative overflow-hidden rounded-[1.35rem] border ${skin.panelBorder} ${skin.panel} p-4 shadow-[0_18px_70px_rgba(0,0,0,0.48)] sm:p-7`}>
-      <div className={`absolute -right-12 -top-16 size-40 rounded-full ${skin.glowA} blur-2xl`} />
-      <div className={`absolute -bottom-20 left-8 size-36 rounded-full ${skin.glowB} blur-2xl`} />
-      <div className="relative flex items-start justify-between gap-3">
-        <div>
-          <p className={`text-[10px] font-black uppercase tracking-[0.22em] ${skin.accentText}`}>Kai co-builder quest</p>
-          <h1 className="mt-2 font-display text-[2rem] font-black leading-none tracking-normal sm:text-6xl">{skin.heroTitle}</h1>
-          <p className="mt-3 max-w-2xl text-sm font-bold leading-6 text-paper/70 sm:text-base">{skin.heroCopy}</p>
-          {answers.vibe && <p className={`mt-3 inline-flex rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wider ${skin.blocker}`}>{answers.vibe} skin active</p>}
+    <div className="sticky top-0 z-10 w-full border-b border-white/8 bg-[#0B1419]/85 px-4 py-3 backdrop-blur">
+      <div className="mx-auto max-w-[520px]">
+        <div className="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em]">
+          <span className="inline-flex items-center gap-1 text-[#A3FF12]"><Flame size={12} /> co-builder xp</span>
+          <span className="text-white/55">{xp}/100</span>
         </div>
-        <span className="relative grid size-12 shrink-0 place-items-center rounded-full bg-paper font-serif text-2xl italic text-[#050505] shadow-[0_0_36px_rgba(163,255,18,0.35)]">k</span>
+        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-[#A3FF12] to-[#4FC3F7] transition-all duration-500" style={{ width: `${xp}%` }} />
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-[0.16em]">
+          {labels.map((label, i) => {
+            const n = (i + 1) as Act;
+            const done = act > n;
+            const here = act === n;
+            return (
+              <span key={label} className={`truncate ${done ? "text-[#A3FF12]" : here ? "text-white" : "text-white/35"}`}>
+                {done ? "✓ " : here ? "• " : ""}{label}
+              </span>
+            );
+          })}
+        </div>
       </div>
-      <div className="relative mt-4 grid grid-cols-2 gap-2 text-xs font-black sm:grid-cols-4">
-        <Stat icon={Trophy} label="missions" value={`${completed}/${buildMissionCount}`} skin={skin} />
-        <Stat icon={Flame} label="mode" value={answers.vibe ? railLabelFromText(answers.vibe) : "open"} skin={skin} />
-        <Stat icon={LockKeyhole} label="loop" value={answers.firstLoop ? railLabelFromText(answers.firstLoop) : "open"} skin={skin} />
-        <Stat icon={saveState === "saved" ? CheckCircle2 : Rocket} label="save" value={saveState === "saved" ? "synced" : "auto"} skin={skin} />
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* ACT 1 — Meet Kai                                                          */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+function ActMeet({ onNext }: { onNext: () => void }) {
+  const [showBubble, setShowBubble] = useState(false);
+  const [showCta, setShowCta] = useState(false);
+
+  useEffect(() => {
+    const a = setTimeout(() => setShowBubble(true), 300);
+    const b = setTimeout(() => setShowCta(true), 650);
+    return () => { clearTimeout(a); clearTimeout(b); };
+  }, []);
+
+  return (
+    <section className="flex flex-col gap-6 pt-4">
+      <header className="flex items-center gap-3">
+        <KaiOrb size={42} />
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">live demo</p>
+          <h1 className="text-xl font-black leading-tight">Build Kai with us.</h1>
+        </div>
+      </header>
+
+      <div className="rounded-[22px] border border-[#A3FF12]/25 bg-[#A3FF12]/8 p-4">
+        <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#A3FF12]">
+          <Trophy size={13} /> Lev mode
+        </p>
+        <p className="mt-2 text-[17px] font-black leading-6">This is not a deck. Every tap changes the prototype and saves the build brief.</p>
       </div>
+
+      <PhoneFrame>
+        <div className="flex h-full flex-col justify-between px-4 py-6">
+          <div className="flex items-center gap-2">
+            <KaiOrb size={28} />
+            <p className="text-[11px] font-bold text-white/55">Kai · just now</p>
+          </div>
+          <div
+            className={`mt-6 transition-all duration-700 ${showBubble ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
+          >
+            <div className="rounded-[20px] rounded-bl-[6px] bg-white/8 px-4 py-3 text-[15px] leading-6">
+              Hey. I'm Kai. I'm a coach you can text when teen life gets loud — school, friends, food, pressure, your head, your body, all of it.
+            </div>
+            <div
+              className={`mt-3 transition-all duration-700 delay-300 ${showBubble ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
+            >
+              <div className="rounded-[20px] rounded-bl-[6px] bg-white/8 px-4 py-3 text-[15px] leading-6">
+                I won't diagnose you. I won't lecture you. And if I sound cringe, you get to tell us exactly what to fix.
+              </div>
+            </div>
+          </div>
+          <div className="h-12" />
+        </div>
+      </PhoneFrame>
+
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={!showCta}
+        className={`focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-[#4FC3F7] px-6 text-base font-black text-[#0B1419] shadow-[0_14px_44px_rgba(79,195,247,0.45)] transition disabled:opacity-30 ${
+          showCta ? "opacity-100" : "opacity-30"
+        }`}
+      >
+        Start the build <ArrowRight size={18} strokeWidth={3} />
+      </button>
+      <p className="text-center text-[11px] font-bold text-white/40">~3 minutes · no signup · skip anytime</p>
     </section>
   );
 }
 
-function MissionRail({ missionIndex, onJump, answers, skin }: { missionIndex: number; onJump: (index: number) => void; answers: Record<string, string>; skin: Skin }) {
-  return (
-    <nav className="mt-3 grid grid-cols-5 gap-1 sm:grid-cols-9" aria-label="Co-builder missions">
-      {missions.map((mission, index) => {
-        const done = Boolean(answers[mission.id]?.trim());
-        const active = index === missionIndex;
-        return (
-          <button key={mission.id} type="button" onClick={() => onJump(index)} className={`focus-ring min-h-14 rounded-[14px] border px-2 py-2 text-center transition ${active ? skin.railActive : "border-white/12 bg-white/8 text-paper"}`}>
-            <span className={`block text-[8px] font-black uppercase tracking-wider ${active ? "text-[#050505]/55" : "text-paper/48"}`}>{done ? "done" : mission.level}</span>
-            <span className="mt-1 block truncate text-[11px] font-black">{railLabel(mission.id)}</span>
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
+/* ────────────────────────────────────────────────────────────────────────── */
+/* ACT 2 — Read the vibe                                                     */
+/* ────────────────────────────────────────────────────────────────────────── */
 
-function ChoiceMission({ mission, value, onChoose, skin }: { mission: Mission; value: string; onChoose: (value: string) => void; skin: Skin }) {
-  return (
-    <div className="grid gap-2 md:grid-cols-2">
-      {mission.options?.map((option) => {
-        const selected = value === option.value;
-        return (
-          <button key={option.value} type="button" onClick={() => onChoose(option.value)} className={`focus-ring min-h-28 rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 ${selected ? `border-transparent ${skin.choiceSelected} text-paper shadow-[0_20px_54px_rgba(0,0,0,0.32)]` : "border-white/12 bg-white text-ink"}`}>
-            <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${selected ? "bg-white/18 text-paper" : "bg-[#050505]/8 text-muted"}`}>{selected ? "locked" : "pick"}</span>
-            <span className="mt-4 block font-display text-2xl font-black leading-none">{option.title}</span>
-            <span className={`mt-2 block text-sm font-bold leading-5 ${selected ? "text-paper/75" : "text-muted"}`}>{option.copy}</span>
-            {option.demo && (
-              <span className={`mt-4 grid gap-1.5 text-xs font-black leading-4 ${selected ? "text-paper/78" : "text-ink/62"}`}>
-                {option.demo.map((item) => (
-                  <span key={item} className="flex gap-2">
-                    <span className={selected ? "text-paper" : "text-ink"}>+</span>
-                    <span>{item}</span>
-                  </span>
-                ))}
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+function ActRead({ build, update, onNext }: { build: Build; update: (p: Partial<Build>) => void; onNext: () => void }) {
+  const [name, setName] = useState(build.firstName);
+  const canGo = build.vibes.length >= 2 && build.vibes.length <= 4;
 
-function TextMission({ mission, value, onChange, skin }: { mission: Mission; value: string; onChange: (value: string) => void; skin: Skin }) {
-  return (
-    <div className="rounded-[24px] border border-white/12 bg-white p-4 text-ink shadow-[0_18px_50px_rgba(0,0,0,0.22)]">
-      <textarea
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={mission.placeholder}
-        className={`min-h-44 w-full resize-none rounded-[18px] border border-line bg-paper p-4 text-base font-bold leading-7 text-ink outline-none placeholder:text-muted ${skin.focusBorder}`}
-      />
-      <p className="mt-3 text-xs font-black uppercase tracking-wider text-muted">{value.trim() ? "Autosaving this blocker answer" : "Write like you are texting the build team"}</p>
-    </div>
-  );
-}
+  const toggle = (id: string) => {
+    const has = build.vibes.includes(id);
+    if (has) update({ vibes: build.vibes.filter((v) => v !== id) });
+    else if (build.vibes.length < 4) update({ vibes: [...build.vibes, id] });
+  };
 
-function ReviewMission({ answers, summary, copied, onCopy, onSave, saveState, skin }: { answers: Record<string, string>; summary: string; copied: boolean; onCopy: () => void; onSave: () => void; saveState: "idle" | "saving" | "saved" | "error"; skin: Skin }) {
   return (
-    <div className="grid gap-3">
-      <div className={`rounded-[24px] border p-4 ${skin.reviewBox}`}>
-        <p className={`text-[11px] font-black uppercase tracking-[0.22em] ${skin.accentText}`}>Lev's build brief</p>
-        <p className="mt-3 text-base font-black leading-7 text-paper">{summary}</p>
+    <section className="flex flex-col gap-5">
+      <header>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 1 of 4</p>
+        <h2 className="mt-1 text-3xl font-black leading-none">Pick your loadout.</h2>
+        <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
+          Tap 2-4 that fit today. Kai uses this to change the first message.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-3 gap-2">
+        {VIBE_CHIPS.map((v) => {
+          const on = build.vibes.includes(v.id);
+          return (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => toggle(v.id)}
+              className={`focus-ring flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2 text-[12px] font-black transition ${
+                on
+                  ? "border-[#4FC3F7] bg-[#4FC3F7]/15 text-white shadow-[0_8px_28px_rgba(79,195,247,0.22)]"
+                  : "border-white/12 bg-white/4 text-white/70 hover:bg-white/8"
+              }`}
+            >
+              <span className="text-xl leading-none">{v.emoji}</span>
+              <span>{v.label}</span>
+            </button>
+          );
+        })}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {missions.filter((mission) => mission.kind !== "review").map((mission) => (
-          <div key={mission.id} className="rounded-[18px] border border-white/12 bg-white/8 p-3">
-            <p className="text-[10px] font-black uppercase tracking-wider text-paper/45">{mission.title}</p>
-            <p className="mt-1 text-sm font-black text-paper">{answers[mission.id] || "Not answered yet"}</p>
-          </div>
+
+      <label className="block">
+        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">what should I call you? (optional)</span>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, 24))}
+          onBlur={() => update({ firstName: name.trim() })}
+          placeholder="your name or a nickname"
+          className="mt-2 w-full rounded-2xl border border-white/12 bg-white/4 px-4 py-3 text-base font-bold text-white outline-none placeholder:text-white/35 focus:border-[#4FC3F7]"
+        />
+      </label>
+
+      <button
+        type="button"
+        onClick={() => { update({ firstName: name.trim() }); onNext(); }}
+        disabled={!canGo}
+        className="focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-[#4FC3F7] px-6 text-base font-black text-[#0B1419] shadow-[0_14px_44px_rgba(79,195,247,0.45)] disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        Unlock live chat <ArrowRight size={18} strokeWidth={3} />
+      </button>
+      {!canGo && <p className="text-center text-[11px] font-bold text-white/45">pick at least 2</p>}
+    </section>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* ACT 3 — Live Kai chat                                                     */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+function ActChat(props: {
+  build: Build;
+  chat: ChatTurn[];
+  chatInput: string;
+  setChatInput: (s: string) => void;
+  send: (text: string) => Promise<void>;
+  thinking: boolean;
+  error: string | null;
+  seenHomeCard: boolean;
+  onNext: () => void;
+}) {
+  const { build, chat, chatInput, setChatInput, send, thinking, error, seenHomeCard, onNext } = props;
+  const scroller = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
+  }, [chat.length, thinking]);
+
+  const userTurns = chat.filter((m) => m.role === "user").length;
+
+  return (
+    <section className="flex flex-col gap-4">
+      <header>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 2 of 4 · live</p>
+        <h2 className="mt-1 text-3xl font-black leading-none">Talk to Kai.</h2>
+        <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
+          Type literally anything. {build.firstName ? `Kai knows your name is ${build.firstName} and ` : "Kai knows "}your vibes are{" "}
+          <span className="text-white">{build.vibes.join(", ") || "open"}</span>.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-3 gap-2">
+        {["school is loud", "food feels weird", "need a reset"].map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            onClick={() => void send(prompt)}
+            disabled={thinking || userTurns >= 3}
+            className="focus-ring min-h-10 rounded-full border border-white/12 bg-white/5 px-3 text-[11px] font-black text-white/70 disabled:opacity-30"
+          >
+            {prompt}
+          </button>
         ))}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <button type="button" onClick={onSave} disabled={saveState === "saving"} className={`focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full ${skin.cta} px-4 text-sm font-black disabled:opacity-60`}>
-          <ShieldCheck size={17} />
-          {saveState === "saving" ? "Saving" : saveState === "saved" ? "Saved" : "Save brief"}
-        </button>
-        <button type="button" onClick={onCopy} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/20 px-4 text-sm font-black text-paper hover:bg-white/10">
-          <Clipboard size={17} />
-          {copied ? "Copied" : "Copy for WhatsApp"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
-function KaiPrototype({ answers, mission, skin }: { answers: Record<string, string>; mission: Mission; skin: Skin }) {
-  const demo = prototypeForAnswers(answers, mission.id);
-  return (
-    <section className={`overflow-hidden rounded-[2rem] border ${skin.panelBorder} ${skin.panel} p-3 shadow-[0_24px_90px_rgba(0,0,0,0.42)]`}>
-      <div className="rounded-[1.65rem] border border-white/12 bg-[#070707] p-2">
-        <div className={`rounded-[1.35rem] ${skin.header} p-4`}>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${skin.accentText}`}>{demo.mode}</p>
-              <h2 className="mt-1 font-display text-2xl font-black leading-none">{demo.title}</h2>
+      <PhoneFrame>
+        <div className="flex h-full flex-col">
+          <div className="flex items-center gap-2 border-b border-white/8 px-4 py-3">
+            <KaiOrb size={26} />
+            <div className="flex-1">
+              <p className="text-[13px] font-black leading-none">{build.kaiName}</p>
+              <p className="mt-0.5 text-[10px] font-bold text-[#4FC3F7]">live · {Math.max(0, 3 - userTurns)} turns left</p>
             </div>
-            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-paper font-serif text-2xl italic text-[#050505]">k</span>
+            <MessageCircle size={16} className="text-white/40" />
           </div>
-          <p className="mt-3 text-sm font-bold leading-5 text-paper/72">{demo.subtitle}</p>
-        </div>
 
-        <div className="mt-2 rounded-[1.35rem] bg-white p-3 text-ink">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-muted">{demo.primaryLabel}</p>
-              <p className="mt-1 font-display text-2xl font-black leading-none">{demo.primary}</p>
-            </div>
-            <div className={`rounded-full px-3 py-2 text-xs font-black ${demo.badgeTone}`}>{demo.badge}</div>
-          </div>
-          <div className="mt-4 grid gap-2">
-            {demo.cards.map((card) => (
-              <div key={card.title} className={`rounded-[18px] border p-3 ${card.tone}`}>
-                <p className="text-[10px] font-black uppercase tracking-wider opacity-55">{card.label}</p>
-                <p className="mt-1 text-base font-black">{card.title}</p>
-                <p className="mt-1 text-xs font-bold leading-5 opacity-70">{card.copy}</p>
-              </div>
+          <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            {chat.map((turn, i) => (
+              <ChatBubble key={i} role={turn.role} content={turn.content} />
             ))}
+            {thinking && <ChatBubble role="assistant" content="…" typing />}
+            {error && (
+              <div className="rounded-[14px] border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] font-bold text-red-300">{error}</div>
+            )}
+            {seenHomeCard && <HomeCard build={build} />}
+          </div>
+
+          <form
+            onSubmit={(e) => { e.preventDefault(); if (userTurns < 3 && !thinking) void send(chatInput); }}
+            className="flex items-center gap-2 border-t border-white/8 px-3 py-3"
+          >
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder={userTurns >= 3 ? "demo chat full — hit continue" : "say something real"}
+              disabled={userTurns >= 3 || thinking}
+              className="flex-1 rounded-full border border-white/12 bg-white/6 px-4 py-3 text-[14px] font-medium text-white outline-none placeholder:text-white/35 focus:border-[#4FC3F7] disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={!chatInput.trim() || thinking || userTurns >= 3}
+              className="focus-ring grid size-11 shrink-0 place-items-center rounded-full bg-[#4FC3F7] text-[#0B1419] disabled:opacity-30"
+            >
+              {thinking ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} strokeWidth={3} />}
+            </button>
+          </form>
+        </div>
+      </PhoneFrame>
+
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={chat.filter((m) => m.role === "user").length < 1}
+        className="focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-[#4FC3F7] px-6 text-base font-black text-[#0B1419] shadow-[0_14px_44px_rgba(79,195,247,0.45)] disabled:opacity-30"
+      >
+        {seenHomeCard ? "Make Kai mine →" : "Continue → make Kai mine"}
+      </button>
+      {chat.filter((m) => m.role === "user").length < 1 && (
+        <p className="text-center text-[11px] font-bold text-white/45">say one thing first</p>
+      )}
+    </section>
+  );
+}
+
+function ChatBubble({ role, content, typing }: { role: "user" | "assistant"; content: string; typing?: boolean }) {
+  if (role === "user") {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[80%] rounded-[18px] rounded-br-[6px] bg-[#4FC3F7] px-3.5 py-2 text-[14px] font-bold leading-5 text-[#0B1419]">
+          {content}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex max-w-[88%] gap-2">
+      <KaiOrb size={22} className="mt-1 shrink-0" />
+      <div className="rounded-[18px] rounded-bl-[6px] bg-white/8 px-3.5 py-2.5 text-[14px] leading-5">
+        {typing ? <span className="inline-flex items-center gap-1 text-white/60">
+          <span className="inline-block size-1.5 animate-pulse rounded-full bg-white/70" />
+          <span className="inline-block size-1.5 animate-pulse rounded-full bg-white/70 [animation-delay:120ms]" />
+          <span className="inline-block size-1.5 animate-pulse rounded-full bg-white/70 [animation-delay:240ms]" />
+        </span> : content}
+      </div>
+    </div>
+  );
+}
+
+/** The wow moment — a faked Home card animates in after a couple turns. */
+function HomeCard({ build }: { build: Build }) {
+  const first = FIRST_MOVES.find((m) => m.id === build.firstMove) || FIRST_MOVES[1];
+  return (
+    <div className="mt-4 animate-[fadeUp_500ms_ease-out_forwards] rounded-[20px] border border-[#4FC3F7]/35 bg-gradient-to-b from-[#4FC3F7]/12 to-transparent p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#4FC3F7]">your home, in 1 minute</p>
+      <div className="mt-3 flex items-start gap-3">
+        <Avatar style={build.art} size={56} level={1} />
+        <div className="flex-1">
+          <p className="text-[13px] font-black">{build.firstName || "you"} · level 1</p>
+          <p className="mt-0.5 text-[11px] font-bold text-white/55">{build.vibes.join(" · ") || "no vibes yet"}</p>
+        </div>
+      </div>
+      <div className="mt-3 rounded-[14px] border border-white/12 bg-white/4 p-3">
+        <p className="text-[10px] font-black uppercase tracking-wider text-white/45">tomorrow, kai will ask</p>
+        <p className="mt-1 text-[14px] font-black">{first.teaser}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* ACT 4 — Make it yours                                                     */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+function ActBuild({ build, update, onNext }: { build: Build; update: (p: Partial<Build>) => void; onNext: () => void }) {
+  const tone = TONES.find((t) => t.id === build.kaiTone) || TONES[1];
+  return (
+    <section className="flex flex-col gap-5">
+      <header>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 3 of 4</p>
+        <h2 className="mt-1 text-3xl font-black leading-none">Direct the build.</h2>
+        <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
+          Pick the look, voice, first feature, and the stuff we should absolutely fix.
+        </p>
+      </header>
+
+      <PhoneFrame compact>
+        <div className="p-4">
+          <div className="flex items-center gap-3">
+            <Avatar style={build.art} size={56} level={1} />
+            <div className="flex-1">
+              <p className="text-[12px] font-black">{build.firstName || "you"}</p>
+              <p className="mt-0.5 text-[10px] font-bold text-white/55">level 1 · {build.vibes.slice(0, 3).join(" · ") || "open"}</p>
+            </div>
+          </div>
+          <div className="mt-3 rounded-[14px] border border-white/12 bg-white/4 px-3 py-2.5">
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#4FC3F7]">{build.kaiName} · {build.kaiTone}</p>
+            <p className="mt-1 text-[13px] font-medium leading-5 text-white/85">{tone.sample}</p>
+          </div>
+          <div className="mt-2 rounded-[14px] border border-white/12 bg-white/4 px-3 py-2.5">
+            <p className="text-[10px] font-black uppercase tracking-wider text-white/45">first daily move</p>
+            <p className="mt-1 text-[13px] font-black">{FIRST_MOVES.find((m) => m.id === build.firstMove)?.teaser}</p>
           </div>
         </div>
+      </PhoneFrame>
 
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          {demo.nav.map((item) => (
-            <div key={item} className={`rounded-[18px] border border-white/12 p-3 text-center text-xs font-black ${skin.previewBadge}`}>{item}</div>
-          ))}
+      {/* Art style */}
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">character art</p>
+        <div className="mt-2 grid grid-cols-4 gap-2">
+          {ART_STYLES.map((a) => {
+            const on = build.art === a.id;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => update({ art: a.id })}
+                className={`focus-ring flex flex-col items-center gap-1.5 rounded-2xl border p-2 transition ${
+                  on ? "border-[#4FC3F7] bg-[#4FC3F7]/10" : "border-white/12 bg-white/4 hover:bg-white/8"
+                }`}
+              >
+                <Avatar style={a.id} size={40} level={1} />
+                <span className="text-[10px] font-black">{a.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
-      <div className="mt-3 rounded-[20px] border border-white/10 bg-white/6 p-3">
-        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${skin.accentText}`}>what changed</p>
-        <p className="mt-1 text-sm font-bold leading-5 text-paper/72">{demo.change}</p>
-      </div>
-    </section>
-  );
-}
 
-function ImpactPreview({ answers, mission, skin }: { answers: Record<string, string>; mission: Mission; skin: Skin }) {
-  if (!answers.vibe && !answers.firstLoop && !answers.parents && mission.id === "vibe") return null;
-  return (
-    <section className={`mt-4 rounded-[22px] border p-4 ${skin.preview}`}>
-      <p className={`text-[10px] font-black uppercase tracking-[0.22em] ${skin.accentText}`}>prototype changed</p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+      {/* Kai name + tone */}
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <label className="block">
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">name your coach</span>
+          <input
+            type="text"
+            value={build.kaiName}
+            onChange={(e) => update({ kaiName: e.target.value.slice(0, 18) })}
+            className="mt-2 w-full rounded-2xl border border-white/12 bg-white/4 px-4 py-3 text-base font-bold text-white outline-none focus:border-[#4FC3F7]"
+          />
+        </label>
         <div>
-          <h2 className="font-display text-2xl font-black leading-none">{previewTitle(answers)}</h2>
-          <p className="mt-2 text-sm font-bold leading-6 text-paper/70">{previewCopy(answers, mission.id)}</p>
-        </div>
-        <div className={`min-w-28 rounded-[20px] border border-white/12 p-3 text-center ${skin.previewBadge}`}>
-          <p className="text-[9px] font-black uppercase tracking-wider text-paper/50">next screen</p>
-          <p className="mt-1 text-sm font-black">{nextScreenLabel(answers)}</p>
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">tone</span>
+          <div className="mt-2 flex h-12 items-center overflow-hidden rounded-2xl border border-white/12 bg-white/4">
+            {TONES.map((t) => {
+              const on = build.kaiTone === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => update({ kaiTone: t.id })}
+                  className={`focus-ring h-full px-3 text-[11px] font-black transition ${on ? "bg-[#4FC3F7] text-[#0B1419]" : "text-white/70"}`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      {/* First move */}
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">tomorrow's first move</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {FIRST_MOVES.map((m) => {
+            const on = build.firstMove === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => update({ firstMove: m.id })}
+                className={`focus-ring flex flex-col items-start gap-1 rounded-2xl border p-3 text-left transition ${
+                  on ? "border-[#4FC3F7] bg-[#4FC3F7]/10" : "border-white/12 bg-white/4 hover:bg-white/8"
+                }`}
+              >
+                <span className="text-[13px] font-black">{m.label}</span>
+                <span className="text-[10.5px] font-medium leading-4 text-white/55">{m.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-[22px] border border-[#A3FF12]/25 bg-[#A3FF12]/8 p-4">
+        <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#A3FF12]">
+          <Trophy size={13} /> co-dev notes
+        </p>
+        <div className="mt-3 grid gap-3">
+          <NoteField
+            label="must have"
+            value={build.mustHave}
+            placeholder="ex: quests, streak freeze, food camera, character upgrades..."
+            onChange={(mustHave) => update({ mustHave })}
+          />
+          <NoteField
+            label="hard no"
+            value={build.hardNo}
+            placeholder="ex: calorie shame, fake therapy voice, too many parent alerts..."
+            onChange={(hardNo) => update({ hardNo })}
+          />
+          <NoteField
+            label="who should test first?"
+            value={build.tester}
+            placeholder="ex: athletes, gamers, stressed juniors, my group chat..."
+            onChange={(tester) => update({ tester })}
+          />
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onNext}
+        className="focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-[#4FC3F7] px-6 text-base font-black text-[#0B1419] shadow-[0_14px_44px_rgba(79,195,247,0.45)]"
+      >
+        Build the brief <ArrowRight size={18} strokeWidth={3} />
+      </button>
     </section>
   );
 }
 
-function BuildConsole({ answers, completed, skin }: { answers: Record<string, string>; completed: number; skin: Skin }) {
+/* ────────────────────────────────────────────────────────────────────────── */
+/* ACT 5 — Ship to a friend                                                  */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+function ActShip(props: {
+  build: Build;
+  shareLink: string;
+  shareCopied: boolean;
+  onShare: () => void;
+  onSave: () => Promise<void>;
+  onRestart: () => void;
+}) {
+  const { build, shareLink, shareCopied, onShare, onSave, onRestart } = props;
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const savedOnce = useRef(false);
+
+  const save = useCallback(async () => {
+    setSaveState("saving");
+    try {
+      await onSave();
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
+  }, [onSave]);
+
+  useEffect(() => {
+    if (savedOnce.current) return;
+    savedOnce.current = true;
+    void save();
+  }, [save]);
+
+  const smsText = `${build.firstName ? build.firstName + " " : ""}made a Kai for you. take a look — ${shareLink}`;
+  const smsHref = `sms:?&body=${encodeURIComponent(smsText)}`;
+
   return (
-    <section className={`rounded-[2rem] border ${skin.panelBorder} ${skin.panel} p-4 shadow-[0_24px_90px_rgba(0,0,0,0.42)]`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className={`text-[10px] font-black uppercase tracking-[0.22em] ${skin.accentText}`}>build console</p>
-          <h2 className="mt-1 font-display text-2xl font-black">{skin.consoleTitle}</h2>
+    <section className="flex flex-col gap-5">
+      <header>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 4 of 4 · ship it</p>
+        <h2 className="mt-1 text-3xl font-black leading-none">Build brief ready.</h2>
+        <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
+          This saves your decisions for the team and gives you a link to send around.
+        </p>
+      </header>
+
+      <div className="rounded-[22px] border border-[#4FC3F7]/30 bg-gradient-to-b from-[#4FC3F7]/10 to-transparent p-4">
+        <div className="flex items-center gap-3">
+          <Avatar style={build.art} size={60} level={1} />
+          <div className="flex-1">
+            <p className="text-[12px] font-black">{build.firstName || "your"} Kai</p>
+            <p className="mt-0.5 text-[11px] font-bold text-white/55">
+              {build.kaiName} · {build.kaiTone}
+            </p>
+            <p className="mt-0.5 text-[11px] font-bold text-white/55">first move: {FIRST_MOVES.find((m) => m.id === build.firstMove)?.label}</p>
+          </div>
+          {saveState === "saved" && <span className="rounded-full bg-[#A3FF12]/15 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-[#A3FF12]">saved</span>}
         </div>
-        <Gamepad2 className={skin.accentText} size={26} />
       </div>
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
-        <div className={`h-full rounded-full ${skin.progress}`} style={{ width: `${Math.round((completed / buildMissionCount) * 100)}%` }} />
+
+      <div className="rounded-[22px] border border-white/12 bg-white/4 p-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">what the team gets</p>
+        <div className="mt-3 grid gap-2 text-[13px] font-bold leading-5 text-white/80">
+          <p><span className="text-[#A3FF12]">Must have:</span> {build.mustHave || "not picked yet"}</p>
+          <p><span className="text-[#A3FF12]">Hard no:</span> {build.hardNo || "not picked yet"}</p>
+          <p><span className="text-[#A3FF12]">First testers:</span> {build.tester || "not picked yet"}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={saveState === "saving"}
+          className="focus-ring mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#A3FF12] px-4 text-[13px] font-black text-[#0B1419] disabled:opacity-50"
+        >
+          {saveState === "saving" ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3.5} />}
+          {saveState === "saved" ? "Brief saved" : saveState === "error" ? "Try saving again" : "Save latest brief"}
+        </button>
+        {saveState === "error" && <p className="mt-2 text-center text-[11px] font-black text-red-300">Save did not reach the server. Try again before sending.</p>}
       </div>
-      <div className="mt-4 grid gap-2">
-        <ConsoleRow icon={Sparkles} label="Vibe" value={answers.vibe || "open"} />
-        <ConsoleRow icon={Target} label="First loop" value={answers.firstLoop || "open"} />
-        <ConsoleRow icon={Rocket} label="Comeback" value={answers.comeback || comebackNudge(answers)} />
-        <ConsoleRow icon={Flame} label="Voice rule" value={answers.voice || voiceNudge(answers)} />
-        <ConsoleRow icon={UsersRound} label="Testers" value={answers.testers || "open"} />
-        <ConsoleRow icon={ShieldCheck} label="Safety lines" value={answers.safety || "open"} />
+
+      <div className="rounded-[22px] border border-white/12 bg-white/4 p-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">your share link</p>
+        <p className="mt-2 break-all rounded-[12px] border border-white/12 bg-[#0B1419] px-3 py-2 font-mono text-[11px] text-white/80">
+          {shareLink}
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <a
+            href={smsHref}
+            className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#A3FF12] px-4 text-[13px] font-black text-[#0B1419]"
+          >
+            <Share2 size={15} strokeWidth={3} /> iMessage
+          </a>
+          <button
+            type="button"
+            onClick={onShare}
+            className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/6 px-4 text-[13px] font-black text-white"
+          >
+            {shareCopied ? <Check size={15} strokeWidth={3.5} /> : <Sparkles size={15} />}
+            {shareCopied ? "copied" : "copy link"}
+          </button>
+        </div>
       </div>
+
+      <QRCard text={shareLink} />
+
+      <div className="mt-2 rounded-[18px] border border-white/10 bg-white/4 p-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">what happens next</p>
+        <ul className="mt-2 grid gap-1.5 text-[13px] font-medium text-white/75">
+          <li>· Your friend opens the link and lands on Kai with your name on the welcome line.</li>
+          <li>· They make their own choices from your starting point.</li>
+          <li>· You can sign up to keep building when the real app drops.</li>
+        </ul>
+      </div>
+
+      <button
+        type="button"
+        onClick={onRestart}
+        className="focus-ring mx-auto inline-flex items-center gap-1 rounded-full px-4 py-2 text-[12px] font-black text-white/55 hover:text-white"
+      >
+        <X size={13} /> restart demo
+      </button>
     </section>
   );
 }
 
-function ConsoleRow({ icon: Icon, label, value }: { icon: typeof Sparkles; label: string; value: string }) {
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Reusable bits                                                             */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+function PhoneFrame({ children, compact = false }: { children: React.ReactNode; compact?: boolean }) {
   return (
-    <div className="rounded-[18px] border border-white/10 bg-white/6 p-3">
-      <div className="flex items-center gap-2">
-        <Icon size={16} className="shrink-0 text-[#22D3EE]" />
-        <p className="text-[10px] font-black uppercase tracking-wider text-paper/45">{label}</p>
+    <div className="mx-auto w-full max-w-[340px]">
+      <div className="rounded-[36px] border border-white/12 bg-[#070C11] p-2 shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
+        <div className={`relative overflow-hidden rounded-[28px] bg-[#0B1419] ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
+          <div className="pointer-events-none absolute left-1/2 top-1.5 h-1 w-16 -translate-x-1/2 rounded-full bg-white/15" />
+          <div className="h-full">{children}</div>
+        </div>
       </div>
-      <p className="mt-1 max-h-16 overflow-hidden text-sm font-black text-paper">{value}</p>
     </div>
   );
 }
 
-function Stat({ icon: Icon, label, value, skin }: { icon: typeof Trophy; label: string; value: string; skin: Skin }) {
+function KaiOrb({ size = 32, className = "" }: { size?: number; className?: string }) {
   return (
-    <div className="rounded-[16px] border border-white/12 bg-white/8 p-3">
-      <Icon size={16} className={skin.accentText} />
-      <p className="mt-2 text-[9px] font-black uppercase tracking-wider text-paper/45">{label}</p>
-      <p className="text-sm font-black text-paper">{value}</p>
+    <span
+      className={`relative grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#4FC3F7] to-[#29B6F6] font-black text-[#0B1419] ${className}`}
+      style={{ width: size, height: size, fontSize: size * 0.45 }}
+    >
+      k
+      <span className="absolute inset-0 rounded-full ring-1 ring-white/20" />
+    </span>
+  );
+}
+
+function Avatar({ style, size, level }: { style: ArtStyle; size: number; level: number }) {
+  // Inline SVG variants so the character changes immediately on style swap.
+  const grad = {
+    chibi: ["#FFD9C0", "#FF8FA3"],
+    pixel: ["#A3FF12", "#22D3EE"],
+    minimal: ["#FFFFFF", "#CBD5E1"],
+    silhouette: ["#1F2937", "#0F172A"]
+  }[style];
+  return (
+    <div className="grid place-items-center" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden>
+        <defs>
+          <linearGradient id={`g-${style}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={grad[0]} />
+            <stop offset="100%" stopColor={grad[1]} />
+          </linearGradient>
+        </defs>
+        {style === "chibi" && (
+          <g>
+            <circle cx="32" cy="26" r="18" fill={`url(#g-${style})`} />
+            <circle cx="26" cy="26" r="2.4" fill="#0B1419" />
+            <circle cx="38" cy="26" r="2.4" fill="#0B1419" />
+            <path d="M26 32 Q32 36 38 32" stroke="#0B1419" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <rect x="20" y="44" width="24" height="14" rx="6" fill={`url(#g-${style})`} opacity="0.85" />
+          </g>
+        )}
+        {style === "pixel" && (
+          <g shapeRendering="crispEdges">
+            <rect x="20" y="12" width="24" height="24" fill={`url(#g-${style})`} />
+            <rect x="24" y="20" width="4" height="4" fill="#0B1419" />
+            <rect x="36" y="20" width="4" height="4" fill="#0B1419" />
+            <rect x="26" y="30" width="12" height="2" fill="#0B1419" />
+            <rect x="22" y="40" width="20" height="14" fill={`url(#g-${style})`} />
+            <rect x="20" y="46" width="6" height="6" fill={grad[1]} />
+            <rect x="38" y="46" width="6" height="6" fill={grad[1]} />
+          </g>
+        )}
+        {style === "minimal" && (
+          <g fill="none" stroke="#F5F7FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="32" cy="24" r="11" />
+            <path d="M16 56 q16 -18 32 0" />
+            <circle cx="28" cy="23" r="1.2" fill="#F5F7FA" />
+            <circle cx="36" cy="23" r="1.2" fill="#F5F7FA" />
+            <path d="M28 28 q4 3 8 0" />
+          </g>
+        )}
+        {style === "silhouette" && (
+          <g>
+            <circle cx="32" cy="24" r="13" fill={grad[1]} />
+            <path d="M14 60 Q14 40 32 40 Q50 40 50 60 Z" fill={grad[1]} />
+            <circle cx="32" cy="22" r="3" fill={"#4FC3F7"} />
+          </g>
+        )}
+      </svg>
+      <p className="mt-1 text-[8px] font-black uppercase tracking-wider text-white/40">lv {level}</p>
     </div>
   );
 }
 
-function StatusPill({ saveState }: { saveState: "idle" | "saving" | "saved" | "error" }) {
-  const label = saveState === "saving" ? "saving" : saveState === "saved" ? "answers saved" : saveState === "error" ? "save failed" : "autosave on";
-  const tone = saveState === "error" ? "bg-dangerWash text-danger" : saveState === "saved" ? "bg-[#A3FF12] text-[#050505]" : "bg-white/10 text-paper/70";
-  return <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${tone}`}>{label}</span>;
+function QRCard({ text }: { text: string }) {
+  // Use Google Charts public QR endpoint as a tiny zero-dep generator.
+  const src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&color=0B1419&bgcolor=F5F7FA&data=${encodeURIComponent(text)}`;
+  return (
+    <div className="grid grid-cols-[auto_1fr] items-center gap-3 rounded-[22px] border border-white/12 bg-white/4 p-3">
+      <img src={src} alt="QR to share" className="size-[88px] rounded-xl" />
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">scan with another phone</p>
+        <p className="mt-1 text-[12px] font-bold text-white/75">Hand your phone to Sam, Mateo, anyone — they're in the same flow in 5 seconds.</p>
+      </div>
+    </div>
+  );
 }
 
-function missionForAnswers(mission: Mission, answers: Record<string, string>): Mission {
-  const vibe = answers.vibe || "Kai";
-  const loop = answers.firstLoop || "the first loop";
-  if (mission.id === "firstLoop" && answers.vibe) {
-    return {
-      ...mission,
-      title: `Pick the first ${railLabelFromText(vibe)} loop.`,
-      prompt: firstLoopPrompt(answers.vibe),
-      blocker: `Turns ${vibe} from a visual idea into the first daily action.`
-    };
-  }
-  if (mission.id === "comeback") {
-    return {
-      ...mission,
-      prompt: answers.firstLoop
-        ? `After someone uses ${loop}, what would make them want to open Kai again tomorrow?`
-        : mission.prompt,
-      placeholder: comebackNudge(answers)
-    };
-  }
-  if (mission.id === "voice") {
-    return {
-      ...mission,
-      prompt: `In ${vibe} mode, what should Kai never say because it would feel fake, corny, school-ish, or annoying?`,
-      placeholder: voiceNudge(answers)
-    };
-  }
-  if (mission.id === "parents") {
-    return {
-      ...mission,
-      prompt: answers.firstLoop
-        ? `If the first habit is ${loop}, what should parents see without making the app feel watched?`
-        : mission.prompt
-    };
-  }
-  if (mission.id === "sources") {
-    return {
-      ...mission,
-      prompt: `Who should Kai learn from to make ${vibe} + ${loop} feel legit?`,
-      placeholder: sourceNudge(answers)
-    };
-  }
-  if (mission.id === "safety") {
-    return {
-      ...mission,
-      prompt: `What needs an adult expert before we let friends test the ${vibe} version?`,
-      placeholder: safetyNudge(answers)
-    };
-  }
-  if (mission.id === "testers") {
-    return {
-      ...mission,
-      prompt: `Who should test the ${vibe} version first, and what would they honestly care about?`,
-      placeholder: testerNudge(answers)
-    };
-  }
-  if (mission.id === "review") {
-    return {
-      ...mission,
-      title: `Ship the ${vibe} build brief.`
-    };
-  }
-  return mission;
+function NoteField(props: { label: string; value: string; placeholder: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/55">{props.label}</span>
+      <textarea
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value.slice(0, 180))}
+        rows={2}
+        placeholder={props.placeholder}
+        className="mt-1 w-full resize-none rounded-2xl border border-white/12 bg-[#0B1419]/75 px-3 py-2 text-[13px] font-bold leading-5 text-white outline-none placeholder:text-white/30 focus:border-[#A3FF12]"
+      />
+    </label>
+  );
 }
 
-function skinForVibe(vibe?: string) {
-  if (vibe === "Lifestyle Feed") {
-    return {
-      page: "bg-[#07120D]",
-      panel: "bg-[#0D1B14]",
-      panelBorder: "border-[#34D399]/22",
-      header: "bg-[radial-gradient(circle_at_top_right,rgba(52,211,153,0.26),transparent_38%),#0D1B14]",
-      glowA: "bg-[#34D399]/35",
-      glowB: "bg-[#F472B6]/24",
-      accentText: "text-[#34D399]",
-      blocker: "border-[#34D399]/35 bg-[#34D399]/12 text-[#34D399]",
-      cta: "bg-[linear-gradient(135deg,#34D399,#F472B6)] text-[#05100B]",
-      railActive: "border-[#34D399] bg-[#34D399] text-[#05100B]",
-      choiceSelected: "bg-[linear-gradient(135deg,#10B981,#F472B6)]",
-      progress: "bg-[linear-gradient(90deg,#34D399,#F472B6)]",
-      focusBorder: "focus:border-[#34D399]",
-      preview: "border-[#34D399]/20 bg-[#34D399]/8",
-      previewBadge: "bg-[#34D399]/16",
-      reviewBox: "border-[#34D399]/45 bg-[#34D399]/10",
-      heroTitle: "Build the version teens would post about.",
-      heroCopy: "Lifestyle mode changes missions toward identity, photos, shareable wins, and friend testing.",
-      consoleTitle: "Feed Draft"
-    };
-  }
-  if (vibe === "Calm Coach") {
-    return {
-      page: "bg-[#101010]",
-      panel: "bg-[#171717]",
-      panelBorder: "border-white/14",
-      header: "bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_38%),#171717]",
-      glowA: "bg-white/20",
-      glowB: "bg-[#93C5FD]/18",
-      accentText: "text-[#F8FAFC]",
-      blocker: "border-white/25 bg-white/10 text-paper",
-      cta: "bg-white text-[#080808]",
-      railActive: "border-white bg-white text-[#080808]",
-      choiceSelected: "bg-[linear-gradient(135deg,#111111,#555555)]",
-      progress: "bg-[linear-gradient(90deg,#F8FAFC,#93C5FD)]",
-      focusBorder: "focus:border-[#111111]",
-      preview: "border-white/14 bg-white/8",
-      previewBadge: "bg-white/10",
-      reviewBox: "border-white/25 bg-white/8",
-      heroTitle: "Build the version teens trust privately.",
-      heroCopy: "Calm Coach mode changes missions toward privacy, low-noise prompts, and parent trust.",
-      consoleTitle: "Coach Draft"
-    };
-  }
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Pure helpers                                                              */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+function defaultBuild(): Build {
   return {
-    page: "bg-[#050505]",
-    panel: "bg-[#101010]",
-    panelBorder: "border-white/12",
-    header: "bg-[radial-gradient(circle_at_top_right,rgba(163,255,18,0.18),transparent_38%),#111]",
-    glowA: "bg-[#A3FF12]/35",
-    glowB: "bg-[#22D3EE]/24",
-    accentText: "text-[#A3FF12]",
-    blocker: "border-[#A3FF12]/30 bg-[#A3FF12]/10 text-[#A3FF12]",
-    cta: "bg-[linear-gradient(135deg,#A3FF12,#22D3EE)] text-[#050505]",
-    railActive: "border-[#A3FF12] bg-[#A3FF12] text-[#050505]",
-    choiceSelected: "bg-[linear-gradient(135deg,#6D5DF6,#22D3EE)]",
-    progress: "bg-[linear-gradient(90deg,#A3FF12,#22D3EE)]",
-    focusBorder: "focus:border-[#6D5DF6]",
-    preview: "border-[#A3FF12]/20 bg-[#A3FF12]/8",
-    previewBadge: "bg-[#A3FF12]/12",
-    reviewBox: "border-[#A3FF12]/45 bg-[#A3FF12]/10",
-    heroTitle: vibe ? "Build the game loop." : "Help build the app.",
-    heroCopy: vibe
-      ? "Quest mode changes missions toward XP, levels, unlocks, and daily comeback mechanics."
-      : "Every answer fills a real blocker: design, voice, sources, safety review, and first testers.",
-    consoleTitle: "Quest Draft"
+    firstName: "",
+    vibes: [],
+    art: "chibi",
+    kaiName: "Kai",
+    kaiTone: "balanced",
+    firstMove: "pressure",
+    mustHave: "",
+    hardNo: "",
+    tester: ""
   };
 }
 
-function railLabel(id: MissionId) {
-  if (id === "vibe") return "Vibe";
-  if (id === "firstLoop") return "Loop";
-  if (id === "comeback") return "Return";
-  if (id === "voice") return "Voice";
-  if (id === "parents") return "Parent";
-  if (id === "sources") return "Brain";
-  if (id === "safety") return "Safety";
-  if (id === "testers") return "Squad";
-  return "Brief";
-}
-
-function railLabelFromText(value: string) {
-  if (value === "Lifestyle Feed") return "Lifestyle";
-  if (value === "Calm Coach") return "Coach";
-  if (value === "Quest Mode") return "Quest";
-  return value.replace("Home-screen ", "").split(/\s+/).slice(0, 2).join(" ");
-}
-
-function firstLoopPrompt(vibe: string) {
-  if (vibe === "Lifestyle Feed") return "What should someone capture first so Kai feels personal, visual, and not like homework?";
-  if (vibe === "Calm Coach") return "What is the smallest private action that would make Kai feel useful immediately?";
-  return "What should a teen do first that creates XP, progress, or a visible unlock in under 30 seconds?";
-}
-
-function comebackNudge(answers: Record<string, string>) {
-  if (answers.vibe === "Lifestyle Feed") return "Example: a daily photo prompt, private recap, friend reaction, streak album, shareable win...";
-  if (answers.vibe === "Calm Coach") return "Example: Kai remembers what I said, one quiet next step, no spam, a useful morning check-in...";
-  if (answers.firstLoop === "Streaks + Belts") return "Example: streak freeze, boss challenge, belt progress, weekly unlock, friend duel...";
-  return "Example: streak freeze, friend challenge, Kai remembers my goal, funny daily mission...";
-}
-
-function voiceNudge(answers: Record<string, string>) {
-  if (answers.vibe === "Lifestyle Feed") return "Write captions, phrases, emojis, or fake influencer energy Kai should avoid.";
-  if (answers.vibe === "Calm Coach") return "Write anything that would feel too therapist-y, too parental, or too dramatic.";
-  return "Write the exact stuff that would make a 16-year-old roll their eyes.";
-}
-
-function sourceNudge(answers: Record<string, string>) {
-  if (answers.firstLoop === "Food Camera") return "Food creators, trainers, nutrition voices, athletes, apps, or books that do not feel diet-y.";
-  if (answers.vibe === "Quest Mode") return "Games, leveling systems, creators, coaches, athletes, books, or apps Kai should learn from.";
-  return "Books, creators, coaches, athletes, therapists, apps, YouTube channels, podcasts, anything.";
-}
-
-function safetyNudge(answers: Record<string, string>) {
-  if (answers.firstLoop === "Food Camera") return "Example: body image, eating, calories, weight, substances, self-harm, medical advice...";
-  if (answers.vibe === "Lifestyle Feed") return "Example: sharing, photos, body image, comparison, bullying, DMs, privacy, AI images...";
-  return "Example: body image, substances, trauma, sex ed, eating, self-harm, anxiety...";
-}
-
-function testerNudge(answers: Record<string, string>) {
-  if (answers.vibe === "Quest Mode") return "Example: athlete, gamer, competitive student, friend group captain, someone who loves streaks...";
-  if (answers.vibe === "Lifestyle Feed") return "Example: creator, athlete, social teen, private teen, someone who tracks outfits/food/wins...";
-  return "Example: athlete, honors student, gamer, someone anxious, someone trying to eat better...";
-}
-
-function prototypeForAnswers(answers: Record<string, string>, missionId: MissionId) {
-  const vibe = answers.vibe;
-  const loop = answers.firstLoop;
-  const parent = answers.parents;
-
-  if (vibe === "Lifestyle Feed") {
-    return {
-      mode: "Lifestyle Feed demo",
-      title: loop ? `${railLabelFromText(loop)} card` : "Private story home",
-      subtitle: "Kai feels like a private feed of wins, prompts, photos, and identity signals.",
-      primaryLabel: "today's prompt",
-      primary: loop === "Food Camera" ? "Snap lunch before practice" : loop === "Streaks + Belts" ? "Post a win to your streak" : "Add one real moment",
-      badge: parent === "Shared Wins" ? "shareable" : "private",
-      badgeTone: "bg-[#DCFCE7] text-[#065F46]",
-      cards: [
-        {
-          label: "feed card",
-          title: loop === "Food Camera" ? "Fuel check" : "Today card",
-          copy: loop ? `${loop} becomes a visual card, not a form.` : "Choosing a first loop changes this card.",
-          tone: "border-[#A7F3D0] bg-[#ECFDF5]"
-        },
-        {
-          label: "comeback",
-          title: answers.comeback || "Daily recap",
-          copy: "The return hook should feel like opening a private story, not completing homework.",
-          tone: "border-[#FBCFE8] bg-[#FDF2F8]"
-        },
-        {
-          label: "parent mode",
-          title: parent || "Pick visibility",
-          copy: parent ? parentCopy(parent) : "Parent settings change the share and privacy controls.",
-          tone: "border-[#BFDBFE] bg-[#EFF6FF]"
-        }
-      ],
-      nav: ["Feed", "Camera", "Wins"],
-      change: changeCopy(answers, missionId, "feed")
-    };
-  }
-
-  if (vibe === "Calm Coach") {
-    return {
-      mode: "Calm Coach demo",
-      title: loop ? `One ${railLabelFromText(loop)} next step` : "One clean next move",
-      subtitle: "Kai feels quiet, private, and useful without trying to be entertaining.",
-      primaryLabel: "kai asks",
-      primary: loop === "Emotional Check-in" ? "What feels loud right now?" : loop === "Food Camera" ? "Want a quick read on this meal?" : "What is one small win today?",
-      badge: parent === "Safety-only" ? "private" : "low-noise",
-      badgeTone: "bg-[#F4F4F5] text-[#18181B]",
-      cards: [
-        {
-          label: "coach prompt",
-          title: loop || "Choose first action",
-          copy: loop ? `${loop} is framed as one calm step.` : "Picking a loop changes Kai's first question.",
-          tone: "border-[#E4E4E7] bg-[#FAFAFA]"
-        },
-        {
-          label: "memory",
-          title: answers.comeback || "Kai remembers context",
-          copy: "The comeback mechanic should feel helpful, not needy.",
-          tone: "border-[#DBEAFE] bg-[#EFF6FF]"
-        },
-        {
-          label: "guardrails",
-          title: parent || "Choose visibility",
-          copy: parent ? parentCopy(parent) : "Parent settings stay clear without taking over the teen experience.",
-          tone: "border-[#E9D5FF] bg-[#FAF5FF]"
-        }
-      ],
-      nav: ["Today", "Chat", "Progress"],
-      change: changeCopy(answers, missionId, "coach")
-    };
-  }
-
-  return {
-    mode: vibe ? "Quest Mode demo" : "Live Kai demo",
-    title: loop ? `${railLabelFromText(loop)} quest` : "Choose a world",
-    subtitle: vibe ? "Kai feels like levels, belts, daily missions, and visible character growth." : "Pick a vibe to load a real Kai prototype.",
-    primaryLabel: "active quest",
-    primary: loop === "Streaks + Belts" ? "+40 XP to green belt" : loop === "Food Camera" ? "Scan fuel, earn XP" : loop || "No quest loaded yet",
-    badge: vibe ? "level 3" : "locked",
-    badgeTone: "bg-[#ECFCCB] text-[#365314]",
-    cards: [
-      {
-        label: "mission",
-        title: loop || "Pick first loop",
-        copy: loop ? `${loop} becomes the core XP action.` : "The first loop decides the first playable mission.",
-        tone: "border-[#D9F99D] bg-[#F7FEE7]"
-      },
-      {
-        label: "unlock",
-        title: answers.comeback || "Tomorrow challenge",
-        copy: "The comeback hook becomes the next unlock or streak mechanic.",
-        tone: "border-[#BAE6FD] bg-[#F0F9FF]"
-      },
-      {
-        label: "safety",
-        title: parent || "Parent visibility",
-        copy: parent ? parentCopy(parent) : "Parent mode changes what gets surfaced outside the teen app.",
-        tone: "border-[#DDD6FE] bg-[#F5F3FF]"
+function loadSeedOrSaved(): Build {
+  if (typeof window === "undefined") return defaultBuild();
+  // First check ?seed= for a shared build
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const seed = params.get("seed");
+    if (seed) {
+      const decoded = JSON.parse(atob(seed.replace(/-/g, "+").replace(/_/g, "/")));
+      if (decoded && typeof decoded === "object") {
+        return { ...defaultBuild(), ...decoded };
       }
-    ],
-    nav: ["Quest", "Kai", "Belts"],
-    change: changeCopy(answers, missionId, "quest")
-  };
+    }
+  } catch { /* ignore */ }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...defaultBuild(), ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return defaultBuild();
 }
 
-function changeCopy(answers: Record<string, string>, missionId: MissionId, mode: "quest" | "feed" | "coach") {
-  if (missionId === "vibe" && answers.vibe) return `${answers.vibe} loaded: the prototype, missions, and prompts now use this product direction.`;
-  if (missionId === "firstLoop" && answers.firstLoop) return `${answers.firstLoop} is now the first real action in the ${mode} demo.`;
-  if (missionId === "comeback" && answers.comeback) return `The comeback mechanic now shows as: ${answers.comeback}`;
-  if (missionId === "voice" && answers.voice) return "The voice rules will shape the content review and Kai prompts.";
-  if (missionId === "parents" && answers.parents) return `${answers.parents} is now reflected in the parent visibility area.`;
-  if (missionId === "sources" && answers.sources) return "Source material will become the grounded prompt direction.";
-  if (missionId === "safety" && answers.safety) return "Safety red lines are now part of the launch blocker list.";
-  if (missionId === "testers" && answers.testers) return "The tester squad is now part of the friend-test plan.";
-  return "Answer this mission to update the live Kai demo.";
+function buildShareLink(build: Build) {
+  if (typeof window === "undefined") return "";
+  const seed = btoa(JSON.stringify(build)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return `${window.location.origin}/demo?seed=${seed}`;
 }
 
-function parentCopy(parent: string) {
-  if (parent === "Safety-only") return "Parents only hear about serious safety boundaries.";
-  if (parent === "Weekly Summary") return "Parents see a light recap without private details.";
-  return "Wins can be shared only when the teen chooses.";
+function openingFromVibes(build: Build) {
+  const name = build.firstName ? `${build.firstName}, ` : "";
+  if (!build.vibes.length) return `${name}what's actually going on right now?`;
+  const v = build.vibes;
+  if (v.includes("tired") && v.includes("stuck"))     return `${name}tired AND stuck is a brutal combo. what's pulling on you most?`;
+  if (v.includes("anxious"))                          return `${name}anxious mode noted. what's the loudest thing in your head right now?`;
+  if (v.includes("hyped") && v.includes("locked-in")) return `${name}you're firing — what are you actually trying to do today?`;
+  if (v.includes("bored"))                            return `${name}bored is a signal, not a verdict. what would you do if no one was watching?`;
+  return `${name}${v.slice(0, 2).join(" + ")} energy. say more — what's behind it?`;
 }
 
-function previewTitle(answers: Record<string, string>) {
-  if (!answers.vibe) return "Pick a world to change the build.";
-  if (!answers.firstLoop) return `${answers.vibe} shell loaded.`;
-  return `${answers.vibe} + ${answers.firstLoop}`;
-}
-
-function previewCopy(answers: Record<string, string>, missionId: MissionId) {
-  if (missionId === "vibe" && answers.vibe) return `The rest of the quest now uses ${answers.vibe} language, colors, and blocker framing.`;
-  if (missionId === "firstLoop" && answers.firstLoop) return `Next missions ask how ${answers.firstLoop} gets someone to come back, what voice ruins it, and what safety lines apply.`;
-  if (missionId === "parents" && answers.parents) return `Parent decisions now attach to ${answers.parents}, not a generic safety model.`;
-  if (missionId === "sources" && answers.sources) return "Kai's prompt grounding can now point at source material Lev actually respects.";
-  if (missionId === "safety" && answers.safety) return "The clinical review list is now shaped by Lev's red lines.";
-  if (missionId === "testers" && answers.testers) return "The first friend-test plan can now be built around the teens Lev names.";
-  return "Your current answers are changing the build console and the next mission prompts.";
-}
-
-function nextScreenLabel(answers: Record<string, string>) {
-  if (answers.vibe === "Lifestyle Feed") return "Feed card";
-  if (answers.vibe === "Calm Coach") return "Quiet prompt";
-  if (answers.firstLoop === "Streaks + Belts") return "XP unlock";
-  return "Mission card";
-}
-
-function choicesFromAnswers(answers: Record<string, string>): DemoFeedbackChoices {
-  return {
-    ui: normalizeChoice(answers.vibe, ["Calm Coach", "Quest Mode", "Lifestyle Feed"], "Quest Mode") as DemoFeedbackChoices["ui"],
-    habit: normalizeChoice(answers.firstLoop, ["Food Camera", "Emotional Check-in", "Streaks + Belts", "Home-screen Character"], "Food Camera") as DemoFeedbackChoices["habit"],
-    onboarding: "Goal Setup",
-    parent: normalizeChoice(answers.parents, ["Safety-only", "Weekly Summary", "Shared Wins"], "Safety-only") as DemoFeedbackChoices["parent"]
-  };
-}
-
-function normalizeChoice(value: string | undefined, allowed: string[], fallback: string) {
-  return allowed.includes(value ?? "") ? value ?? fallback : fallback;
-}
-
-function buildScopeSummary(answers: Record<string, string>) {
-  return [
-    `Vibe: ${answers.vibe || "open"}`,
-    `First loop: ${answers.firstLoop || "open"}`,
-    `Comeback hook: ${answers.comeback || "open"}`,
-    `Cringe rules: ${answers.voice || "open"}`,
-    `Parent mode: ${answers.parents || "open"}`,
-    `Sources: ${answers.sources || "open"}`,
-    `Safety review lines: ${answers.safety || "open"}`,
-    `First testers: ${answers.testers || "open"}`
-  ].join("\n");
-}
-
-function makeSessionId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
-  return `scope-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+function getOrMakeSession(): string {
+  try {
+    const existing = localStorage.getItem("kai_demo_session");
+    if (existing) return existing;
+    const fresh = crypto?.randomUUID?.() || `demo-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem("kai_demo_session", fresh);
+    return fresh;
+  } catch {
+    return `demo-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
 }

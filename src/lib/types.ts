@@ -93,6 +93,19 @@ export interface FoodPhotoResult {
   notes: string;
 }
 
+/**
+ * Response shape for the anonymous /api/demo-food-photo endpoint.
+ * Same as FoodPhotoResult but without `mealId` — the demo endpoint
+ * doesn't persist to D1.
+ */
+export interface DemoFoodPhotoResult {
+  r2Key?: string;
+  items: FoodPhotoItem[];
+  totals: FoodNutrition | null;
+  confidence: FoodPhotoConfidence;
+  notes: string;
+}
+
 export interface DemoFeedbackChoices {
   ui: "Calm Coach" | "Quest Mode" | "Lifestyle Feed";
   habit: "Food Camera" | "Emotional Check-in" | "Streaks + Belts" | "Home-screen Character";

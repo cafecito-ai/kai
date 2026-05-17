@@ -1,8 +1,14 @@
-import type { ChatMessage, DemoFeedbackChoices, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
-const PUBLIC_DEMO_API_PATHS = new Set(["/api/demo-kai", "/api/scope-feedback", "/api/demo-feedback"]);
+const PUBLIC_DEMO_API_PATHS = new Set([
+  "/api/demo-kai",
+  "/api/demo-food-photo",
+  "/api/demo-food-photo-upload",
+  "/api/scope-feedback",
+  "/api/demo-feedback"
+]);
 type TokenGetter = () => Promise<string | null>;
 
 let apiAuthTokenGetter: TokenGetter | null = null;
@@ -147,6 +153,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body)
     }),
+  demoFoodPhoto: (file: File, sessionId: string, note?: string) => {
+    const body = new FormData();
+    body.set("photo", file);
+    body.set("sessionId", sessionId);
+    if (note?.trim()) body.set("note", note.trim());
+    return request<DemoFoodPhotoResult>("/api/demo-food-photo-upload", {
+      method: "POST",
+      body
+    });
+  },
   demoKai: (body: {
     message: string;
     history: { role: "user" | "assistant"; content: string }[];
@@ -154,6 +170,7 @@ export const api = {
     kaiName: string;
     kaiTone: "warm" | "balanced" | "direct";
     firstName?: string;
+    mode?: "chat" | "feelings";
   }) =>
     request<{ reply: string; capped?: boolean; turnsRemaining?: number; safetyEvent?: { category?: string; severity?: string } }>("/api/demo-kai", {
       method: "POST",

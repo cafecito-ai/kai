@@ -1,4 +1,4 @@
-import { Activity, Brain, ChevronLeft, ShieldAlert, Target } from "lucide-react";
+import { Activity, Brain, ChevronLeft, Sparkles, ShieldAlert, Target } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
@@ -7,6 +7,40 @@ import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
+
+// Demo carry-over — when a teen completes /demo and clicks the SignupNudge,
+// they land here with kai_demo_build_v1 still in localStorage. We pre-fill the
+// Kai name + tone so they don't have to re-type what they already chose, and
+// show a small banner so they know the demo bled through.
+const DEMO_STORAGE_KEY = "kai_demo_build_v1";
+
+type DemoBuildSlice = {
+  firstName?: string;
+  vibes?: string[];
+  kaiName?: string;
+  kaiTone?: KaiTone;
+  tried?: string[];
+  goalText?: string;
+  feelingsSummary?: string;
+  mealSummary?: string;
+};
+
+function loadDemoBuild(): DemoBuildSlice | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(DEMO_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed as DemoBuildSlice;
+  } catch {
+    return null;
+  }
+}
+
+function isValidKaiTone(v: unknown): v is KaiTone {
+  return v === "warm" || v === "balanced" || v === "direct";
+}
 
 const intakeQuestions = [
   "Walk me into a normal day for you. What does it look like from wake-up to bed?",
@@ -33,13 +67,31 @@ const toneChoices: Array<{ id: KaiTone; title: string; copy: string; preview: st
 export function Onboarding() {
   const navigate = useNavigate();
   const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
+  const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
+  const fromDemo = Boolean(demoBuild);
   const [step, setStep] = useState(0);
   const [age, setAge] = useState("16");
   const [parentEmail, setParentEmail] = useState("");
-  const [kaiName, setKaiName] = useState("Kai");
-  const [kaiTone, setKaiTone] = useState<KaiTone>("balanced");
+  const [kaiName, setKaiName] = useState(() => {
+    const name = demoBuild?.kaiName?.trim();
+    return name && name.length > 0 ? name : "Kai";
+  });
+  const [kaiTone, setKaiTone] = useState<KaiTone>(() =>
+    isValidKaiTone(demoBuild?.kaiTone) ? demoBuild.kaiTone : "balanced"
+  );
   const [manualEngine, setManualEngine] = useState<EngineId | "unsure">("unsure");
-  const [responses, setResponses] = useState<string[]>(Array(intakeQuestions.length).fill(""));
+  const [responses, setResponses] = useState<string[]>(() => {
+    const initial = Array(intakeQuestions.length).fill("");
+    // Pre-seed Q5 ("extra hour every day") with what they said they want to
+    // try in the demo — gives Kai useful context without filling answers for
+    // questions the user hasn't actually engaged with.
+    const triedNotes: string[] = [];
+    if (demoBuild?.goalText) triedNotes.push(`In the demo, said: "${demoBuild.goalText}"`);
+    if (demoBuild?.feelingsSummary) triedNotes.push(`Feelings check: ${demoBuild.feelingsSummary}`);
+    if (demoBuild?.mealSummary) triedNotes.push(demoBuild.mealSummary);
+    if (triedNotes.length) initial[4] = triedNotes.join(" — ");
+    return initial;
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -103,6 +155,7 @@ export function Onboarding() {
     return (
       <StepShell eyebrow="step 1 of 11" title="First, how old are you?" progress={progress} footer={<NextBack onNext={() => setStep(1)} nextDisabled={isMinor && !parentEmail.trim()} />}>
         <div className="space-y-4">
+          {fromDemo && <DemoCarryoverBanner build={demoBuild!} />}
           <DisclosureBanner />
           {error && <p className="rounded-kai border border-danger/25 bg-dangerWash p-3 text-sm font-bold text-danger">{error}</p>}
           <label className="block text-sm font-black">
@@ -257,4 +310,30 @@ function labelForEngine(engine: EngineId) {
   if (engine === "physical") return "Body";
   if (engine === "potential") return "Goals";
   return "Reset";
+}
+
+function DemoCarryoverBanner({ build }: { build: DemoBuildSlice }) {
+  const triedLabels: Record<string, string> = {
+    win: "one win",
+    feelings: "feelings check",
+    fuel: "fuel snap"
+  };
+  const triedLine = (build.tried ?? []).map((k) => triedLabels[k] ?? k).join(" · ");
+  const parts = [
+    build.kaiName && build.kaiName !== "Kai" ? `name: ${build.kaiName}` : null,
+    build.kaiTone ? `tone: ${build.kaiTone}` : null,
+    build.vibes?.length ? `vibes: ${build.vibes.slice(0, 3).join(", ")}` : null,
+    triedLine ? `tried: ${triedLine}` : null
+  ].filter(Boolean).join(" · ");
+  return (
+    <div className="rounded-kai border border-goals/30 bg-goalsWash p-3 text-sm">
+      <p className="flex items-center gap-2 font-black text-goals">
+        <Sparkles size={14} /> Picked up where you left off in the demo
+      </p>
+      {parts && <p className="mt-1 font-semibold leading-5 text-muted">{parts}</p>}
+      <p className="mt-1.5 text-xs font-semibold leading-5 text-muted/85">
+        Pre-filled the next couple steps — you can change any of it.
+      </p>
+    </div>
+  );
 }

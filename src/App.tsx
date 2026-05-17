@@ -17,6 +17,8 @@ import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
 import { Ops } from "./pages/Ops";
+import { OpsDemoSession } from "./pages/OpsDemoSession";
+import { OpsDemoSessions } from "./pages/OpsDemoSessions";
 import { PolicyPage } from "./pages/PolicyPage";
 import { Progress } from "./pages/Progress";
 import { Scope } from "./pages/Scope";
@@ -75,6 +77,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/design" element={<DesignPicker />} />
           <Route path="/scope" element={<Scope />} />
           <Route path="/ops" element={protectedAuth(<Ops />)} />
+          <Route path="/ops/demo-sessions" element={protectedAuth(<OpsDemoSessions />)} />
+          <Route path="/ops/demo-sessions/:sessionId" element={protectedAuth(<OpsDemoSession />)} />
           <Route path="/for-parents" element={<ForParents />} />
           <Route path="/terms" element={<PolicyPage kind="terms" />} />
           <Route path="/privacy" element={<PolicyPage kind="privacy" />} />

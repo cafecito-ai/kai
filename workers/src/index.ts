@@ -56,6 +56,35 @@ function consentHtml(message: string) {
  * Spec hook: P1-4 nightly streak recompute from
  * `/home/eratner/.claude/plans/lets-review-kai-boostaisearch-ai-and-imperative-dove.md`.
  */
+/**
+ * Sweep stale anonymous demo food photos out of R2. Anything under the
+ * `demo-food-photos/` prefix older than 24h is deleted. The /demo flow
+ * shows users "demo photos auto-delete in 24h" — this is what makes that true.
+ */
+async function cleanupDemoFoodPhotos(env: Env): Promise<{ scanned: number; deleted: number }> {
+  if (!env.UPLOADS) return { scanned: 0, deleted: 0 };
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  let scanned = 0;
+  let deleted = 0;
+  let cursor: string | undefined;
+  for (let page = 0; page < 50; page++) { // hard cap to avoid runaway
+    const listing = await env.UPLOADS.list({ prefix: "demo-food-photos/", cursor, limit: 1000 });
+    scanned += listing.objects.length;
+    const stale = listing.objects.filter((obj) => {
+      const ts = Number(obj.customMetadata?.uploadedAt);
+      const uploadedAt = Number.isFinite(ts) ? ts : obj.uploaded?.getTime() ?? 0;
+      return uploadedAt > 0 && uploadedAt < cutoff;
+    });
+    if (stale.length) {
+      await env.UPLOADS.delete(stale.map((o) => o.key));
+      deleted += stale.length;
+    }
+    if (!listing.truncated) break;
+    cursor = listing.cursor;
+  }
+  return { scanned, deleted };
+}
+
 export default {
   fetch: app.fetch.bind(app),
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
@@ -66,6 +95,12 @@ export default {
           console.log("nightly progress recompute", report);
         } catch (err) {
           console.error("nightly progress recompute fatal", err);
+        }
+        try {
+          const cleanup = await cleanupDemoFoodPhotos(env);
+          console.log("demo food photo cleanup", cleanup);
+        } catch (err) {
+          console.error("demo food photo cleanup fatal", err);
         }
       })()
     );

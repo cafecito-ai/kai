@@ -76,6 +76,47 @@ select {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Demo Act 4 "One win" celebration burst.
+ * Trophy pops in, four colored dots radiate outward. All gated by the
+ * prefers-reduced-motion sweep below — no JS reduced-motion check needed. */
+@keyframes pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes burst-up {
+  0%   { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -28px) scale(0.4); opacity: 0; }
+}
+@keyframes burst-down {
+  0%   { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, 28px) scale(0.4); opacity: 0; }
+}
+@keyframes burst-right {
+  0%   { transform: translate(0, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(28px, -50%) scale(0.4); opacity: 0; }
+}
+@keyframes burst-left {
+  0%   { transform: translate(0, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-28px, -50%) scale(0.4); opacity: 0; }
+}
+@keyframes burst-up-right {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(22px, -22px) scale(0.4); opacity: 0; }
+}
+@keyframes burst-up-left {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-22px, -22px) scale(0.4); opacity: 0; }
+}
+@keyframes burst-down-right {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(22px, 22px) scale(0.4); opacity: 0; }
+}
+@keyframes burst-down-left {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-22px, 22px) scale(0.4); opacity: 0; }
+}
+
 /*
  * Spec Section 4 / P3-8: "Respect prefers-reduced-motion — replace all
  * motion with instant transitions if set." Belt-and-suspenders approach

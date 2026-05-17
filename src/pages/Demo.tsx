@@ -1,5 +1,6 @@
-import { ArrowRight, Check, Flame, Loader2, MessageCircle, Send, Share2, Sparkles, Trophy, X } from "lucide-react";
+import { ArrowRight, Camera, Check, ChevronDown, Flame, Loader2, MessageCircle, RefreshCw, Send, Share2, Sparkles, Trophy, UserPlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 
 /**
@@ -11,11 +12,12 @@ import { api } from "../lib/api";
  * Acts: 1) Meet  2) Read  3) Chat  4) Build  5) Ship
  */
 
-type Act = 1 | 2 | 3 | 4 | 5;
+type Act = 1 | 2 | 3 | 4 | 5 | 6;
 
 type ArtStyle = "chibi" | "silhouette" | "pixel" | "minimal";
 type KaiTone = "warm" | "balanced" | "direct";
 type FirstMove = "fuel" | "pressure" | "win" | "breath";
+type TriedKey = "fuel" | "feelings" | "win";
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
@@ -29,6 +31,12 @@ type Build = {
   mustHave: string;
   hardNo: string;
   tester: string;
+  // Act-4 "Try" results — what the user actually did in the demo, not just chose.
+  // tried[] tracks which mini-flows completed; other fields hold their output.
+  tried: TriedKey[];
+  goalText: string;
+  feelingsSummary: string;
+  mealSummary: string;
 };
 
 const VIBE_CHIPS: { id: string; label: string; emoji: string }[] = [
@@ -194,15 +202,21 @@ export function Demo() {
             onNext={() => goAct(4)}
           />
         )}
-        {act === 4 && <ActBuild build={build} update={update} onNext={() => goAct(5)} />}
-        {act === 5 && (
+        {act === 4 && <ActTry build={build} update={update} onNext={() => goAct(5)} />}
+        {act === 5 && <ActBuild build={build} update={update} onNext={() => goAct(6)} />}
+        {act === 6 && (
           <ActShip
             build={build}
             shareLink={shareLink}
             shareCopied={shareCopied}
             onShare={copyShare}
             onSave={saveBuildBrief}
-            onRestart={() => { setAct(1); setChat([]); setSeenHomeCard(false); }}
+            onRestart={() => {
+              setAct(1);
+              setChat([]);
+              setSeenHomeCard(false);
+              setBuild((b) => ({ ...b, tried: [], goalText: "", feelingsSummary: "", mealSummary: "" }));
+            }}
           />
         )}
       </div>
@@ -215,8 +229,8 @@ export function Demo() {
 /* ────────────────────────────────────────────────────────────────────────── */
 
 function ProgressDots({ act }: { act: Act }) {
-  const labels = ["meet", "read", "chat", "build", "ship"];
-  const xp = act * 20;
+  const labels = ["meet", "read", "chat", "try", "build", "ship"];
+  const xp = Math.round((act / labels.length) * 100);
   return (
     <div className="sticky top-0 z-10 w-full border-b border-white/8 bg-[#0B1419]/85 px-4 py-3 backdrop-blur">
       <div className="mx-auto max-w-[520px]">
@@ -227,14 +241,20 @@ function ProgressDots({ act }: { act: Act }) {
         <div className="h-2 overflow-hidden rounded-full bg-white/10">
           <div className="h-full rounded-full bg-gradient-to-r from-[#A3FF12] to-[#4FC3F7] transition-all duration-500" style={{ width: `${xp}%` }} />
         </div>
-        <div className="mt-2 flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-[0.16em]">
+        {/* Label row: drops the inline marker character (✓/•) since with 6
+            labels at 375px every pixel matters. Color encodes state. */}
+        <div className="mt-2 flex items-center justify-between text-[9.5px] font-black uppercase tracking-[0.12em]">
           {labels.map((label, i) => {
             const n = (i + 1) as Act;
             const done = act > n;
             const here = act === n;
             return (
-              <span key={label} className={`truncate ${done ? "text-[#A3FF12]" : here ? "text-white" : "text-white/35"}`}>
-                {done ? "✓ " : here ? "• " : ""}{label}
+              <span
+                key={label}
+                aria-current={here ? "step" : undefined}
+                className={`truncate ${done ? "text-[#A3FF12]" : here ? "text-white" : "text-white/35"}`}
+              >
+                {label}
               </span>
             );
           })}
@@ -331,7 +351,7 @@ function ActRead({ build, update, onNext }: { build: Build; update: (p: Partial<
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 1 of 4</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 1 of 5</p>
         <h2 className="mt-1 text-3xl font-black leading-none">Pick your loadout.</h2>
         <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
           Tap 2-4 that fit today. Kai uses this to change the first message.
@@ -411,7 +431,7 @@ function ActChat(props: {
   return (
     <section className="flex flex-col gap-4">
       <header>
-        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 2 of 4 · live</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 2 of 5 · live</p>
         <h2 className="mt-1 text-3xl font-black leading-none">Talk to Kai.</h2>
         <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
           Type literally anything. {build.firstName ? `Kai knows your name is ${build.firstName} and ` : "Kai knows "}your vibes are{" "}
@@ -539,7 +559,564 @@ function HomeCard({ build }: { build: Build }) {
 }
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/* ACT 4 — Make it yours                                                     */
+/* ACT 4 — Try Kai (one win, feelings, fuel snap)                            */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+type MiniKey = TriedKey | null;
+
+const TRY_TILES: {
+  key: TriedKey;
+  label: string;
+  teaser: string;
+  tagline: string;
+  firstMove: FirstMove;
+}[] = [
+  {
+    key: "win",
+    label: "One win",
+    teaser: "Lock in one thing that went right today — or one thing you want to make happen.",
+    tagline: "30 sec · type one line",
+    firstMove: "win"
+  },
+  {
+    key: "feelings",
+    label: "Feelings check",
+    teaser: "Three turns with Kai. Body, head, one reframe. No diagnosis, no lecture.",
+    tagline: "90 sec · live Kai",
+    firstMove: "pressure"
+  },
+  {
+    key: "fuel",
+    label: "Fuel snap",
+    teaser: "Snap your meal. Kai reads it descriptively — no calorie lecture.",
+    tagline: "20 sec · one photo",
+    firstMove: "fuel"
+  }
+];
+
+// Short post-completion line shown on a locked tile.
+function summarizeTry(build: Build, key: TriedKey): string {
+  if (key === "win") return build.goalText ? `"${build.goalText.slice(0, 64)}${build.goalText.length > 64 ? "…" : ""}"` : "saved";
+  if (key === "feelings") return "kept private · 3 turns done";
+  if (key === "fuel") return build.mealSummary ? build.mealSummary.replace(/^snapped:\s*/, "").slice(0, 56) : "logged";
+  return "done";
+}
+
+function ActTry({ build, update, onNext }: { build: Build; update: (p: Partial<Build>) => void; onNext: () => void }) {
+  const [openMini, setOpenMini] = useState<MiniKey>(null);
+  const canContinue = build.tried.length >= 1;
+
+  // After any successful try, auto-set firstMove to match — so Act 5 (Build)
+  // feels like a confirmation instead of asking what they just demonstrated.
+  // Only fires when tried[] grows; doesn't override a manual pick afterwards.
+  const triedCount = build.tried.length;
+  useEffect(() => {
+    if (triedCount === 0) return;
+    const lastTried = build.tried[triedCount - 1];
+    const tile = TRY_TILES.find((t) => t.key === lastTried);
+    if (tile && build.firstMove !== tile.firstMove) update({ firstMove: tile.firstMove });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triedCount]);
+
+  const markTried = (key: TriedKey) => {
+    if (!build.tried.includes(key)) update({ tried: [...build.tried, key] });
+  };
+
+  return (
+    <section className="flex flex-col gap-5">
+      <header>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 3 of 5 · live</p>
+        <h2 className="mt-1 text-3xl font-black leading-none">Try one thing.</h2>
+        <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
+          Tap a card. Each takes under a minute. Skip the rest.
+        </p>
+      </header>
+
+      <div className="flex flex-col gap-3">
+        {TRY_TILES.map((tile) => {
+          const done = build.tried.includes(tile.key);
+          const isOpen = openMini === tile.key;
+          const lockedSummary = done ? summarizeTry(build, tile.key) : "";
+          return (
+            <div
+              key={tile.key}
+              className={`overflow-hidden rounded-[22px] border transition-colors ${
+                done
+                  ? "border-[#A3FF12]/40 bg-[#A3FF12]/8"
+                  : isOpen
+                  ? "border-[#4FC3F7]/50 bg-[#4FC3F7]/8"
+                  : "border-white/12 bg-white/4 hover:border-white/20 hover:bg-white/6"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  // Locked tiles stay collapsed — re-opening a completed sub-flow
+                  // would silently lose the saved result, which is worse than locking it.
+                  if (done) return;
+                  setOpenMini(isOpen ? null : tile.key);
+                }}
+                disabled={done}
+                aria-expanded={isOpen}
+                className="focus-ring flex w-full items-start gap-3 p-4 text-left disabled:cursor-default"
+              >
+                <span
+                  className={`grid size-10 shrink-0 place-items-center rounded-full transition-colors ${
+                    done ? "bg-[#A3FF12] text-[#0B1419]" : "bg-[#4FC3F7] text-[#0B1419]"
+                  }`}
+                >
+                  {done ? (
+                    <Check size={18} strokeWidth={3.5} />
+                  ) : tile.key === "win" ? (
+                    <Trophy size={18} strokeWidth={2.5} />
+                  ) : tile.key === "feelings" ? (
+                    <MessageCircle size={18} strokeWidth={2.5} />
+                  ) : (
+                    <Camera size={18} strokeWidth={2.5} />
+                  )}
+                </span>
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[15px] font-black leading-tight">{tile.label}</p>
+                    {done && (
+                      <span className="rounded-full bg-[#A3FF12]/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#A3FF12]">
+                        locked in
+                      </span>
+                    )}
+                  </div>
+                  {done ? (
+                    <p className="mt-1 text-[12.5px] font-bold leading-5 text-white/75">{lockedSummary}</p>
+                  ) : (
+                    <p className="mt-1 text-[12.5px] font-medium leading-5 text-white/65">{tile.teaser}</p>
+                  )}
+                  <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-white/40">{tile.tagline}</p>
+                </div>
+                {!done && (
+                  <ChevronDown
+                    size={18}
+                    strokeWidth={2.5}
+                    className={`mt-0.5 shrink-0 text-white/45 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                  />
+                )}
+              </button>
+              {isOpen && (
+                <div className="border-t border-white/10 p-4 animate-[fadeUp_240ms_ease-out]">
+                  {tile.key === "win" && (
+                    <OneWinMini
+                      build={build}
+                      onLock={(text) => {
+                        update({ goalText: text });
+                        markTried("win");
+                        window.setTimeout(() => setOpenMini(null), 1500);
+                      }}
+                    />
+                  )}
+                  {tile.key === "feelings" && (
+                    <FeelingsCheckMini
+                      build={build}
+                      onComplete={(summary) => {
+                        update({ feelingsSummary: summary });
+                        markTried("feelings");
+                        window.setTimeout(() => setOpenMini(null), 1800);
+                      }}
+                    />
+                  )}
+                  {tile.key === "fuel" && (
+                    <FuelSnapMini
+                      onComplete={(summary) => {
+                        update({ mealSummary: summary });
+                        markTried("fuel");
+                        window.setTimeout(() => setOpenMini(null), 1800);
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={!canContinue}
+        className="focus-ring inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-[#4FC3F7] px-6 text-base font-black text-[#0B1419] shadow-[0_14px_44px_rgba(79,195,247,0.45)] disabled:opacity-30"
+      >
+        Build the brief <ArrowRight size={18} strokeWidth={3} />
+      </button>
+      {!canContinue && (
+        <button
+          type="button"
+          onClick={onNext}
+          className="focus-ring mx-auto text-[11px] font-black uppercase tracking-wider text-white/45 hover:text-white/70"
+        >
+          skip — straight to build
+        </button>
+      )}
+    </section>
+  );
+}
+
+function OneWinMini({ build, onLock }: { build: Build; onLock: (text: string) => void }) {
+  const [text, setText] = useState(build.goalText);
+  const [locked, setLocked] = useState(Boolean(build.goalText));
+
+  const submit = () => {
+    const v = text.trim();
+    if (!v) return;
+    setLocked(true);
+    onLock(v);
+  };
+
+  if (locked) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-2">
+        <div className="relative grid size-14 place-items-center rounded-full bg-[#A3FF12] text-[#0B1419] animate-[pop_700ms_ease-out]">
+          <Trophy size={26} strokeWidth={2.5} />
+          {/* 8-dot burst: 4 cardinal + 4 diagonal for a confetti feel */}
+          <span className="pointer-events-none absolute -top-1 left-1/2 size-1.5 -translate-x-1/2 animate-[burst-up_700ms_ease-out_forwards] rounded-full bg-[#A3FF12]" />
+          <span className="pointer-events-none absolute -right-1 top-1/2 size-1.5 -translate-y-1/2 animate-[burst-right_700ms_ease-out_forwards] rounded-full bg-[#4FC3F7]" />
+          <span className="pointer-events-none absolute -bottom-1 left-1/2 size-1.5 -translate-x-1/2 animate-[burst-down_700ms_ease-out_forwards] rounded-full bg-[#A3FF12]" />
+          <span className="pointer-events-none absolute -left-1 top-1/2 size-1.5 -translate-y-1/2 animate-[burst-left_700ms_ease-out_forwards] rounded-full bg-[#4FC3F7]" />
+          <span className="pointer-events-none absolute right-0 top-0 size-1 animate-[burst-up-right_700ms_ease-out_forwards] rounded-full bg-white" />
+          <span className="pointer-events-none absolute left-0 top-0 size-1 animate-[burst-up-left_700ms_ease-out_forwards] rounded-full bg-white" />
+          <span className="pointer-events-none absolute bottom-0 right-0 size-1 animate-[burst-down-right_700ms_ease-out_forwards] rounded-full bg-[#A3FF12]" />
+          <span className="pointer-events-none absolute bottom-0 left-0 size-1 animate-[burst-down-left_700ms_ease-out_forwards] rounded-full bg-[#4FC3F7]" />
+        </div>
+        <p className="text-[12px] font-black uppercase tracking-wider text-[#A3FF12]">one win locked</p>
+        <p className="max-w-[280px] text-center text-[12.5px] font-bold leading-5 text-white/75">"{text.trim()}"</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="block">
+        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/55">one thing</span>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value.slice(0, 120))}
+          rows={2}
+          autoFocus
+          placeholder="one thing that went right today — or one thing you want to make happen"
+          className="mt-1 w-full resize-none rounded-2xl border border-white/12 bg-[#0B1419]/75 px-3 py-2 text-[13.5px] font-bold leading-5 text-white outline-none placeholder:text-white/30 focus:border-[#A3FF12]"
+        />
+        <p className="mt-1 text-right text-[10px] font-bold text-white/55">{text.length}/120</p>
+      </label>
+      <button
+        type="button"
+        onClick={submit}
+        disabled={!text.trim()}
+        className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#A3FF12] px-5 text-[13px] font-black text-[#0B1419] disabled:opacity-40"
+      >
+        <Trophy size={15} strokeWidth={3} /> Lock it in
+      </button>
+    </div>
+  );
+}
+
+type FuelSnapResult = Awaited<ReturnType<typeof api.demoFoodPhoto>>;
+
+function FuelSnapMini({ onComplete }: { onComplete: (summary: string) => void }) {
+  const [result, setResult] = useState<FuelSnapResult | null>(null);
+  const [thinking, setThinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rateLimited, setRateLimited] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const upload = async (file: File) => {
+    setThinking(true);
+    setError(null);
+    setRateLimited(false);
+    try {
+      const res = await api.demoFoodPhoto(file, getOrMakeSession());
+      setResult(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("429")) {
+        setRateLimited(true);
+        setError("Hold up — too many snaps in a row. Wait a minute and try again.");
+      } else {
+        setError("Photo didn't go through. Try another angle.");
+      }
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  const reset = () => {
+    setResult(null);
+    setError(null);
+    setRateLimited(false);
+    if (fileInput.current) fileInput.current.value = "";
+  };
+
+  const confidenceIsReal = result && (result.confidence === "high" || result.confidence === "medium");
+  const showStubFallback = result && (result.confidence === "photo_stub" || result.confidence === "manual_stub");
+
+  // Initial / loading / error states
+  if (!result) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-2 text-center">
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void upload(f);
+          }}
+        />
+        {thinking ? (
+          <>
+            <div className="grid size-14 place-items-center rounded-full bg-[#4FC3F7]/15">
+              <Loader2 size={26} className="animate-spin text-[#4FC3F7]" strokeWidth={2.5} />
+            </div>
+            <p className="text-[12px] font-black uppercase tracking-wider text-[#4FC3F7]">looking at your plate</p>
+            <p className="max-w-[240px] text-[11.5px] font-medium leading-5 text-white/55">
+              this takes ~5 seconds — vision model + nutrition lookup
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="grid size-14 place-items-center rounded-full bg-white/8">
+              <Camera size={24} className="text-white/70" strokeWidth={2} />
+            </div>
+            <p className="max-w-[280px] text-[12.5px] font-medium leading-5 text-white/65">
+              Snap or upload your meal. Kai reads it descriptively — no scoring, no lecture.
+            </p>
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              disabled={rateLimited}
+              className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#4FC3F7] px-5 text-[13px] font-black text-[#0B1419] shadow-[0_8px_24px_rgba(79,195,247,0.32)] disabled:opacity-40 disabled:shadow-none"
+            >
+              <Camera size={16} strokeWidth={2.5} /> Take photo
+            </button>
+            <p className="max-w-[240px] text-[10px] font-bold leading-4 text-white/40">
+              demo photos auto-delete in 24h.
+            </p>
+            {error && (
+              <p className="text-[11.5px] font-bold text-red-300">{error}</p>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // Result state — show items
+  return (
+    <div className="flex flex-col gap-3">
+      {confidenceIsReal && (
+        <div className="rounded-2xl border border-white/10 bg-white/4 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#A3FF12]">what kai sees</p>
+            <p className="text-[10px] font-black uppercase tracking-wider text-white/45">
+              confidence: {result.confidence}
+            </p>
+          </div>
+          <ul className="mt-2 grid gap-1.5">
+            {result.items.map((item, i) => (
+              <li key={i} className="flex items-baseline justify-between gap-2">
+                <span className="text-[13px] font-bold text-white/90">{item.name}</span>
+                <span className="text-[11px] font-bold text-white/55">
+                  {item.estimatedGrams ? `~${item.estimatedGrams}g` : ""}
+                  {item.nutrition?.calories ? ` · ~${Math.round(item.nutrition.calories)} kcal` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[10.5px] font-medium leading-4 text-white/45">
+            Descriptive only. Kai never scores meals or shows daily targets.
+          </p>
+        </div>
+      )}
+
+      {showStubFallback && (
+        <div className="rounded-2xl border border-white/12 bg-white/4 p-3 text-center">
+          <p className="text-[12.5px] font-bold leading-5 text-white/75">
+            Hmm — couldn't read that one clearly. Want to try another angle, or skip?
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={reset}
+          className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 text-[12px] font-black text-white/85"
+        >
+          <RefreshCw size={14} strokeWidth={2.5} /> Try another
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const names = result.items.map((i) => i.name).filter(Boolean).slice(0, 5).join(", ");
+            onComplete(names ? `snapped: ${names}` : "fuel snap completed");
+          }}
+          className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#A3FF12] px-4 text-[12px] font-black text-[#0B1419]"
+        >
+          <Check size={14} strokeWidth={3} /> {confidenceIsReal ? "Looks right" : "Log anyway"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function feelingsOpener(firstName: string): string {
+  const hi = firstName ? `Hey ${firstName}. ` : "";
+  return `${hi}Quick check-in. Where in your body do you notice something right now — tight jaw, heavy chest, buzzing hands? One sentence works.`;
+}
+
+function FeelingsCheckMini({ build, onComplete }: { build: Build; onComplete: (summary: string) => void }) {
+  // Local chat state — feelings flow doesn't share with the Act 3 free chat
+  const [chat, setChat] = useState<ChatTurn[]>(() => [
+    { role: "assistant", content: feelingsOpener(build.firstName.trim()) }
+  ]);
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [safety, setSafety] = useState<{ category?: string; severity?: string } | null>(null);
+  const [done, setDone] = useState(false);
+  const scroller = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the input when the mini opens so the user can just type
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const userTurns = chat.filter((m) => m.role === "user").length;
+  const maxUserTurns = 2; // 2 user msgs + 3 Kai msgs (opener + reframe + close)
+
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
+  }, [chat.length, thinking]);
+
+  const send = useCallback(async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || thinking || done) return;
+    const userTurn: ChatTurn = { role: "user", content: trimmed };
+    const nextChat = [...chat, userTurn];
+    setChat(nextChat);
+    setInput("");
+    setThinking(true);
+    setError(null);
+    try {
+      const result = await api.demoKai({
+        message: trimmed,
+        history: chat,
+        vibes: build.vibes,
+        kaiName: build.kaiName,
+        kaiTone: build.kaiTone,
+        firstName: build.firstName || undefined,
+        mode: "feelings"
+      });
+      if (result.safetyEvent) {
+        setSafety(result.safetyEvent);
+        setChat([...nextChat, { role: "assistant", content: result.reply }]);
+        return; // Hold position — don't auto-advance past a safety response
+      }
+      const finalChat: ChatTurn[] = [...nextChat, { role: "assistant", content: result.reply }];
+      setChat(finalChat);
+
+      const nextUserTurns = nextChat.filter((m) => m.role === "user").length;
+      const capped = Boolean(result.capped);
+      if (nextUserTurns >= maxUserTurns || capped) {
+        // Build a compact summary: what they shared, joined.
+        const userText = finalChat.filter((m) => m.role === "user").map((m) => m.content).join(" | ").slice(0, 240);
+        setDone(true);
+        window.setTimeout(() => onComplete(userText || "feelings check-in completed"), 1200);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("429")) {
+        setError("Hold up — too many turns in a row. Wait a minute and try again.");
+      } else {
+        setError("That didn't go through. Try once more.");
+      }
+    } finally {
+      setThinking(false);
+    }
+  }, [chat, thinking, done, build, onComplete]);
+
+  const inputDisabled = thinking || done || Boolean(safety);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div
+        ref={scroller}
+        className="max-h-[260px] space-y-2.5 overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1419]/55 p-3"
+      >
+        {chat.map((turn, i) => (
+          <ChatBubble key={i} role={turn.role} content={turn.content} />
+        ))}
+        {thinking && <ChatBubble role="assistant" content="…" typing />}
+        {safety && (
+          <div className="mt-2 rounded-[14px] border border-red-400/35 bg-red-500/10 p-3">
+            <p className="text-[10px] font-black uppercase tracking-wider text-red-300">crisis resources</p>
+            <p className="mt-1 text-[12.5px] font-bold leading-5 text-white/90">
+              What you just said is bigger than this demo. Real people, fast:
+            </p>
+            <ul className="mt-2 grid gap-1 text-[12.5px] font-bold text-white/85">
+              <li>· <a className="underline" href="tel:988">Call or text 988</a> — Suicide & Crisis Lifeline (US/Canada)</li>
+              <li>· <a className="underline" href="sms:741741?&body=HOME">Text HOME to 741741</a> — Crisis Text Line</li>
+              <li>· <a className="underline" href="/crisis">More resources</a></li>
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <div className="rounded-[12px] border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] font-bold text-red-300">
+          {error}
+        </div>
+      )}
+
+      {done && !safety && (
+        <div className="flex items-center justify-center gap-2 rounded-2xl border border-[#A3FF12]/30 bg-[#A3FF12]/10 px-3 py-2 text-[12px] font-black uppercase tracking-wider text-[#A3FF12]">
+          <Check size={14} strokeWidth={3.5} /> kept between us
+        </div>
+      )}
+
+      {!done && !safety && (
+        <form
+          onSubmit={(e) => { e.preventDefault(); void send(input); }}
+          className="flex items-center gap-2"
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value.slice(0, DEMO_INPUT_CHARS))}
+            placeholder={userTurns === 0 ? "where you notice it" : "what you'd tell a friend"}
+            disabled={inputDisabled}
+            className="flex-1 rounded-full border border-white/12 bg-white/6 px-4 py-2.5 text-[13.5px] font-medium text-white outline-none placeholder:text-white/35 focus:border-[#4FC3F7] disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || inputDisabled}
+            className="focus-ring grid size-10 shrink-0 place-items-center rounded-full bg-[#4FC3F7] text-[#0B1419] disabled:opacity-30"
+          >
+            {thinking ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} strokeWidth={3} />}
+          </button>
+        </form>
+      )}
+      <p className="text-center text-[10px] font-black uppercase tracking-wider text-white/35">
+        {safety ? "demo paused for safety" : done ? "3 turns done" : `turn ${Math.min(userTurns + 1, maxUserTurns)} of ${maxUserTurns} · kai chooses what to ask next`}
+      </p>
+    </div>
+  );
+}
+
+const DEMO_INPUT_CHARS = 260;
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* ACT 5 — Make it yours                                                     */
 /* ────────────────────────────────────────────────────────────────────────── */
 
 function ActBuild({ build, update, onNext }: { build: Build; update: (p: Partial<Build>) => void; onNext: () => void }) {
@@ -547,7 +1124,7 @@ function ActBuild({ build, update, onNext }: { build: Build; update: (p: Partial
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 3 of 4</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 4 of 5</p>
         <h2 className="mt-1 text-3xl font-black leading-none">Direct the build.</h2>
         <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
           Pick the look, voice, first feature, and the stuff we should absolutely fix.
@@ -634,6 +1211,11 @@ function ActBuild({ build, update, onNext }: { build: Build; update: (p: Partial
         <div className="mt-2 grid grid-cols-2 gap-2">
           {FIRST_MOVES.map((m) => {
             const on = build.firstMove === m.id;
+            // Was this move auto-pre-filled because the user did the matching
+            // mini in Act 4? If so, surface that — otherwise this picker
+            // feels like "Kai asks the same question twice."
+            const tile = TRY_TILES.find((t) => t.firstMove === m.id);
+            const fromTry = Boolean(tile && build.tried.includes(tile.key));
             return (
               <button
                 key={m.id}
@@ -643,7 +1225,14 @@ function ActBuild({ build, update, onNext }: { build: Build; update: (p: Partial
                   on ? "border-[#4FC3F7] bg-[#4FC3F7]/10" : "border-white/12 bg-white/4 hover:bg-white/8"
                 }`}
               >
-                <span className="text-[13px] font-black">{m.label}</span>
+                <div className="flex w-full items-center justify-between gap-1.5">
+                  <span className="text-[13px] font-black">{m.label}</span>
+                  {fromTry && (
+                    <span className="rounded-full bg-[#A3FF12]/20 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider text-[#A3FF12]">
+                      tried
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10.5px] font-medium leading-4 text-white/55">{m.desc}</span>
               </button>
             );
@@ -726,7 +1315,7 @@ function ActShip(props: {
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 4 of 4 · ship it</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#4FC3F7]">unlock 5 of 5 · ship it</p>
         <h2 className="mt-1 text-3xl font-black leading-none">Build brief ready.</h2>
         <p className="mt-2 text-[14px] font-medium leading-6 text-white/65">
           This saves your decisions for the team and gives you a link to send around.
@@ -796,9 +1385,11 @@ function ActShip(props: {
         <ul className="mt-2 grid gap-1.5 text-[13px] font-medium text-white/75">
           <li>· Your friend opens the link and lands on Kai with your name on the welcome line.</li>
           <li>· They make their own choices from your starting point.</li>
-          <li>· You can sign up to keep building when the real app drops.</li>
+          <li>· Sign up to save THIS Kai and keep going for real.</li>
         </ul>
       </div>
+
+      <SignupNudge build={build} />
 
       <button
         type="button"
@@ -808,6 +1399,57 @@ function ActShip(props: {
         <X size={13} /> restart demo
       </button>
     </section>
+  );
+}
+
+function SignupNudge({ build }: { build: Build }) {
+  const triedLabels: Record<TriedKey, string> = {
+    win: "one win",
+    feelings: "feelings check",
+    fuel: "fuel snap"
+  };
+  const tried = build.tried.map((k) => triedLabels[k]).join(" · ");
+  const carryOver = [
+    build.kaiName !== "Kai" ? `name: ${build.kaiName}` : null,
+    `tone: ${build.kaiTone}`,
+    build.vibes.length ? `vibes: ${build.vibes.slice(0, 3).join(", ")}` : null,
+    tried ? `tried: ${tried}` : null
+  ].filter(Boolean).join(" · ");
+
+  return (
+    <div className="rounded-[22px] border border-[#4FC3F7]/40 bg-gradient-to-b from-[#4FC3F7]/12 to-transparent p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#4FC3F7] text-[#0B1419]">
+          <UserPlus size={18} strokeWidth={2.5} />
+        </span>
+        <div className="flex-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#4FC3F7]">save your kai</p>
+          <p className="mt-1 text-[15px] font-black leading-tight">Keep this Kai. Don't lose the build.</p>
+          <p className="mt-1.5 text-[12px] font-medium leading-5 text-white/65">
+            We'll carry it into your real account — no re-typing.
+          </p>
+        </div>
+      </div>
+      {carryOver && (
+        <p className="mt-3 rounded-2xl border border-white/10 bg-[#0B1419]/45 px-3 py-2 text-[11px] font-bold leading-5 text-white/65">
+          carries over → <span className="text-white/85">{carryOver}</span>
+        </p>
+      )}
+      <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+        <Link
+          to="/sign-up"
+          className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#4FC3F7] px-4 text-[13px] font-black text-[#0B1419] shadow-[0_8px_24px_rgba(79,195,247,0.35)]"
+        >
+          Save my Kai <ArrowRight size={15} strokeWidth={3} />
+        </Link>
+        <Link
+          to="/sign-in"
+          className="focus-ring inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 text-[12px] font-black text-white/80"
+        >
+          Sign in
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -942,7 +1584,11 @@ function defaultBuild(): Build {
     firstMove: "pressure",
     mustHave: "",
     hardNo: "",
-    tester: ""
+    tester: "",
+    tried: [],
+    goalText: "",
+    feelingsSummary: "",
+    mealSummary: ""
   };
 }
 
@@ -968,7 +1614,12 @@ function loadSeedOrSaved(): Build {
 
 function buildShareLink(build: Build) {
   if (typeof window === "undefined") return "";
-  const seed = btoa(JSON.stringify(build)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  // Strip session-specific fields — sharing is about the character build,
+  // not what the original user typed into their One Win or Feelings check.
+  // Recipients should start their own Try act fresh.
+  const { tried: _t, goalText: _g, feelingsSummary: _f, mealSummary: _m, ...shareable } = build;
+  void _t; void _g; void _f; void _m;
+  const seed = btoa(JSON.stringify(shareable)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return `${window.location.origin}/demo?seed=${seed}`;
 }
 

@@ -1,4 +1,4 @@
-import { ArrowRight, Camera, Check, ChevronDown, Flame, Loader2, MessageCircle, RefreshCw, Send, Share2, Sparkles, Trophy, UserPlus, X } from "lucide-react";
+import { ArrowRight, Bell, CalendarDays, Camera, Check, ChevronDown, Flame, Images, Loader2, Mail, MessageCircle, Mic, Music, Phone, RefreshCw, Send, Share2, Sparkles, Trophy, UserPlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
@@ -313,13 +313,11 @@ function ProgressDots({ act }: { act: Act }) {
 /* ────────────────────────────────────────────────────────────────────────── */
 
 function ActMeet({ onNext }: { onNext: () => void }) {
-  const [showBubble, setShowBubble] = useState(false);
   const [showCta, setShowCta] = useState(false);
 
   useEffect(() => {
-    const a = setTimeout(() => setShowBubble(true), 300);
-    const b = setTimeout(() => setShowCta(true), 650);
-    return () => { clearTimeout(a); clearTimeout(b); };
+    const timer = setTimeout(() => setShowCta(true), 450);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -339,29 +337,7 @@ function ActMeet({ onNext }: { onNext: () => void }) {
         <p className="mt-2 text-[17px] font-black leading-6">This is not a deck. Every tap changes the prototype and saves the build brief.</p>
       </div>
 
-      <PhoneFrame>
-        <div className="flex h-full flex-col justify-between px-4 py-6">
-          <div className="flex items-center gap-2">
-            <KaiOrb size={28} />
-            <p className="text-[11px] font-bold text-white/55">Kai · just now</p>
-          </div>
-          <div
-            className={`mt-6 transition-all duration-700 ${showBubble ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
-          >
-            <div className="rounded-[20px] rounded-bl-[6px] bg-white/8 px-4 py-3 text-[15px] leading-6">
-              Hey. I'm Kai. I'm a coach you can text when teen life gets loud — school, friends, food, pressure, your head, your body, all of it.
-            </div>
-            <div
-              className={`mt-3 transition-all duration-700 delay-300 ${showBubble ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
-            >
-              <div className="rounded-[20px] rounded-bl-[6px] bg-white/8 px-4 py-3 text-[15px] leading-6">
-                I won't diagnose you. I won't lecture you. And if I sound cringe, you get to tell us exactly what to fix.
-              </div>
-            </div>
-          </div>
-          <div className="h-12" />
-        </div>
-      </PhoneFrame>
+      <VoiceHomePreview ready={showCta} />
 
       <button
         type="button"
@@ -375,6 +351,150 @@ function ActMeet({ onNext }: { onNext: () => void }) {
       </button>
       <p className="text-center text-[11px] font-bold text-white/40">~3 minutes · no signup · skip anytime</p>
     </section>
+  );
+}
+
+function VoiceHomePreview({ ready }: { ready: boolean }) {
+  return (
+    <div className="mx-auto w-full max-w-[370px] overflow-hidden rounded-[34px] border border-white/12 bg-[#101725] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.48)]">
+      <div className="relative min-h-[650px] overflow-hidden rounded-[28px] border border-white/10 bg-[#151B2A] px-4 pb-4 pt-5">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(117,75,255,0.35),transparent_28%),radial-gradient(circle_at_75%_28%,rgba(79,195,247,0.26),transparent_30%),linear-gradient(160deg,#293247_0%,#15192A_42%,#32263B_68%,#F5A35B_100%)]" />
+        <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]" />
+
+        <div className="relative z-[1] mb-4 flex items-center justify-between px-1 text-white">
+          <span className="text-[16px] font-black">9:41</span>
+          <div className="flex items-center gap-1.5 text-white/85">
+            <span className="h-3 w-4 rounded-[3px] border border-white/70" />
+            <span className="h-3 w-4 rounded-full border-t-2 border-white/80" />
+            <span className="h-3 w-6 rounded-[4px] border border-white/75">
+              <span className="ml-0.5 mt-0.5 block h-2 w-4 rounded-[2px] bg-white/85" />
+            </span>
+          </div>
+        </div>
+
+        <VoiceAssistantWidget />
+
+        <div className="relative z-[1] mt-5 grid grid-cols-4 gap-x-4 gap-y-4">
+          <AppIcon icon={MessageCircle} label="Kai" tone="from-[#A855F7] to-[#22D3EE]" />
+          <AppIcon icon={Camera} label="Fuel" tone="from-[#F97316] to-[#FDE047]" />
+          <AppIcon icon={Trophy} label="Wins" tone="from-[#A3FF12] to-[#22C55E]" />
+          <AppIcon icon={Sparkles} label="Reset" tone="from-[#7C3AED] to-[#EC4899]" />
+          <AppIcon icon={CalendarDays} label="Plan" tone="from-[#F8FAFC] to-[#CBD5E1]" dark />
+          <AppIcon icon={Images} label="Photos" tone="from-[#F43F5E] to-[#FACC15]" />
+          <AppIcon icon={Mail} label="Inbox" tone="from-[#38BDF8] to-[#2563EB]" />
+          <AppIcon icon={Bell} label="Nudges" tone="from-[#FDE68A] to-[#FB7185]" dark />
+        </div>
+
+        <div className="relative z-[1] mx-auto mt-5 flex w-max items-center gap-1.5 rounded-full bg-white/18 px-4 py-1.5 text-[13px] font-bold text-white/80 backdrop-blur">
+          <Sparkles size={14} /> Search Kai
+        </div>
+
+        <div className="relative z-[1] mt-4 grid grid-cols-4 gap-3 rounded-[26px] border border-white/10 bg-white/14 p-3 backdrop-blur-xl">
+          <DockIcon icon={Phone} tone="from-[#22C55E] to-[#84CC16]" />
+          <DockIcon icon={MessageCircle} tone="from-[#22C55E] to-[#A3FF12]" />
+          <DockIcon icon={Music} tone="from-[#FB7185] to-[#EF4444]" />
+          <DockIcon icon={Camera} tone="from-[#E5E7EB] to-[#94A3B8]" dark />
+        </div>
+
+        <div
+          className={`relative z-[1] mt-5 rounded-[22px] border px-4 py-3 text-center text-[12px] font-black uppercase tracking-[0.14em] transition ${
+            ready ? "border-[#A3FF12]/40 bg-[#A3FF12]/12 text-[#A3FF12]" : "border-white/10 bg-white/8 text-white/50"
+          }`}
+        >
+          {ready ? "voice preview ready" : "loading voice preview"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VoiceAssistantWidget() {
+  return (
+    <div className="relative z-[1] rounded-[28px] border border-white/18 bg-[#14182C]/58 p-3 shadow-[0_24px_80px_rgba(4,7,20,0.42)] backdrop-blur-2xl">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="grid size-11 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)]">
+            <Sparkles size={21} className="text-white" fill="currentColor" />
+          </div>
+          <div className="min-w-0">
+            <p className="whitespace-nowrap text-[14px] font-black text-white">Kai Assistant</p>
+            <p className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-bold text-white/62">
+              <span className="size-2 rounded-full bg-[#39F776] shadow-[0_0_12px_rgba(57,247,118,0.8)]" />
+              Listening...
+            </p>
+          </div>
+        </div>
+        <div className="w-[112px] shrink-0 rounded-[20px] border border-white/10 bg-white/10 px-3 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]">
+          <p className="text-[13px] font-bold leading-5 text-white/86">I can help with food, pressure, or one next move.</p>
+          <p className="mt-2 text-[11px] font-bold text-white/42">just now</p>
+        </div>
+      </div>
+
+      <div className="relative mx-auto mt-6 grid h-[184px] place-items-center overflow-hidden">
+        <Waveform />
+        <div className="voice-orb relative z-[1] grid size-40 place-items-center rounded-full border border-white/25 bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.55),rgba(147,51,234,0.26)_28%,rgba(6,182,212,0.24)_56%,rgba(14,18,38,0.9)_100%)] shadow-[0_0_54px_rgba(168,85,247,0.7)]">
+          <div className="h-12 w-24 rounded-[50%] bg-[linear-gradient(90deg,rgba(168,85,247,0.1),rgba(255,255,255,0.8),rgba(34,211,238,0.12))] blur-md" />
+        </div>
+      </div>
+
+      <p className="mt-1 text-center text-[29px] font-black leading-none text-white/88">Tap to talk</p>
+      <div className="mt-5 flex items-center justify-center gap-12">
+        <button type="button" className="focus-ring grid size-[66px] place-items-center rounded-full border border-white/20 bg-[#7C3AED]/70 text-white shadow-[0_0_36px_rgba(124,58,237,0.58)]">
+          <Mic size={34} strokeWidth={2.8} />
+        </button>
+        <button type="button" className="focus-ring grid size-12 place-items-center rounded-full border border-white/14 bg-white/8 text-white/70">
+          <WaveIcon />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Waveform() {
+  const bars = [12, 22, 34, 48, 30, 42, 62, 78, 44, 28, 18, 26, 36, 58, 72, 46, 32, 20, 16];
+  return (
+    <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center gap-1 opacity-80">
+      {bars.map((height, index) => (
+        <span
+          key={`${height}-${index}`}
+          className="voice-wave-bar w-[3px] rounded-full bg-[linear-gradient(180deg,#A78BFA,#F0F9FF,#22D3EE)]"
+          style={{ height, animationDelay: `${index * 42}ms` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WaveIcon() {
+  return (
+    <span className="flex h-5 items-center gap-1">
+      {[10, 16, 22, 14].map((height, index) => (
+        <span key={`wave-icon-${index}`} className="w-[2px] rounded-full bg-current" style={{ height }} />
+      ))}
+    </span>
+  );
+}
+
+function AppIcon(props: { icon: typeof Sparkles; label: string; tone: string; dark?: boolean }) {
+  const Icon = props.icon;
+  const color = props.dark ? "text-[#111827]" : "text-white";
+  return (
+    <div className="grid justify-items-center gap-1.5">
+      <div className={`grid size-[58px] place-items-center rounded-[16px] bg-gradient-to-br ${props.tone} ${color} shadow-[0_8px_22px_rgba(0,0,0,0.24)]`}>
+        <Icon size={29} strokeWidth={2.5} />
+      </div>
+      <p className="max-w-[68px] truncate text-center text-[11px] font-bold text-white/90">{props.label}</p>
+    </div>
+  );
+}
+
+function DockIcon(props: { icon: typeof Sparkles; tone: string; dark?: boolean }) {
+  const Icon = props.icon;
+  const color = props.dark ? "text-[#111827]" : "text-white";
+  return (
+    <div className={`grid size-[54px] place-items-center rounded-[16px] bg-gradient-to-br ${props.tone} ${color} shadow-[0_8px_22px_rgba(0,0,0,0.26)]`}>
+      <Icon size={28} strokeWidth={2.6} />
+    </div>
   );
 }
 

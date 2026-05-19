@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 :root {
-  /* KAI v2 §7 — dark-mode only */
-  color: #f0f0f5;
-  background: #0a0a0f;
-  color-scheme: dark;
+  /* KAI light mode (DECISIONS D-005 — override of v2 §7 dark-only).
+     Warm off-white background, near-black text, premium wellness-app aesthetic. */
+  color: #1a1a1f;
+  background: #fafaf7;
+  color-scheme: light;
   font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,8 +21,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
-  background: #0a0a0f;
-  color: #f0f0f5;
+  background: #fafaf7;
+  color: #1a1a1f;
 }
 
 button,

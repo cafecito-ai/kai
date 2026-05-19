@@ -39,6 +39,27 @@ Append-only log. Every non-trivial decision (especially when picking the conserv
 
 ---
 
+## D-005 — Override CLAUDE.md v2 §7 "Dark mode only" → light mode
+**Date:** 2026-05-19 (T-003 revision)
+**Decision:** KAI ships in light mode. The v0 dark glass aesthetic is replaced with a warm off-white wellness-app aesthetic (background #FAFAF7, surface #FFFFFF, near-black text). Brand accent hues from v2 §7 are preserved (violet #7B6EF6, warm #F0A868, cool #68C5B8) and reused as soft-tinted chip backgrounds (`accent-soft`, `accent-warm-soft`, `accent-cool-soft`). Status colors slightly muted (#3F9D6A success, #D89A2C warning, #C75555 danger) to match the warmer palette.
+**Why:** Evan Seder's call. Parents need to trust the product. Light reads as "real wellness app" (Apple Health / Calm / Headspace school); dark reads as "edgy teen app" and undermines parent trust. Teens are also fine with light — every major wellness app they use defaults to light.
+**Spec conflict:** CLAUDE.md v2 §7 explicitly says "Dark mode only. No light mode." This decision overrides that line. v3 patch does not weigh in on light vs dark.
+**Authority:** Visual direction is Lev's final call per CLAUDE.md §9. This decision is a working default pending Lev's review at Gate 1. Q-003 logged in QUESTIONS.md to flag for Lev.
+**Action:** `tailwind.config.js`, `index.html` theme-color, `src/styles/globals.css` :root/body all flipped to light. `/_design-tokens` page rebuilt to show the light aesthetic + a full Home-screen mockup at iPhone width.
+
+---
+
+## D-006 — Three signature elements: orb, gradient score ring, KAI message bubble
+**Date:** 2026-05-19 (T-003 revision continued)
+**Decision:** KAI ships with three distinctive visual elements that no other wellness app has:
+1. **KaiOrb** (`src/components/KaiOrb.tsx`) — A multi-stop radial gradient (cool → violet → warm) with a soft inner highlight and outer glow. Breathes on a 4s loop. Used at 28px next to messages, 44–56px in the home reflection card, and 180–240px as the voice-mode hero. KAI's "face" everywhere.
+2. **ScoreRing** (`src/components/ScoreRing.tsx`) — The Daily Score ring uses an amber → violet → green linear gradient stroke along the arc. Color itself communicates how the day is going, not just fill amount. Animates from 0 → score over 900ms with a cubic-bezier ease-out on first paint.
+3. **KaiMessage** (`src/components/KaiMessage.tsx`) — Reflections, check-in responses, and agent comments render as iMessage-style bubbles (tight bottom-left corner = "speaker tail" without an actual triangle, off-white tinted surface, KaiOrb anchored at the corner). Reads as a friend texting, not as a UI card.
+**Why:** Without distinctive visual moments, KAI looks like every other wellness app. These three components are cheap to build but transform perceived quality — the orb is the "face" teens screenshot and share; the gradient ring is the home-screen hero; the bubbles make AI feel warm not mechanical.
+**Action:** All three live in `src/components/`. The `/_design-tokens` page demos them in a "Signature elements" hero section + uses them in the iPhone-width Home mockup.
+
+---
+
 ## Build understanding (T-002)
 **Date:** 2026-05-19
 **Source:** CLAUDE.md (v2 base spec) + CLAUDE_v3_PATCH.md (v3 patch — wins where the two conflict)

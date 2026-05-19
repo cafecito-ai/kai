@@ -10,6 +10,18 @@ Agent writes ambiguities here, tagged `for_lev`, `for_evan_ratner`, or `for_evan
 
 ---
 
+## Q-003 — Light mode override of v2 §7 "Dark mode only" `for_lev`
+**Opened:** 2026-05-19 (T-003 revision)
+Visual direction is Lev's call per CLAUDE.md §9. Evan Seder made a working decision today to flip KAI to light mode against v2 §7's "Dark mode only" mandate (see DECISIONS D-005). Reasoning: parent trust, "real wellness app" credibility (Apple Health / Calm / Headspace school), teens are comfortable with light. Three new signature elements added: KaiOrb (KAI's face — breathing gradient orb), gradient ScoreRing (color tells the day's story), iMessage-style KaiMessage bubbles (see D-006).
+
+**For Lev to review:** Visit `/_design-tokens` once the branch is pushed/deployed. Specifically look at the iPhone-width Home mockup. Two yes/no calls:
+1. Light vs dark — keep light?
+2. The three signature elements — do they feel like KAI or like "another wellness app"?
+
+The build agent is proceeding with light + signature elements pending Lev. If Lev flips on either, the changes are bounded: tailwind.config.js for colors, three component files for signature elements.
+
+---
+
 ## Q-002 — Design token names: AGENT_PLAN vs CLAUDE.md v2 §7 `for_evan_ratner`
 **Opened:** 2026-05-19 (T-003 prep)
 The two source-of-truth docs name the same colors differently:

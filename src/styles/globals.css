@@ -3,8 +3,11 @@
 @tailwind utilities;
 
 :root {
-  color: #0a0a0a;
-  background: #fafaf7;
+  /* KAI v2 §7 — dark-mode only */
+  color: #f0f0f5;
+  background: #0a0a0f;
+  color-scheme: dark;
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -16,7 +19,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
-  background: #fafaf7;
+  background: #0a0a0f;
+  color: #f0f0f5;
 }
 
 button,
@@ -26,47 +30,21 @@ select {
   font: inherit;
 }
 
+/* Focus ring — accent violet on dark bg */
 .focus-ring {
-  @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-plum;
+  @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 }
 
-.noise {
-  background:
-    radial-gradient(circle at 18% 0%, rgba(123, 196, 245, 0.22), transparent 34rem),
-    radial-gradient(circle at 92% 8%, rgba(168, 220, 143, 0.18), transparent 30rem),
-    linear-gradient(180deg, rgba(250, 250, 247, 0.94), rgba(244, 241, 235, 0.72) 420px, rgba(250, 250, 247, 1)),
-    linear-gradient(90deg, rgba(229, 226, 217, 0.28) 1px, transparent 1px),
-    #fafaf7;
-  background-size: auto, 64px 64px, auto;
-}
-
-.app-panel {
-  @apply rounded-[28px] border border-white/65 bg-white/80 shadow-soft backdrop-blur-xl;
-}
-
-.app-page {
-  @apply mx-auto w-full max-w-6xl min-w-0 space-y-4 overflow-hidden text-ink sm:space-y-5;
-}
-
-.app-surface {
-  @apply min-w-0 overflow-hidden rounded-[30px] border border-white/65 bg-white/80 shadow-calm backdrop-blur-xl;
-}
-
-.app-title {
-  @apply max-w-[22rem] font-display text-4xl font-black leading-none tracking-normal text-ink sm:max-w-3xl sm:text-6xl lg:text-7xl;
-}
-
-.eyebrow {
-  @apply text-[11px] font-black uppercase tracking-[0.14em] text-muted;
-}
-
-.display-title {
-  @apply font-display font-black leading-none tracking-normal text-ink;
-}
-
-.field {
-  @apply focus-ring min-h-12 w-full rounded-kai border border-line bg-white px-4 py-3 text-base text-ink placeholder:text-muted/70;
-}
+/*
+ * v0 legacy utility classes (.app-panel, .app-surface, .app-page, .app-title,
+ * .display-title, .eyebrow, .field, .noise) used to live here but referenced
+ * removed tokens (shadow-soft, text-ink, rounded-kai, border-line as a color,
+ * etc.) and broke the PostCSS build. Stripped during T-003.
+ *
+ * Components that referenced them will render unstyled until rewritten in
+ * Phase A tasks T-004+. Per AGENT_PLAN T-003 guardrail: "existing routes
+ * still render (with visual regression — that's expected and intentional)."
+ */
 
 .mobile-safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 5.75rem);

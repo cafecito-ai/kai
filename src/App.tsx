@@ -8,6 +8,7 @@ import { AppShell } from "./components/layout/AppShell";
 import { Crisis } from "./pages/Crisis";
 import { Demo } from "./pages/Demo";
 import { DesignPicker } from "./pages/DesignPicker";
+import { DesignTokens } from "./pages/DesignTokens";
 import { EngineMental } from "./pages/EngineMental";
 import { EnginePhysical } from "./pages/EnginePhysical";
 import { ForParents } from "./pages/ForParents";
@@ -74,6 +75,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/design" element={<DesignPicker />} />
+          <Route path="/_design-tokens" element={<DesignTokens />} />
           <Route path="/scope" element={<Scope />} />
           <Route path="/ops" element={protectedAuth(<Ops />)} />
           <Route path="/ops/demo-sessions" element={protectedAuth(<OpsDemoSessions />)} />

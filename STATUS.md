@@ -5,11 +5,11 @@ Live tracker maintained by the build agent. Each task: `done` / `iterating` / `a
 ---
 
 ## Current task
-T-002 starting — read CLAUDE.md + v3 patch end-to-end, write build understanding to DECISIONS.md.
+T-003 starting — replace tailwind.config.js with v3 glass design tokens and add `/_design-tokens` test page.
 
 ## Phase A — Foundations (T-001 → T-008)
 - [x] T-001 — Branch setup and status files (real repo `cafecito-ai/kai`, `feature/kai-v1` off `main`; B-001 resolved)
-- [ ] T-002 — Read CLAUDE.md + v3 patch, write summary to DECISIONS.md
+- [x] T-002 — Read CLAUDE.md + v3 patch, write summary to DECISIONS.md (commit `a4d3141`)
 - [ ] T-003 — Tailwind config with glass design tokens
 - [ ] T-004 — App shell + floating glass tabbar
 - [ ] T-005 — Onboarding for two agents `requires_safety_review`

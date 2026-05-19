@@ -76,6 +76,24 @@ select {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes voicePulse {
+  0%, 100% { transform: scale(0.94); opacity: 0.72; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes voiceOrb {
+  0%, 100% { filter: hue-rotate(0deg) brightness(1); transform: scale(1); }
+  50% { filter: hue-rotate(22deg) brightness(1.18); transform: scale(1.02); }
+}
+
+.voice-wave-bar {
+  animation: voicePulse 1.35s ease-in-out infinite;
+}
+
+.voice-orb {
+  animation: voiceOrb 3.4s ease-in-out infinite;
+}
+
 /* Demo Act 4 "One win" celebration burst.
  * Trophy pops in, four colored dots radiate outward. All gated by the
  * prefers-reduced-motion sweep below — no JS reduced-motion check needed. */

@@ -78,10 +78,12 @@ export function AppShell() {
       <main
         id="main"
         className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8"
-        // Leave space for the floating tabbar (88px = tabbar + padding).
+        // Leave generous space for the floating tabbar so trailing content
+        // never sits under the chrome. Tabbar + button is ~72px tall and
+        // sits 16px from the bottom edge — pad 9rem to leave breathing room.
         style={{
           paddingBottom: showTabbar
-            ? "calc(env(safe-area-inset-bottom) + 6rem)"
+            ? "calc(env(safe-area-inset-bottom) + 9rem)"
             : undefined,
         }}
       >

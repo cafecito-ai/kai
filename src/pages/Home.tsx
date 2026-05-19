@@ -118,9 +118,17 @@ export function Home() {
           type="button"
           onClick={() => navigate("/chat")}
           aria-label="Talk to KAI"
-          className="rounded-full transition active:scale-95 focus-ring"
+          className="
+            flex items-center gap-2 rounded-full
+            border border-glass-border bg-surface
+            py-1.5 pl-1.5 pr-3
+            shadow-card
+            transition active:scale-95 hover:bg-surface-muted
+            focus-ring
+          "
         >
-          <KaiOrb size={48} />
+          <KaiOrb size={36} />
+          <span className="text-sm font-medium text-text-primary">Talk</span>
         </button>
       </header>
 

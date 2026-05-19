@@ -18,10 +18,8 @@ import {
   Activity as ActivityIcon,
   ArrowUpRight,
   Brain,
-  ChevronRight,
   Flame,
   Heart,
-  MessageCircle,
   Moon,
   Sparkles,
   type LucideIcon,
@@ -128,7 +126,9 @@ export function Home() {
           "
         >
           <KaiOrb size={36} />
-          <span className="text-sm font-medium text-text-primary">Talk</span>
+          <span className="text-sm font-medium text-text-primary">
+            Talk to KAI
+          </span>
         </button>
       </header>
 
@@ -175,9 +175,6 @@ export function Home() {
 
       {/* Recent — 3 rows */}
       <RecentActivity items={DEMO_ACTIVITY} />
-
-      {/* One inline suggestion — compact, single-line */}
-      <NextUpRow />
     </div>
   );
 }
@@ -228,31 +225,6 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
   );
 }
 
-function NextUpRow() {
-  const navigate = useNavigate();
-  return (
-    <button
-      type="button"
-      onClick={() => navigate("/chat")}
-      className="flex w-full items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted active:scale-[0.995]"
-    >
-      <span className="flex items-center gap-3 text-left">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-cool-soft">
-          <MessageCircle size={16} className="text-accent-cool" />
-        </span>
-        <span>
-          <span className="block text-sm font-medium text-text-primary">
-            Talk to KAI
-          </span>
-          <span className="block text-xs text-text-secondary">
-            Anything on your mind — Mind or Body
-          </span>
-        </span>
-      </span>
-      <ChevronRight size={18} className="text-text-muted" />
-    </button>
-  );
-}
 
 function SubScoreCard({
   icon,

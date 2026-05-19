@@ -109,6 +109,14 @@ export const api = {
         createdAt: string;
       } | null;
     }>("/api/score/recent-input"),
+  submitCheckIn: (body: { mood: number; mind?: string; better?: string }) =>
+    request<{
+      score: unknown;
+      reflection: string;
+      window: "morning" | "evening" | "other";
+      duplicateInWindow: boolean;
+      safetyEvent?: unknown;
+    }>("/api/check-in", { method: "POST", body: JSON.stringify(body) }),
   updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean; designPreference?: string }) =>
     request("/api/user/me", { method: "PATCH", body: JSON.stringify(body) }),
   submitIntake: (responses: Record<string, string>) =>

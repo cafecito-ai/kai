@@ -5,6 +5,7 @@ import { ApiAuthBridge } from "./components/auth/ApiAuthBridge";
 import { RequireAuth } from "./components/auth/RequireAuth";
 import { RequireOnboarding } from "./components/auth/RequireOnboarding";
 import { AppShell } from "./components/layout/AppShell";
+import { Chat } from "./pages/Chat";
 import { Crisis } from "./pages/Crisis";
 import { Demo } from "./pages/Demo";
 import { DesignPicker } from "./pages/DesignPicker";
@@ -68,6 +69,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           />
           <Route path="/onboarding" element={protectedAuth(<Onboarding />)} />
           <Route path="/home" element={protectedOnboarding(<Home />)} />
+          <Route path="/chat" element={protectedOnboarding(<Chat />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />

@@ -21,10 +21,12 @@ import {
   ChevronRight,
   Flame,
   Heart,
+  MessageCircle,
   Moon,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
@@ -92,6 +94,7 @@ const DEMO_ACTIVITY: ActivityItem[] = [
 
 export function Home() {
   const greeting = greetingForNow();
+  const navigate = useNavigate();
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
@@ -111,7 +114,14 @@ export function Home() {
             </span>
           </div>
         </div>
-        <KaiOrb size={48} />
+        <button
+          type="button"
+          onClick={() => navigate("/chat")}
+          aria-label="Talk to KAI"
+          className="rounded-full transition active:scale-95 focus-ring"
+        >
+          <KaiOrb size={48} />
+        </button>
       </header>
 
       {/* Daily Score hero */}
@@ -146,7 +156,10 @@ export function Home() {
       <KaiMessage
         timestamp={greeting.timestampLabel}
         orbSize={32}
-        action={{ label: "Reply" }}
+        action={{
+          label: "Reply",
+          onClick: () => navigate("/chat"),
+        }}
       >
         Sleep dipped under 7h again last night — want to start light today
         and see how you feel by lunch?
@@ -208,18 +221,23 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
 }
 
 function NextUpRow() {
+  const navigate = useNavigate();
   return (
-    <button className="flex w-full items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted">
+    <button
+      type="button"
+      onClick={() => navigate("/chat")}
+      className="flex w-full items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted active:scale-[0.995]"
+    >
       <span className="flex items-center gap-3 text-left">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-cool-soft">
-          <Brain size={16} className="text-accent-cool" />
+          <MessageCircle size={16} className="text-accent-cool" />
         </span>
         <span>
           <span className="block text-sm font-medium text-text-primary">
-            Quick evening check-in
+            Talk to KAI
           </span>
           <span className="block text-xs text-text-secondary">
-            30 seconds · feeds tomorrow's score
+            Anything on your mind — Mind or Body
           </span>
         </span>
       </span>

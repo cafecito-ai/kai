@@ -41,6 +41,7 @@ export function CheckIn() {
   const [mood, setMood] = useState<number | null>(null);
   const [mind, setMind] = useState("");
   const [better, setBetter] = useState("");
+  const [screenHours, setScreenHours] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("form");
   const [reflection, setReflection] = useState<string>("");
   const [duplicateInWindow, setDuplicateInWindow] = useState(false);
@@ -61,7 +62,12 @@ export function CheckIn() {
     appendLocalInput({
       date: new Date().toISOString().slice(0, 10),
       source: "check_in",
-      value: { mood, mind, better },
+      value: {
+        mood,
+        mind,
+        better,
+        screenHours: screenHours ?? undefined,
+      },
     });
 
     try {
@@ -115,6 +121,8 @@ export function CheckIn() {
           setMind={setMind}
           better={better}
           setBetter={setBetter}
+          screenHours={screenHours}
+          setScreenHours={setScreenHours}
           submitting={phase === "submitting"}
           onSubmit={submit}
           headline={headline.title}
@@ -135,6 +143,8 @@ function FormState({
   setMind,
   better,
   setBetter,
+  screenHours,
+  setScreenHours,
   submitting,
   onSubmit,
   headline,
@@ -145,6 +155,8 @@ function FormState({
   setMind: (s: string) => void;
   better: string;
   setBetter: (s: string) => void;
+  screenHours: number | null;
+  setScreenHours: (n: number | null) => void;
   submitting: boolean;
   onSubmit: () => void;
   headline: string;
@@ -231,6 +243,38 @@ function FormState({
         />
       </div>
 
+      {/* Screen time — only surfaced for evening check-ins per AGENT_PLAN
+          T-018, and entirely optional. Observational only — never a target. */}
+      {isEvening() && (
+        <div className="space-y-2.5">
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+            On your phone today?  <span className="ml-1 normal-case text-text-soft">— optional</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 4, 6, 8, 10].map((h) => {
+              const selected = screenHours === h;
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => setScreenHours(selected ? null : h)}
+                  className={`
+                    rounded-full border px-4 py-2 text-sm font-medium transition
+                    ${
+                      selected
+                        ? "border-text-primary bg-text-primary text-background"
+                        : "border-glass-border bg-surface text-text-primary hover:bg-surface-muted"
+                    }
+                  `}
+                >
+                  ~{h}h
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="mt-auto pb-2">
         <button
           type="button"
@@ -249,6 +293,11 @@ function FormState({
       </div>
     </div>
   );
+}
+
+function isEvening(): boolean {
+  const h = new Date().getHours();
+  return h >= 17 && h < 23;
 }
 
 // ─────────────────────────────────────────────────────────────────────

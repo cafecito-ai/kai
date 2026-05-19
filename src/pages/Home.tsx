@@ -16,7 +16,10 @@
 
 import {
   Activity as ActivityIcon,
+  ArrowUpRight,
   Brain,
+  ChevronRight,
+  Flame,
   Heart,
   Moon,
   Sparkles,
@@ -34,6 +37,8 @@ import { ScoreRing } from "../components/ScoreRing";
 type DailyScoreView = {
   score: number;          // 0–100
   bandLabel: string;      // "Strong start" / "Steady" / "Easy day"
+  trend: number;          // delta vs yesterday (e.g. +6)
+  streak: number;         // current daily streak in days
   mind: { value: number; outOf: number };
   sleep: { value: number; outOf: number; unit: string };
   mood: { value: number; outOf: number };
@@ -50,12 +55,13 @@ type ActivityItem = {
 const DEMO_SCORE: DailyScoreView = {
   score: 82,
   bandLabel: "Strong start",
+  trend: 6,
+  streak: 4,
   mind: { value: 7, outOf: 10 },
   sleep: { value: 6.4, outOf: 8, unit: "hrs" },
   mood: { value: 68, outOf: 100 },
 };
 
-// Two rows max on home. Anything older lives on /progress.
 const DEMO_ACTIVITY: ActivityItem[] = [
   {
     icon: ActivityIcon,
@@ -71,6 +77,13 @@ const DEMO_ACTIVITY: ActivityItem[] = [
     meta: "Last night",
     chip: { label: "−2", className: "bg-warning-soft text-warning" },
   },
+  {
+    icon: Brain,
+    iconTint: "text-accent-cool",
+    title: "Evening reflection",
+    meta: "Yesterday",
+    chip: { label: "+3", className: "bg-success-soft text-success" },
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────
@@ -82,8 +95,8 @@ export function Home() {
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
-      {/* Greeting */}
-      <header className="flex items-center justify-between px-1">
+      {/* Greeting + streak chip + orb */}
+      <header className="flex items-start justify-between gap-3 px-1">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
             {greeting.eyebrow}
@@ -91,8 +104,14 @@ export function Home() {
           <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">
             {greeting.headline}.
           </h1>
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs">
+            <Flame size={12} className="text-accent-warm" />
+            <span className="font-medium text-text-primary">
+              {DEMO_SCORE.streak}-day streak
+            </span>
+          </div>
         </div>
-        <KaiOrb size={44} />
+        <KaiOrb size={48} />
       </header>
 
       {/* Daily Score hero */}
@@ -133,8 +152,11 @@ export function Home() {
         and see how you feel by lunch?
       </KaiMessage>
 
-      {/* Recent — 2 rows. Anything older lives on /progress. */}
+      {/* Recent — 3 rows */}
       <RecentActivity items={DEMO_ACTIVITY} />
+
+      {/* One inline suggestion — compact, single-line */}
+      <NextUpRow />
     </div>
   );
 }
@@ -144,6 +166,10 @@ export function Home() {
 // ─────────────────────────────────────────────────────────────────────
 
 function DailyScoreCard({ data }: { data: DailyScoreView }) {
+  const trendPositive = data.trend >= 0;
+  const trendChip = trendPositive
+    ? "bg-success-soft text-success"
+    : "bg-warning-soft text-warning";
   return (
     <div className="relative overflow-hidden rounded-glass border border-glass-border bg-surface p-6 shadow-card-lg">
       <div className="flex items-end justify-between gap-4">
@@ -157,14 +183,48 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
             </span>
             <span className="font-mono text-xl text-text-muted">/100</span>
           </p>
-          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1 text-xs font-medium text-success">
-            <Sparkles size={12} aria-hidden="true" />
-            {data.bandLabel}
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1 text-xs font-medium text-success">
+              <Sparkles size={12} aria-hidden="true" />
+              {data.bandLabel}
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[11px] ${trendChip}`}
+            >
+              <ArrowUpRight
+                size={11}
+                aria-hidden="true"
+                className={trendPositive ? "" : "rotate-90"}
+              />
+              {trendPositive ? "+" : ""}
+              {data.trend} vs yesterday
+            </span>
+          </div>
         </div>
         <ScoreRing value={data.score} size={104} />
       </div>
     </div>
+  );
+}
+
+function NextUpRow() {
+  return (
+    <button className="flex w-full items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted">
+      <span className="flex items-center gap-3 text-left">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-cool-soft">
+          <Brain size={16} className="text-accent-cool" />
+        </span>
+        <span>
+          <span className="block text-sm font-medium text-text-primary">
+            Quick evening check-in
+          </span>
+          <span className="block text-xs text-text-secondary">
+            30 seconds · feeds tomorrow's score
+          </span>
+        </span>
+      </span>
+      <ChevronRight size={18} className="text-text-muted" />
+    </button>
   );
 }
 

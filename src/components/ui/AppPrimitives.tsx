@@ -36,14 +36,43 @@ export function AppSurface({
 
 export function KaiMark({ size = "md", label = "Kai" }: { size?: "sm" | "md" | "lg"; label?: string }) {
   const sizes = {
-    sm: "size-8 text-lg",
-    md: "size-11 text-2xl",
-    lg: "size-24 text-6xl sm:size-28 sm:text-7xl"
+    sm: 32,
+    md: 44,
+    lg: 108
   };
+  const px = sizes[size];
   return (
-    <span className="relative inline-grid place-items-center" aria-label={label} role="img">
-      <span className={`absolute rounded-full bg-plum/10 ${sizes[size]} motion-safe:animate-pulse`} />
-      <span className={`relative grid place-items-center rounded-full bg-ink font-serif italic text-paper shadow-soft ${sizes[size]}`}>k</span>
+    <KaiAvatar size={px} label={label} pulse={size !== "sm"} />
+  );
+}
+
+export function KaiAvatar({ size = 44, label = "Kai", pulse = false, className = "" }: { size?: number; label?: string; pulse?: boolean; className?: string }) {
+  return (
+    <span className={`relative inline-grid shrink-0 place-items-center ${className}`} style={{ width: size, height: size }} aria-label={label} role="img">
+      {pulse && <span className="absolute inset-0 rounded-full bg-[#4FC3F7]/20 motion-safe:animate-pulse" />}
+      <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="relative drop-shadow-[0_10px_22px_rgba(15,23,42,0.18)]">
+        <defs>
+          <radialGradient id="kai-face-glow" cx="33%" cy="24%" r="74%">
+            <stop offset="0%" stopColor="#E9FBFF" />
+            <stop offset="42%" stopColor="#4FC3F7" />
+            <stop offset="100%" stopColor="#2563EB" />
+          </radialGradient>
+          <linearGradient id="kai-ear-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#A3FF12" />
+            <stop offset="100%" stopColor="#22D3EE" />
+          </linearGradient>
+        </defs>
+        <circle cx="32" cy="32" r="29" fill="#EAF8FF" opacity="0.72" />
+        <circle cx="32" cy="32" r="25" fill="url(#kai-face-glow)" stroke="rgba(255,255,255,0.72)" strokeWidth="2.4" />
+        <circle cx="23" cy="29" r="3.2" fill="#07111E" />
+        <circle cx="41" cy="29" r="3.2" fill="#07111E" />
+        <circle cx="22" cy="28" r="1" fill="#FFFFFF" />
+        <circle cx="40" cy="28" r="1" fill="#FFFFFF" />
+        <path d="M24 40c4.8 4.2 11.2 4.2 16 0" fill="none" stroke="#07111E" strokeLinecap="round" strokeWidth="3.2" />
+        <path d="M12 35c-4.2 2.2-6.5 5.1-6.8 8.8" fill="none" stroke="url(#kai-ear-gradient)" strokeLinecap="round" strokeWidth="4.4" />
+        <path d="M52 35c4.2 2.2 6.5 5.1 6.8 8.8" fill="none" stroke="url(#kai-ear-gradient)" strokeLinecap="round" strokeWidth="4.4" />
+        <path d="M20 18l2.1 4.1 4.4 1.1-4.1 2.1-1.1 4.4-2.1-4.1-4.4-1.1 4.1-2.1L20 18z" fill="#FFFFFF" opacity="0.9" />
+      </svg>
     </span>
   );
 }

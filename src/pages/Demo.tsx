@@ -1,6 +1,7 @@
 import { ArrowRight, Bell, CalendarDays, Camera, Check, ChevronDown, Flame, Images, Loader2, Mail, MessageCircle, Mic, Music, Phone, RefreshCw, Send, Share2, Sparkles, Trophy, UserPlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { api } from "../lib/api";
 
 /**
@@ -433,7 +434,8 @@ function VoiceAssistantWidget() {
       <div className="relative mx-auto mt-6 grid h-[184px] place-items-center overflow-hidden">
         <Waveform />
         <div className="voice-orb relative z-[1] grid size-40 place-items-center rounded-full border border-white/25 bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.55),rgba(147,51,234,0.26)_28%,rgba(6,182,212,0.24)_56%,rgba(14,18,38,0.9)_100%)] shadow-[0_0_54px_rgba(168,85,247,0.7)]">
-          <div className="h-12 w-24 rounded-[50%] bg-[linear-gradient(90deg,rgba(168,85,247,0.1),rgba(255,255,255,0.8),rgba(34,211,238,0.12))] blur-md" />
+          <div className="absolute h-12 w-24 rounded-[50%] bg-[linear-gradient(90deg,rgba(168,85,247,0.1),rgba(255,255,255,0.8),rgba(34,211,238,0.12))] blur-md" />
+          <KaiAvatar size={112} label="Kai Assistant" className="relative z-[1]" />
         </div>
       </div>
 
@@ -551,7 +553,7 @@ function ActRead({ build, update, onNext }: { build: Build; update: (p: Partial<
           onChange={(e) => setName(e.target.value.slice(0, 24))}
           onBlur={() => update({ firstName: name.trim() })}
           placeholder="your name or a nickname"
-          className="mt-2 w-full rounded-2xl border border-white/12 bg-white/4 px-4 py-3 text-base font-bold text-white outline-none placeholder:text-white/35 focus:border-[#4FC3F7]"
+          className="mt-2 w-full rounded-2xl border border-white/20 bg-white px-4 py-3 text-base font-black text-[#0B1419] outline-none placeholder:text-[#52616B] focus:border-[#4FC3F7] focus:ring-2 focus:ring-[#4FC3F7]/30"
         />
       </label>
 
@@ -649,7 +651,7 @@ function ActChat(props: {
               onChange={(e) => setChatInput(e.target.value)}
               placeholder={userTurns >= 3 ? "demo chat full — hit continue" : "say something real"}
               disabled={userTurns >= 3 || thinking}
-              className="flex-1 rounded-full border border-white/12 bg-white/6 px-4 py-3 text-[14px] font-medium text-white outline-none placeholder:text-white/35 focus:border-[#4FC3F7] disabled:opacity-50"
+              className="flex-1 rounded-full border border-white/20 bg-white px-4 py-3 text-[14px] font-black text-[#0B1419] outline-none placeholder:text-[#52616B] focus:border-[#4FC3F7] focus:ring-2 focus:ring-[#4FC3F7]/30 disabled:opacity-50"
             />
             <button
               type="submit"
@@ -1273,7 +1275,7 @@ function FeelingsCheckMini({ build, onComplete }: { build: Build; onComplete: (s
             onChange={(e) => setInput(e.target.value.slice(0, DEMO_INPUT_CHARS))}
             placeholder={userTurns === 0 ? "where you notice it" : "what you'd tell a friend"}
             disabled={inputDisabled}
-            className="flex-1 rounded-full border border-white/12 bg-white/6 px-4 py-2.5 text-[13.5px] font-medium text-white outline-none placeholder:text-white/35 focus:border-[#4FC3F7] disabled:opacity-50"
+            className="flex-1 rounded-full border border-white/20 bg-white px-4 py-2.5 text-[13.5px] font-black text-[#0B1419] outline-none placeholder:text-[#52616B] focus:border-[#4FC3F7] focus:ring-2 focus:ring-[#4FC3F7]/30 disabled:opacity-50"
           />
           <button
             type="submit"
@@ -1360,7 +1362,7 @@ function ActBuild({ build, update, onNext }: { build: Build; update: (p: Partial
             type="text"
             value={build.kaiName}
             onChange={(e) => update({ kaiName: e.target.value.slice(0, 18) })}
-            className="mt-2 w-full rounded-2xl border border-white/12 bg-white/4 px-4 py-3 text-base font-bold text-white outline-none focus:border-[#4FC3F7]"
+            className="mt-2 w-full rounded-2xl border border-white/20 bg-white px-4 py-3 text-base font-black text-[#0B1419] outline-none placeholder:text-[#52616B] focus:border-[#4FC3F7] focus:ring-2 focus:ring-[#4FC3F7]/30"
           />
         </label>
         <div>
@@ -1684,15 +1686,7 @@ function PhoneFrame({ children, compact = false }: { children: React.ReactNode; 
 }
 
 function KaiOrb({ size = 32, className = "" }: { size?: number; className?: string }) {
-  return (
-    <span
-      className={`relative grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#4FC3F7] to-[#29B6F6] font-black text-[#0B1419] ${className}`}
-      style={{ width: size, height: size, fontSize: size * 0.45 }}
-    >
-      k
-      <span className="absolute inset-0 rounded-full ring-1 ring-white/20" />
-    </span>
-  );
+  return <KaiAvatar size={size} className={className} />;
 }
 
 function Avatar({ style, size, level }: { style: ArtStyle; size: number; level: number }) {

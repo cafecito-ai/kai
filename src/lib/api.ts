@@ -117,6 +117,19 @@ export const api = {
       duplicateInWindow: boolean;
       safetyEvent?: unknown;
     }>("/api/check-in", { method: "POST", body: JSON.stringify(body) }),
+  submitJournal: (body: { content: string }) =>
+    request<{
+      score: unknown;
+      reflection: string;
+      sentiment: number;
+      safetyEvent?: unknown;
+    }>("/api/journal", { method: "POST", body: JSON.stringify(body) }),
+  submitSleep: (body: { hours: number; quality?: number; notes?: string }) =>
+    request<{
+      score: unknown;
+      reflection: string;
+      safetyFlagged?: boolean;
+    }>("/api/sleep", { method: "POST", body: JSON.stringify(body) }),
   updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean; designPreference?: string }) =>
     request("/api/user/me", { method: "PATCH", body: JSON.stringify(body) }),
   submitIntake: (responses: Record<string, string>) =>

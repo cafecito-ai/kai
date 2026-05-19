@@ -32,6 +32,8 @@ const IMMERSIVE_PREFIXES = [
   // Chat is its own focused surface — own back button, no competing chrome
   "/chat",
   "/check-in",
+  "/journal",
+  "/sleep",
 ];
 
 // Routes that show the tabbar.

@@ -8,6 +8,8 @@ import { AppShell } from "./components/layout/AppShell";
 import { Chat } from "./pages/Chat";
 import { CheckIn } from "./pages/CheckIn";
 import { Crisis } from "./pages/Crisis";
+import { Journal } from "./pages/Journal";
+import { SleepLog } from "./pages/SleepLog";
 import { Demo } from "./pages/Demo";
 import { DesignPicker } from "./pages/DesignPicker";
 import { DesignTokens } from "./pages/DesignTokens";
@@ -72,6 +74,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/home" element={protectedOnboarding(<Home />)} />
           <Route path="/chat" element={protectedOnboarding(<Chat />)} />
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
+          <Route path="/journal" element={protectedOnboarding(<Journal />)} />
+          <Route path="/sleep/log" element={protectedOnboarding(<SleepLog />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />

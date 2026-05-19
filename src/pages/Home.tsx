@@ -17,8 +17,6 @@
 import {
   Activity as ActivityIcon,
   Brain,
-  ChevronRight,
-  Dumbbell,
   Heart,
   Moon,
   Sparkles,
@@ -57,12 +55,13 @@ const DEMO_SCORE: DailyScoreView = {
   mood: { value: 68, outOf: 100 },
 };
 
+// Two rows max on home. Anything older lives on /progress.
 const DEMO_ACTIVITY: ActivityItem[] = [
   {
     icon: ActivityIcon,
     iconTint: "text-accent-warm",
     title: "Easy run · 32 min",
-    meta: "Yesterday · 6:48 PM",
+    meta: "Yesterday",
     chip: { label: "+5", className: "bg-success-soft text-success" },
   },
   {
@@ -71,13 +70,6 @@ const DEMO_ACTIVITY: ActivityItem[] = [
     title: "Slept 6h 24m",
     meta: "Last night",
     chip: { label: "−2", className: "bg-warning-soft text-warning" },
-  },
-  {
-    icon: Brain,
-    iconTint: "text-accent-cool",
-    title: "Evening reflection",
-    meta: "Yesterday · 10:12 PM",
-    chip: { label: "+3", className: "bg-success-soft text-success" },
   },
 ];
 
@@ -89,7 +81,7 @@ export function Home() {
   const greeting = greetingForNow();
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-4 pt-2 sm:max-w-lg">
+    <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
       {/* Greeting */}
       <header className="flex items-center justify-between px-1">
         <div>
@@ -141,15 +133,8 @@ export function Home() {
         and see how you feel by lunch?
       </KaiMessage>
 
-      {/* Recent activity */}
+      {/* Recent — 2 rows. Anything older lives on /progress. */}
       <RecentActivity items={DEMO_ACTIVITY} />
-
-      {/* Soft suggestions */}
-      <Suggestions />
-
-      <p className="px-1 pt-2 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted">
-        Daily Score preview · live data in Phase B
-      </p>
     </div>
   );
 }
@@ -225,92 +210,38 @@ function SubScoreCard({
 
 function RecentActivity({ items }: { items: ActivityItem[] }) {
   return (
-    <div className="rounded-glass border border-glass-border bg-surface p-5 shadow-card">
-      <div className="flex items-center justify-between">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
-          Recent
-        </p>
-        <button className="text-xs font-medium text-accent">See all</button>
-      </div>
-      <div className="mt-3 space-y-3">
-        {items.map((it, i) => {
-          const Icon = it.icon;
-          return (
-            <div key={i} className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted">
-                <Icon size={16} className={it.iconTint} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-text-primary">
-                  {it.title}
-                </p>
-                <p className="text-xs text-text-muted">{it.meta}</p>
-              </div>
-              {it.chip && (
-                <span
-                  className={`rounded-full px-2.5 py-0.5 font-mono text-xs ${it.chip.className}`}
-                >
-                  {it.chip.label}
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function Suggestions() {
-  return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <p className="px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
-        Easy wins
+        Recent
       </p>
-      <SuggestionRow
-        icon={<Brain size={16} className="text-accent-cool" />}
-        tint="bg-accent-cool-soft"
-        title="Quick check-in"
-        meta="30 seconds · adds to your mood score"
-      />
-      <SuggestionRow
-        icon={<Dumbbell size={16} className="text-accent-warm" />}
-        tint="bg-accent-warm-soft"
-        title="Log last night's sleep"
-        meta="Even a guess helps"
-      />
+      <div className="rounded-glass border border-glass-border bg-surface p-5 shadow-card">
+        <div className="space-y-4">
+          {items.map((it, i) => {
+            const Icon = it.icon;
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted">
+                  <Icon size={16} className={it.iconTint} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-text-primary">
+                    {it.title}
+                  </p>
+                  <p className="text-xs text-text-muted">{it.meta}</p>
+                </div>
+                {it.chip && (
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 font-mono text-xs ${it.chip.className}`}
+                  >
+                    {it.chip.label}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
-  );
-}
-
-function SuggestionRow({
-  icon,
-  tint,
-  title,
-  meta,
-}: {
-  icon: React.ReactNode;
-  tint: string;
-  title: string;
-  meta: string;
-}) {
-  return (
-    <button className="flex w-full items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted">
-      <span className="flex items-center gap-3">
-        <span
-          className={`flex h-9 w-9 items-center justify-center rounded-full ${tint}`}
-        >
-          {icon}
-        </span>
-        <span className="text-left">
-          <span className="block text-sm font-medium text-text-primary">
-            {title}
-          </span>
-          <span className="block text-xs text-text-secondary">{meta}</span>
-        </span>
-      </span>
-      <ChevronRight size={18} className="text-text-muted" />
-    </button>
   );
 }
 

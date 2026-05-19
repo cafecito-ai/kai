@@ -37,26 +37,65 @@ import { useUserStore } from "../stores/userStore";
 // Step content
 // ─────────────────────────────────────────────────────────────────────
 
-const FOCUS_AREAS = [
-  { id: "mental_clarity", label: "Mental clarity" },
-  { id: "managing_stress", label: "Managing stress" },
-  { id: "anxiety", label: "Anxiety" },
-  { id: "mood", label: "Mood" },
-  { id: "confidence", label: "Confidence" },
-  { id: "finding_purpose", label: "Finding purpose" },
-  { id: "motivation", label: "Motivation" },
-  { id: "focus", label: "Focus" },
-  { id: "social_life", label: "Social life" },
-  { id: "friendships", label: "Friendships" },
-  { id: "family_stuff", label: "Family stuff" },
-  { id: "school_pressure", label: "School pressure" },
-  { id: "getting_stronger", label: "Getting stronger" },
-  { id: "better_sleep", label: "Better sleep" },
-  { id: "energy", label: "Energy" },
-  { id: "eating_better", label: "Eating better" },
-  { id: "body_image", label: "Body image" },
-] as const;
-type FocusAreaId = (typeof FOCUS_AREAS)[number]["id"];
+// Focus areas grouped into three calm sections so the chip wall reads as
+// "scan a section" rather than "wall of 17". Group labels are intentionally
+// short and warm (not "categories").
+type FocusAreaId =
+  | "mental_clarity"
+  | "managing_stress"
+  | "anxiety"
+  | "mood"
+  | "confidence"
+  | "motivation"
+  | "focus"
+  | "finding_purpose"
+  | "school_pressure"
+  | "social_life"
+  | "friendships"
+  | "family_stuff"
+  | "better_sleep"
+  | "energy"
+  | "getting_stronger"
+  | "eating_better"
+  | "body_image";
+
+type FocusOption = { id: FocusAreaId; label: string };
+type FocusGroup = { label: string; options: FocusOption[] };
+
+const FOCUS_GROUPS: FocusGroup[] = [
+  {
+    label: "How you're feeling",
+    options: [
+      { id: "mental_clarity", label: "Mental clarity" },
+      { id: "managing_stress", label: "Managing stress" },
+      { id: "anxiety", label: "Anxiety" },
+      { id: "mood", label: "Mood" },
+      { id: "confidence", label: "Confidence" },
+    ],
+  },
+  {
+    label: "How you spend your days",
+    options: [
+      { id: "motivation", label: "Motivation" },
+      { id: "focus", label: "Focus" },
+      { id: "finding_purpose", label: "Finding purpose" },
+      { id: "school_pressure", label: "School pressure" },
+      { id: "social_life", label: "Social life" },
+      { id: "friendships", label: "Friendships" },
+      { id: "family_stuff", label: "Family stuff" },
+    ],
+  },
+  {
+    label: "How your body feels",
+    options: [
+      { id: "better_sleep", label: "Better sleep" },
+      { id: "energy", label: "Energy" },
+      { id: "getting_stronger", label: "Getting stronger" },
+      { id: "eating_better", label: "Eating better" },
+      { id: "body_image", label: "Body image" },
+    ],
+  },
+];
 
 // Map focus areas → suggested primary engine. Ties and ambiguity default to
 // "mental" per AGENT_PLAN T-006 §4 ("unclear → mental, more general-purpose
@@ -405,33 +444,42 @@ function FocusStep({
     );
   }
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Heading
         eyebrow="step 3"
         title="What do you want to work on?"
-        blurb="Pick as many as feel right. You can change this later."
+        blurb="Pick a few. You can change this later."
       />
-      <div className="flex flex-wrap gap-2">
-        {FOCUS_AREAS.map(({ id, label }) => {
-          const selected = value.includes(id);
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => toggle(id)}
-              className={`
-                rounded-full border px-4 py-2 text-sm font-medium transition active:scale-[0.98]
-                ${
-                  selected
-                    ? "border-text-primary bg-text-primary text-background"
-                    : "border-glass-border bg-surface text-text-primary hover:bg-surface-muted"
-                }
-              `}
-            >
-              {label}
-            </button>
-          );
-        })}
+      <div className="space-y-6">
+        {FOCUS_GROUPS.map((group) => (
+          <div key={group.label} className="space-y-2.5">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+              {group.label}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {group.options.map(({ id, label }) => {
+                const selected = value.includes(id);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => toggle(id)}
+                    className={`
+                      rounded-full border px-4 py-2 text-sm font-medium transition active:scale-[0.98]
+                      ${
+                        selected
+                          ? "border-text-primary bg-text-primary text-background"
+                          : "border-glass-border bg-surface text-text-primary hover:bg-surface-muted"
+                      }
+                    `}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -587,9 +635,10 @@ function ConfirmStep({
   error: string;
   saving: boolean;
 }) {
-  const focusLabels = FOCUS_AREAS.filter((f) =>
-    focusAreas.includes(f.id),
-  ).map((f) => f.label);
+  const allOptions = FOCUS_GROUPS.flatMap((g) => g.options);
+  const focusLabels = allOptions
+    .filter((f) => focusAreas.includes(f.id))
+    .map((f) => f.label);
   return (
     <div className="space-y-6">
       <Heading

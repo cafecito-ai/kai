@@ -39,21 +39,43 @@ import { useUserStore } from "../stores/userStore";
 
 const FOCUS_AREAS = [
   { id: "mental_clarity", label: "Mental clarity" },
+  { id: "managing_stress", label: "Managing stress" },
+  { id: "anxiety", label: "Anxiety" },
+  { id: "mood", label: "Mood" },
   { id: "confidence", label: "Confidence" },
+  { id: "finding_purpose", label: "Finding purpose" },
+  { id: "motivation", label: "Motivation" },
+  { id: "focus", label: "Focus" },
+  { id: "social_life", label: "Social life" },
+  { id: "friendships", label: "Friendships" },
+  { id: "family_stuff", label: "Family stuff" },
+  { id: "school_pressure", label: "School pressure" },
   { id: "getting_stronger", label: "Getting stronger" },
   { id: "better_sleep", label: "Better sleep" },
-  { id: "social_life", label: "Social life" },
-  { id: "finding_purpose", label: "Finding purpose" },
+  { id: "energy", label: "Energy" },
+  { id: "eating_better", label: "Eating better" },
+  { id: "body_image", label: "Body image" },
 ] as const;
 type FocusAreaId = (typeof FOCUS_AREAS)[number]["id"];
 
-// Map focus areas → suggested primary engine. "both" → mental (more
-// general-purpose voice) per AGENT_PLAN §5/T-006 "unclear defaults to mental".
+// Map focus areas → suggested primary engine. Ties and ambiguity default to
+// "mental" per AGENT_PLAN T-006 §4 ("unclear → mental, more general-purpose
+// voice"). Body image is intentionally mental-leaning — it's an identity
+// conversation, not a physique conversation.
 const MENTAL_LEANING: FocusAreaId[] = [
   "mental_clarity",
+  "managing_stress",
+  "anxiety",
+  "mood",
   "confidence",
-  "social_life",
   "finding_purpose",
+  "motivation",
+  "focus",
+  "social_life",
+  "friendships",
+  "family_stuff",
+  "school_pressure",
+  "body_image",
 ];
 
 function suggestEngine(focusAreas: FocusAreaId[]): EngineId {

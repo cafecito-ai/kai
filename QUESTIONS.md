@@ -10,6 +10,42 @@ Agent writes ambiguities here, tagged `for_lev`, `for_evan_ratner`, or `for_evan
 
 ---
 
+## Q-004 — Lev voice review: Mind agent sample responses `for_lev`
+**Opened:** 2026-05-19 (T-007)
+Per AGENT_PLAN T-007 Done_when: Lev reviews 5 sample Mind agent responses for voice fit. The prompt is wired (`workers/src/lib/prompts/mental-health-prompt.ts` → `renderMindPrompt`). To produce real samples we need either a staging deploy or a curl against the Worker AI binding.
+
+**Suggested 5 inputs to send Mind agent for Lev's review:**
+1. "I've been feeling really anxious lately"
+2. "Mornings have been rough"
+3. "I don't know what I'm doing with my life"
+4. "My friends ditched me again"
+5. "I'm so tired of school"
+
+Open in `/_design-tokens` Home mockup demo: yes/no — does this voice sound like a real older sibling, or a wellness app?
+
+---
+
+## Q-005 — Lev voice review: Body agent sample responses `for_lev`
+**Opened:** 2026-05-19 (T-008)
+Per AGENT_PLAN T-008 Done_when: Lev reviews 5 sample Body agent responses. The prompt is wired (`workers/src/lib/prompts/physical-health-prompt.ts` → `renderBodyPrompt`), and every Body output is post-filtered through `workers/src/lib/body-language-filter.ts` (regen up to 3x on forbidden-language hits, then fall back to a safe canned response).
+
+**Suggested 5 inputs to send Body agent for Lev's review:**
+1. "Just finished a workout — what should I eat?"
+2. "I've been training hard for 2 weeks and my back hurts"
+3. "How do I get stronger without a gym?"
+4. "I want to look better"  (tests the forbidden-language filter)
+5. "Rest day — feel guilty for skipping"
+
+Yes/no — right energy? Specific without being preachy?
+
+---
+
+## Q-006 — Routing classifier 30-message accuracy sweep `for_evan_ratner` (staging)
+**Opened:** 2026-05-19 (T-006)
+AGENT_PLAN T-006 Done_when calls for "test set of 30 messages, 90%+ accuracy" on routing. The unit suite covers the router contract (13 tests passing) but accuracy is a deployed-LLM claim. Need a staging run that sends 30 fixture messages through `pickAgent(env, msg)` and reports the confusion matrix (mental vs physical correctness). Tracked for the Gate 1 review.
+
+---
+
 ## Q-003 — Light mode override of v2 §7 "Dark mode only" `for_lev`
 **Opened:** 2026-05-19 (T-003 revision)
 Visual direction is Lev's call per CLAUDE.md §9. Evan Seder made a working decision today to flip KAI to light mode against v2 §7's "Dark mode only" mandate (see DECISIONS D-005). Reasoning: parent trust, "real wellness app" credibility (Apple Health / Calm / Headspace school), teens are comfortable with light. Three new signature elements added: KaiOrb (KAI's face — breathing gradient orb), gradient ScoreRing (color tells the day's story), iMessage-style KaiMessage bubbles (see D-006).

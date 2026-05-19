@@ -12,10 +12,12 @@ import { DesignTokens } from "./pages/DesignTokens";
 import { EngineMental } from "./pages/EngineMental";
 import { EnginePhysical } from "./pages/EnginePhysical";
 import { ForParents } from "./pages/ForParents";
+import { Groups } from "./pages/Groups";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
+import { Profile } from "./pages/Profile";
 import { Ops } from "./pages/Ops";
 import { OpsDemoSession } from "./pages/OpsDemoSession";
 import { OpsDemoSessions } from "./pages/OpsDemoSessions";
@@ -71,6 +73,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
+          <Route path="/groups" element={protectedOnboarding(<Groups />)} />
+          <Route path="/profile" element={protectedOnboarding(<Profile />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/demo" element={<Demo />} />

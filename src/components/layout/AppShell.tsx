@@ -1,23 +1,68 @@
-import { Activity, Brain } from "lucide-react";
-import { Link, Outlet, useLocation } from "react-router-dom";
-import { useProgressStore } from "../../stores/progressStore";
-import { useUserStore } from "../../stores/userStore";
-import { Footer } from "./Footer";
-import { Nav } from "./Nav";
+// AppShell — the wrapper rendered around every authenticated route.
+//
+// Per CLAUDE_v3_PATCH §5: the primary navigation is a floating glass
+// Tabbar at the bottom of the screen, with a persistent + button. The v0
+// top-of-page Nav header and TodayBar were retired in T-004 — they relied
+// on a different IA (three engines, app-path strip) that the v3 patch has
+// replaced. Old code remains in src/components/layout/{Nav,Footer}.tsx for
+// reference but is no longer rendered.
+//
+// Immersive routes (`/demo`, `/scope`, `/_design-tokens`, `/crisis`,
+// `/onboarding`, sign-in pages) opt out of the chrome and render edge-to-edge.
+
+import { Outlet, useLocation } from "react-router-dom";
+import { useState } from "react";
+
+import { QuickActionSheet } from "./QuickActionSheet";
+import { Tabbar } from "./Tabbar";
+
+// Routes that should render edge-to-edge (no tabbar, no chrome).
+// Use prefix matching for routes that have sub-paths.
+const IMMERSIVE_PREFIXES = [
+  "/_design-tokens",
+  "/demo",
+  "/scope",
+  "/crisis",
+  "/onboarding",
+  "/sign-in",
+  "/sign-up",
+  "/for-parents",
+  "/terms",
+  "/privacy",
+];
+
+// Routes that show the tabbar.
+const TABBAR_PREFIXES = [
+  "/home",
+  "/progress",
+  "/groups",
+  "/profile",
+  "/engine",
+  "/settings",
+  "/check-in",
+  "/journal",
+  "/workout",
+  "/food",
+  "/sleep",
+];
+
+function matchesAnyPrefix(pathname: string, prefixes: readonly string[]) {
+  return prefixes.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
 
 export function AppShell() {
   const { pathname } = useLocation();
-  const immersiveRoute = pathname === "/demo" || pathname === "/scope";
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
 
-  if (immersiveRoute) {
+  const immersive = matchesAnyPrefix(pathname, IMMERSIVE_PREFIXES);
+  const showTabbar = !immersive && matchesAnyPrefix(pathname, TABBAR_PREFIXES);
+
+  if (immersive) {
     return (
-      <div className="noise min-h-screen bg-paper text-ink">
-        <a
-          href="#main"
-          className="focus-ring sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-kai focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-paper"
-        >
-          Skip to content
-        </a>
+      <div className="min-h-screen bg-background text-text-primary">
+        <SkipLink />
         <div id="main">
           <Outlet />
         </div>
@@ -26,71 +71,49 @@ export function AppShell() {
   }
 
   return (
-    <div className="noise min-h-screen bg-paper text-ink">
-      {/* WCAG SC 2.4.1 Bypass Blocks: keyboard-only users skip the nav. */}
-      <a
-        href="#main"
-        className="focus-ring sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-kai focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-paper"
+    <div className="min-h-screen bg-background text-text-primary">
+      <SkipLink />
+      <main
+        id="main"
+        className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8"
+        // Leave space for the floating tabbar (88px = tabbar + padding).
+        style={{
+          paddingBottom: showTabbar
+            ? "calc(env(safe-area-inset-bottom) + 6rem)"
+            : undefined,
+        }}
       >
-        Skip to content
-      </a>
-      <Nav />
-      <TodayBar />
-      <main id="main" className="mobile-safe-bottom mx-auto w-full max-w-6xl px-3 pt-3 sm:px-5 sm:pt-5 lg:px-8">
         <Outlet />
       </main>
-      <Footer />
+
+      {showTabbar ? (
+        <>
+          <Tabbar onOpenQuickActions={() => setQuickActionsOpen(true)} />
+          <QuickActionSheet
+            open={quickActionsOpen}
+            onClose={() => setQuickActionsOpen(false)}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
 
-function TodayBar() {
-  const { pathname } = useLocation();
-  const { primaryEngine } = useUserStore();
-  const events = useProgressStore((state) => state.events);
-  const streak = useProgressStore((state) => state.streak());
-  const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
-  const appRoute = pathname.startsWith("/engine") || pathname === "/progress" || pathname === "/settings";
-
-  if (!appRoute) return null;
-
-  const activeEngine = engineFromPath(pathname) ?? primaryEngine;
-  const lane = laneMeta(activeEngine);
-  const ActiveIcon = lane.icon;
-
+// WCAG SC 2.4.1 Bypass Blocks: keyboard-only users skip ahead to main.
+function SkipLink() {
   return (
-    <aside className="border-b border-line bg-white/62 backdrop-blur">
-      <div className="mx-auto grid max-w-6xl gap-2 px-3 py-2 sm:grid-cols-[1fr_auto] sm:items-center sm:px-5 lg:px-8">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className={`grid size-8 shrink-0 place-items-center rounded-full ${lane.tone}`}>
-            <ActiveIcon size={16} aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-xs font-black uppercase tracking-[0.14em] text-muted">today's app path</p>
-            <p className="truncate text-sm font-black text-ink">{lane.label} first, one rep, then progress.</p>
-          </div>
-        </div>
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 text-xs font-black sm:grid-cols-[1fr_1fr_auto]">
-          <span className="min-w-0 truncate rounded-full border border-line bg-paper px-2 py-2 text-center text-muted sm:px-3">{todayCount} reps</span>
-          <span className="min-w-0 truncate rounded-full border border-line bg-paper px-2 py-2 text-center text-muted sm:px-3">{streak} day streak</span>
-          <Link to={`/engine/${activeEngine}`} className="focus-ring hidden rounded-full bg-ink px-4 py-2 text-paper sm:inline-flex">
-            Continue
-          </Link>
-        </div>
-      </div>
-    </aside>
+    <a
+      href="#main"
+      className="
+        focus-ring
+        sr-only
+        focus:not-sr-only
+        focus:absolute focus:left-3 focus:top-3 focus:z-50
+        focus:rounded-md focus:bg-text-primary focus:px-4 focus:py-2
+        focus:text-sm focus:font-medium focus:text-background
+      "
+    >
+      Skip to content
+    </a>
   );
-}
-
-function engineFromPath(pathname: string): "physical" | "potential" | "mental" | null {
-  if (pathname.startsWith("/engine/potential")) return "mental";
-  if (pathname.startsWith("/engine/mental")) return "mental";
-  if (pathname.startsWith("/engine/physical")) return "physical";
-  return null;
-}
-
-function laneMeta(engine: "physical" | "potential" | "mental") {
-  if (engine === "potential") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
-  if (engine === "mental") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
-  return { label: "Body", icon: Activity, tone: "bg-bodyWash text-body" };
 }

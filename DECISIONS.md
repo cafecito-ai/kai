@@ -39,6 +39,15 @@ Append-only log. Every non-trivial decision (especially when picking the conserv
 
 ---
 
+## D-007 — Ratner delegated build-phase safety-review authority to Seder
+**Date:** 2026-05-19
+**Decision:** Evan Ratner has explicitly authorized Evan Seder to proceed with all `requires_safety_review` tasks through Gate 1 (Phase A: T-005, T-007, T-008) without per-task hold-and-wait. Build implementation proceeds; final production sign-off still rests with Ratner per CLAUDE.md §9.
+**Why:** Seder is the day-to-day intern working for Ratner on this build. Bouncing every safety-flagged task back for explicit approval pre-merge would stall the loop. The implementation work is mostly plumbing (wiring already-written prompt files; restyling existing consent flow); the SAFETY of the system is in the prompt files themselves + the existing `workers/src/lib/safety.ts` (untouched), both of which Ratner has already cleared.
+**Bounded:** This delegation is for Phase A only. Gates still halt the loop — Gate 1 review by Ratner + Lev, Gate 5 (body scan, highest stakes) still requires Ratner explicit sign-off and clinician review per CLAUDE.md §6 and the build plan.
+**Action:** Continue T-005 → T-008. Mark each commit as `awaiting_review` in STATUS.md, not `merged`. Gate 1 review after T-008 is mandatory.
+
+---
+
 ## D-005 — Override CLAUDE.md v2 §7 "Dark mode only" → light mode
 **Date:** 2026-05-19 (T-003 revision)
 **Decision:** KAI ships in light mode. The v0 dark glass aesthetic is replaced with a warm off-white wellness-app aesthetic (background #FAFAF7, surface #FFFFFF, near-black text). Brand accent hues from v2 §7 are preserved (violet #7B6EF6, warm #F0A868, cool #68C5B8) and reused as soft-tinted chip backgrounds (`accent-soft`, `accent-warm-soft`, `accent-cool-soft`). Status colors slightly muted (#3F9D6A success, #D89A2C warning, #C75555 danger) to match the warmer palette.

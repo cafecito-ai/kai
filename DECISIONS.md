@@ -40,6 +40,21 @@ Append-only log. Every non-trivial decision (especially when picking the conserv
 ---
 
 ## Build understanding (T-002)
-_To be written when T-002 executes._
+**Date:** 2026-05-19
+**Source:** CLAUDE.md (v2 base spec) + CLAUDE_v3_PATCH.md (v3 patch — wins where the two conflict)
+
+**The product.** KAI is an AI wellness companion for teenagers aged 13–18, built by Boost AI (JV of Cafecito AI and Madison AI Search) for client Offy. **Lev (16)** is Offy's son, the product owner, and first real user; he has final approval on voice and visual direction. The user perceives KAI as one warm "older sibling" character — internally it's two agents (**Mind** mental, **Body** physical) plus a routing classifier and a safety classifier. KAI is explicitly not therapy, not a fitness tracker, not a productivity app. Voice is honest, direct, occasionally funny, never preachy, never toxic-positive, never clinical.
+
+**The two agents.** **Mind** draws on adolescent psychology, identity-based habits, Stoic practice and meaning-making — internal scaffolding only, never named to the user. Handles check-ins, journaling, goals, sleep reflection, loneliness, screen-time awareness. Default 2–3 sentences (v3 tightened from v2's 2–4). **Body** draws on sports science, teen physiology, Huberman-style protocols. Handles workouts, food photos, hydration, mobility, body scans. All output runs through a forbidden-word filter. Forbidden everywhere: physique descriptors (fat/skinny/toned-as-aesthetic), body metrics (BMI, calories, target weight), comparisons ("for your age"), shame language.
+
+**Routing + safety.** Every message hits two classifiers in parallel: a **safety classifier** (always wins if it fires — routes to 988 crisis flow) and a **routing classifier** (Haiku 4.5, returns mental/physical/unclear; unclear → mental). User never sees this. **The safety surface is protected** — `safety/classifier`, `crisis-page`, `parental-consent`, `handoff`, and the safety middleware all require Evan Ratner approval for any change, even cosmetic. In this repo those map onto `workers/src/lib/safety.ts` and friends.
+
+**Home hero is Daily Score** — composite 0–100 = mental·40% + sleep·30% + mood·30%. v3 thresholds: 0–40 amber (never red), 41–70 violet, 71–100 green. Animated 8px ring, JetBrains Mono number, sub-scores horizontal-scroll on mobile, tap opens a bottom-sheet detail.
+
+**Highest-risk feature: body scan.** Three photos (front/side/back) with neutral white-outline silhouette guides. Client-side encrypted before R2 upload, no public R2 access. Output is posture/alignment only — never aesthetics, never body metrics. Hard delete on user request. Re-consent for under-16 on first use. Max 3 scans per 7 days. **Gate 5 is the highest-stakes gate**: 20 test images at 100% filter compliance, clinician review of 10 sample outputs, explicit Evan Ratner sign-off — no shortcut.
+
+**What v3 changes from v2.** Mind tighter (default 2–3 sentences, banned-phrase list expanded). Body food logging capped at 2 sentences. Score gets 8px ring + three color thresholds. Body scan: verbatim privacy copy, neutral silhouette, observation/action cards, 3-per-week cap. Onboarding step order locked. Tab bar = 4 tabs + persistent +. Group invite links expire 48h. Voice opens "Mental or physical today — or just want to talk?", 10-min cap. Safety architecture, Body forbidden language, crisis protocol, tech stack and approval hierarchy are unchanged.
+
+**Reporting line.** Seder day-to-day, Ratner for safety, Lev for voice/visual, Offy funds. Loop: work the graph, self-verify Done_when, halt at every Gate, escalate `requires_safety_review`, log `requires_lev_input`.
 
 ---

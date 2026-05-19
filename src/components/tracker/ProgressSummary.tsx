@@ -1,4 +1,4 @@
-import { Activity, Award, Brain, Flame, Target } from "lucide-react";
+import { Activity, Award, Brain, Flame } from "lucide-react";
 import { eventDisplayName, engineTotals, lastNDays } from "../../lib/tracker";
 import { useProgressStore } from "../../stores/progressStore";
 import { EvolvingCharacter } from "./EvolvingCharacter";
@@ -34,7 +34,7 @@ export function ProgressSummary() {
           </div>
           {events.length === 0 ? (
             <div className="grid min-h-32 place-items-center rounded-kai border border-line bg-paper p-4 text-center text-sm font-semibold leading-6 text-muted">
-              Complete one Body, Goals, or Reset action to start the chart.
+              Complete one Mental or Physical action to start the chart.
             </div>
           ) : (
             <div className="flex h-32 items-end gap-2 rounded-kai border border-line bg-paper p-3">
@@ -55,8 +55,7 @@ export function ProgressSummary() {
           <p className="eyebrow">engine balance</p>
           <div className="mt-3 space-y-2">
             <EngineTotal icon={<Activity />} label="Body" value={totals.physical} tone="text-sage" />
-            <EngineTotal icon={<Target />} label="Goals" value={totals.potential} tone="text-plum" />
-            <EngineTotal icon={<Brain />} label="Reset" value={totals.mental} tone="text-coral" />
+            <EngineTotal icon={<Brain />} label="Mental" value={totals.mental + totals.potential} tone="text-coral" />
           </div>
         </div>
       </div>

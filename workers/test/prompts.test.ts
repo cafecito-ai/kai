@@ -80,7 +80,7 @@ describe("renderEnginePrompt", () => {
     // Kai base
     expect(result).toContain('display name is "Sam"');
     // Engine block
-    expect(result).toContain("YOU ARE NOW IN THE PHYSICAL WELLNESS ENGINE");
+    expect(result).toContain("YOU ARE NOW IN THE PHYSICAL AGENT ENGINE");
     expect(result).toContain("DOMAIN FOCUS");
     expect(result).toContain("GROUNDED IN");
     expect(result).toContain("AVAILABLE ACTIONS");
@@ -104,5 +104,6 @@ describe("renderEnginePrompt", () => {
     expect(renderEnginePrompt("physical", baseContext())).toContain("no pain no gain");
     expect(renderEnginePrompt("potential", baseContext({ primaryEngine: "potential" }))).toContain("pleasing parents");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("Replace therapy");
+    expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("identity-based habits");
   });
 });

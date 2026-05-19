@@ -1,4 +1,4 @@
-import { Activity, Brain, Target } from "lucide-react";
+import { Activity, Brain } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useProgressStore } from "../../stores/progressStore";
 import { useUserStore } from "../../stores/userStore";
@@ -83,14 +83,14 @@ function TodayBar() {
 }
 
 function engineFromPath(pathname: string): "physical" | "potential" | "mental" | null {
-  if (pathname.startsWith("/engine/potential")) return "potential";
+  if (pathname.startsWith("/engine/potential")) return "mental";
   if (pathname.startsWith("/engine/mental")) return "mental";
   if (pathname.startsWith("/engine/physical")) return "physical";
   return null;
 }
 
 function laneMeta(engine: "physical" | "potential" | "mental") {
-  if (engine === "potential") return { label: "Goals", icon: Target, tone: "bg-goalsWash text-goals" };
-  if (engine === "mental") return { label: "Reset", icon: Brain, tone: "bg-resetWash text-reset" };
+  if (engine === "potential") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
+  if (engine === "mental") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
   return { label: "Body", icon: Activity, tone: "bg-bodyWash text-body" };
 }

@@ -8,7 +8,7 @@ export function EnginePanel({ title, intro, label = "Engine", accent = "text-plu
         eyebrow={label}
         title={
           <>
-            {title} <span className={`font-serif font-normal italic ${accent}`}>lane</span>
+            {title} <span className={`font-serif font-normal italic ${accent}`}>agent</span>
           </>
         }
         aside={

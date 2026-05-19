@@ -2,8 +2,8 @@ import type { ProgressEvent } from "./types";
 
 const ENGINE_LABELS: Record<ProgressEvent["engine"], string> = {
   physical: "Body",
-  potential: "Goals",
-  mental: "Reset",
+  potential: "Mental",
+  mental: "Mental",
   kai: "Kai"
 };
 

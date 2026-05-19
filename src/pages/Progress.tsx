@@ -13,7 +13,7 @@ export function Progress() {
           </>
         }
       >
-        Streaks, belts, and character growth reward reps across Body, Goals, and Reset without turning wellness into a scoreboard.
+        Streaks, belts, and character growth reward reps across Mental and Physical without turning wellness into a scoreboard.
       </AppHero>
       <ProgressSummary />
       <FriendCompare />

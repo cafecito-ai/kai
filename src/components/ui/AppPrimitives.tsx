@@ -24,11 +24,11 @@ export function AppSurface({
   className?: string;
   variant?: "plain" | "soft" | "dark" | "danger";
 }) {
-  const base = "min-w-0 overflow-hidden rounded-calm border shadow-sm";
+  const base = "min-w-0 overflow-hidden rounded-[30px] border shadow-sm backdrop-blur-xl";
   const variants = {
-    plain: `${base} border-line bg-white`,
-    soft: `${base} border-line bg-warmPaper`,
-    dark: `${base} border-ink bg-ink text-paper`,
+    plain: `${base} border-white/65 bg-white/80`,
+    soft: `${base} border-white/60 bg-white/60`,
+    dark: `${base} border-white/10 bg-ink/92 text-paper`,
     danger: `${base} border-danger/25 bg-dangerWash`
   };
   return <section className={`${variants[variant]} ${className}`}>{children}</section>;
@@ -94,13 +94,13 @@ export function SessionHero({
 }) {
   return (
     <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-stretch">
-      <div className="min-w-0 rounded-calm border border-line bg-white p-5 shadow-calm sm:p-7 lg:p-9">
+      <div className="min-w-0 rounded-[32px] border border-white/70 bg-white/80 p-5 shadow-calm backdrop-blur-xl sm:p-7 lg:p-9">
         <p className="eyebrow">{eyebrow}</p>
         <h1 className="mt-3 max-w-4xl break-words font-display text-3xl font-black leading-[0.96] tracking-normal text-ink sm:text-6xl lg:text-7xl">{title}</h1>
         {children && <div className="mt-4 max-w-2xl break-words text-base font-medium leading-7 text-muted">{children}</div>}
         {action && <div className="mt-6 flex flex-col gap-2 sm:flex-row">{action}</div>}
       </div>
-      {aside && <div className={`min-w-0 rounded-calm border border-line bg-warmPaper p-5 shadow-sm ${asideClassName}`}>{aside}</div>}
+      {aside && <div className={`min-w-0 rounded-[32px] border border-white/65 bg-white/60 p-5 shadow-sm backdrop-blur-xl ${asideClassName}`}>{aside}</div>}
     </section>
   );
 }
@@ -202,7 +202,7 @@ export function MetricPill({ label, value, tone = "neutral" }: { label: string; 
 
 export function AppWorkspace({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <section className={`min-w-0 overflow-hidden rounded-calm border border-line bg-white shadow-calm ${className}`}>
+    <section className={`min-w-0 overflow-hidden rounded-[32px] border border-white/70 bg-white/80 shadow-calm backdrop-blur-xl ${className}`}>
       {children}
     </section>
   );
@@ -224,7 +224,7 @@ export function SecondaryShelf({
   defaultOpen?: boolean;
 }) {
   return (
-    <details open={defaultOpen} className="group rounded-calm border border-line bg-white p-5 shadow-sm">
+    <details open={defaultOpen} className="group rounded-[30px] border border-white/65 bg-white/80 p-5 shadow-sm backdrop-blur-xl">
       <summary className="focus-ring -m-2 flex cursor-pointer list-none items-center justify-between gap-4 rounded-kai p-2">
         <span className="min-w-0">
           <span className="eyebrow block">{eyebrow}</span>

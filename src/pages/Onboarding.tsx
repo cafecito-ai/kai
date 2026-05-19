@@ -1,4 +1,4 @@
-import { Activity, Brain, ChevronLeft, Sparkles, ShieldAlert, Target } from "lucide-react";
+import { Activity, Brain, ChevronLeft, Sparkles, ShieldAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
@@ -52,9 +52,8 @@ const intakeQuestions = [
 ];
 
 const engineChoices: Array<{ id: EngineId | "unsure"; title: string; copy: string; icon: typeof Activity; tone: string }> = [
-  { id: "physical", title: "Body", copy: "Food, sleep, movement, energy.", icon: Activity, tone: "bg-bodyWash text-body" },
-  { id: "potential", title: "Goals", copy: "School, sport, ideas, future.", icon: Target, tone: "bg-goalsWash text-goals" },
-  { id: "mental", title: "Reset", copy: "Stress, feelings, self-talk.", icon: Brain, tone: "bg-resetWash text-reset" },
+  { id: "physical", title: "Physical", copy: "Food, sleep, movement, recovery.", icon: Activity, tone: "bg-bodyWash text-body" },
+  { id: "mental", title: "Mental", copy: "Stress, confidence, goals, social pressure.", icon: Brain, tone: "bg-resetWash text-reset" },
   { id: "unsure", title: "Not sure", copy: "Let Kai read the pattern.", icon: ShieldAlert, tone: "bg-careWash text-care" }
 ];
 
@@ -100,7 +99,7 @@ export function Onboarding() {
   const suggestedEngine = useMemo<EngineId>(() => {
     if (manualEngine !== "unsure") return manualEngine;
     const text = responses.join(" ").toLowerCase();
-    if (/goal|school|sport|business|future|music|instrument|college|project/.test(text)) return "potential";
+    if (/goal|school|sport|business|future|music|instrument|college|project|confidence|purpose|discipline|habit/.test(text)) return "mental";
     if (/stress|sad|anxious|friend|social|identity|emotion|pressure|overthink/.test(text)) return "mental";
     return "physical";
   }, [manualEngine, responses]);
@@ -122,7 +121,8 @@ export function Onboarding() {
     try {
       const keyedResponses = Object.fromEntries(intakeQuestions.map((question, index) => [`q${index + 1}`, responses[index] || question]));
       const intake = await api.submitIntake(keyedResponses);
-      const engine = manualEngine === "unsure" ? intake.suggestedEngine || suggestedEngine : manualEngine;
+      const rawEngine = manualEngine === "unsure" ? intake.suggestedEngine || suggestedEngine : manualEngine;
+      const engine = rawEngine === "potential" ? "mental" : rawEngine;
       await api.updateUser({
         kaiName: kaiName || "Kai",
         kaiTone,
@@ -308,8 +308,7 @@ function NextBack({
 
 function labelForEngine(engine: EngineId) {
   if (engine === "physical") return "Body";
-  if (engine === "potential") return "Goals";
-  return "Reset";
+  return "Mind";
 }
 
 function DemoCarryoverBanner({ build }: { build: DemoBuildSlice }) {

@@ -1,4 +1,4 @@
-import { Activity, Brain, CheckCircle2, Target, Wind } from "lucide-react";
+import { Activity, Brain, CheckCircle2, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { KaiChat } from "../components/kai/KaiChat";
 import { EvolvingCharacter } from "../components/tracker/EvolvingCharacter";
@@ -16,7 +16,8 @@ export function Home() {
   const belt = useProgressStore((state) => state.belt());
   const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
   const topEngine = topEngineLabel(events);
-  const activeLane = laneForEngine(primaryEngine);
+  const visibleEngine = primaryEngine === "potential" ? "mental" : primaryEngine;
+  const activeLane = laneForEngine(visibleEngine);
 
   return (
     <AppPage className="max-w-5xl">
@@ -27,9 +28,9 @@ export function Home() {
             <h1 className="mt-3 max-w-3xl font-display text-4xl font-black leading-[0.92] tracking-normal sm:text-6xl">
               {kaiName}, start with <span className="font-serif font-normal italic text-plum">{activeLane.label}.</span>
             </h1>
-            <p className="mt-4 max-w-xl text-base font-medium leading-7 text-muted">One check-in, one lane, one rep. Everything else can wait.</p>
+            <p className="mt-4 max-w-xl text-base font-medium leading-7 text-muted">One check-in, one agent, one rep. Everything else can wait.</p>
             <div className="mt-6">
-              <LaneTabs active={primaryEngine} onChange={setPrimaryEngine} />
+              <LaneTabs active={visibleEngine} onChange={setPrimaryEngine} />
             </div>
           </div>
 
@@ -41,8 +42,8 @@ export function Home() {
             <KaiChat embedded />
           </div>
           <div className="grid content-start gap-3 bg-warmPaper/60 p-4">
-            <TodayPlan engine={primaryEngine} todayCount={todayCount} />
-            <Link to={`/engine/${primaryEngine}`}>
+            <TodayPlan engine={visibleEngine} todayCount={todayCount} />
+            <Link to={`/engine/${visibleEngine}`}>
               <Button className="w-full">
                 Open {activeLane.label} rep
               </Button>
@@ -62,9 +63,9 @@ export function Home() {
   );
 }
 
-function LaneTabs({ active, onChange }: { active: "physical" | "potential" | "mental"; onChange: (engine: "physical" | "potential" | "mental") => void }) {
+function LaneTabs({ active, onChange }: { active: "physical" | "mental"; onChange: (engine: "physical" | "mental") => void }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-3" role="tablist" aria-label="Choose today's lane">
+    <div className="grid gap-2 sm:grid-cols-2" role="tablist" aria-label="Choose today's agent">
       {lanes.map((lane) => {
         const Icon = lane.icon;
         const selected = active === lane.id;
@@ -128,7 +129,7 @@ function RewardStrip({ level }: { level: number }) {
   );
 }
 
-function TodayPlan({ engine, todayCount }: { engine: "physical" | "potential" | "mental"; todayCount: number }) {
+function TodayPlan({ engine, todayCount }: { engine: "physical" | "mental"; todayCount: number }) {
   const lane = laneForEngine(engine);
   return (
     <section className="rounded-[22px] border border-line bg-white p-4">
@@ -152,30 +153,21 @@ function TodayPlan({ engine, todayCount }: { engine: "physical" | "potential" | 
 }
 
 const lanes = [
-  { id: "physical" as const, label: "Body", short: "Food, sleep, movement.", icon: Activity, tone: "bg-bodyWash text-body" },
-  { id: "potential" as const, label: "Goals", short: "One next move.", icon: Target, tone: "bg-goalsWash text-goals" },
-  { id: "mental" as const, label: "Reset", short: "Pressure and self-talk.", icon: Brain, tone: "bg-resetWash text-reset" }
+  { id: "mental" as const, label: "Mental", short: "Feelings, confidence, purpose.", icon: Brain, tone: "bg-resetWash text-reset" },
+  { id: "physical" as const, label: "Physical", short: "Food, sleep, movement.", icon: Activity, tone: "bg-bodyWash text-body" }
 ];
 
-function laneForEngine(engine: "physical" | "potential" | "mental") {
-  if (engine === "potential") {
-    return {
-      label: "Goals",
-      tone: "bg-goalsWash text-goals",
-      iconTone: "text-goals",
-      steps: ["Name the thing.", "Shrink it to ten minutes.", "Save the next move."]
-    };
-  }
+function laneForEngine(engine: "physical" | "mental") {
   if (engine === "mental") {
     return {
-      label: "Reset",
+      label: "Mental",
       tone: "bg-resetWash text-reset",
       iconTone: "text-reset",
-      steps: ["Name the feeling.", "Lower the volume.", "Choose the next kind move."]
+      steps: ["Name what is loud.", "Understand the pattern.", "Choose one honest next move."]
     };
   }
   return {
-    label: "Body",
+    label: "Physical",
     tone: "bg-bodyWash text-body",
     iconTone: "text-body",
     steps: ["Log one real thing.", "Notice energy or pressure.", "Keep it descriptive."]
@@ -191,8 +183,8 @@ function topEngineLabel(events: ReturnType<typeof useProgressStore.getState>["ev
 }
 
 function labelForEngine(engine: "physical" | "potential" | "mental" | "none") {
-  if (engine === "physical") return "Body";
-  if (engine === "potential") return "Goals";
-  if (engine === "mental") return "Reset";
+  if (engine === "physical") return "Physical";
+  if (engine === "potential") return "Mental";
+  if (engine === "mental") return "Mental";
   return "new";
 }

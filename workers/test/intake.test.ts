@@ -36,9 +36,9 @@ describe("parseEngineRouting", () => {
 });
 
 describe("keywordRouteEngine", () => {
-  it("routes to potential when goal-language is present", () => {
+  it("routes goal-language to mental because goals now live inside the Mental agent", () => {
     const result = keywordRouteEngine({ q1: "I want to make varsity soccer", q2: "", q3: "", q4: "", q5: "practice more", q6: "7" });
-    expect(result.engine).toBe("potential");
+    expect(result.engine).toBe("mental");
     expect(result.reasoning).toMatch(/goal|skill/i);
   });
 
@@ -78,7 +78,7 @@ function makeFakeEnv(opts: {
     AI: {
       async run(_model: string, input: Record<string, unknown>) {
         const prompt = String(input.prompt ?? "");
-        const isRouting = prompt.includes("Engines:");
+        const isRouting = prompt.includes("Agents:");
         if (isRouting) {
           if (opts.failRouting) throw new Error("routing model down");
           return { response: opts.routingResponse ?? '{"engine":"physical","reasoning":"default"}' };

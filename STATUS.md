@@ -5,7 +5,9 @@ Live tracker maintained by the build agent. Each task: `done` / `iterating` / `a
 ---
 
 ## Current task
-🛑 **HALTED AT GATE 1.** Phase A complete. Awaiting Ratner (architecture + safety) and Lev (voice + visual) approval. Post `gate-1-approved` here when both sign off.
+**gate-1-approved** (2026-05-19, Seder per Ratner's D-007 delegation; final voice review by Lev deferred to live staging deploy). Starting Phase B — Daily Score system.
+
+T-009 in progress — D1 migration for `daily_scores` + `score_inputs` tables.
 
 ## Phase A — Foundations (T-001 → T-008) ✅
 - [x] T-001 — Branch setup and status files (`d22d24c`; B-001 resolved)

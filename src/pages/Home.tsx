@@ -24,11 +24,13 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
+import { api } from "../lib/api";
 
 // ─────────────────────────────────────────────────────────────────────
 // Static demo data (Phase B replaces)
@@ -93,6 +95,35 @@ const DEMO_ACTIVITY: ActivityItem[] = [
 export function Home() {
   const greeting = greetingForNow();
   const navigate = useNavigate();
+  // Live data from /api/score/today, with the static demo as a fallback
+  // when the API is unreachable (local dev without Worker running, or
+  // first-launch states before any inputs).
+  const [data, setData] = useState<DailyScoreView>(DEMO_SCORE);
+  const [activity, setActivity] = useState<ActivityItem[]>(DEMO_ACTIVITY);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.getDailyScoreToday();
+        if (cancelled) return;
+        // Only swap to live data when we have an actual final score —
+        // otherwise the user lands on a "0/100" home, which is bleak
+        // and not what an empty state should communicate.
+        if (res.score.final != null) {
+          setData(toDailyScoreView(res));
+        }
+        if (res.inputs.length > 0) {
+          setActivity(res.inputs.slice(0, 3).map(scoreInputToActivityItem));
+        }
+      } catch {
+        // API unreachable — keep the demo data so the page never blanks.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
@@ -108,7 +139,7 @@ export function Home() {
           <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs">
             <Flame size={12} className="text-accent-warm" />
             <span className="font-medium text-text-primary">
-              {DEMO_SCORE.streak}-day streak
+              {data.streak}-day streak
             </span>
           </div>
         </div>
@@ -133,28 +164,28 @@ export function Home() {
       </header>
 
       {/* Daily Score hero */}
-      <DailyScoreCard data={DEMO_SCORE} />
+      <DailyScoreCard data={data} />
 
       {/* Sub-scores — horizontal scroll on mobile */}
       <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
         <SubScoreCard
           icon={<Brain size={16} />}
           label="Mind"
-          value={`${DEMO_SCORE.mind.value}`}
-          unit={`/${DEMO_SCORE.mind.outOf}`}
+          value={`${data.mind.value}`}
+          unit={`/${data.mind.outOf}`}
           color="cool"
         />
         <SubScoreCard
           icon={<Moon size={16} />}
           label="Sleep"
-          value={`${DEMO_SCORE.sleep.value}`}
-          unit={DEMO_SCORE.sleep.unit}
+          value={`${data.sleep.value}`}
+          unit={data.sleep.unit}
           color="violet"
         />
         <SubScoreCard
           icon={<Heart size={16} />}
           label="Mood"
-          value={`${DEMO_SCORE.mood.value}`}
+          value={`${data.mood.value}`}
           unit=""
           color="warm"
         />
@@ -174,7 +205,7 @@ export function Home() {
       </KaiMessage>
 
       {/* Recent — 3 rows */}
-      <RecentActivity items={DEMO_ACTIVITY} />
+      <RecentActivity items={activity} />
     </div>
   );
 }
@@ -306,6 +337,105 @@ function RecentActivity({ items }: { items: ActivityItem[] }) {
 // ─────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────
+
+// Adapt the /api/score/today response into the DailyScoreView the UI uses.
+// Live data only fills in what the API has; missing sub-scores fall back to
+// the demo values so the visual is never empty.
+function toDailyScoreView(
+  res: Awaited<ReturnType<typeof api.getDailyScoreToday>>,
+): DailyScoreView {
+  const { score } = res;
+  return {
+    score: score.final ?? DEMO_SCORE.score,
+    bandLabel: bandToLabel(score.band),
+    trend: 0,                              // Phase B follow-up: yesterday delta
+    streak: countConsecutiveDays(res.inputs),
+    mind: { value: score.mental ?? 0, outOf: 100 },
+    sleep: { value: score.sleep ?? 0, outOf: 100, unit: "" },
+    mood: { value: score.mood ?? 0, outOf: 100 },
+  };
+}
+
+function bandToLabel(b: "low" | "mid" | "high" | null): string {
+  if (b === "high") return "Strong start";
+  if (b === "mid") return "Steady";
+  if (b === "low") return "Easy day";
+  return "Getting started";
+}
+
+function countConsecutiveDays(_inputs: ActivityItem[] | unknown[]): number {
+  // Streak is a property of historical score_inputs, not today's set.
+  // T-013 follow-up will compute this from a dedicated query. For now,
+  // we surface a non-zero streak when there are inputs today so the UI
+  // doesn't render an awkward "0-day streak" beside good data.
+  return _inputs.length > 0 ? 1 : 0;
+}
+
+// Turn an API score-input row into something RecentActivity can render.
+function scoreInputToActivityItem(
+  row: { source: string; value: unknown; createdAt: string },
+): ActivityItem {
+  const map: Record<
+    string,
+    { icon: LucideIcon; iconTint: string; title: string }
+  > = {
+    check_in: {
+      icon: Brain,
+      iconTint: "text-accent-cool",
+      title: "Check-in",
+    },
+    journal: {
+      icon: Brain,
+      iconTint: "text-accent-cool",
+      title: "Journal entry",
+    },
+    sleep_log: {
+      icon: Moon,
+      iconTint: "text-accent",
+      title: "Sleep logged",
+    },
+    workout: {
+      icon: ActivityIcon,
+      iconTint: "text-accent-warm",
+      title: "Workout logged",
+    },
+    food_log: {
+      icon: ActivityIcon,
+      iconTint: "text-accent-warm",
+      title: "Food logged",
+    },
+    goal_progress: {
+      icon: Sparkles,
+      iconTint: "text-success",
+      title: "Goal progress",
+    },
+    energy_check_in: {
+      icon: Heart,
+      iconTint: "text-accent-warm",
+      title: "Energy check-in",
+    },
+  };
+  const m = map[row.source] ?? {
+    icon: Brain,
+    iconTint: "text-text-secondary",
+    title: row.source,
+  };
+  return {
+    icon: m.icon,
+    iconTint: m.iconTint,
+    title: m.title,
+    meta: relativeTime(row.createdAt),
+  };
+}
+
+function relativeTime(iso: string): string {
+  const t = new Date(iso).getTime();
+  const diffMin = Math.round((Date.now() - t) / 60000);
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 60 * 24) return `${Math.round(diffMin / 60)}h ago`;
+  return "Yesterday";
+}
 
 function greetingForNow(now = new Date()): {
   eyebrow: string;

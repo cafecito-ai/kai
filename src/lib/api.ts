@@ -67,6 +67,48 @@ export const api = {
     }),
   getCurrentConversation: (engine: EngineId | "kai" = "kai") =>
     request<{ conversationId: string | null; messages: ChatMessage[] }>(`/api/conversations/current?engine=${engine}`),
+  getDailyScoreToday: () =>
+    request<{
+      date: string;
+      score: {
+        userId: string;
+        date: string;
+        mental: number | null;
+        sleep: number | null;
+        mood: number | null;
+        final: number | null;
+        band: "low" | "mid" | "high" | null;
+        updatedAt: string;
+      };
+      inputs: Array<{
+        id: string;
+        userId: string;
+        date: string;
+        source: string;
+        value: unknown;
+        createdAt: string;
+      }>;
+      suggestions: string[];
+    }>("/api/score/today"),
+  recordScoreInput: (body: {
+    source: string;
+    value: unknown;
+    date?: string;
+  }) =>
+    request<{ inputId: string; score: unknown }>("/api/score/input", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getRecentScoreInput: () =>
+    request<{
+      input: {
+        id: string;
+        date: string;
+        source: string;
+        value: unknown;
+        createdAt: string;
+      } | null;
+    }>("/api/score/recent-input"),
   updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean; designPreference?: string }) =>
     request("/api/user/me", { method: "PATCH", body: JSON.stringify(body) }),
   submitIntake: (responses: Record<string, string>) =>

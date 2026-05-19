@@ -1,18 +1,18 @@
-import { Activity, ArrowRight, Brain, ShieldAlert, Target } from "lucide-react";
+import { Activity, ArrowRight, Brain, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ActionTile, AppPage, AppSurface, FlowList, KaiMark, SessionHero } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { useUserStore } from "../stores/userStore";
 
 const lanes = [
-  { title: "Body", path: "/engine/physical", icon: Activity, tone: "body" as const, copy: "Food, sleep, movement." },
-  { title: "Goals", path: "/engine/potential", icon: Target, tone: "goals" as const, copy: "School, sport, projects." },
-  { title: "Reset", path: "/engine/mental", icon: Brain, tone: "reset" as const, copy: "Pressure, feelings, self-talk." }
+  { title: "Physical", path: "/engine/physical", icon: Activity, tone: "body" as const, copy: "Food camera, movement, sleep, recovery." },
+  { title: "Mental", path: "/engine/mental", icon: Brain, tone: "reset" as const, copy: "Feelings, confidence, purpose, social pressure." }
 ];
 
 export function Landing() {
   const { kaiName, primaryEngine, onboardingCompletedAt } = useUserStore();
-  const startPath = onboardingCompletedAt ? `/engine/${primaryEngine}` : "/onboarding";
+  const visibleEngine = primaryEngine === "potential" ? "mental" : primaryEngine;
+  const startPath = onboardingCompletedAt ? `/engine/${visibleEngine}` : "/onboarding";
 
   return (
     <AppPage className="max-w-5xl">
@@ -27,7 +27,7 @@ export function Landing() {
           <>
             <Link to={startPath}>
               <Button className="w-full sm:w-auto">
-                {onboardingCompletedAt ? "Open today's lane" : "Start with Kai"}
+              {onboardingCompletedAt ? "Open today's agent" : "Start with Kai"}
                 <ArrowRight size={18} />
               </Button>
             </Link>
@@ -46,7 +46,7 @@ export function Landing() {
             <FlowList
               items={[
                 { label: "Say the loud part", copy: "A messy sentence is enough." },
-                { label: "Pick the lane", copy: "Body, Goals, or Reset." },
+                { label: "Pick the agent", copy: "Mental or Physical." },
                 { label: "Do one rep", copy: "Small enough to finish today." }
               ]}
             />
@@ -54,13 +54,13 @@ export function Landing() {
         }
       >
         <p>
-            Tell Kai what is loud today. It helps you choose the right lane and turn it into one small move.
+            Tell Kai what is loud today. It helps you choose the right agent and turn it into one small move.
         </p>
       </SessionHero>
 
-      <section aria-label="Choose a lane" className="grid gap-2 sm:grid-cols-3">
+      <section aria-label="Choose an agent" className="grid gap-2 sm:grid-cols-2">
         {lanes.map((lane) => (
-          <ActionTile key={lane.path} as={Link} to={lane.path} icon={lane.icon} title={lane.title} copy={lane.copy} tone={lane.tone} active={lane.path.endsWith(primaryEngine)} />
+          <ActionTile key={lane.path} as={Link} to={lane.path} icon={lane.icon} title={lane.title} copy={lane.copy} tone={lane.tone} active={lane.path.endsWith(visibleEngine)} />
         ))}
       </section>
 

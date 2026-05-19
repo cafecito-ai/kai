@@ -65,6 +65,6 @@ describe("tracker", () => {
   });
 
   it("formats activity names for teens", () => {
-    expect(eventDisplayName({ id: "1", engine: "potential", eventType: "goal_hit", eventValue: 40, occurredAt: "2026-05-11T00:00:00Z" })).toBe("Goals: goal hit");
+    expect(eventDisplayName({ id: "1", engine: "potential", eventType: "goal_hit", eventValue: 40, occurredAt: "2026-05-11T00:00:00Z" })).toBe("Mental: goal hit");
   });
 });

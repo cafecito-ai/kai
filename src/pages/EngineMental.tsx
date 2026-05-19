@@ -1,5 +1,5 @@
-import { Brain } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Brain, CheckCircle2, RefreshCw, Target } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { BreathingPlayer } from "../components/mental/BreathingPlayer";
@@ -11,18 +11,35 @@ import { SocialMediaReset } from "../components/mental/SocialMediaReset";
 import { ThoughtReframe } from "../components/mental/ThoughtReframe";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { SecondaryShelf } from "../components/ui/AppPrimitives";
+import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
-import type { EngineEntry } from "../lib/types";
+import type { EngineEntry, Goal } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
+import { StrengthsDiscoveryCard } from "./EnginePotential";
+
+const StressPrimer = lazy(() =>
+  import("../components/physical/StressPrimer").then((module) => ({ default: module.StressPrimer }))
+);
+const IdentityPrimer = lazy(() =>
+  import("../components/physical/IdentityPrimer").then((module) => ({ default: module.IdentityPrimer }))
+);
+const RelationshipsPrimer = lazy(() =>
+  import("../components/physical/RelationshipsPrimer").then((module) => ({ default: module.RelationshipsPrimer }))
+);
 
 export function EngineMental() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalTitle, setGoalTitle] = useState("");
+  const [nextStep, setNextStep] = useState("Spend 10 minutes on the smallest useful version.");
+  const [reframe, setReframe] = useState("This still matters. I can make the next move smaller without quitting.");
   // All four flows (feelings, thought, social, letter) are now structured
   // components below. No remaining inline-action items.
 
   useEffect(() => {
     void api.getEngineEntries("mental").then((result) => setEntries(result.entries)).catch(() => undefined);
+    void api.getGoals().then((result) => setGoals(result.goals)).catch(() => undefined);
   }, []);
 
   async function completeReset(input: { eventType: string; title: string; payload?: unknown; eventValue?: number }) {
@@ -49,8 +66,28 @@ export function EngineMental() {
     }
   }
 
+  async function createGoal() {
+    const title = goalTitle.trim();
+    if (!title) return;
+    const fallback: Goal = { id: crypto.randomUUID(), category: "custom", title, status: "active" };
+    setGoals((items) => [fallback, ...items]);
+    setGoalTitle("");
+    try {
+      const result = await api.createGoal({ category: "custom", title, description: "Created inside the Mental agent." });
+      setGoals((items) => items.map((goal) => (goal.id === fallback.id ? result.goal : goal)));
+    } catch {
+      // Keep the optimistic goal in demo mode.
+    }
+    await completeReset({
+      eventType: "goal_created",
+      title,
+      payload: { title, source: "mental_agent" },
+      eventValue: 22
+    });
+  }
+
   return (
-    <EnginePanel title="Mental wellness" label="Reset" accent="text-coral" intro="Self-esteem, pressure, emotions, and resets. Always wellness. Never diagnosis.">
+    <EnginePanel title="Mental" label="Mind" accent="text-coral" intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical.">
       <ClinicalReviewBanner />
       <DisclosureBanner />
       <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
@@ -129,6 +166,126 @@ export function EngineMental() {
           />
         </div>
       </SecondaryShelf>
+      <Suspense fallback={null}>
+        <StressPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "mental",
+              eventType: "stress_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+        <IdentityPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "mental",
+              eventType: "identity_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+        <RelationshipsPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "mental",
+              eventType: "relationships_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+      </Suspense>
+      <SecondaryShelf eyebrow="purpose + confidence" title="Goals now live inside Mental." summary="Identity-based habits, strengths, discipline, confidence, and purpose belong with the mind, not in a separate lane." count="4 tools" defaultOpen>
+        <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+            <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset">
+              <Target />
+            </div>
+            <p className="eyebrow">identity habit</p>
+            <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make one next move visible.</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-muted">
+              Goals are treated as identity practice: small systems, honest effort, no fake hype.
+            </p>
+            <div className="mt-4 grid gap-2">
+              <input
+                className="field"
+                value={goalTitle}
+                onChange={(event) => setGoalTitle(event.target.value)}
+                placeholder="One thing I want to build, practice, repair, or try"
+              />
+              <Button onClick={() => void createGoal()} disabled={!goalTitle.trim()}>
+                Add goal
+              </Button>
+            </div>
+            <div className="mt-4 space-y-2">
+              {goals.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No goals yet. Add one tiny thing worth doing this week.</p>}
+              {goals.slice(0, 4).map((goal) => (
+                <button
+                  key={goal.id}
+                  type="button"
+                  className="focus-ring flex w-full items-center gap-3 rounded-kai border border-line bg-paper p-3 text-left transition hover:bg-white"
+                  onClick={() => {
+                    setGoals((items) => items.map((item) => (item.id === goal.id ? { ...item, status: "achieved" } : item)));
+                    void api.updateGoal(goal.id, { status: "achieved" }).catch(() => undefined);
+                    void completeReset({ eventType: "goal_completed", title: goal.title, payload: { goalId: goal.id }, eventValue: 40 });
+                  }}
+                >
+                  <CheckCircle2 className={goal.status === "achieved" ? "text-sage" : "text-soft"} />
+                  <span className="font-semibold">{goal.title}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <div className="grid gap-4">
+            <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+              <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset">
+                <Target />
+              </div>
+              <p className="eyebrow">next step planner</p>
+              <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Shrink it until it can start.</h2>
+              <textarea className="field mt-4 min-h-24" value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
+              <Button
+                className="mt-4"
+                variant="secondary"
+                onClick={() => void completeReset({ eventType: "next_step_planned", title: "Next step", payload: { nextStep }, eventValue: 22 })}
+              >
+                Save next step
+              </Button>
+            </section>
+            <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+              <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset">
+                <RefreshCw />
+              </div>
+              <p className="eyebrow">reframe</p>
+              <h2 className="mt-2 font-display text-2xl font-black tracking-normal">A goal can change without becoming a failure.</h2>
+              <textarea className="field mt-4 min-h-24" value={reframe} onChange={(event) => setReframe(event.target.value)} />
+              <Button
+                className="mt-4"
+                variant="secondary"
+                onClick={() => void completeReset({ eventType: "goal_reframed", title: "Goal reframe", payload: { reframe }, eventValue: 24 })}
+              >
+                Save reframe
+              </Button>
+            </section>
+          </div>
+        </div>
+        <div className="mt-4">
+          <StrengthsDiscoveryCard
+            onComplete={(summary) =>
+              void completeReset({
+                eventType: "strengths_discovery",
+                title: "Strengths summary",
+                payload: { summary, source: "mental_agent" },
+                eventValue: 60
+              })
+            }
+          />
+        </div>
+      </SecondaryShelf>
       <SecondaryShelf eyebrow="reset history" title="Recent reset work" count={`${entries.length} saved`}>
         <div className="space-y-2">
           {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Reset entries yet. Complete one check-in, breathing session, or letter.</p>}
@@ -145,8 +302,14 @@ export function EngineMental() {
       </SecondaryShelf>
       <EngineGuidesIndex
         engine="mental"
-        title="Mind + feelings guides"
-        intro="Specific topics across emotion, identity, stress, grief, trauma, purpose. Each is short. Kai links here in chat when topics come up."
+        title="Mind + growth guides"
+        intro="Emotion, identity, stress, confidence, relationships, purpose, and habits. Each is short. Kai links here in chat when topics come up."
+      />
+      <EngineGuidesIndex
+        engine="potential"
+        eyebrow="legacy goals guides"
+        title="Purpose + doing guides"
+        intro="The old Goals lane is now part of Mental: focus, motivation, money, decisions, and skill-building."
       />
     </EnginePanel>
   );

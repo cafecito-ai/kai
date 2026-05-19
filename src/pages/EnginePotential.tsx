@@ -176,7 +176,7 @@ function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");
 }
 
-function StrengthsDiscoveryCard({ onComplete }: { onComplete: (summary: string) => void }) {
+export function StrengthsDiscoveryCard({ onComplete }: { onComplete: (summary: string) => void }) {
   const [mode, setMode] = useState<"idle" | "answering" | "summary">("idle");
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState("");

@@ -1,12 +1,11 @@
-import { Activity, Brain, HeartPulse, Home, Settings, ShieldAlert, Target } from "lucide-react";
+import { Activity, Brain, HeartPulse, Home, Settings, ShieldAlert } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { KaiMark } from "../ui/AppPrimitives";
 
 const links = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/engine/physical", label: "Body", icon: Activity },
-  { to: "/engine/potential", label: "Goals", icon: Target },
-  { to: "/engine/mental", label: "Reset", icon: Brain },
+  { to: "/engine/mental", label: "Mind", icon: Brain },
   { to: "/progress", label: "Progress", icon: HeartPulse },
   { to: "/settings", label: "Settings", icon: Settings }
 ];

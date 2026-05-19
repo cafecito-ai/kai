@@ -1,5 +1,5 @@
-import { Camera, CheckCircle2, Dumbbell, Moon, Utensils, Wind } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Camera, CheckCircle2, Dumbbell, Eye, Lock, Moon, ScanLine, ShieldCheck, Utensils, Wind } from "lucide-react";
+import { useEffect, useState } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { EnginePanel } from "../components/engines/EnginePanel";
 import { SecondaryShelf } from "../components/ui/AppPrimitives";
@@ -18,16 +18,6 @@ import { localSafetyCheck } from "../lib/safety";
 import type { EngineEntry, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
-const StressPrimer = lazy(() =>
-  import("../components/physical/StressPrimer").then((module) => ({ default: module.StressPrimer }))
-);
-const IdentityPrimer = lazy(() =>
-  import("../components/physical/IdentityPrimer").then((module) => ({ default: module.IdentityPrimer }))
-);
-const RelationshipsPrimer = lazy(() =>
-  import("../components/physical/RelationshipsPrimer").then((module) => ({ default: module.RelationshipsPrimer }))
-);
-
 export function EnginePhysical() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
@@ -38,6 +28,8 @@ export function EnginePhysical() {
   const [foodPhotoMessage, setFoodPhotoMessage] = useState("");
   const [foodPhotoResult, setFoodPhotoResult] = useState<FoodPhotoResult | null>(null);
   const [mealContext, setMealContext] = useState<MealContextId>("school_lunch");
+  const [bodyScanPhoto, setBodyScanPhoto] = useState<File | null>(null);
+  const [bodyScanSaved, setBodyScanSaved] = useState(false);
 
   useEffect(() => {
     void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
@@ -151,8 +143,26 @@ export function EnginePhysical() {
     }
   }
 
+  async function saveBodyScanPreview() {
+    setBodyScanSaved(false);
+    await completeEntry({
+      entryType: "body_scan_preview",
+      title: "Private body scan preview",
+      payload: {
+        hasPhoto: Boolean(bodyScanPhoto),
+        mode: "private_preview",
+        focus: ["posture", "mobility", "readiness", "confidence"],
+        guardrails: ["no body score", "no comparison", "no attractiveness rating", "teen-safe framing"]
+      },
+      eventType: "body_scan_preview",
+      eventValue: 18
+    });
+    setBodyScanSaved(true);
+    setBodyScanPhoto(null);
+  }
+
   return (
-    <EnginePanel title="Physical wellness" label="Body" accent="text-sage" intro="Food, movement, sleep, stretching, and breathing. Useful, pattern-aware, never obsessive.">
+    <EnginePanel title="Physical" label="Body" accent="text-sage" intro="Food camera, movement, sleep, hydration, posture, mobility, and recovery. Useful, pattern-aware, never obsessive.">
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="rounded-calm border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
           <p className="eyebrow text-soft">start here</p>
@@ -306,38 +316,63 @@ export function EnginePhysical() {
           />
         </div>
       </SecondaryShelf>
-      <Suspense fallback={null}>
-        <StressPrimer
-          onRead={({ articleId }) =>
-            addEvent({
-              engine: "physical",
-              eventType: "stress_primer_read",
-              eventValue: 6,
-              payload: { articleId }
-            })
-          }
-        />
-        <IdentityPrimer
-          onRead={({ articleId }) =>
-            addEvent({
-              engine: "physical",
-              eventType: "identity_primer_read",
-              eventValue: 6,
-              payload: { articleId }
-            })
-          }
-        />
-        <RelationshipsPrimer
-          onRead={({ articleId }) =>
-            addEvent({
-              engine: "physical",
-              eventType: "relationships_primer_read",
-              eventValue: 6,
-              payload: { articleId }
-            })
-          }
-        />
-      </Suspense>
+      <SecondaryShelf eyebrow="private beta" title="Full body scan preview." summary="A camera-first flow for posture, mobility, recovery, and progress context. No body score. No comparison." count="safe preview" defaultOpen>
+        <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="rounded-calm border border-line bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-5 grid size-12 place-items-center rounded-full bg-bodyWash text-body">
+              <ScanLine />
+            </div>
+            <p className="eyebrow">body scan</p>
+            <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Posture and readiness, not appearance.</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-muted">
+              This v1 preview captures the experience and privacy model. Kai frames scans around alignment, tightness, recovery, and useful mobility suggestions.
+            </p>
+            <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-line bg-paper p-3 text-sm font-black text-ink hover:border-ink/35">
+              <Camera size={18} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{bodyScanPhoto ? bodyScanPhoto.name : "Take or choose a private scan photo"}</span>
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(event) => {
+                  setBodyScanSaved(false);
+                  setBodyScanPhoto(event.target.files?.[0] ?? null);
+                }}
+              />
+            </label>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <BodyScanPrinciple icon={<Lock />} title="Private by default" copy="The teen controls whether a scan is saved. No social sharing." />
+              <BodyScanPrinciple icon={<ShieldCheck />} title="No body score" copy="Kai never rates attractiveness, size, leanness, or compares bodies." />
+              <BodyScanPrinciple icon={<Eye />} title="Pattern view" copy="Progress means posture, comfort, recovery, and confidence over time." />
+              <BodyScanPrinciple icon={<Wind />} title="Next move" copy="Suggestions stay practical: stretch, breathe, recover, hydrate, adjust form." />
+            </div>
+            {bodyScanSaved && (
+              <p className="mt-4 rounded-kai border border-sage/25 bg-bodyWash p-3 text-sm font-black text-body">
+                Scan preview saved as a private Body rep.
+              </p>
+            )}
+            <Button className="mt-4" variant="secondary" onClick={() => void saveBodyScanPreview()}>
+              Save private scan preview
+            </Button>
+          </section>
+          <section className="rounded-calm border border-line bg-warmPaper p-5 shadow-sm sm:p-6">
+            <p className="eyebrow">what Kai can say</p>
+            <h3 className="mt-2 font-display text-2xl font-black tracking-normal">Supportive read, not a diagnosis.</h3>
+            <div className="mt-4 space-y-3">
+              {[
+                "Your shoulders look a little rounded today. Try two minutes of chest opener and see if breathing feels easier.",
+                "This looks like a recovery day, not a push day. Mobility and sleep beat forcing intensity.",
+                "Progress timeline is private. We are watching confidence and function, not chasing a perfect body."
+              ].map((copy) => (
+                <p key={copy} className="rounded-kai border border-line bg-white p-3 text-sm font-semibold leading-6 text-muted">
+                  {copy}
+                </p>
+              ))}
+            </div>
+          </section>
+        </div>
+      </SecondaryShelf>
       <SecondaryShelf eyebrow="body history" title="Recent physical entries" count={`${entries.length} saved`}>
         <div className="space-y-2">
           {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Body entries yet. Log one fuel, movement, sleep, or recovery note.</p>}
@@ -452,5 +487,15 @@ function ActionCard({ icon, title, copy, action, onClick }: { icon: React.ReactN
       <p className="my-3 text-sm leading-6 text-muted">{copy}</p>
       <Button variant="secondary" onClick={onClick}>{action}</Button>
     </section>
+  );
+}
+
+function BodyScanPrinciple({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {
+  return (
+    <div className="rounded-kai border border-line bg-white p-3">
+      <div className="mb-2 text-body">{icon}</div>
+      <h3 className="text-sm font-black">{title}</h3>
+      <p className="mt-1 text-xs font-semibold leading-5 text-muted">{copy}</p>
+    </div>
   );
 }

@@ -23,6 +23,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { appendLocalInput, offlineReflection } from "../lib/local-score";
 
 type Phase = "form" | "submitting" | "done" | "error";
 
@@ -54,6 +55,15 @@ export function CheckIn() {
   async function submit() {
     if (mood == null) return;
     setPhase("submitting");
+
+    // ALWAYS write to local store first so /home reflects the check-in
+    // immediately, regardless of whether the Worker is reachable.
+    appendLocalInput({
+      date: new Date().toISOString().slice(0, 10),
+      source: "check_in",
+      value: { mood, mind, better },
+    });
+
     try {
       const res = await api.submitCheckIn({
         mood,
@@ -62,16 +72,15 @@ export function CheckIn() {
       });
       setReflection(
         res.reflection ||
-          "Got it. Thanks for checking in — KAI's saved this and the score has updated.",
+          offlineReflection(mood, mind, better),
       );
       setDuplicateInWindow(res.duplicateInWindow);
       setPhase("done");
     } catch {
-      // Offline / Worker not running. Still log the check-in locally so
-      // the user feels heard, and use a fallback reflection.
-      setReflection(
-        "Got it — saved on this device. KAI will pick it up once you're back online.",
-      );
+      // Worker unreachable. The local store already has this check-in,
+      // so /home updates correctly. Use a smart mood-keyed fallback so
+      // the reflection is still meaningful.
+      setReflection(offlineReflection(mood, mind, better));
       setPhase("done");
     }
   }

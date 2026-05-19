@@ -31,6 +31,11 @@ import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
 import { api } from "../lib/api";
+import {
+  computeLocalScore,
+  readLocalInputs,
+  type LocalInput,
+} from "../lib/local-score";
 
 // ─────────────────────────────────────────────────────────────────────
 // Static demo data (Phase B replaces)
@@ -104,20 +109,52 @@ export function Home() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Tier 1 — try the live API.
       try {
         const res = await api.getDailyScoreToday();
         if (cancelled) return;
-        // Only swap to live data when we have an actual final score —
-        // otherwise the user lands on a "0/100" home, which is bleak
-        // and not what an empty state should communicate.
         if (res.score.final != null) {
           setData(toDailyScoreView(res));
         }
         if (res.inputs.length > 0) {
           setActivity(res.inputs.slice(0, 3).map(scoreInputToActivityItem));
+          return; // API had data — done
         }
       } catch {
-        // API unreachable — keep the demo data so the page never blanks.
+        /* fall through to local */
+      }
+
+      // Tier 2 — local-only inputs (check-ins logged before the Worker
+      // is wired). Mirrors the same calculator the Worker uses so the
+      // score the user sees is real, just computed in the browser.
+      if (cancelled) return;
+      const inputs = readLocalInputs();
+      if (inputs.length === 0) return; // Tier 3 — demo data stays
+      const local = computeLocalScore(inputs);
+      const todayInputs = inputs.filter(
+        (i) => i.date === new Date().toISOString().slice(0, 10),
+      );
+      if (local.final != null) {
+        setData({
+          score: local.final,
+          bandLabel:
+            local.band === "high"
+              ? "Strong start"
+              : local.band === "mid"
+                ? "Steady"
+                : "Easy day",
+          trend: 0,
+          streak: local.streak,
+          mind: { value: local.mental ?? 0, outOf: 100 },
+          sleep: { value: local.sleep ?? 0, outOf: 100, unit: "" },
+          mood: { value: local.mood ?? 0, outOf: 100 },
+        });
+      }
+      const latestThree = [...todayInputs]
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .slice(0, 3);
+      if (latestThree.length > 0) {
+        setActivity(latestThree.map(localInputToActivityItem));
       }
     })();
     return () => {
@@ -426,6 +463,32 @@ function scoreInputToActivityItem(
     title: m.title,
     meta: relativeTime(row.createdAt),
   };
+}
+
+function localInputToActivityItem(input: LocalInput): ActivityItem {
+  // Map local source → row. For check_in we surface the mood emoji so the
+  // user sees their own answer reflected back, not just "Check-in".
+  if (input.source === "check_in") {
+    const mood = (input.value as { mood?: number }).mood;
+    const labels: Record<number, string> = {
+      1: "Really rough",
+      2: "Off",
+      3: "Okay",
+      4: "Pretty good",
+      5: "Really good",
+    };
+    return {
+      icon: Brain,
+      iconTint: "text-accent-cool",
+      title: `Check-in · ${labels[mood ?? 3] ?? "logged"}`,
+      meta: relativeTime(input.createdAt),
+    };
+  }
+  return scoreInputToActivityItem({
+    source: input.source,
+    value: input.value,
+    createdAt: input.createdAt,
+  });
 }
 
 function relativeTime(iso: string): string {

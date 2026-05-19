@@ -3,7 +3,7 @@
 // phases its functionality will move here. T-004 just needs this to exist
 // so the tabbar's Profile tab has a destination.
 
-import { ChevronRight, Settings as SettingsIcon, User } from "lucide-react";
+import { ChevronRight, Settings as SettingsIcon, Target, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function Profile() {
@@ -22,6 +22,25 @@ export function Profile() {
       </div>
 
       <div className="mt-8 space-y-2">
+        <Link
+          to="/goals"
+          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted"
+        >
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-cool-soft">
+              <Target size={16} className="text-accent-cool" />
+            </span>
+            <span>
+              <span className="block text-sm font-medium text-text-primary">
+                Goals
+              </span>
+              <span className="block text-xs text-text-secondary">
+                Identity-based · max 3 active
+              </span>
+            </span>
+          </span>
+          <ChevronRight size={18} className="text-text-muted" />
+        </Link>
         <Link
           to="/settings"
           className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted"

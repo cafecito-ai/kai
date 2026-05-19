@@ -11,6 +11,7 @@ import {
   Dumbbell,
   Moon,
   NotebookPen,
+  Target,
   X,
 } from "lucide-react";
 import { useEffect } from "react";
@@ -51,6 +52,13 @@ const ACTIONS = [
     icon: Moon,
     tint: "bg-accent-soft text-accent",
     to: "/sleep/log",
+  },
+  {
+    label: "Set a goal",
+    blurb: "Identity-based, never task-based.",
+    icon: Target,
+    tint: "bg-accent-cool-soft text-accent-cool",
+    to: "/goals",
   },
 ] as const;
 

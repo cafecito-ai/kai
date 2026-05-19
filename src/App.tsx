@@ -16,6 +16,7 @@ import { DesignTokens } from "./pages/DesignTokens";
 import { EngineMental } from "./pages/EngineMental";
 import { EnginePhysical } from "./pages/EnginePhysical";
 import { ForParents } from "./pages/ForParents";
+import { Goals } from "./pages/Goals";
 import { Groups } from "./pages/Groups";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
@@ -76,6 +77,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />
           <Route path="/sleep/log" element={protectedOnboarding(<SleepLog />)} />
+          <Route path="/goals" element={protectedOnboarding(<Goals />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />

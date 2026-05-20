@@ -96,3 +96,21 @@ Append-only log. Every non-trivial decision (especially when picking the conserv
 **Patterns we surface:** mood trend (3+ days monotonic), mood swing (≥1.5 points over 5 days), sleep streak (3+ nights <6h), sleep variance (>2.5h stddev over 7 days), journaling habit/drop-off, week-over-week score lift/dip. Max 5 patterns per user. Stored in `user_patterns` with 14-day TTL. Recomputed by the daily Cloudflare cron in the existing `scheduled` handler.
 
 ---
+
+## D-019 — T-028 body scan: scaffold-grade encryption + storage, flagged for Ratner review
+**Date:** 2026-05-20 (T-028)
+**Status:** Scaffold only — must not ship to real users without Ratner sign-off and the Phase E swap.
+**Decision:** Implement the body scan UI end-to-end (welcome / 3-photo capture / encrypted save / history with delete / 3-per-week rate limit / verbatim privacy promise per v3 §3) so the flow can be exercised on a real device for design + UX review. The encryption and storage layers are intentionally scaffold-grade:
+  - **Key derivation:** PBKDF2 with the per-device UUID as both secret and salt. Allows round-trip on the same device but is not a real authentication boundary. Phase E (T-030) must replace this with either a passphrase + proper salt, or a server-issued wrapped key.
+  - **Persistence:** localStorage. No network surface, so the privacy promise ("never shared, never used for training, never seen by anyone else") holds for the scaffold by construction. Phase E swaps for R2 with no-public ACL.
+**Why this approach:** the AGENT_PLAN T-028 spec is "build the secure infrastructure" with **no AI vision call yet** (that's T-030). The pieces of "secure infrastructure" that genuinely need Ratner / clinician review (R2 ACL, vision API key handling, plaintext never persists) can't be wired without R2 credentials and a vision API contract — both of which are Phase E concerns. The scaffold lets us proof-of-concept the UI without putting any real-user data at risk.
+**Gate 4 reviewers must verify before approving Phase E start:**
+  - [ ] No R2 wiring exists yet (verify in `workers/src/index.ts` and `workers/wrangler.worker.toml`)
+  - [ ] No outbound network requests carry scan bytes (verify in `src/lib/scan-storage.ts` and `src/pages/scan/*`)
+  - [ ] Verbatim privacy promise matches CLAUDE_v3_PATCH §3 exactly
+  - [ ] Delete buttons present on every photo and every session, exercised in `scan-storage.test.ts`
+  - [ ] 3-sessions-per-7-days limit enforced client-side (will be re-enforced server-side in Phase E)
+  - [ ] Encryption round-trip tested (`scan-storage.test.ts > encryptImage / decryptImage`)
+**Phase E (T-029-T-031) checklist installed in `src/lib/scan-storage.ts` top-of-file comment block.**
+
+---

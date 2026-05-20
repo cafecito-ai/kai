@@ -9,6 +9,12 @@ import { Chat } from "./pages/Chat";
 import { CheckIn } from "./pages/CheckIn";
 import { Crisis } from "./pages/Crisis";
 import { Journal } from "./pages/Journal";
+import { EnergyCheckIn } from "./pages/EnergyCheckIn";
+import { Mobility } from "./pages/Mobility";
+import { MobilityPlayer } from "./pages/MobilityPlayer";
+import { ScanCapture } from "./pages/scan/ScanCapture";
+import { ScanHistory } from "./pages/scan/ScanHistory";
+import { ScanWelcome } from "./pages/scan/ScanWelcome";
 import { SleepLog } from "./pages/SleepLog";
 import { WorkoutLog } from "./pages/WorkoutLog";
 import { Demo } from "./pages/Demo";
@@ -79,6 +85,12 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />
           <Route path="/sleep/log" element={protectedOnboarding(<SleepLog />)} />
           <Route path="/workout/log" element={protectedOnboarding(<WorkoutLog />)} />
+          <Route path="/mobility" element={protectedOnboarding(<Mobility />)} />
+          <Route path="/mobility/:id" element={protectedOnboarding(<MobilityPlayer />)} />
+          <Route path="/energy" element={protectedOnboarding(<EnergyCheckIn />)} />
+          <Route path="/scan" element={protectedOnboarding(<ScanWelcome />)} />
+          <Route path="/scan/capture" element={protectedOnboarding(<ScanCapture />)} />
+          <Route path="/scan/history" element={protectedOnboarding(<ScanHistory />)} />
           <Route path="/goals" element={protectedOnboarding(<Goals />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />

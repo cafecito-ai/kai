@@ -21,7 +21,7 @@ describe("QuickActionSheet", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("renders the five v3 quick actions when open", () => {
+  it("renders all v3 quick actions when open", () => {
     renderSheet(true);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     for (const label of [
@@ -30,6 +30,8 @@ describe("QuickActionSheet", () => {
       "Log food",
       "Journal",
       "Log sleep",
+      "Set a goal",
+      "Stretch / move",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }

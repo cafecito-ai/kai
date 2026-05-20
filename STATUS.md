@@ -5,9 +5,9 @@ Live tracker maintained by the build agent. Each task: `done` / `iterating` / `a
 ---
 
 ## Current task
-**Phase C complete — awaiting Gate 3 review** (2026-05-20). T-015 → T-021 all in. Mental Health agent surface area: check-in, journal, sleep, screen-time, identity-based goals, and now background pattern recognition feeding the Mind prompt's context window.
+**Phase D complete — awaiting Gate 4 review** (2026-05-20). T-022 → T-028 all in. Physical Health agent surface area: food photo comments, workout logging, sleep recovery angle, hydration counter, 12-routine mobility library, energy check-in with low-streak detection, and the body scan UI scaffold (encryption + UI flow only — AI vision is Phase E).
 
-T-021 done — abstracted observations only (no journal content), 14-day window, 14-day TTL, daily cron recompute + on-the-fly via getRecentPatterns.
+**Body scan scaffold (T-028) flagged for Ratner pre-Phase-E review** — see D-019. Client-side AES-GCM with PBKDF2 key derivation works end-to-end (encrypt → store → decrypt round-trip tested), but the per-device "secret" and the localStorage-not-R2 persistence are scaffold-grade. Phase E swaps both for production-ready primitives, with full safety review at Gate 4.
 
 ## Phase A — Foundations (T-001 → T-008) ✅
 - [x] T-001 — Branch setup and status files (`d22d24c`; B-001 resolved)
@@ -36,8 +36,14 @@ Pending Gate 1.
 - [x] T-019/T-020 — Identity-based goals (max 3 active, streak counter, day-7/14/30 reframes)
 - [x] T-021 — Mental Health pattern recognition (`mental-patterns.ts` detector; `user_patterns` D1 table; daily cron + on-read fetch; wired into `recentPatterns` slot of Mind prompt)
 
-## Phase D — Body agent (T-022 → T-028)
-Pending Gate 3.
+## Phase D — Body agent (T-022 → T-028) ✅ Awaiting Gate 4
+- [x] T-022 — Food photo → Body 1-2 sentence comment, body-language filter + 3-regen + fallback
+- [x] T-023 — Workout logging (5 types: run/strength/yoga/sport/other), 2-3 sentence Body comment, under-16 bodyweight default rule
+- [x] T-024 — Sleep + Body recovery comment when recent-workout or training-notes context warrants
+- [x] T-025 — Hydration tracker (+/- glass counter, default 8, daily local-midnight reset)
+- [x] T-026 — Mobility library (12 teen-appropriate routines, 3-10 min, step-by-step player with countdown)
+- [x] T-027 — Energy check-in (1-5 scale, low-streak detection fires recovery note when today + yesterday both ≤2)
+- [x] T-028 — Body scan UI scaffold (welcome / capture / history + AES-GCM encryption + 3-per-week limit) — REQUIRES SAFETY REVIEW
 
 ## Phase E — AI Body Scan (T-029 → T-031) — HIGHEST RISK
 Pending Gate 4.

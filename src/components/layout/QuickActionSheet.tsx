@@ -11,8 +11,10 @@ import {
   Dumbbell,
   Moon,
   NotebookPen,
+  Sparkles,
   Target,
   X,
+  Zap,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -59,6 +61,20 @@ const ACTIONS = [
     icon: Target,
     tint: "bg-accent-cool-soft text-accent-cool",
     to: "/goals",
+  },
+  {
+    label: "Stretch / move",
+    blurb: "3-10 min mobility routines.",
+    icon: Sparkles,
+    tint: "bg-accent-soft text-accent",
+    to: "/mobility",
+  },
+  {
+    label: "Energy check",
+    blurb: "1-5 read on how today feels.",
+    icon: Zap,
+    tint: "bg-accent-warm-soft text-accent-warm",
+    to: "/energy",
   },
 ] as const;
 

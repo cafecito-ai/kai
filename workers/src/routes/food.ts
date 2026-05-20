@@ -1,10 +1,12 @@
 import { Hono } from "hono";
+import { buildKaiContext } from "../lib/context";
 import {
   analyzeMeal,
   extensionForContentType,
   type AnalyzedItem,
   type MealAnalysis
 } from "../lib/food-analysis";
+import { generateFoodComment } from "../lib/food-comment";
 import type { Env } from "../types";
 
 export const foodRoutes = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
@@ -12,6 +14,10 @@ export const foodRoutes = new Hono<{ Bindings: Env; Variables: { userId: string 
 type FoodPhotoResponse = MealAnalysis & {
   mealId: string;
   r2Key?: string;
+  /** T-022 — Body agent's 1-2 sentence observational comment on the meal.
+   *  Always present (falls back to a safe canned string if AI is unavailable
+   *  or the body-language filter rejects 3 regens in a row). */
+  bodyComment: string;
 };
 
 foodRoutes.post("/food-photo", async (c) => {
@@ -60,23 +66,30 @@ async function analyzeAndSaveMeal(
   const id = crypto.randomUUID();
   const analysis = await analyzeMeal(env, body);
 
-  await env.DB
-    .prepare(
-      "INSERT INTO meals (id, user_id, photo_r2_key, items, total_calories, total_protein) VALUES (?, ?, ?, ?, ?, ?)"
-    )
-    .bind(
-      id,
-      userId,
-      body.r2Key ?? null,
-      JSON.stringify(analysis.items as AnalyzedItem[]),
-      analysis.totals ? analysis.totals.calories : null,
-      analysis.totals ? analysis.totals.protein : null
-    )
-    .run();
+  // T-022 — generate the Body-agent comment in parallel with the DB write.
+  // Filtered + regen-protected; always returns a safe string.
+  const context = await buildKaiContext(env, userId);
+  const [commentResult] = await Promise.all([
+    generateFoodComment(env, context, analysis),
+    env.DB
+      .prepare(
+        "INSERT INTO meals (id, user_id, photo_r2_key, items, total_calories, total_protein) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .bind(
+        id,
+        userId,
+        body.r2Key ?? null,
+        JSON.stringify(analysis.items as AnalyzedItem[]),
+        analysis.totals ? analysis.totals.calories : null,
+        analysis.totals ? analysis.totals.protein : null
+      )
+      .run()
+  ]);
 
   return {
     mealId: id,
     r2Key: body.r2Key,
+    bodyComment: commentResult.comment,
     ...analysis
   };
 }

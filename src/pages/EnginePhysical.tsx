@@ -431,6 +431,14 @@ function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult;
         </span>
       </div>
       <p className="mt-3 text-sm font-semibold leading-6 text-paper/75">{describeFoodPhotoResult(result)}</p>
+      {/* T-022 — Body agent's comment on the meal. Specific, observational,
+          energy-focused. Comes back filtered for forbidden body-language. */}
+      {result.bodyComment && (
+        <div className="mt-3 rounded-kai border border-accent-cool/30 bg-accent-cool/10 p-3">
+          <p className="text-xs font-black uppercase tracking-wider text-accent-cool">KAI says</p>
+          <p className="mt-1 text-sm font-semibold leading-6 text-paper">{result.bodyComment}</p>
+        </div>
+      )}
       {result.items.length > 0 && (
         <div className="mt-3 grid gap-2">
           {result.items.map((item, idx) => (

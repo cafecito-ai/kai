@@ -91,6 +91,10 @@ export interface FoodPhotoResult {
   totals: FoodNutrition | null;
   confidence: FoodPhotoConfidence;
   notes: string;
+  /** T-022 — Body agent's 1-2 sentence observational comment on this meal.
+   *  Always present (server falls back to a safe canned string if AI is
+   *  unavailable or the body-language filter rejects 3 regens in a row). */
+  bodyComment?: string;
 }
 
 /**

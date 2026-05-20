@@ -41,6 +41,7 @@ const IMMERSIVE_PREFIXES = [
   "/scan",
   "/settings",
   "/voice",
+  "/food",
 ];
 
 // Routes that show the tabbar.

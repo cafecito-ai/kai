@@ -17,6 +17,7 @@ import { ScanHistory } from "./pages/scan/ScanHistory";
 import { ScanResult } from "./pages/scan/ScanResult";
 import { ScanWelcome } from "./pages/scan/ScanWelcome";
 import { Voice } from "./pages/Voice";
+import { FoodLog } from "./pages/FoodLog";
 import { GroupDetail } from "./pages/GroupDetail";
 import { GroupInbox } from "./pages/GroupInbox";
 import { GroupLeaderboard } from "./pages/GroupLeaderboard";
@@ -25,8 +26,9 @@ import { WorkoutLog } from "./pages/WorkoutLog";
 import { Demo } from "./pages/Demo";
 import { DesignPicker } from "./pages/DesignPicker";
 import { DesignTokens } from "./pages/DesignTokens";
-import { EngineMental } from "./pages/EngineMental";
-import { EnginePhysical } from "./pages/EnginePhysical";
+// (Old EngineMental + EnginePhysical pages removed — those routes now
+// redirect to /home. v2 superseded the three-engine model with the
+// two-agent Mind+Body architecture.)
 import { ForParents } from "./pages/ForParents";
 import { Goals } from "./pages/Goals";
 import { Groups } from "./pages/Groups";
@@ -90,6 +92,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />
           <Route path="/sleep/log" element={protectedOnboarding(<SleepLog />)} />
           <Route path="/workout/log" element={protectedOnboarding(<WorkoutLog />)} />
+          <Route path="/food/log" element={protectedOnboarding(<FoodLog />)} />
           <Route path="/mobility" element={protectedOnboarding(<Mobility />)} />
           <Route path="/mobility/:id" element={protectedOnboarding(<MobilityPlayer />)} />
           <Route path="/energy" element={protectedOnboarding(<EnergyCheckIn />)} />
@@ -99,9 +102,13 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/scan/result/:sessionId" element={protectedOnboarding(<ScanResult />)} />
           <Route path="/voice" element={protectedOnboarding(<Voice />)} />
           <Route path="/goals" element={protectedOnboarding(<Goals />)} />
-          <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
-          <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />
-          <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />
+          {/* Old v0 three-engine routes — kept ONLY as redirects so any
+              bookmarked links or stale onboarding state lands on the new
+              /home instead of a confusing old page. */}
+          <Route path="/engine/physical" element={<Navigate to="/home" replace />} />
+          <Route path="/engine/mental" element={<Navigate to="/home" replace />} />
+          <Route path="/engine/potential" element={<Navigate to="/home" replace />} />
+          {/* Guides (educational content) still useful — keep the route. */}
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
           <Route path="/groups" element={protectedOnboarding(<Groups />)} />

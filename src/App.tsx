@@ -13,7 +13,6 @@ import { EnginePhysical } from "./pages/EnginePhysical";
 import { ForParents } from "./pages/ForParents";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
-import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
 import { Ops } from "./pages/Ops";
 import { OpsDemoSession } from "./pages/OpsDemoSession";
@@ -32,7 +31,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
   const routes = (
       <Routes>
         <Route element={<AppShell />}>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={protectedOnboarding(<Home />)} />
           <Route
             path="/sign-in/*"
             element={

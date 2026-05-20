@@ -33,9 +33,10 @@ export default {
         graphite: "#2A2A28"
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["Inter Tight", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["Instrument Serif", "Georgia", "serif"]
+        sans: ["DM Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Fraunces", "DM Sans", "ui-serif", "serif"],
+        serif: ["Fraunces", "Georgia", "serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"]
       },
       borderRadius: {
         kai: "18px",

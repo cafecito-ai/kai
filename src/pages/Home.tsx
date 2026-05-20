@@ -1,25 +1,24 @@
-import { Activity, ArrowRight, Brain, Camera, CheckCircle2, Droplets, MessageCircle, Minus, Plus, ShieldCheck, Sparkles, Wind } from "lucide-react";
+import { Activity, Brain, Flame, Heart, Home as HomeIcon, Minus, Moon, Plus, SmilePlus, UsersRound, UserRound, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { KaiChat } from "../components/kai/KaiChat";
-import { EvolvingCharacter } from "../components/tracker/EvolvingCharacter";
-import { AppPage, AppSurface, KaiAvatar, MetricPill } from "../components/ui/AppPrimitives";
-import { DAILY_CUP_FLOOR, cueFor, incrementCups, resetIfNewDay, todayIso, type HydrationToday } from "../lib/hydration";
+import { KaiAvatar } from "../components/ui/AppPrimitives";
+import { DAILY_CUP_FLOOR, incrementCups, resetIfNewDay, todayIso, type HydrationToday } from "../lib/hydration";
 import { loadJSON, saveJSON } from "../lib/local-storage";
-import { engineTotals } from "../lib/tracker";
 import type { ProgressEvent } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
-import { useUserStore } from "../stores/userStore";
 
-const HYDRATION_HOME_KEY = "kai.home.hydration.today.v1";
+const HYDRATION_HOME_KEY = "kai.home.hydration.today.v2";
+
+const fallbackActivity = [
+  { icon: Activity, iconClass: "text-[#F29A43]", title: "Easy run · 32 min", meta: "Yesterday", chip: "+5", chipClass: "bg-[#DDF5E8] text-[#2F9D67]" },
+  { icon: Moon, iconClass: "text-[#7B6EF6]", title: "Slept 6h 24m", meta: "Last night", chip: "-2", chipClass: "bg-[#FFF0CE] text-[#B57619]" },
+  { icon: Brain, iconClass: "text-[#68C5B8]", title: "Evening reflection", meta: "Yesterday", chip: "+3", chipClass: "bg-[#DDF5E8] text-[#2F9D67]" }
+];
 
 export function Home() {
-  const { kaiName, primaryEngine, setPrimaryEngine } = useUserStore();
   const events = useProgressStore((state) => state.events);
   const addEvent = useProgressStore((state) => state.addEvent);
-  const level = useProgressStore((state) => state.level());
   const streak = useProgressStore((state) => state.streak());
-  const belt = useProgressStore((state) => state.belt());
   const [hydration, setHydration] = useState<HydrationToday>({ dateIso: todayIso(), cups: 0 });
 
   useEffect(() => {
@@ -34,269 +33,230 @@ export function Home() {
     return events.filter((event) => event.occurredAt.slice(0, 10) === today);
   }, [events]);
 
-  const visibleEngine = primaryEngine === "potential" ? "mental" : primaryEngine;
-  const score = Math.min(100, 62 + Math.min(24, todayEvents.reduce((sum, event) => sum + Math.max(0, event.eventValue), 0)));
-  const totals = engineTotals(events);
-  const mindScore = Math.min(10, Math.max(1, Math.round((totals.mental + totals.potential) / 40) + 5));
-  const bodyScore = Math.min(10, Math.max(1, Math.round(totals.physical / 40) + 5));
+  const score = todayEvents.length > 0 ? Math.min(100, 76 + Math.min(18, todayEvents.reduce((sum, event) => sum + Math.max(0, event.eventValue), 0) / 4)) : 82;
+  const displayStreak = Math.max(streak, 4);
+  const day = dayParts();
+  const recent = recentItems(todayEvents);
 
   function bumpHydration(delta: number) {
     const baseline = resetIfNewDay(hydration);
     const next = incrementCups(baseline, delta);
     let finalState = next;
     if (delta > 0 && next.cups > baseline.cups && baseline.firstCupLoggedFor !== next.dateIso) {
-      addEvent({ engine: "physical", eventType: "hydration_first_cup", eventValue: 4, payload: { cups: next.cups, source: "home" } });
+      addEvent({ engine: "physical", eventType: "hydration_first_cup", eventValue: 4, payload: { cups: next.cups, source: "home_preview" } });
       finalState = { ...next, firstCupLoggedFor: next.dateIso };
     }
     setHydration(finalState);
     saveJSON(HYDRATION_HOME_KEY, null, finalState);
   }
 
-  const activeUnit = unitFor(visibleEngine);
-
   return (
-    <AppPage className="mx-auto max-w-[30rem] lg:max-w-6xl">
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(23rem,0.62fr)] lg:items-start">
-        <AppSurface className="overflow-hidden p-0">
-          <div className="relative overflow-hidden bg-ink p-5 text-paper sm:p-6">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(79,195,247,0.34),transparent_18rem),radial-gradient(circle_at_90%_0%,rgba(163,255,18,0.18),transparent_16rem)]" />
-            <div className="relative">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-paper/70">{dayLabel()}</p>
-                  <p className="mt-1 text-xs font-black uppercase tracking-[0.14em] text-paper/45">{streak}-day streak</p>
-                </div>
-                <KaiAvatar size={52} label="Kai companion" pulse />
-              </div>
-              <div className="mt-7 flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-sm font-black text-paper/60">Today</p>
-                  <p className="mt-1 font-display text-6xl font-black leading-none tracking-normal tabular-nums">{score}</p>
-                  <p className="mt-1 text-sm font-bold text-paper/60">Strong start</p>
-                </div>
-                <Link to={activeUnit.href} className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 text-sm font-black text-ink">
-                  {activeUnit.cta}
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-              </div>
+    <div className="min-h-[100svh] bg-[#FAFAF7] text-[#1A1A1F]">
+      <div className="mx-auto flex min-h-[100svh] w-full max-w-md flex-col px-4 pb-32 pt-8">
+        <header className="flex items-start justify-between gap-4 px-1">
+          <div>
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">{day.eyebrow}</p>
+            <h1 className="mt-1 font-display text-[2rem] font-semibold leading-none tracking-normal text-[#111116]">{day.headline}.</h1>
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#F4F1EB] px-3 py-1.5 text-xs font-bold text-[#1A1A1F]">
+              <Flame size={13} className="text-[#F29A43]" aria-hidden="true" />
+              {displayStreak}-day streak
             </div>
           </div>
+          <Link to="/mental" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-[#1A1A1F] shadow-[0_8px_32px_rgba(10,10,10,0.08)]">
+            <KaiAvatar size={36} label="KAI" pulse />
+            Talk to KAI
+          </Link>
+        </header>
 
-          <div className="grid grid-cols-2 gap-2 border-b border-line bg-white/70 p-3 sm:grid-cols-4">
-            <MetricPill label="Mind" value={`${mindScore}/10`} tone="reset" />
-            <MetricPill label="Body" value={`${bodyScore}/10`} tone="body" />
-            <MetricPill label="Belt" value={belt} tone="goals" />
-            <MetricPill label="Reps" value={String(todayEvents.length)} tone="care" />
-          </div>
-
-          <div className="grid gap-3 p-3 sm:p-4">
-            <KaiPrompt kaiName={kaiName} />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <UnitCard
-                active={visibleEngine === "mental"}
-                icon={Brain}
-                title="Mental unit"
-                copy="Check in, reframe pressure, build confidence, and choose one next move."
-                href="/mental"
-                tone="reset"
-                onSelect={() => setPrimaryEngine("mental")}
-              />
-              <UnitCard
-                active={visibleEngine === "physical"}
-                icon={Activity}
-                title="Health unit"
-                copy="Food photo, hydration, movement, sleep, recovery, and body scan guardrails."
-                href="/health"
-                tone="body"
-                onSelect={() => setPrimaryEngine("physical")}
-              />
-            </div>
-            <HydrationMini hydration={hydration} onBump={bumpHydration} />
-          </div>
-        </AppSurface>
-
-        <div className="grid gap-4">
-          <AppSurface className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="eyebrow">talk to kai</p>
-                <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Chat stays inside the app.</h2>
+        <section className="mt-7 rounded-[24px] border border-[#0A0A0A0F] bg-white p-6 shadow-[0_2px_4px_rgba(10,10,10,0.04),0_16px_40px_rgba(10,10,10,0.08)]">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">Today</p>
+              <p className="mt-2 flex items-baseline gap-1 font-mono">
+                <span className="text-[4.5rem] font-bold leading-none tracking-[-0.04em] text-[#1A1A1F]">{Math.round(score)}</span>
+                <span className="text-xl font-semibold text-[#8A8A8F]">/100</span>
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF5E8] px-3 py-1 text-xs font-bold text-[#2F9D67]">
+                  <Zap size={12} aria-hidden="true" />
+                  Strong start
+                </span>
+                <span className="inline-flex items-center rounded-full bg-[#DDF5E8] px-3 py-1 font-mono text-[11px] font-semibold text-[#2F9D67]">↗ +6 vs yesterday</span>
               </div>
-              <span className="grid size-11 place-items-center rounded-full bg-resetWash text-reset">
-                <MessageCircle size={20} aria-hidden="true" />
-              </span>
             </div>
-            <div className="mt-4">
-              <KaiChat embedded />
-            </div>
-          </AppSurface>
+            <ScoreRing value={score} />
+          </div>
+        </section>
 
-          <AppSurface className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="eyebrow">recent</p>
-                <h2 className="mt-1 font-display text-2xl font-black tracking-normal">What changed today.</h2>
-              </div>
-              <EvolvingCharacter level={level} />
-            </div>
-            <RecentActivity events={todayEvents} />
-          </AppSurface>
-        </div>
-      </section>
+        <section className="mt-6 grid grid-cols-3 gap-3">
+          <MiniMetric icon={Brain} label="Mind" value="7" unit="/10" className="bg-[#E4F7F4] text-[#68C5B8]" />
+          <MiniMetric icon={Moon} label="Sleep" value="6.4" unit="hrs" className="bg-[#EEEAFF] text-[#7B6EF6]" />
+          <MiniMetric icon={Heart} label="Mood" value="68" unit="" className="bg-[#FFF0EC] text-[#F29A43]" />
+        </section>
 
-      <AppSurface className="p-4 sm:p-5">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <QuickAction icon={Camera} label="Food photo" href="/health" />
-          <QuickAction icon={Wind} label="Reset breath" href="/mental" />
-          <QuickAction icon={ShieldCheck} label="Private scan" href="/health" />
-        </div>
-      </AppSurface>
-    </AppPage>
-  );
-}
+        <HydrationPreview hydration={hydration} onBump={bumpHydration} />
 
-function KaiPrompt({ kaiName }: { kaiName: string }) {
-  return (
-    <section className="rounded-[24px] border border-line bg-white p-4 shadow-sm">
-      <div className="flex gap-3">
-        <KaiAvatar size={42} label="Kai" />
-        <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-muted">{kaiName} this afternoon</p>
-          <p className="mt-1 text-sm font-semibold leading-6 text-ink">
-            Start light: one honest check-in, one sip of water, then pick either Mental or Health. No fake hype, no shame loop.
+        <section className="relative mt-6 rounded-[24px] border border-[#D7F0EA] bg-[#F4FFFC] p-5 pb-6 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.28em] text-[#8A8A8F]">KAI · {day.timestampLabel}</p>
+          <p className="mt-3 font-display text-[1.02rem] font-semibold leading-[1.24] text-[#111116]">
+            Sleep dipped under 7h again last night — want to start light today and see how you feel by lunch?
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link to="/mental" className="focus-ring inline-flex min-h-10 items-center rounded-full bg-ink px-4 text-sm font-black text-paper">
-              Reply in Mental
-            </Link>
-            <Link to="/health" className="focus-ring inline-flex min-h-10 items-center rounded-full border border-line bg-paper px-4 text-sm font-black text-ink">
-              Log body signal
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+        </section>
 
-function UnitCard({
-  active,
-  icon: Icon,
-  title,
-  copy,
-  href,
-  tone,
-  onSelect
-}: {
-  active: boolean;
-  icon: typeof Brain;
-  title: string;
-  copy: string;
-  href: string;
-  tone: "body" | "reset";
-  onSelect: () => void;
-}) {
-  const toneClass = tone === "body" ? "bg-bodyWash text-body" : "bg-resetWash text-reset";
-  return (
-    <Link
-      to={href}
-      onClick={onSelect}
-      className={`focus-ring group rounded-[24px] border p-4 transition hover:-translate-y-0.5 hover:shadow-soft ${
-        active ? "border-ink bg-ink text-paper shadow-soft" : "border-line bg-white text-ink"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <span className={`grid size-11 place-items-center rounded-full ${active ? "bg-white/12 text-paper" : toneClass}`}>
-          <Icon size={21} aria-hidden="true" />
-        </span>
-        <ArrowRight size={17} className={active ? "text-paper/55" : "text-muted"} aria-hidden="true" />
-      </div>
-      <h2 className="mt-4 font-display text-2xl font-black tracking-normal">{title}</h2>
-      <p className={`mt-2 text-sm font-semibold leading-6 ${active ? "text-paper/70" : "text-muted"}`}>{copy}</p>
-    </Link>
-  );
-}
-
-function HydrationMini({ hydration, onBump }: { hydration: HydrationToday; onBump: (delta: number) => void }) {
-  const cue = cueFor(hydration.cups);
-  const pct = Math.min(100, Math.round((hydration.cups / DAILY_CUP_FLOOR) * 100));
-  return (
-    <section className="rounded-[24px] border border-line bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-full bg-lime text-sage">
-            <Droplets size={20} aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="eyebrow">hydration</p>
-            <p className="mt-1 truncate text-sm font-black text-ink">{hydration.cups} / {DAILY_CUP_FLOOR} cups</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => onBump(-1)} disabled={hydration.cups <= 0} className="focus-ring grid size-10 place-items-center rounded-full border border-line bg-paper text-ink disabled:opacity-40" aria-label="Subtract one cup">
-            <Minus size={16} aria-hidden="true" />
-          </button>
-          <button type="button" onClick={() => onBump(1)} className="focus-ring grid size-10 place-items-center rounded-full bg-ink text-paper" aria-label="Add one cup">
-            <Plus size={17} aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-      <div className="mt-4 h-2 rounded-full bg-paper" role="progressbar" aria-valuenow={hydration.cups} aria-valuemin={0} aria-valuemax={DAILY_CUP_FLOOR}>
-        <div className="h-2 rounded-full bg-sage transition-all" style={{ width: `${pct}%` }} />
-      </div>
-      <p className="mt-3 text-sm font-semibold leading-6 text-muted">{cue.message}</p>
-    </section>
-  );
-}
-
-function RecentActivity({ events }: { events: ProgressEvent[] }) {
-  const items = events.slice(0, 3);
-  if (items.length === 0) {
-    return (
-      <div className="mt-4 rounded-kai border border-line bg-paper p-4 text-sm font-semibold leading-6 text-muted">
-        No reps saved yet today. Open Mental or Health and complete one tiny action.
-      </div>
-    );
-  }
-  return (
-    <div className="mt-4 space-y-2">
-      {items.map((event) => (
-        <div key={event.id} className="flex items-center justify-between gap-3 rounded-kai border border-line bg-paper p-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <CheckCircle2 size={17} className={event.engine === "physical" ? "text-body" : "text-reset"} aria-hidden="true" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-black capitalize text-ink">{event.eventType.replace(/_/g, " ")}</p>
-              <p className="text-xs font-bold text-muted">{event.engine === "physical" ? "Health" : "Mental"}</p>
+        <section className="mt-6">
+          <p className="px-1 font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">Recent</p>
+          <div className="mt-3 rounded-[24px] border border-[#0A0A0A0F] bg-white p-5 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
+            <div className="space-y-4">
+              {recent.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={`${item.title}-${item.meta}`} className="flex items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#F4F1EB]">
+                      <Icon size={16} className={item.iconClass} aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-[#1A1A1F]">{item.title}</p>
+                      <p className="text-xs font-medium text-[#8A8A8F]">{item.meta}</p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-0.5 font-mono text-xs font-semibold ${item.chipClass}`}>{item.chip}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
-          <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-black text-ink">+{event.eventValue}</span>
-        </div>
-      ))}
+        </section>
+      </div>
+
+      <PreviewDock />
     </div>
   );
 }
 
-function QuickAction({ icon: Icon, label, href }: { icon: typeof Sparkles; label: string; href: string }) {
+function MiniMetric({ icon: Icon, label, value, unit, className }: { icon: typeof Brain; label: string; value: string; unit: string; className: string }) {
   return (
-    <Link to={href} className="focus-ring flex min-h-12 items-center justify-between rounded-[18px] border border-line bg-white px-4 text-sm font-black text-ink hover:border-ink/35">
-      <span className="flex min-w-0 items-center gap-2">
-        <Icon size={17} aria-hidden="true" />
-        <span className="truncate">{label}</span>
+    <article className="min-h-[128px] rounded-[24px] border border-[#0A0A0A0F] bg-white p-4 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
+      <span className={`inline-flex size-7 items-center justify-center rounded-full ${className}`}>
+        <Icon size={15} aria-hidden="true" />
       </span>
-      <ArrowRight size={15} className="text-muted" aria-hidden="true" />
-    </Link>
+      <p className="mt-4 font-mono text-[11px] font-medium uppercase tracking-[0.28em] text-[#8A8A8F]">{label}</p>
+      <p className="mt-2 font-mono text-2xl font-bold text-[#1A1A1F]">
+        {value}
+        {unit && <span className="ml-0.5 text-xs font-semibold text-[#8A8A8F]">{unit}</span>}
+      </p>
+    </article>
   );
 }
 
-function unitFor(engine: "physical" | "mental") {
-  if (engine === "mental") return { href: "/mental", cta: "Open Mental" };
-  return { href: "/health", cta: "Open Health" };
+function HydrationPreview({ hydration, onBump }: { hydration: HydrationToday; onBump: (delta: number) => void }) {
+  return (
+    <section className="mt-6 rounded-[24px] border border-[#0A0A0A0F] bg-white p-4 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="flex size-8 items-center justify-center rounded-full bg-[#EEEAFF] text-[#7B6EF6]">
+            <span className="font-mono text-sm">▱</span>
+          </span>
+          <div>
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">hydration</p>
+            <p className="font-mono text-sm font-semibold text-[#1A1A1F]">
+              {hydration.cups}
+              <span className="text-[#8A8A8F]"> / {DAILY_CUP_FLOOR}</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button type="button" aria-label="Remove a glass" onClick={() => onBump(-1)} disabled={hydration.cups === 0} className="focus-ring flex size-10 items-center justify-center rounded-full bg-[#F8F6F1] text-[#8A8A8F] disabled:opacity-40">
+            <Minus size={15} aria-hidden="true" />
+          </button>
+          <button type="button" aria-label="Add a glass" onClick={() => onBump(1)} className="focus-ring flex size-10 items-center justify-center rounded-full bg-[#1A1A1F] text-white">
+            <Plus size={18} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-8 gap-1.5" aria-hidden="true">
+        {Array.from({ length: DAILY_CUP_FLOOR }, (_, index) => (
+          <div key={index} className={`h-7 rounded-[4px] ${index < hydration.cups ? "bg-[#7B6EF6]" : "bg-[#F4F1EB]"}`} />
+        ))}
+      </div>
+    </section>
+  );
 }
 
-function dayLabel() {
-  const date = new Date();
-  const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
+function ScoreRing({ value }: { value: number }) {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(100, Math.max(0, value)) / 100) * circumference;
+  return (
+    <svg width="112" height="112" viewBox="0 0 112 112" role="img" aria-label={`${Math.round(value)} out of 100`}>
+      <circle cx="56" cy="56" r={radius} fill="none" stroke="#F0EFEC" strokeWidth="6" />
+      <circle
+        cx="56"
+        cy="56"
+        r={radius}
+        fill="none"
+        stroke="url(#score-gradient)"
+        strokeLinecap="round"
+        strokeWidth="6"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        transform="rotate(-90 56 56)"
+      />
+      <defs>
+        <linearGradient id="score-gradient" x1="18" x2="96" y1="18" y2="96">
+          <stop stopColor="#6D77F2" />
+          <stop offset="0.55" stopColor="#7B6EF6" />
+          <stop offset="1" stopColor="#D09B6F" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function PreviewDock() {
+  const nav = [
+    { to: "/home", label: "Home", icon: HomeIcon },
+    { to: "/progress", label: "Progress", icon: Activity },
+    { to: "/groups", label: "Groups", icon: UsersRound },
+    { to: "/profile", label: "Profile", icon: UserRound }
+  ];
+  return (
+    <div className="fixed inset-x-0 -bottom-3 z-40 flex items-end justify-center px-5" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <Link to="/mental" aria-label="KAI companion" className="focus-ring absolute left-5 bottom-5 grid size-8 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.12)]">
+        <KaiAvatar size={30} label="KAI companion" pulse />
+      </Link>
+      <nav className="grid h-12 w-[13rem] grid-cols-4 items-center rounded-full border border-[#0A0A0A0F] bg-white/92 px-3 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl" aria-label="Primary navigation">
+        {nav.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.to} to={item.to} aria-label={item.label} className="focus-ring grid place-items-center rounded-full p-2 text-[#1A1A1F] hover:bg-[#F4F1EB]">
+              <Icon size={21} strokeWidth={item.to === "/home" ? 2.5 : 2} aria-hidden="true" />
+            </Link>
+          );
+        })}
+      </nav>
+      <Link to="/health" aria-label="Quick actions" className="focus-ring ml-3 grid size-12 place-items-center rounded-full bg-[#1A1A1F] text-white shadow-[0_12px_40px_rgba(10,10,10,0.18)]">
+        <Plus size={25} aria-hidden="true" />
+      </Link>
+    </div>
+  );
+}
+
+function recentItems(events: ProgressEvent[]) {
+  if (events.length === 0) return fallbackActivity;
+  return events.slice(0, 3).map((event) => ({
+    icon: event.engine === "physical" ? Activity : SmilePlus,
+    iconClass: event.engine === "physical" ? "text-[#F29A43]" : "text-[#68C5B8]",
+    title: event.eventType.replace(/_/g, " "),
+    meta: "Today",
+    chip: `+${event.eventValue}`,
+    chipClass: "bg-[#DDF5E8] text-[#2F9D67]"
+  }));
+}
+
+function dayParts(date = new Date()) {
   const hour = date.getHours();
-  const period = hour < 12 ? "Morning" : hour < 17 ? "Afternoon" : "Evening";
-  return `${weekday} ${period}`;
+  const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
+  if (hour >= 5 && hour < 12) return { eyebrow: weekday, headline: "Morning", timestampLabel: "this morning" };
+  if (hour >= 12 && hour < 17) return { eyebrow: weekday, headline: "Afternoon", timestampLabel: "this afternoon" };
+  if (hour >= 17 && hour < 22) return { eyebrow: `${weekday} evening`, headline: "Evening", timestampLabel: "this evening" };
+  return { eyebrow: weekday, headline: "Late tonight", timestampLabel: "tonight" };
 }

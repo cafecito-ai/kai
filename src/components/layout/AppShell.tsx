@@ -8,6 +8,7 @@ import { Nav } from "./Nav";
 export function AppShell() {
   const { pathname } = useLocation();
   const immersiveRoute = pathname === "/demo" || pathname === "/scope";
+  const standaloneAppRoute = pathname === "/home" || pathname === "/";
 
   if (immersiveRoute) {
     return (
@@ -21,6 +22,22 @@ export function AppShell() {
         <div id="main">
           <Outlet />
         </div>
+      </div>
+    );
+  }
+
+  if (standaloneAppRoute) {
+    return (
+      <div className="min-h-screen bg-paper text-ink">
+        <a
+          href="#main"
+          className="focus-ring sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-kai focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-paper"
+        >
+          Skip to content
+        </a>
+        <main id="main">
+          <Outlet />
+        </main>
       </div>
     );
   }

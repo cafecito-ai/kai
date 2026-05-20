@@ -6,9 +6,31 @@
 //
 // Tap +/- to bump glasses. Tap the "X / target" readout to edit the
 // target (1-20). Goal persists across days until changed.
+//
+// ─────────────────────────────────────────────────────────────────────
+// TODO[hydration-celebration]: Evan asked to "remember he'll call upon
+// this later." When he does, the options he wants to choose between are:
+//
+//   SMALL (~15 min) — current tiny animation + a one-time dismissable
+//     KaiMessage bubble below the tile the FIRST time hitting goal each
+//     day: "That's N — your body's gonna thank you tomorrow. Anything
+//     past this is a bonus." Use existing KaiMessage component.
+//
+//   MEDIUM (~30 min) — all of the above PLUS:
+//     - Count as a small win on /progress's "This week" tile
+//       (add `hydration_goal_hit` source to local-score or just track
+//        separately in local-hydration)
+//     - Tiny bump to mood subscore (hydration → energy → mood is real)
+//     - Mind agent prompt context: include "hit hydration N days in a
+//       row" so KAI references it naturally in chat
+//
+// What's currently implemented is the TINY option: brief celebrate
+// animation on the strip + scale pop on the ✓ chip when crossing the
+// goal threshold. Fires once per local day (dedupe via localStorage).
+// ─────────────────────────────────────────────────────────────────────
 
 import { Check, GlassWater, Minus, Pencil, Plus, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   bumpHydration,
@@ -19,14 +41,61 @@ import {
 
 const PRESETS = [4, 6, 8, 10, 12];
 
+/** localStorage key for "have we already celebrated hitting the goal
+ *  today?" — prevents the animation re-firing every time the user bumps
+ *  +/- after crossing the line. Stores YYYY-MM-DD of the last celebration. */
+const CELEBRATED_KEY = "kai_hydration_celebrated_v1";
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function alreadyCelebratedToday(): boolean {
+  try {
+    return localStorage.getItem(CELEBRATED_KEY) === todayKey();
+  } catch {
+    return false;
+  }
+}
+
+function markCelebrated(): void {
+  try {
+    localStorage.setItem(CELEBRATED_KEY, todayKey());
+  } catch {
+    /* no-op */
+  }
+}
+
 export function HydrationTile({ className = "" }: { className?: string }) {
   const [entry, setEntry] = useState<HydrationEntry | null>(null);
   const [editing, setEditing] = useState(false);
   const [draftTarget, setDraftTarget] = useState<number>(8);
+  // `celebrating` is true for ~1.6s after the user crosses the goal
+  // for the first time today. Triggers the animation classes below.
+  const [celebrating, setCelebrating] = useState(false);
+  const prevGlassesRef = useRef<number | null>(null);
 
   useEffect(() => {
     setEntry(getTodayHydration());
   }, []);
+
+  // Detect the cross-the-goal transition. Fires when glasses goes from
+  // < target to >= target AND we haven't celebrated today yet.
+  useEffect(() => {
+    if (!entry) return;
+    const prev = prevGlassesRef.current;
+    const justCrossed =
+      prev != null && prev < entry.target && entry.glasses >= entry.target;
+    if (justCrossed && !alreadyCelebratedToday()) {
+      setCelebrating(true);
+      markCelebrated();
+      const id = window.setTimeout(() => setCelebrating(false), 1600);
+      // Update ref AFTER setting up the timeout so the cleanup is correct.
+      prevGlassesRef.current = entry.glasses;
+      return () => window.clearTimeout(id);
+    }
+    prevGlassesRef.current = entry.glasses;
+  }, [entry]);
 
   if (!entry) {
     return <div className={`h-[112px] ${className}`} aria-hidden="true" />;
@@ -83,7 +152,14 @@ export function HydrationTile({ className = "" }: { className?: string }) {
                   aria-hidden="true"
                 />
                 {reachedTarget && (
-                  <span className="ml-1 inline-flex items-center rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-medium text-success">
+                  <span
+                    className={`
+                      ml-1 inline-flex items-center rounded-full bg-success-soft
+                      px-2 py-0.5 text-[10px] font-medium text-success
+                      transition-transform duration-300
+                      ${celebrating ? "animate-celebrate-chip" : ""}
+                    `}
+                  >
                     ✓
                   </span>
                 )}
@@ -236,7 +312,15 @@ export function HydrationTile({ className = "" }: { className?: string }) {
                 className={`
                   h-7 flex-1 rounded transition-colors
                   ${isFilled ? "bg-accent/70" : "bg-surface-muted/60"}
+                  ${celebrating ? "animate-celebrate-ripple" : ""}
                 `}
+                // Stagger the ripple left-to-right via inline animation-delay
+                // so each glass pops in sequence. ~60ms per cell.
+                style={
+                  celebrating
+                    ? { animationDelay: `${i * 60}ms` }
+                    : undefined
+                }
               />
             );
           })}

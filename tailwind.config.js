@@ -110,11 +110,24 @@ export default {
           "0%, 100%": { transform: "scale(1)", opacity: "0.9" },
           "50%": { transform: "scale(1.04)", opacity: "1" },
         },
+        // Hydration-goal celebration animations (HydrationTile)
+        "celebrate-chip": {
+          "0%": { transform: "scale(0.6)", opacity: "0" },
+          "40%": { transform: "scale(1.25)", opacity: "1" },
+          "70%": { transform: "scale(0.95)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "celebrate-ripple": {
+          "0%, 100%": { transform: "scaleY(1)" },
+          "50%": { transform: "scaleY(1.4)" },
+        },
       },
       animation: {
         "fade-slide-up": "fade-slide-up 380ms ease-out",
         "scale-press": "scale-press 220ms ease-out",
         breathe: "breathe 4s ease-in-out infinite",
+        "celebrate-chip": "celebrate-chip 600ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "celebrate-ripple": "celebrate-ripple 380ms ease-out",
       },
     },
   },

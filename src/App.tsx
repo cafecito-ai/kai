@@ -17,6 +17,9 @@ import { ScanHistory } from "./pages/scan/ScanHistory";
 import { ScanResult } from "./pages/scan/ScanResult";
 import { ScanWelcome } from "./pages/scan/ScanWelcome";
 import { Voice } from "./pages/Voice";
+import { GroupDetail } from "./pages/GroupDetail";
+import { GroupInbox } from "./pages/GroupInbox";
+import { GroupLeaderboard } from "./pages/GroupLeaderboard";
 import { SleepLog } from "./pages/SleepLog";
 import { WorkoutLog } from "./pages/WorkoutLog";
 import { Demo } from "./pages/Demo";
@@ -102,6 +105,9 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
           <Route path="/groups" element={protectedOnboarding(<Groups />)} />
+          <Route path="/groups/inbox" element={protectedOnboarding(<GroupInbox />)} />
+          <Route path="/groups/:id" element={protectedOnboarding(<GroupDetail />)} />
+          <Route path="/groups/:id/leaderboard" element={protectedOnboarding(<GroupLeaderboard />)} />
           <Route path="/profile" element={protectedOnboarding(<Profile />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />

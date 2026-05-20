@@ -204,6 +204,118 @@ export const api = {
     request<{ ok: boolean }>(`/api/scan/observations/${sessionId}`, {
       method: "DELETE",
     }),
+  // Phase G — Groups (T-036 → T-040)
+  listGroups: () =>
+    request<{
+      groups: Array<{
+        id: string;
+        name: string;
+        inviteCode: string;
+        inviteExpires: string;
+        inviteExpired: boolean;
+        hideScore: boolean;
+        leaderboardOptIn: boolean;
+        joinedAt: string;
+        memberCount: number;
+      }>;
+    }>(`/api/groups`),
+  createGroup: (name: string) =>
+    request<{
+      group: { id: string; name: string; inviteCode: string; inviteExpires: string };
+    }>(`/api/groups`, { method: "POST", body: JSON.stringify({ name }) }),
+  joinGroup: (inviteCode: string) =>
+    request<{ group: { id: string; name: string } }>(
+      `/api/groups/join/${inviteCode}`,
+      { method: "POST", body: "{}" },
+    ),
+  getGroup: (id: string) =>
+    request<{
+      group: {
+        id: string;
+        name: string;
+        inviteCode: string;
+        inviteExpires: string;
+        inviteExpired: boolean;
+        createdByMe: boolean;
+      };
+      me: { hideScore: boolean; leaderboardOptIn: boolean };
+      members: Array<{
+        userId: string;
+        displayName: string;
+        bucket: "high" | "mid" | "low" | "hidden" | "none";
+        isMe: boolean;
+        leaderboardOptIn: boolean;
+      }>;
+    }>(`/api/groups/${id}`),
+  updateGroupMembership: (
+    id: string,
+    body: { hideScore?: boolean; leaderboardOptIn?: boolean },
+  ) =>
+    request<{ ok: true }>(`/api/groups/${id}/me`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  getEncouragementTemplates: () =>
+    request<{
+      templates: Array<{
+        id: string;
+        text: string;
+        fitsContexts: string[];
+      }>;
+    }>(`/api/groups/templates`),
+  sendEncouragement: (
+    groupId: string,
+    body: { toUserId: string; templateId?: string; customText?: string },
+  ) =>
+    request<{ message: { id: string; text: string } }>(
+      `/api/groups/${groupId}/encourage`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  getEncouragementInbox: () =>
+    request<{
+      messages: Array<{
+        id: string;
+        groupId: string;
+        groupName: string;
+        fromUserId: string;
+        fromDisplayName: string;
+        text: string;
+        acked: boolean;
+        createdAt: string;
+      }>;
+    }>(`/api/groups/inbox`),
+  ackEncouragement: (id: string) =>
+    request<{ ok: true }>(`/api/groups/messages/${id}/ack`, {
+      method: "POST",
+      body: "{}",
+    }),
+  getGroupLeaderboard: (id: string) =>
+    request<{
+      entries: Array<{
+        userId: string;
+        displayName: string;
+        bucket: "high" | "mid" | "low" | "hidden" | "none";
+        streakDays: number;
+      }>;
+    }>(`/api/groups/${id}/leaderboard`),
+  blockGroupMember: (groupId: string, targetUserId: string) =>
+    request<{ ok: true }>(`/api/groups/${groupId}/block/${targetUserId}`, {
+      method: "POST",
+      body: "{}",
+    }),
+  leaveGroup: (id: string) =>
+    request<{ ok: true }>(`/api/groups/${id}/leave`, {
+      method: "POST",
+      body: "{}",
+    }),
+  reportGroup: (
+    id: string,
+    body: { targetUserId?: string; context: string },
+  ) =>
+    request<{ ok: true }>(`/api/groups/${id}/report`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   // T-035 — voice eligibility + session control
   getVoiceEligibility: (localHour: number) =>
     request<

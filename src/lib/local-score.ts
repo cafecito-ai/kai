@@ -73,12 +73,20 @@ export function appendLocalInput(input: Omit<LocalInput, "id" | "createdAt">): L
 // ─────────────────────────────────────────────────────────────────────
 
 export function computeLocalScore(inputs: LocalInput[]): LocalScore {
-  const today = new Date().toISOString().slice(0, 10);
-  const todays = inputs.filter((i) => i.date === today);
+  return computeLocalScoreFor(inputs, new Date().toISOString().slice(0, 10));
+}
 
-  const mental = mentalSubscore(todays);
-  const sleep = sleepSubscore(todays);
-  const mood = moodSubscore(todays);
+/** Same as computeLocalScore but for any specific date — used by the
+ *  Progress page to build a 7-day series. */
+export function computeLocalScoreFor(
+  inputs: LocalInput[],
+  date: string,
+): LocalScore {
+  const dayInputs = inputs.filter((i) => i.date === date);
+
+  const mental = mentalSubscore(dayInputs);
+  const sleep = sleepSubscore(dayInputs);
+  const mood = moodSubscore(dayInputs);
 
   const present = [
     { v: mental, w: 0.4 },

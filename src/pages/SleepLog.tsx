@@ -26,6 +26,7 @@ export function SleepLog() {
   const [notes, setNotes] = useState("");
   const [phase, setPhase] = useState<Phase>("form");
   const [reflection, setReflection] = useState("");
+  const [bodyComment, setBodyComment] = useState<string | undefined>(undefined);
 
   function bump(delta: number) {
     setHours((h) => clamp(round025(h + delta)));
@@ -49,9 +50,12 @@ export function SleepLog() {
         notes: notes || undefined,
       });
       setReflection(res.reflection || offlineSleepReflection(hours));
+      // T-024 — Body recovery comment when context warrants it.
+      setBodyComment(res.bodyComment);
       setPhase("done");
     } catch {
       setReflection(localSleepReflection(hours));
+      setBodyComment(undefined);
       setPhase("done");
     }
   }
@@ -73,7 +77,11 @@ export function SleepLog() {
       </header>
 
       {phase === "done" ? (
-        <DoneState reflection={reflection} onClose={() => navigate("/home")} />
+        <DoneState
+          reflection={reflection}
+          bodyComment={bodyComment}
+          onClose={() => navigate("/home")}
+        />
       ) : (
         <Form
           hours={hours}
@@ -236,9 +244,14 @@ function Form({
 
 function DoneState({
   reflection,
+  bodyComment,
   onClose,
 }: {
   reflection: string;
+  /** T-024 — optional Body recovery comment. Renders below the reflection
+   *  as a second KaiMessage with a "recovery" label so the user knows
+   *  this is the same KAI speaking in their physical-coach voice. */
+  bodyComment?: string;
   onClose: () => void;
 }) {
   return (
@@ -249,6 +262,14 @@ function DoneState({
       <div className="mt-2">
         <KaiMessage orbSize={32}>{reflection}</KaiMessage>
       </div>
+      {bodyComment && (
+        <div className="mt-3">
+          <p className="mb-1.5 ml-12 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            recovery
+          </p>
+          <KaiMessage orbSize={32}>{bodyComment}</KaiMessage>
+        </div>
+      )}
       <div className="mt-auto pb-2">
         <button
           type="button"

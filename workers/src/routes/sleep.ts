@@ -21,6 +21,10 @@ import {
   recordScoreInput,
   todayUtc,
 } from "../lib/score-store";
+import {
+  generateSleepBodyComment,
+  shouldBodyCommentOnSleep,
+} from "../lib/sleep-body-comment";
 import type { AppVariables, Env } from "../types";
 
 const SLEEP_RATE_LIMIT = {
@@ -79,10 +83,29 @@ sleepRoutes.post("/sleep", async (c) => {
     value: { hours, quality, notes: notes || undefined },
   });
 
-  // Pattern check: look back 7 days to decide if a reflection is warranted.
-  const reflection = await maybeReflectOnSleep(c.env, userId, hours);
+  // Mind reflection (existing behaviour) + T-024 Body recovery comment.
+  // Body comment only fires when context warrants it (recent workout or
+  // notes mention training / soreness etc) — sleep is primarily a Mind
+  // surface, so we don't double-voice every entry.
+  const [reflection, decision] = await Promise.all([
+    maybeReflectOnSleep(c.env, userId, hours),
+    shouldBodyCommentOnSleep(c.env, userId, notes || undefined),
+  ]);
 
-  return c.json({ score, reflection });
+  let bodyComment: string | undefined;
+  if (decision.should) {
+    const context = await buildKaiContext(c.env, userId);
+    const result = await generateSleepBodyComment(
+      c.env,
+      context,
+      hours,
+      quality,
+      decision.reason,
+    );
+    bodyComment = result.comment;
+  }
+
+  return c.json({ score, reflection, bodyComment });
 });
 
 async function maybeReflectOnSleep(

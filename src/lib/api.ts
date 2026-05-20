@@ -128,6 +128,9 @@ export const api = {
     request<{
       score: unknown;
       reflection: string;
+      /** T-024 — Body recovery comment, present when recent workout context
+       *  or notes suggest physical framing is more useful than reflective. */
+      bodyComment?: string;
       safetyFlagged?: boolean;
     }>("/api/sleep", { method: "POST", body: JSON.stringify(body) }),
   // T-023 — workout logging.

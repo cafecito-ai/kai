@@ -8,17 +8,18 @@
 //
 // Strategy:
 //   - /api/*           → bypass the SW entirely (always hit the network)
-//   - /crisis (or /)   → cache-first with network update (loads instantly
+//   - /crisis          → cache-first with network update (loads instantly
 //                        offline, fresh when online)
 //   - /assets/*        → runtime cache (Vite ships content-hashed names
 //                        so we can cache them forever)
-//   - everything else  → network-first with cache fallback
+//   - everything else  → network-first with cache fallback. This includes
+//                        / so product/home changes are visible immediately.
 
-const KAI_SW_VERSION = "v1";
+const KAI_SW_VERSION = "v2";
 const STATIC_CACHE = `kai-static-${KAI_SW_VERSION}`;
 const RUNTIME_CACHE = `kai-runtime-${KAI_SW_VERSION}`;
 
-const STATIC_URLS = ["/", "/crisis", "/manifest.webmanifest"];
+const STATIC_URLS = ["/crisis", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -50,7 +51,7 @@ function isApi(url) {
 }
 
 function isCrisisShell(url) {
-  return url.pathname === "/crisis" || url.pathname === "/";
+  return url.pathname === "/crisis";
 }
 
 function isAsset(url) {

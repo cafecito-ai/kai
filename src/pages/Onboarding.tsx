@@ -1,17 +1,28 @@
-import { Activity, Brain, ChevronLeft, Sparkles, ShieldAlert } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  Brain,
+  Check,
+  ChevronLeft,
+  Dumbbell,
+  Flame,
+  HeartPulse,
+  Moon,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  UsersRound,
+  Utensils,
+  Zap
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { DisclosureBanner } from "../components/safety/DisclosureBanner";
-import { ChoiceCard, StepShell } from "../components/ui/AppPrimitives";
+import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
-// Demo carry-over — when a teen completes /demo and clicks the SignupNudge,
-// they land here with kai_demo_build_v1 still in localStorage. We pre-fill the
-// Kai name + tone so they don't have to re-type what they already chose, and
-// show a small banner so they know the demo bled through.
 const DEMO_STORAGE_KEY = "kai_demo_build_v1";
 
 type DemoBuildSlice = {
@@ -24,6 +35,10 @@ type DemoBuildSlice = {
   feelingsSummary?: string;
   mealSummary?: string;
 };
+
+type VibeId = "stressed" | "locked_in" | "tired" | "motivated" | "lonely" | "confident" | "chaotic" | "bored";
+type SignalId = "sleep" | "energy" | "confidence" | "movement" | "food" | "social";
+type MissionId = "mind" | "body" | "confidence" | "discipline" | "food" | "sleep" | "social" | "goals";
 
 function loadDemoBuild(): DemoBuildSlice | null {
   if (typeof window === "undefined") return null;
@@ -42,32 +57,49 @@ function isValidKaiTone(v: unknown): v is KaiTone {
   return v === "warm" || v === "balanced" || v === "direct";
 }
 
-const intakeQuestions = [
-  "Walk me into a normal day for you. What does it look like from wake-up to bed?",
-  "What's one thing you wish was different right now?",
-  "What's one thing you actually like about your life right now?",
-  "Where do you feel pressure these days, and where is it coming from?",
-  "If you had an extra hour every day for anything, no judgment, what would you do?",
-  "On a scale of 1 to 10, how are you actually doing this week?"
+const toneChoices: Array<{ id: KaiTone; label: string; copy: string; preview: string }> = [
+  { id: "balanced", label: "Real", copy: "Calm, honest, not corny.", preview: "We can keep this small. Pick the next rep and build from there." },
+  { id: "warm", label: "Soft", copy: "More patient and reflective.", preview: "That sounds like a lot to hold. Let's slow it down and choose one manageable move." },
+  { id: "direct", label: "Direct", copy: "Faster, practical, clearer.", preview: "Here are two clean options. Pick one, do it for ten minutes, then reassess." }
 ];
 
-const engineChoices: Array<{ id: EngineId | "unsure"; title: string; copy: string; icon: typeof Activity; tone: string }> = [
-  { id: "physical", title: "Physical", copy: "Food, sleep, movement, recovery.", icon: Activity, tone: "bg-bodyWash text-body" },
-  { id: "mental", title: "Mental", copy: "Stress, confidence, goals, social pressure.", icon: Brain, tone: "bg-resetWash text-reset" },
-  { id: "unsure", title: "Not sure", copy: "Let Kai read the pattern.", icon: ShieldAlert, tone: "bg-careWash text-care" }
+const vibeChoices: Array<{ id: VibeId; label: string; icon: typeof Brain }> = [
+  { id: "stressed", label: "Stressed", icon: Brain },
+  { id: "locked_in", label: "Locked in", icon: Zap },
+  { id: "tired", label: "Tired", icon: Moon },
+  { id: "motivated", label: "Motivated", icon: Flame },
+  { id: "lonely", label: "Lonely", icon: UsersRound },
+  { id: "confident", label: "Confident", icon: Sparkles },
+  { id: "chaotic", label: "Chaotic", icon: Activity },
+  { id: "bored", label: "Bored", icon: Target }
 ];
 
-const toneChoices: Array<{ id: KaiTone; title: string; copy: string; preview: string }> = [
-  { id: "balanced", title: "Balanced", copy: "Asks questions, offers options, does not push.", preview: "We can keep this small. Pick the easiest next move and we will build from there." },
-  { id: "warm", title: "Warm", copy: "Gentler, more reflective, more feeling-aware.", preview: "That sounds like a lot to hold. We can slow it down and start with what feels most manageable." },
-  { id: "direct", title: "Direct", copy: "Faster, practical, clearer options sooner.", preview: "Here are two clean options. Pick one, do it for ten minutes, then reassess." }
+const signalCopy: Record<SignalId, { label: string; low: string; mid: string; high: string; icon: typeof Brain }> = {
+  sleep: { label: "Sleep", low: "Rough", mid: "Okay", high: "Solid", icon: Moon },
+  energy: { label: "Energy", low: "Low", mid: "Fine", high: "High", icon: Zap },
+  confidence: { label: "Confidence", low: "Quiet", mid: "Mixed", high: "Strong", icon: Sparkles },
+  movement: { label: "Movement", low: "None", mid: "Some", high: "Active", icon: Dumbbell },
+  food: { label: "Food/body", low: "Messy", mid: "Neutral", high: "Good", icon: Utensils },
+  social: { label: "Social", low: "Heavy", mid: "Normal", high: "Connected", icon: UsersRound }
+};
+
+const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: "mental" | "physical"; route: string }> = [
+  { id: "mind", label: "Mind", copy: "Feel less overloaded.", icon: Brain, engine: "mental", route: "/mental?module=checkin" },
+  { id: "body", label: "Body", copy: "Move, recover, feel better.", icon: HeartPulse, engine: "physical", route: "/health?module=movement" },
+  { id: "confidence", label: "Confidence", copy: "Stop shrinking yourself.", icon: Sparkles, engine: "mental", route: "/mental?module=purpose" },
+  { id: "discipline", label: "Discipline", copy: "Build systems, not hype.", icon: Target, engine: "mental", route: "/mental?module=purpose" },
+  { id: "food", label: "Food", copy: "Log without shame.", icon: Utensils, engine: "physical", route: "/health?module=food" },
+  { id: "sleep", label: "Sleep", copy: "Reset the foundation.", icon: Moon, engine: "physical", route: "/health?module=movement" },
+  { id: "social", label: "Social", copy: "Handle pressure and loneliness.", icon: UsersRound, engine: "mental", route: "/mental?module=checkin" },
+  { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "mental", route: "/mental?module=purpose" }
 ];
+
+const steps = ["Gate", "Kai", "Vibe", "Signals", "Mission", "Context", "Reveal"];
 
 export function Onboarding() {
   const navigate = useNavigate();
   const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
   const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
-  const fromDemo = Boolean(demoBuild);
   const [step, setStep] = useState(0);
   const [age, setAge] = useState("16");
   const [parentEmail, setParentEmail] = useState("");
@@ -75,37 +107,52 @@ export function Onboarding() {
     const name = demoBuild?.kaiName?.trim();
     return name && name.length > 0 ? name : "Kai";
   });
-  const [kaiTone, setKaiTone] = useState<KaiTone>(() =>
-    isValidKaiTone(demoBuild?.kaiTone) ? demoBuild.kaiTone : "balanced"
-  );
-  const [manualEngine, setManualEngine] = useState<EngineId | "unsure">("unsure");
-  const [responses, setResponses] = useState<string[]>(() => {
-    const initial = Array(intakeQuestions.length).fill("");
-    // Pre-seed Q5 ("extra hour every day") with what they said they want to
-    // try in the demo — gives Kai useful context without filling answers for
-    // questions the user hasn't actually engaged with.
-    const triedNotes: string[] = [];
-    if (demoBuild?.goalText) triedNotes.push(`In the demo, said: "${demoBuild.goalText}"`);
-    if (demoBuild?.feelingsSummary) triedNotes.push(`Feelings check: ${demoBuild.feelingsSummary}`);
-    if (demoBuild?.mealSummary) triedNotes.push(demoBuild.mealSummary);
-    if (triedNotes.length) initial[4] = triedNotes.join(" — ");
-    return initial;
+  const [kaiTone, setKaiTone] = useState<KaiTone>(() => (isValidKaiTone(demoBuild?.kaiTone) ? demoBuild.kaiTone : "balanced"));
+  const [vibes, setVibes] = useState<VibeId[]>(() => normalizeDemoVibes(demoBuild?.vibes));
+  const [signals, setSignals] = useState<Record<SignalId, number>>({
+    sleep: 1,
+    energy: 1,
+    confidence: 1,
+    movement: 1,
+    food: 1,
+    social: 1
+  });
+  const [mission, setMission] = useState<MissionId>(() => inferDemoMission(demoBuild));
+  const [context, setContext] = useState(() => {
+    const parts = [demoBuild?.goalText, demoBuild?.feelingsSummary, demoBuild?.mealSummary].filter(Boolean);
+    return parts.join(" ");
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const normalizedAge = Number(age) || undefined;
   const isMinor = Boolean(normalizedAge && normalizedAge < 18);
-  const suggestedEngine = useMemo<EngineId>(() => {
-    if (manualEngine !== "unsure") return manualEngine;
-    const text = responses.join(" ").toLowerCase();
-    if (/goal|school|sport|business|future|music|instrument|college|project|confidence|purpose|discipline|habit/.test(text)) return "mental";
-    if (/stress|sad|anxious|friend|social|identity|emotion|pressure|overthink/.test(text)) return "mental";
-    return "physical";
-  }, [manualEngine, responses]);
-  const questionIndex = step - 4;
-  const totalSteps = 11;
-  const progress = ((step + 1) / totalSteps) * 100;
+  const selectedMission = missionChoices.find((item) => item.id === mission) ?? missionChoices[0];
+  const selectedTone = toneChoices.find((tone) => tone.id === kaiTone) ?? toneChoices[0];
+  const primaryEngine: EngineId = selectedMission.engine;
+  const progress = ((step + 1) / steps.length) * 100;
+  const calibration = useMemo(() => calibrationScore({ vibes, signals, context }), [vibes, signals, context]);
+
+  function next() {
+    setError("");
+    if (step === 0 && isMinor && !parentEmail.trim()) {
+      setError("Parent email is required for teen accounts.");
+      return;
+    }
+    setStep((value) => Math.min(steps.length - 1, value + 1));
+  }
+
+  function back() {
+    setError("");
+    setStep((value) => Math.max(0, value - 1));
+  }
+
+  function toggleVibe(id: VibeId) {
+    setVibes((items) => {
+      if (items.includes(id)) return items.filter((item) => item !== id);
+      return [...items, id].slice(-3);
+    });
+  }
 
   async function finish() {
     setSaving(true);
@@ -119,10 +166,9 @@ export function Onboarding() {
     }
 
     try {
-      const keyedResponses = Object.fromEntries(intakeQuestions.map((question, index) => [`q${index + 1}`, responses[index] || question]));
-      const intake = await api.submitIntake(keyedResponses);
-      const rawEngine = manualEngine === "unsure" ? intake.suggestedEngine || suggestedEngine : manualEngine;
-      const engine = rawEngine === "potential" ? "mental" : rawEngine;
+      const intake = await api.submitIntake(buildIntakeAnswers({ vibes, signals, mission, context, kaiTone }));
+      const routedEngine = intake.suggestedEngine === "potential" ? "mental" : intake.suggestedEngine;
+      const engine = selectedMission.engine || routedEngine || primaryEngine;
       await api.updateUser({
         kaiName: kaiName || "Kai",
         kaiTone,
@@ -132,207 +178,398 @@ export function Onboarding() {
         onboardingCompleted: true
       });
       if (isMinor && normalizedParentEmail) {
-        await api.sendParentConsent({
-          parentEmail: normalizedParentEmail,
-          teenName: kaiName || "Kai user"
-        });
+        await api.sendParentConsent({ parentEmail: normalizedParentEmail, teenName: kaiName || "Kai user" });
         setConsentPending(normalizedParentEmail);
       }
       setKai(kaiName || "Kai", kaiTone);
       setPrimaryEngine(engine);
-      navigate(`/engine/${engine}`);
+      navigate(selectedMission.route);
     } catch {
-      setError("Could not save onboarding yet. You can keep going in demo mode.");
+      setError("Could not save onboarding yet. Kai saved the setup locally so you can keep moving.");
       setKai(kaiName || "Kai", kaiTone);
-      setPrimaryEngine(suggestedEngine);
-      navigate(`/engine/${suggestedEngine}`);
+      setPrimaryEngine(primaryEngine);
+      navigate(selectedMission.route);
     } finally {
       setSaving(false);
     }
   }
 
-  if (step === 0) {
-    return (
-      <StepShell eyebrow="step 1 of 11" title="First, how old are you?" progress={progress} footer={<NextBack onNext={() => setStep(1)} nextDisabled={isMinor && !parentEmail.trim()} />}>
-        <div className="space-y-4">
-          {fromDemo && <DemoCarryoverBanner build={demoBuild!} />}
-          <DisclosureBanner />
-          {error && <p className="rounded-kai border border-danger/25 bg-dangerWash p-3 text-sm font-bold text-danger">{error}</p>}
-          <label className="block text-sm font-black">
-            Age
-            <input className="field mt-2" inputMode="numeric" value={age} onChange={(event) => setAge(event.target.value)} />
-          </label>
-          <label className="block text-sm font-black">
-            Parent email {isMinor ? "(required)" : "(optional)"}
-            <input className="field mt-2" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} placeholder="parent@example.com" />
-          </label>
-          {isMinor && (
-            <div className="rounded-kai border border-line bg-paper p-3 text-sm font-semibold leading-6 text-muted">
-              Kai sends a consent email for teen accounts. The parent view confirms consent only; it does not show private answers, goals, meals, or chats.
-            </div>
-          )}
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (step === 1) {
-    return (
-      <StepShell eyebrow="step 2 of 11" title="What should Kai call you?" progress={progress} footer={<NextBack onBack={() => setStep(0)} onNext={() => setStep(2)} />}>
-        <label className="block text-sm font-black">
-          Mentor name
-          <input className="field mt-2" value={kaiName} maxLength={20} onChange={(event) => setKaiName(event.target.value)} />
-        </label>
-        <p className="mt-3 text-sm font-semibold leading-6 text-muted">Default is Kai. You can change this later in settings.</p>
-      </StepShell>
-    );
-  }
-
-  if (step === 2) {
-    return (
-      <StepShell eyebrow="step 3 of 11" title="How should Kai sound?" progress={progress} footer={<NextBack onBack={() => setStep(1)} onNext={() => setStep(3)} />}>
-        <div className="space-y-2">
-          {toneChoices.map((tone) => (
-            <ChoiceCard key={tone.id} selected={kaiTone === tone.id} onClick={() => setKaiTone(tone.id)}>
-              <span className="block text-base font-black">{tone.title}</span>
-              <span className={`mt-1 block text-sm leading-6 ${kaiTone === tone.id ? "text-paper/75" : "text-muted"}`}>{tone.copy}</span>
-            </ChoiceCard>
-          ))}
-        </div>
-        <div className="mt-4 rounded-kai border border-line bg-paper p-3 text-sm font-semibold leading-6">
-          "{toneChoices.find((tone) => tone.id === kaiTone)?.preview}"
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (step === 3) {
-    return (
-      <StepShell eyebrow="step 4 of 11" title="What feels most useful today?" progress={progress} footer={<NextBack onBack={() => setStep(2)} onNext={() => setStep(4)} />}>
-        <div className="grid gap-2">
-          {engineChoices.map(({ id, title, copy, icon: Icon, tone }) => (
-            <ChoiceCard key={id} selected={manualEngine === id} onClick={() => setManualEngine(id)}>
-              <span className="flex items-start gap-3">
-                <span className={`grid size-10 shrink-0 place-items-center rounded-full ${manualEngine === id ? "bg-white/15 text-paper" : tone}`}>
-                  <Icon size={19} />
-                </span>
-                <span>
-                  <span className="block text-base font-black">{title}</span>
-                  <span className={`mt-1 block text-sm leading-6 ${manualEngine === id ? "text-paper/75" : "text-muted"}`}>{copy}</span>
-                </span>
-              </span>
-            </ChoiceCard>
-          ))}
-        </div>
-      </StepShell>
-    );
-  }
-
-  if (questionIndex >= 0 && questionIndex < intakeQuestions.length) {
-    return (
-      <StepShell eyebrow={`step ${step + 1} of 11`} title={intakeQuestions[questionIndex]} progress={progress} footer={<NextBack onBack={() => setStep(step - 1)} onNext={() => setStep(step + 1)} nextLabel={questionIndex === intakeQuestions.length - 1 ? "See Kai's read" : "Next"} />}>
-        <textarea
-          className="field min-h-40"
-          value={responses[questionIndex]}
-          onChange={(event) => setResponses((items) => items.map((item, index) => (index === questionIndex ? event.target.value : item)))}
-          placeholder="A messy sentence is enough."
-        />
-        <button type="button" className="mt-3 text-sm font-black text-muted" onClick={() => setStep(step + 1)}>
-          Skip for now
-        </button>
-      </StepShell>
-    );
-  }
-
   return (
-    <StepShell eyebrow="step 11 of 11" title={`Let's start with ${labelForEngine(suggestedEngine)}.`} progress={100} footer={<NextBack onBack={() => setStep(9)} onNext={() => void finish()} nextLabel={saving ? "Saving" : "Sounds good. Start"} nextDisabled={saving} />}>
-      <div className="space-y-4">
-        <div className="rounded-kai border border-line bg-paper p-4 text-sm font-semibold leading-6">
-          {manualEngine === "unsure"
-            ? "Based on your answers, this is the lane most likely to help first. You can switch any time."
-            : "You picked this lane. Kai will use it as your starting point, and the other lanes stay one tap away."}
-        </div>
-        <div className="grid gap-2">
-          {engineChoices.filter((engine) => engine.id !== "unsure").map(({ id, title, copy, icon: Icon, tone }) => (
-            <ChoiceCard key={id} selected={suggestedEngine === id} onClick={() => setManualEngine(id as EngineId)}>
-              <span className="flex items-start gap-3">
-                <span className={`grid size-10 shrink-0 place-items-center rounded-full ${suggestedEngine === id ? "bg-white/15 text-paper" : tone}`}>
-                  <Icon size={19} />
-                </span>
-                <span>
-                  <span className="block text-base font-black">{title}</span>
-                  <span className={`mt-1 block text-sm leading-6 ${suggestedEngine === id ? "text-paper/75" : "text-muted"}`}>{copy}</span>
-                </span>
-              </span>
-            </ChoiceCard>
-          ))}
-        </div>
-        {isMinor && parentEmail.trim() && (
-          <div className="rounded-kai border border-line bg-careWash p-3 text-sm font-semibold leading-6 text-muted">
-            Parent consent email will be sent to {parentEmail.trim()}. Crisis resources remain available any time.
+    <main className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-5xl flex-col justify-center px-1 py-4 text-[#111116]">
+      <section className="overflow-hidden rounded-[34px] border border-[#0A0A0A0F] bg-[#FAFAF7] shadow-[0_24px_90px_rgba(10,10,10,0.12)]">
+        <div className="grid min-h-[720px] lg:grid-cols-[0.78fr_1.22fr]">
+          <aside className="relative hidden bg-[#111116] p-7 text-white lg:flex lg:flex-col lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white/70">
+                <ShieldCheck size={14} aria-hidden="true" />
+                Private by default
+              </div>
+              <h1 className="mt-8 max-w-sm font-display text-5xl font-semibold leading-[0.94] tracking-normal">Build the Kai that actually fits you.</h1>
+              <p className="mt-4 max-w-sm text-sm font-semibold leading-6 text-white/62">
+                Fast setup. No diagnosis. No fake motivation. Kai learns your first pattern and gives you one useful rep.
+              </p>
+            </div>
+            <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <div className="flex items-center gap-3">
+                <KaiAvatar size={54} label={kaiName || "Kai"} pulse />
+                <div>
+                  <p className="text-sm font-black">{kaiName || "Kai"}</p>
+                  <p className="text-xs font-semibold capitalize text-white/55">{selectedTone.label} mode</p>
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                <CalibrationPill label="Vibes" value={String(vibes.length)} />
+                <CalibrationPill label="Read" value={`${calibration}%`} />
+                <CalibrationPill label="Unit" value={selectedMission.engine === "physical" ? "Body" : "Mind"} />
+              </div>
+            </div>
+          </aside>
+
+          <div className="flex min-w-0 flex-col p-4 sm:p-6 lg:p-8">
+            <OnboardingHeader step={step} progress={progress} />
+            <div className="flex flex-1 flex-col justify-center py-6">
+              {error && <p className="mb-4 rounded-[18px] border border-[#E35D4F]/25 bg-[#FFF0EC] p-3 text-sm font-black text-[#C4473E]">{error}</p>}
+              {step === 0 && <AgeGate age={age} setAge={setAge} isMinor={isMinor} parentEmail={parentEmail} setParentEmail={setParentEmail} fromDemo={Boolean(demoBuild)} />}
+              {step === 1 && <KaiBuilder kaiName={kaiName} setKaiName={setKaiName} kaiTone={kaiTone} setKaiTone={setKaiTone} selectedTone={selectedTone} />}
+              {step === 2 && <VibeScan selected={vibes} onToggle={toggleVibe} />}
+              {step === 3 && <SignalScan signals={signals} setSignals={setSignals} />}
+              {step === 4 && <MissionPick mission={mission} setMission={setMission} />}
+              {step === 5 && <ContextDrop context={context} setContext={setContext} />}
+              {step === 6 && <Reveal kaiName={kaiName || "Kai"} tone={selectedTone} mission={selectedMission} calibration={calibration} isMinor={isMinor} parentEmail={parentEmail} />}
+            </div>
+            <footer className="grid gap-2 sm:grid-cols-[auto_1fr]">
+              {step > 0 && (
+                <Button type="button" variant="secondary" onClick={back} className="w-full sm:w-auto">
+                  <ChevronLeft size={18} aria-hidden="true" />
+                  Back
+                </Button>
+              )}
+              {step < steps.length - 1 ? (
+                <Button type="button" onClick={next} className="min-h-12 w-full">
+                  {step === 5 ? "Reveal Kai" : "Next"}
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Button>
+              ) : (
+                <Button type="button" onClick={() => void finish()} disabled={saving} className="min-h-12 w-full">
+                  {saving ? "Saving" : "Start my first rep"}
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Button>
+              )}
+            </footer>
           </div>
-        )}
-        <Link to="/crisis" className="inline-flex text-sm font-black text-danger">
-          Open crisis resources
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function OnboardingHeader({ step, progress }: { step: number; progress: number }) {
+  return (
+    <header>
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-[#8A8A8F]">
+          {steps[step]} · {step + 1}/{steps.length}
+        </p>
+        <Link to="/crisis" className="text-xs font-black text-[#C4473E]">
+          Crisis
         </Link>
       </div>
-    </StepShell>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#F0EFEC]">
+        <div className="h-full rounded-full bg-[#111116] transition-all duration-500" style={{ width: `${progress}%` }} />
+      </div>
+    </header>
   );
 }
 
-function NextBack({
-  onBack,
-  onNext,
-  nextLabel = "Next",
-  nextDisabled = false
+function AgeGate({
+  age,
+  setAge,
+  isMinor,
+  parentEmail,
+  setParentEmail,
+  fromDemo
 }: {
-  onBack?: () => void;
-  onNext: () => void;
-  nextLabel?: string;
-  nextDisabled?: boolean;
+  age: string;
+  setAge: (value: string) => void;
+  isMinor: boolean;
+  parentEmail: string;
+  setParentEmail: (value: string) => void;
+  fromDemo: boolean;
 }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-[auto_1fr]">
-      {onBack && (
-        <Button type="button" variant="secondary" onClick={onBack} className="w-full sm:w-auto">
-          <ChevronLeft size={18} />
-          Back
-        </Button>
+    <div>
+      <Eyebrow>Start clean</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">First, the safety stuff. Then the fun part.</h2>
+      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">
+        Kai needs age for teen safety rules. Private answers, meals, goals, and chats stay private.
+      </p>
+      {fromDemo && <p className="mt-4 rounded-[18px] border border-[#D6D0FF] bg-[#F8F6FF] p-3 text-sm font-black text-[#6C5CE7]">Picked up your demo choices. You can change anything.</p>}
+      <div className="mt-6 grid gap-3 sm:grid-cols-[9rem_1fr]">
+        <label className="block text-sm font-black">
+          Age
+          <input className="field mt-2 text-lg" inputMode="numeric" value={age} onChange={(event) => setAge(event.target.value)} />
+        </label>
+        <label className="block text-sm font-black">
+          Parent email {isMinor ? "(required)" : "(optional)"}
+          <input className="field mt-2 text-lg" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} placeholder="parent@example.com" />
+        </label>
+      </div>
+      {isMinor && (
+        <div className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">
+          Parent consent confirms beta access. It does not unlock private answers, food logs, goals, or chats.
+        </div>
       )}
-      <Button type="button" onClick={onNext} disabled={nextDisabled} className="w-full">
-        {nextLabel}
-      </Button>
     </div>
   );
 }
 
-function labelForEngine(engine: EngineId) {
-  if (engine === "physical") return "Body";
-  return "Mind";
-}
-
-function DemoCarryoverBanner({ build }: { build: DemoBuildSlice }) {
-  const triedLabels: Record<string, string> = {
-    win: "one win",
-    feelings: "feelings check",
-    fuel: "fuel snap"
-  };
-  const triedLine = (build.tried ?? []).map((k) => triedLabels[k] ?? k).join(" · ");
-  const parts = [
-    build.kaiName && build.kaiName !== "Kai" ? `name: ${build.kaiName}` : null,
-    build.kaiTone ? `tone: ${build.kaiTone}` : null,
-    build.vibes?.length ? `vibes: ${build.vibes.slice(0, 3).join(", ")}` : null,
-    triedLine ? `tried: ${triedLine}` : null
-  ].filter(Boolean).join(" · ");
+function KaiBuilder({
+  kaiName,
+  setKaiName,
+  kaiTone,
+  setKaiTone,
+  selectedTone
+}: {
+  kaiName: string;
+  setKaiName: (value: string) => void;
+  kaiTone: KaiTone;
+  setKaiTone: (value: KaiTone) => void;
+  selectedTone: (typeof toneChoices)[number];
+}) {
   return (
-    <div className="rounded-kai border border-goals/30 bg-goalsWash p-3 text-sm">
-      <p className="flex items-center gap-2 font-black text-goals">
-        <Sparkles size={14} /> Picked up where you left off in the demo
-      </p>
-      {parts && <p className="mt-1 font-semibold leading-5 text-muted">{parts}</p>}
-      <p className="mt-1.5 text-xs font-semibold leading-5 text-muted/85">
-        Pre-filled the next couple steps — you can change any of it.
-      </p>
+    <div>
+      <Eyebrow>Build Kai</Eyebrow>
+      <div className="mt-3 flex items-center gap-4">
+        <KaiAvatar size={72} label={kaiName || "Kai"} pulse />
+        <div>
+          <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">Choose the voice.</h2>
+          <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Not a therapist. Not a corporate assistant. A useful mentor.</p>
+        </div>
+      </div>
+      <label className="mt-6 block text-sm font-black">
+        Companion name
+        <input className="field mt-2 text-lg" value={kaiName} maxLength={20} onChange={(event) => setKaiName(event.target.value)} />
+      </label>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        {toneChoices.map((tone) => (
+          <button key={tone.id} type="button" onClick={() => setKaiTone(tone.id)} className={`focus-ring min-h-32 rounded-[24px] border p-4 text-left transition ${kaiTone === tone.id ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-white text-[#111116]"}`}>
+            <span className="text-lg font-black">{tone.label}</span>
+            <span className={`mt-2 block text-sm font-semibold leading-5 ${kaiTone === tone.id ? "text-white/62" : "text-[#8A8A8F]"}`}>{tone.copy}</span>
+          </button>
+        ))}
+      </div>
+      <p className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">"{selectedTone.preview}"</p>
     </div>
   );
+}
+
+function VibeScan({ selected, onToggle }: { selected: VibeId[]; onToggle: (id: VibeId) => void }) {
+  return (
+    <div>
+      <Eyebrow>Vibe scan</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Pick the 3 that feel most true right now.</h2>
+      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">No perfect answer. Kai just needs the starting weather.</p>
+      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {vibeChoices.map((vibe) => {
+          const Icon = vibe.icon;
+          const active = selected.includes(vibe.id);
+          return (
+            <button key={vibe.id} type="button" onClick={() => onToggle(vibe.id)} className={`focus-ring min-h-24 rounded-[24px] border p-4 text-left transition ${active ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-white text-[#111116]"}`}>
+              <Icon size={20} aria-hidden="true" />
+              <span className="mt-3 block text-sm font-black">{vibe.label}</span>
+              {active && <Check className="mt-2 text-[#A3FF12]" size={16} aria-hidden="true" />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SignalScan({ signals, setSignals }: { signals: Record<SignalId, number>; setSignals: React.Dispatch<React.SetStateAction<Record<SignalId, number>>> }) {
+  return (
+    <div>
+      <Eyebrow>Life signals</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Give Kai the dashboard.</h2>
+      <div className="mt-6 grid gap-3">
+        {(Object.keys(signalCopy) as SignalId[]).map((id) => {
+          const signal = signalCopy[id];
+          const Icon = signal.icon;
+          return (
+            <div key={id} className="rounded-[24px] border border-[#0A0A0A0F] bg-white p-4">
+              <div className="flex items-center gap-2">
+                <Icon size={18} aria-hidden="true" />
+                <p className="text-sm font-black">{signal.label}</p>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {[signal.low, signal.mid, signal.high].map((label, index) => (
+                  <button key={label} type="button" onClick={() => setSignals((items) => ({ ...items, [id]: index }))} className={`focus-ring min-h-11 rounded-full text-sm font-black ${signals[id] === index ? "bg-[#111116] text-white" : "bg-[#F4F1EB] text-[#5E5E64]"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MissionPick({ mission, setMission }: { mission: MissionId; setMission: (value: MissionId) => void }) {
+  return (
+    <div>
+      <Eyebrow>First mission</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What should Kai help with first?</h2>
+      <div className="mt-6 grid gap-2 sm:grid-cols-2">
+        {missionChoices.map((item) => {
+          const Icon = item.icon;
+          const active = mission === item.id;
+          return (
+            <button key={item.id} type="button" onClick={() => setMission(item.id)} className={`focus-ring flex min-h-24 items-center gap-3 rounded-[24px] border p-4 text-left transition ${active ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-white text-[#111116]"}`}>
+              <span className={`grid size-11 shrink-0 place-items-center rounded-full ${active ? "bg-white/12" : "bg-[#F4F1EB]"}`}>
+                <Icon size={20} aria-hidden="true" />
+              </span>
+              <span>
+                <span className="block text-base font-black">{item.label}</span>
+                <span className={`mt-1 block text-sm font-semibold ${active ? "text-white/62" : "text-[#8A8A8F]"}`}>{item.copy}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ContextDrop({ context, setContext }: { context: string; setContext: (value: string) => void }) {
+  return (
+    <div>
+      <Eyebrow>Optional context</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Anything Kai should know?</h2>
+      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">A messy sentence is enough. Or skip it and let Kai learn as you use the app.</p>
+      <textarea className="field mt-6 min-h-40 text-base" value={context} onChange={(event) => setContext(event.target.value)} placeholder="Example: school pressure has been loud, sleep is bad, and I want to feel more confident..." />
+    </div>
+  );
+}
+
+function Reveal({
+  kaiName,
+  tone,
+  mission,
+  calibration,
+  isMinor,
+  parentEmail
+}: {
+  kaiName: string;
+  tone: (typeof toneChoices)[number];
+  mission: (typeof missionChoices)[number];
+  calibration: number;
+  isMinor: boolean;
+  parentEmail: string;
+}) {
+  const MissionIcon = mission.icon;
+  return (
+    <div>
+      <Eyebrow>Kai is calibrated</Eyebrow>
+      <div className="mt-3 rounded-[30px] border border-[#0A0A0A0F] bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-4">
+          <KaiAvatar size={76} label={kaiName} pulse />
+          <div>
+            <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">{kaiName} is ready.</h2>
+            <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Start with one useful rep. The rest can wait.</p>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <RevealStat label="Voice" value={tone.label} />
+          <RevealStat label="Read" value={`${calibration}%`} />
+          <RevealStat label="Unit" value={mission.engine === "physical" ? "Body" : "Mind"} />
+        </div>
+      </div>
+      <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-[#111116] p-5 text-white">
+        <div className="flex items-start gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white/12">
+            <MissionIcon size={20} aria-hidden="true" />
+          </span>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">First rep</p>
+            <h3 className="mt-1 text-2xl font-black">{mission.label}</h3>
+            <p className="mt-2 text-sm font-semibold leading-6 text-white/62">{mission.copy}</p>
+          </div>
+        </div>
+      </div>
+      {isMinor && parentEmail.trim() && (
+        <p className="mt-4 rounded-[18px] border border-[#D7F0EA] bg-[#F4FFFC] p-3 text-sm font-semibold leading-6 text-[#5E5E64]">
+          Parent consent email will be sent to {parentEmail.trim()}. Private answers stay private.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return <p className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-[#8A8A8F]">{children}</p>;
+}
+
+function CalibrationPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-white/10 bg-white/10 p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">{label}</p>
+      <p className="mt-1 truncate text-sm font-black capitalize text-white">{value}</p>
+    </div>
+  );
+}
+
+function RevealStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[20px] bg-[#F4F1EB] p-4">
+      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A8A8F]">{label}</p>
+      <p className="mt-2 truncate text-lg font-black capitalize text-[#111116]">{value}</p>
+    </div>
+  );
+}
+
+function normalizeDemoVibes(vibes: string[] | undefined): VibeId[] {
+  if (!vibes) return [];
+  const ids = new Set(vibeChoices.map((item) => item.id));
+  return vibes.map((vibe) => vibe.toLowerCase().replace(/\s+/g, "_")).filter((vibe): vibe is VibeId => ids.has(vibe as VibeId)).slice(0, 3);
+}
+
+function inferDemoMission(build: DemoBuildSlice | null): MissionId {
+  const text = [build?.goalText, build?.feelingsSummary, build?.mealSummary, ...(build?.tried ?? [])].join(" ").toLowerCase();
+  if (/meal|food|fuel|camera/.test(text)) return "food";
+  if (/body|scan|workout|sport|sleep|recovery/.test(text)) return "body";
+  if (/confidence/.test(text)) return "confidence";
+  if (/goal|discipline|future/.test(text)) return "goals";
+  return "mind";
+}
+
+function calibrationScore({ vibes, signals, context }: { vibes: VibeId[]; signals: Record<SignalId, number>; context: string }) {
+  const answeredSignals = Object.values(signals).filter((value) => value !== 1).length;
+  return Math.min(96, 58 + vibes.length * 8 + answeredSignals * 3 + (context.trim().length > 12 ? 8 : 0));
+}
+
+function buildIntakeAnswers({
+  vibes,
+  signals,
+  mission,
+  context,
+  kaiTone
+}: {
+  vibes: VibeId[];
+  signals: Record<SignalId, number>;
+  mission: MissionId;
+  context: string;
+  kaiTone: KaiTone;
+}) {
+  const signalLines = (Object.keys(signals) as SignalId[]).map((id) => `${signalCopy[id].label}: ${["low", "medium", "high"][signals[id]]}`);
+  const missionChoice = missionChoices.find((item) => item.id === mission) ?? missionChoices[0];
+  return {
+    q1: `Current vibe: ${vibes.map((vibe) => vibe.replace(/_/g, " ")).join(", ") || "not sure yet"}. Signals: ${signalLines.join("; ")}.`,
+    q2: `Wants help first with ${missionChoice.label}: ${missionChoice.copy}`,
+    q3: `They chose ${kaiTone} tone because that is the support style they want from Kai.`,
+    q4: context.trim() || "No extra context yet. Learn from early app reps.",
+    q5: `First suggested route is ${missionChoice.route}.`,
+    q6: `Use a supportive, honest mentor style. Avoid shame, clinical diagnosis, toxic productivity, and body comparison.`
+  };
 }

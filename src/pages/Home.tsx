@@ -1,9 +1,28 @@
-import { Activity, Brain, Flame, Heart, Home as HomeIcon, Minus, Moon, Plus, SmilePlus, UsersRound, UserRound, Zap } from "lucide-react";
+import {
+  Activity,
+  Brain,
+  Camera,
+  Dumbbell,
+  Flame,
+  Heart,
+  Home as HomeIcon,
+  Minus,
+  Moon,
+  Plus,
+  SmilePlus,
+  Sparkles,
+  UsersRound,
+  UserRound,
+  X,
+  Zap
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { KaiChat } from "../components/kai/KaiChat";
 import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { DAILY_CUP_FLOOR, incrementCups, resetIfNewDay, todayIso, type HydrationToday } from "../lib/hydration";
 import { loadJSON, saveJSON } from "../lib/local-storage";
+import { engineTotals } from "../lib/tracker";
 import type { ProgressEvent } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
@@ -20,6 +39,8 @@ export function Home() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const streak = useProgressStore((state) => state.streak());
   const [hydration, setHydration] = useState<HydrationToday>({ dateIso: todayIso(), cups: 0 });
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     const stored = loadJSON<HydrationToday | null>(HYDRATION_HOME_KEY, null, null);
@@ -37,6 +58,11 @@ export function Home() {
   const displayStreak = Math.max(streak, 4);
   const day = dayParts();
   const recent = recentItems(todayEvents);
+  const totals = useMemo(() => engineTotals(events), [events]);
+  const mentalPoints = totals.mental + totals.potential;
+  const physicalPoints = totals.physical;
+  const mindScore = Math.min(10, Math.max(6, Math.round(mentalPoints / 45) + 6));
+  const bodyScore = Math.min(10, Math.max(6, Math.round(physicalPoints / 45) + 6));
 
   function bumpHydration(delta: number) {
     const baseline = resetIfNewDay(hydration);
@@ -62,10 +88,10 @@ export function Home() {
               {displayStreak}-day streak
             </div>
           </div>
-          <Link to="/mental" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-[#1A1A1F] shadow-[0_8px_32px_rgba(10,10,10,0.08)]">
+          <button type="button" onClick={() => setChatOpen(true)} className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-[#1A1A1F] shadow-[0_8px_32px_rgba(10,10,10,0.08)]">
             <KaiAvatar size={36} label="KAI" pulse />
             Talk to KAI
-          </Link>
+          </button>
         </header>
 
         <section className="mt-7 rounded-[24px] border border-[#0A0A0A0F] bg-white p-6 shadow-[0_2px_4px_rgba(10,10,10,0.04),0_16px_40px_rgba(10,10,10,0.08)]">
@@ -89,9 +115,32 @@ export function Home() {
         </section>
 
         <section className="mt-6 grid grid-cols-3 gap-3">
-          <MiniMetric icon={Brain} label="Mind" value="7" unit="/10" className="bg-[#E4F7F4] text-[#68C5B8]" />
+          <MiniMetric icon={Brain} label="Mind" value={String(mindScore)} unit="/10" className="bg-[#E4F7F4] text-[#68C5B8]" />
           <MiniMetric icon={Moon} label="Sleep" value="6.4" unit="hrs" className="bg-[#EEEAFF] text-[#7B6EF6]" />
-          <MiniMetric icon={Heart} label="Mood" value="68" unit="" className="bg-[#FFF0EC] text-[#F29A43]" />
+          <MiniMetric icon={Heart} label="Body" value={String(bodyScore)} unit="/10" className="bg-[#FFF0EC] text-[#F29A43]" />
+        </section>
+
+        <section className="mt-6 grid gap-3">
+          <ModuleCard
+            to="/mental"
+            icon={Brain}
+            label="Mental agent"
+            title="Check in, reframe, reset."
+            copy="Kai keeps the emotional work simple: name what is happening, understand the pattern, choose one next move."
+            stat={`${mentalPoints || 18} pts`}
+            chips={["Mood", "Breath", "Journal"]}
+            accent="from-[#E4F7F4] to-white text-[#218A7D]"
+          />
+          <ModuleCard
+            to="/health"
+            icon={Dumbbell}
+            label="Physical agent"
+            title="Food photo, hydration, body scan."
+            copy="Log fuel, track recovery, and build a private progress loop without turning health into pressure."
+            stat={`${physicalPoints || hydration.cups * 4 || 24} pts`}
+            chips={["Food", "Hydrate", "Scan"]}
+            accent="from-[#FFF0EC] to-white text-[#C86B31]"
+          />
         </section>
 
         <HydrationPreview hydration={hydration} onBump={bumpHydration} />
@@ -127,7 +176,9 @@ export function Home() {
         </section>
       </div>
 
-      <PreviewDock />
+      {chatOpen && <ChatSheet onClose={() => setChatOpen(false)} />}
+      {quickOpen && <QuickActionSheet onClose={() => setQuickOpen(false)} onHydrate={() => bumpHydration(1)} />}
+      <PreviewDock onOpenChat={() => setChatOpen(true)} quickOpen={quickOpen} onToggleQuick={() => setQuickOpen((open) => !open)} />
     </div>
   );
 }
@@ -144,6 +195,47 @@ function MiniMetric({ icon: Icon, label, value, unit, className }: { icon: typeo
         {unit && <span className="ml-0.5 text-xs font-semibold text-[#8A8A8F]">{unit}</span>}
       </p>
     </article>
+  );
+}
+
+function ModuleCard({
+  to,
+  icon: Icon,
+  label,
+  title,
+  copy,
+  stat,
+  chips,
+  accent
+}: {
+  to: string;
+  icon: typeof Brain;
+  label: string;
+  title: string;
+  copy: string;
+  stat: string;
+  chips: string[];
+  accent: string;
+}) {
+  return (
+    <Link to={to} className={`focus-ring block rounded-[24px] border border-[#0A0A0A0F] bg-gradient-to-br ${accent} p-5 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]`}>
+      <div className="flex items-start justify-between gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/80 shadow-[0_8px_22px_rgba(10,10,10,0.08)]">
+          <Icon size={19} aria-hidden="true" />
+        </span>
+        <span className="rounded-full bg-white/80 px-3 py-1 font-mono text-[11px] font-bold text-[#1A1A1F]">{stat}</span>
+      </div>
+      <p className="mt-4 font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">{label}</p>
+      <h2 className="mt-2 font-display text-[1.35rem] font-semibold leading-[1.06] text-[#111116]">{title}</h2>
+      <p className="mt-2 text-sm font-medium leading-5 text-[#5E5E64]">{copy}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <span key={chip} className="rounded-full bg-white/70 px-3 py-1 text-xs font-bold text-[#1A1A1F]">
+            {chip}
+          </span>
+        ))}
+      </div>
+    </Link>
   );
 }
 
@@ -211,7 +303,83 @@ function ScoreRing({ value }: { value: number }) {
   );
 }
 
-function PreviewDock() {
+function ChatSheet({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-[#111116]/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
+      <div className="mx-auto w-full max-w-md rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <KaiAvatar size={34} label="KAI" pulse />
+            <div>
+              <p className="text-sm font-black text-[#111116]">KAI</p>
+              <p className="text-xs font-semibold text-[#8A8A8F]">Mental + physical companion</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="focus-ring grid size-10 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close chat">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <KaiChat embedded />
+        <div className="grid grid-cols-2 gap-2 p-2 pt-3">
+          <Link to="/mental" onClick={onClose} className="focus-ring rounded-full bg-[#E4F7F4] px-4 py-3 text-center text-sm font-black text-[#218A7D]">
+            Mental tools
+          </Link>
+          <Link to="/health" onClick={onClose} className="focus-ring rounded-full bg-[#FFF0EC] px-4 py-3 text-center text-sm font-black text-[#C86B31]">
+            Health tools
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickActionSheet({ onClose, onHydrate }: { onClose: () => void; onHydrate: () => void }) {
+  const actions = [
+    { to: "/health", label: "Food photo", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
+    { to: "/mental", label: "Mental check-in", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
+    { to: "/mental", label: "Breath reset", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
+    { to: "/health", label: "Body scan", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" }
+  ];
+
+  return (
+    <div className="fixed inset-x-0 bottom-20 z-40 px-5" role="dialog" aria-label="Quick actions">
+      <div className="mx-auto w-full max-w-md rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
+        <div className="mb-2 flex items-center justify-between px-2">
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Quick rep</p>
+          <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close quick actions">
+            <X size={15} aria-hidden="true" />
+          </button>
+        </div>
+        <div className="grid gap-2">
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link key={action.label} to={action.to} onClick={onClose} className="focus-ring flex min-h-14 items-center gap-3 rounded-[18px] bg-[#FAFAF7] px-3 text-sm font-black text-[#1A1A1F]">
+                <span className={`grid size-9 place-items-center rounded-full ${action.tone}`}>
+                  <Icon size={17} aria-hidden="true" />
+                </span>
+                {action.label}
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => {
+              onHydrate();
+              onClose();
+            }}
+            className="focus-ring flex min-h-14 items-center gap-3 rounded-[18px] bg-[#FAFAF7] px-3 text-left text-sm font-black text-[#1A1A1F]"
+          >
+            <span className="grid size-9 place-items-center rounded-full bg-[#EAF8FF] font-mono text-[#2563EB]">▱</span>
+            Add water
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewDock({ onOpenChat, quickOpen, onToggleQuick }: { onOpenChat: () => void; quickOpen: boolean; onToggleQuick: () => void }) {
   const nav = [
     { to: "/home", label: "Home", icon: HomeIcon },
     { to: "/progress", label: "Progress", icon: Activity },
@@ -220,9 +388,9 @@ function PreviewDock() {
   ];
   return (
     <div className="fixed inset-x-0 -bottom-3 z-40 flex items-end justify-center px-5" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <Link to="/mental" aria-label="KAI companion" className="focus-ring absolute left-5 bottom-5 grid size-8 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.12)]">
+      <button type="button" onClick={onOpenChat} aria-label="KAI companion" className="focus-ring absolute left-5 bottom-5 grid size-8 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.12)]">
         <KaiAvatar size={30} label="KAI companion" pulse />
-      </Link>
+      </button>
       <nav className="grid h-12 w-[13rem] grid-cols-4 items-center rounded-full border border-[#0A0A0A0F] bg-white/92 px-3 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl" aria-label="Primary navigation">
         {nav.map((item) => {
           const Icon = item.icon;
@@ -233,9 +401,9 @@ function PreviewDock() {
           );
         })}
       </nav>
-      <Link to="/health" aria-label="Quick actions" className="focus-ring ml-3 grid size-12 place-items-center rounded-full bg-[#1A1A1F] text-white shadow-[0_12px_40px_rgba(10,10,10,0.18)]">
-        <Plus size={25} aria-hidden="true" />
-      </Link>
+      <button type="button" onClick={onToggleQuick} aria-label="Quick actions" aria-expanded={quickOpen} className="focus-ring ml-3 grid size-12 place-items-center rounded-full bg-[#1A1A1F] text-white shadow-[0_12px_40px_rgba(10,10,10,0.18)]">
+        <Plus size={25} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />
+      </button>
     </div>
   );
 }

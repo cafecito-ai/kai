@@ -71,17 +71,30 @@ export type ForbiddenMatch = {
  * Return every forbidden hit in the response. Useful for logging /
  * regeneration context — the caller can tell the model exactly which words
  * to avoid on the retry.
+ *
+ * Matching: case-insensitive, with WORD BOUNDARIES so single-word forbidden
+ * terms like "fat" and "thin" don't false-positive inside "fatigue" or
+ * "breathing". Multi-word phrases like "calorie deficit" still match via
+ * the same regex — the `\b` at start/end is satisfied by the surrounding
+ * spaces and punctuation as expected.
+ *
+ * Word boundary is `\b` which matches between a `\w` (letter/digit/_) and
+ * a non-`\w`. So "fat-shaming" still flags "fat" (the hyphen is a
+ * boundary), but "fatigue" doesn't (no boundary between t and i).
  */
 export function findForbidden(response: string): ForbiddenMatch[] {
-  const lower = response.toLowerCase();
   const hits: ForbiddenMatch[] = [];
   for (const word of FORBIDDEN_BODY_LANGUAGE) {
-    let from = 0;
-    while (from <= lower.length) {
-      const idx = lower.indexOf(word, from);
-      if (idx === -1) break;
-      hits.push({ word, index: idx });
-      from = idx + word.length;
+    // Escape any regex metachars in the forbidden term (none today, but
+    // defensive — and use `i` flag for case-insensitive matching).
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`\\b${escaped}\\b`, "gi");
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(response)) !== null) {
+      hits.push({ word, index: m.index });
+      // Guard against zero-width match infinite loops (shouldn't happen
+      // with our terms, but be safe).
+      if (m.index === re.lastIndex) re.lastIndex += 1;
     }
   }
   return hits;

@@ -15,8 +15,11 @@ import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { SilhouetteOverlay } from "../../components/scan/SilhouetteOverlay";
+import { api } from "../../lib/api";
 import {
+  decryptImage,
   encryptImage,
+  listScans,
   newRecordId,
   newSessionId,
   saveScan,
@@ -77,12 +80,48 @@ export function ScanCapture() {
         mime: file.type || "image/jpeg",
       });
       if (isLast) {
-        navigate("/scan/history");
+        // T-030 — Trigger vision analysis. Best-effort: if it fails
+        // (no AI binding, network), we still navigate to history. The
+        // observations will be re-computable on demand from history.
+        analyzeAndNavigate();
       } else {
         setIdx(idx + 1);
       }
     } catch {
       setError("Couldn't save that photo — try once more.");
+      setBusy(false);
+    }
+  }
+
+  async function analyzeAndNavigate() {
+    setBusy(true);
+    try {
+      const sessionId = sessionIdRef.current;
+      const sessionScans = listScans().filter((s) => s.sessionId === sessionId);
+      const byAngle = (a: ScanAngle) => sessionScans.find((s) => s.angle === a);
+      const fr = byAngle("front");
+      const si = byAngle("side");
+      const ba = byAngle("back");
+      if (!fr || !si || !ba) {
+        navigate(`/scan/result/${sessionId}`);
+        return;
+      }
+      // Decrypt all three in memory only; send to Worker for vision.
+      const [front, side, back] = await Promise.all([
+        decryptImage(fr, userSecretRef.current),
+        decryptImage(si, userSecretRef.current),
+        decryptImage(ba, userSecretRef.current),
+      ]);
+      try {
+        await api.analyzeScan({ sessionId, front, side, back });
+      } catch {
+        // Worker unreachable or AI not configured — skip silently and
+        // let the result page render a "not yet analyzed" state.
+      }
+      navigate(`/scan/result/${sessionId}`);
+    } catch {
+      // Analysis path itself broke — fall back to history.
+      navigate("/scan/history");
     } finally {
       setBusy(false);
     }

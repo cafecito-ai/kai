@@ -145,6 +145,65 @@ export const api = {
       bodyComment: string;
       score: unknown;
     }>("/api/workouts/log", { method: "POST", body: JSON.stringify(body) }),
+  // T-030 — Body scan vision analyze.
+  // Sends three decrypted image blobs to the Worker. Returns parsed
+  // observations or a structured error message (filter_failed → user
+  // retakes with the canned guidance).
+  analyzeScan: (body: {
+    sessionId: string;
+    front: Blob;
+    side: Blob;
+    back: Blob;
+  }) => {
+    const form = new FormData();
+    form.set("sessionId", body.sessionId);
+    form.set("front", new File([body.front], "front.jpg", { type: body.front.type || "image/jpeg" }));
+    form.set("side", new File([body.side], "side.jpg", { type: body.side.type || "image/jpeg" }));
+    form.set("back", new File([body.back], "back.jpg", { type: body.back.type || "image/jpeg" }));
+    return request<
+      | {
+          ok: true;
+          observations: Array<{ index: 1 | 2 | 3; text: string; action: string }>;
+          summary: string;
+          attempts: number;
+        }
+      | {
+          ok: false;
+          reason: string;
+          message: string;
+          attempts: number;
+        }
+    >("/api/scan/analyze", {
+      method: "POST",
+      body: form,
+    });
+  },
+  getScanObservations: (limit = 10) =>
+    request<{
+      observations: Array<{
+        id: string;
+        sessionId: string;
+        observations: Array<{ index: 1 | 2 | 3; text: string; action: string }>;
+        summary: string;
+        attempts: number;
+        createdAt: string;
+      }>;
+    }>(`/api/scan/observations?limit=${limit}`),
+  getScanObservation: (sessionId: string) =>
+    request<{
+      observation: {
+        id: string;
+        sessionId: string;
+        observations: Array<{ index: 1 | 2 | 3; text: string; action: string }>;
+        summary: string;
+        attempts: number;
+        createdAt: string;
+      } | null;
+    }>(`/api/scan/observations/${sessionId}`),
+  deleteScanObservation: (sessionId: string) =>
+    request<{ ok: boolean }>(`/api/scan/observations/${sessionId}`, {
+      method: "DELETE",
+    }),
   getRecentWorkouts: (limit = 10) =>
     request<{
       workouts: Array<{

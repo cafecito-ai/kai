@@ -114,3 +114,21 @@ Append-only log. Every non-trivial decision (especially when picking the conserv
 **Phase E (T-029-T-031) checklist installed in `src/lib/scan-storage.ts` top-of-file comment block.**
 
 ---
+
+## D-020 — Body scan: Path B (client-decrypts + sends bytes) over the spec's Path A (R2 + server key)
+**Date:** 2026-05-20 (T-030, post-Ratner-greenlight)
+**Decision:** For the vision pipeline, the client decrypts its locally-stored encrypted photos in-memory and POSTs the decrypted bytes to `/api/scan/analyze` as multipart form data. The Worker calls Workers AI with `disable_training: true`, runs the response through the body-language filter (3-regen loop), parses the structured output, and persists ONLY the observations (no image bytes) to D1. Encrypted photos remain in the client's localStorage; the Worker never holds plaintext beyond the duration of one request.
+**Why this instead of Path A (the spec's letter):** AGENT_PLAN T-030 §1-2 reads "Photos pulled from R2 (encrypted), Decrypted in Worker memory only" — which requires R2 plus a server-held key (or a server-held key-unwrapping flow). Path A is the right shape once the production R2 bucket + KMS are provisioned; that's a Phase F or post-Gate-5 task. Path B is strictly safer for the present:
+  1. No server-side photo storage at all (R2 not yet provisioned with proper ACL anyway)
+  2. No server-held key material for photos
+  3. Privacy promise ("never shared, never used for training, never seen by anyone else") holds by construction — vision API gets bytes via TLS only, with disable_training set
+  4. The same `/api/scan/analyze` route works once Path A is wired — just swap the multipart upload for "fetch from R2 and decrypt with KMS-held key"
+**Risk:** image bytes traverse the network on each scan (vs. one-time R2 upload then in-region vision call). At our scale and bandwidth-per-user this is negligible (~3-5 MB per scan, 3 times per week max).
+**Gate 5 reviewer must verify:**
+  - [ ] No R2 binding present in wrangler config
+  - [ ] No image-bytes persistence after the analyze handler returns
+  - [ ] `disable_training: true` literal present in defaultVisionCall
+  - [ ] scan_observations table only contains text fields
+  - [ ] Forbidden-language filter uses word boundaries (the regex fix landed in this commit)
+
+---

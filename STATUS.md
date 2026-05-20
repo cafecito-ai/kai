@@ -5,9 +5,21 @@ Live tracker maintained by the build agent. Each task: `done` / `iterating` / `a
 ---
 
 ## Current task
-**Phase D complete — awaiting Gate 4 review** (2026-05-20). T-022 → T-028 all in. Physical Health agent surface area: food photo comments, workout logging, sleep recovery angle, hydration counter, 12-routine mobility library, energy check-in with low-streak detection, and the body scan UI scaffold (encryption + UI flow only — AI vision is Phase E).
+**Phase E complete — awaiting Gate 5 review** (2026-05-20, Ratner explicit "let it rip" authorization). T-029 → T-031 all in. Body scan AI vision pipeline:
+  - Vision call orchestrator with disable_training=true, 3-regen filter loop, structured error fallback
+  - Word-boundary fix in body-language-filter (eliminated "thin" inside "breathing" false positive that would have falsely rejected clinically clean outputs)
+  - 20-image filter compliance harness asserting 100% clean→pass + 100% forbidden→catch
+  - /api/scan/analyze endpoint persisting only parsed observations (never image bytes) to D1
+  - Path B chosen over the spec's Path A — see D-020. Client decrypts and sends bytes to Worker for vision; no server-side photo persistence anywhere.
+  - /scan/result/:sessionId page with observation cards (accentWarm left border) + action cards (✓ icon) per CLAUDE_v3_PATCH §3
+  - First-view privacy reminder ("These are yours alone")
 
-**Body scan scaffold (T-028) flagged for Ratner pre-Phase-E review** — see D-019. Client-side AES-GCM with PBKDF2 key derivation works end-to-end (encrypt → store → decrypt round-trip tested), but the per-device "secret" and the localStorage-not-R2 persistence are scaffold-grade. Phase E swaps both for production-ready primitives, with full safety review at Gate 4.
+**Gate 5 checklist (highest-stakes gate per CLAUDE.md §5):**
+  - [ ] Ratner verifies disable_training=true flag (defaultVisionCall in workers/src/lib/scan-vision.ts)
+  - [ ] Ratner audits filter regex change in body-language-filter.ts (word boundaries added)
+  - [ ] 20-test-image filter compliance auto-test PASSES (workers/test/scan-vision.test.ts)
+  - [ ] Clinician / movement specialist reviews 10 sample real-image outputs (Ratner schedules)
+  - [ ] Lev tests end-to-end on his own phone
 
 ## Phase A — Foundations (T-001 → T-008) ✅
 - [x] T-001 — Branch setup and status files (`d22d24c`; B-001 resolved)
@@ -45,8 +57,10 @@ Pending Gate 1.
 - [x] T-027 — Energy check-in (1-5 scale, low-streak detection fires recovery note when today + yesterday both ≤2)
 - [x] T-028 — Body scan UI scaffold (welcome / capture / history + AES-GCM encryption + 3-per-week limit) — REQUIRES SAFETY REVIEW
 
-## Phase E — AI Body Scan (T-029 → T-031) — HIGHEST RISK
-Pending Gate 4.
+## Phase E — AI Body Scan (T-029 → T-031) — HIGHEST RISK ✅ Awaiting Gate 5
+- [x] T-029 — Vision prompt + parser + 20-image filter compliance test set (10 clean → 10 pass; 10 forbidden → 10 caught)
+- [x] T-030 — /api/scan/analyze with disable_training=true, 3-regen filter loop, scan_observations D1 persistence; only observations stored, photos never leave client
+- [x] T-031 — /scan/result/:sessionId page with accentWarm observation cards + ✓ action cards per v3 §3, first-view privacy reminder, history page enhanced with KAI's-read summary tile per session
 
 ## Phase F — Voice mode (T-032 → T-035)
 Pending Gate 5.

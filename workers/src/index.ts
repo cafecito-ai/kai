@@ -14,6 +14,7 @@ import { progressRoutes } from "./routes/progress";
 import { scoreRoutes } from "./routes/score";
 import { strengthsRoutes } from "./routes/strengths";
 import { userRoutes } from "./routes/user";
+import { workoutsRoutes } from "./routes/workouts";
 import { requireAuth } from "./lib/auth";
 import { consumeConsentToken } from "./lib/consent";
 import { recomputeAllUsersPatterns } from "./lib/patterns-store";
@@ -41,6 +42,7 @@ app.route("/api", entriesRoutes);
 app.route("/api", foodRoutes);
 app.route("/api", friendsRoutes);
 app.route("/api", strengthsRoutes);
+app.route("/api", workoutsRoutes);
 app.post("/api/safety/log", async (c) => c.json({ event: await c.req.json() }));
 app.get("/api/parent/consent", async (c) => {
   const token = c.req.query("token");

@@ -10,6 +10,7 @@ import { CheckIn } from "./pages/CheckIn";
 import { Crisis } from "./pages/Crisis";
 import { Journal } from "./pages/Journal";
 import { SleepLog } from "./pages/SleepLog";
+import { WorkoutLog } from "./pages/WorkoutLog";
 import { Demo } from "./pages/Demo";
 import { DesignPicker } from "./pages/DesignPicker";
 import { DesignTokens } from "./pages/DesignTokens";
@@ -77,6 +78,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />
           <Route path="/sleep/log" element={protectedOnboarding(<SleepLog />)} />
+          <Route path="/workout/log" element={protectedOnboarding(<WorkoutLog />)} />
           <Route path="/goals" element={protectedOnboarding(<Goals />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />

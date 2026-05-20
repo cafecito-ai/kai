@@ -130,6 +130,30 @@ export const api = {
       reflection: string;
       safetyFlagged?: boolean;
     }>("/api/sleep", { method: "POST", body: JSON.stringify(body) }),
+  // T-023 — workout logging.
+  logWorkout: (body: {
+    type: "run" | "lift" | "bodyweight" | "yoga" | "sport" | "other";
+    durationMin: number;
+    intensity: 1 | 2 | 3 | 4 | 5;
+    notes?: string;
+  }) =>
+    request<{
+      workoutId: string;
+      bodyComment: string;
+      score: unknown;
+    }>("/api/workouts/log", { method: "POST", body: JSON.stringify(body) }),
+  getRecentWorkouts: (limit = 10) =>
+    request<{
+      workouts: Array<{
+        id: string;
+        date: string;
+        type: string;
+        durationMin: number;
+        intensity: number;
+        notes: string | null;
+        createdAt: string;
+      }>;
+    }>(`/api/workouts/recent?limit=${limit}`),
   updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean; designPreference?: string }) =>
     request("/api/user/me", { method: "PATCH", body: JSON.stringify(body) }),
   submitIntake: (responses: Record<string, string>) =>

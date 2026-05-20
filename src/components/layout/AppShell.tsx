@@ -35,6 +35,7 @@ const IMMERSIVE_PREFIXES = [
   "/journal",
   "/sleep",
   "/goals",
+  "/workout",
 ];
 
 // Routes that show the tabbar.

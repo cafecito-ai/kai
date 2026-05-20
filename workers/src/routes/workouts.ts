@@ -17,7 +17,7 @@ import type { AppVariables, Env } from "../types";
 
 export const workoutsRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
-const VALID_TYPES = ["run", "lift", "bodyweight", "yoga", "sport", "other"] as const;
+const VALID_TYPES = ["run", "strength", "yoga", "sport", "other"] as const;
 
 workoutsRoutes.post("/workouts/log", async (c) => {
   const userId = c.get("userId");

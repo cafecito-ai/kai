@@ -24,7 +24,10 @@ const MAX_REGENERATIONS = 3;
 const UNDER_AGE_THRESHOLD = 16;
 
 export type WorkoutPayload = {
-  type: "run" | "lift" | "bodyweight" | "yoga" | "sport" | "other";
+  // "strength" covers both weight training and bodyweight work — we don't
+  // ask teens to self-classify, and the under-16 safety rule defaults to
+  // bodyweight regardless of what the user logged.
+  type: "run" | "strength" | "yoga" | "sport" | "other";
   durationMin: number;
   intensity: 1 | 2 | 3 | 4 | 5;
   notes?: string;
@@ -53,8 +56,12 @@ function buildWorkoutCommentPrompt(
     "max effort",
   ][payload.intensity - 1];
 
+  // The strength bucket covers both weighted work and bodyweight. For
+  // users under 16, we always steer toward bodyweight regardless of what
+  // they self-logged — they may have done barbell work, but we don't
+  // coach specific weights for that age without form review.
   const ageRule = isUnderAge
-    ? `\nIMPORTANT: ${context.displayName} is ${age} — under 16. DO NOT recommend specific weights, barbell lifts, or one-rep-max work. Default to bodyweight movements, mobility, and aerobic conditioning. Form coaching always comes first.`
+    ? `\nIMPORTANT: ${context.displayName} is ${age} — under 16. DO NOT recommend specific weights, barbell lifts, or one-rep-max work, even if they logged "strength". Default your suggestions to bodyweight movements, mobility, and aerobic conditioning. Form coaching always comes first.`
     : "";
 
   return `You are KAI's physical health side, responding to a workout ${context.displayName} just logged.

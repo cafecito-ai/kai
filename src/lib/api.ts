@@ -132,7 +132,7 @@ export const api = {
     }>("/api/sleep", { method: "POST", body: JSON.stringify(body) }),
   // T-023 — workout logging.
   logWorkout: (body: {
-    type: "run" | "lift" | "bodyweight" | "yoga" | "sport" | "other";
+    type: "run" | "strength" | "yoga" | "sport" | "other";
     durationMin: number;
     intensity: 1 | 2 | 3 | 4 | 5;
     notes?: string;

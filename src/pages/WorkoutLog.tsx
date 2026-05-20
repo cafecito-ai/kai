@@ -21,15 +21,17 @@ import { appendLocalInput } from "../lib/local-score";
 
 type Phase = "form" | "sending" | "done";
 
-type WorkoutType = "run" | "lift" | "bodyweight" | "yoga" | "sport" | "other";
+type WorkoutType = "run" | "strength" | "yoga" | "sport" | "other";
 
-const TYPES: Array<{ id: WorkoutType; label: string; emoji: string }> = [
-  { id: "run", label: "Run", emoji: "🏃" },
-  { id: "lift", label: "Lift", emoji: "🏋️" },
-  { id: "bodyweight", label: "Bodyweight", emoji: "💪" },
-  { id: "yoga", label: "Yoga", emoji: "🧘" },
-  { id: "sport", label: "Sport", emoji: "⚽" },
-  { id: "other", label: "Other", emoji: "✨" },
+// "Strength" intentionally covers both weight training and bodyweight —
+// teens don't need to self-classify. The Body agent decides what to coach
+// based on age (under 16 → always bodyweight default).
+const TYPES: Array<{ id: WorkoutType; label: string; sub: string; emoji: string }> = [
+  { id: "run", label: "Run", sub: "Running, jog, sprints", emoji: "🏃" },
+  { id: "strength", label: "Strength", sub: "Weights or bodyweight", emoji: "💪" },
+  { id: "yoga", label: "Yoga", sub: "Mobility, stretching", emoji: "🧘" },
+  { id: "sport", label: "Sport", sub: "Basketball, soccer, etc.", emoji: "⚽" },
+  { id: "other", label: "Other", sub: "Anything else", emoji: "✨" },
 ];
 
 const INTENSITY_LABELS = ["Easy", "Comfortable", "Moderate", "Hard", "Max"];
@@ -156,7 +158,7 @@ function Form({
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
           What kind?
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {TYPES.map((t) => {
             const selected = type === t.id;
             return (
@@ -166,8 +168,7 @@ function Form({
                 onClick={() => setType(t.id)}
                 aria-pressed={selected}
                 className={`
-                  flex flex-1 min-w-[100px] flex-col items-center gap-1
-                  rounded-lg border py-3 text-xs font-medium
+                  flex items-center gap-3 rounded-lg border px-3 py-3 text-left
                   transition active:scale-[0.98]
                   ${
                     selected
@@ -177,7 +178,18 @@ function Form({
                 `}
               >
                 <span className="text-2xl leading-none">{t.emoji}</span>
-                <span className="leading-tight">{t.label}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium leading-tight">
+                    {t.label}
+                  </span>
+                  <span
+                    className={`block text-[11px] leading-tight ${
+                      selected ? "text-background/70" : "text-text-secondary"
+                    }`}
+                  >
+                    {t.sub}
+                  </span>
+                </span>
               </button>
             );
           })}
@@ -377,8 +389,7 @@ function offlineWorkoutComment(type: WorkoutType, intensity: number): string {
   switch (type) {
     case "run":
       return "Logged. Solid steady-state day. Stretch the calves and hips for five minutes before bed and you'll thank yourself in the morning.";
-    case "lift":
-    case "bodyweight":
+    case "strength":
       return "Logged. Now the work is in recovery — protein within an hour, water, and at least 8 hours of sleep tonight.";
     case "yoga":
       return "Logged. Slow work is real work — recovery sessions like this are where the nervous system resets. Notice if you sleep deeper tonight.";

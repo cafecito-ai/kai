@@ -111,7 +111,7 @@ describe("generateWorkoutComment — age guardrails", () => {
     await generateWorkoutComment(
       env,
       ctx({ age: 14, displayName: "Sam" }),
-      payload({ type: "lift", intensity: 4 }),
+      payload({ type: "strength", intensity: 4 }),
     );
     const prompt = (runMock.mock.calls[0]![1] as { prompt: string }).prompt;
     expect(prompt).toMatch(/under 16/i);
@@ -121,7 +121,7 @@ describe("generateWorkoutComment — age guardrails", () => {
 
   it("does NOT inject the under-16 rule for users 16+", async () => {
     const { env, runMock } = mockEnv(["Strong session."]);
-    await generateWorkoutComment(env, ctx({ age: 17 }), payload({ type: "lift" }));
+    await generateWorkoutComment(env, ctx({ age: 17 }), payload({ type: "strength" }));
     const prompt = (runMock.mock.calls[0]![1] as { prompt: string }).prompt;
     expect(prompt).not.toMatch(/under 16/i);
   });

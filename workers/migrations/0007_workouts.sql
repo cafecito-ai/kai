@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS workouts (
   user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   date          TEXT NOT NULL,                 -- YYYY-MM-DD user-local
   type          TEXT NOT NULL CHECK (type IN (
-                  'run', 'lift', 'bodyweight', 'yoga', 'sport', 'other'
+                  'run', 'strength', 'yoga', 'sport', 'other'
                 )),
   duration_min  INTEGER NOT NULL,              -- 1-300
   intensity     INTEGER NOT NULL CHECK (intensity BETWEEN 1 AND 5),

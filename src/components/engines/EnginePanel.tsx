@@ -31,8 +31,8 @@ export function EnginePanel({ title, intro, label = "Engine", accent = "text-plu
             <div className={`grid size-11 place-items-center rounded-full bg-white ${tone}`}>
               <Icon size={21} aria-hidden="true" />
             </div>
-            <p className="mt-4 text-sm font-black text-[#1A1A1F]">One useful rep is enough.</p>
-            <p className="mt-1 text-sm font-semibold leading-5 text-[#8A8A8F]">Start with the first tool, save what happened, then return when life gives you new data.</p>
+            <p className="mt-4 text-sm font-black text-[#1A1A1F]">This is one unit inside Kai.</p>
+            <p className="mt-1 text-sm font-semibold leading-5 text-[#8A8A8F]">Use a tool here, save the rep, and the same signal updates home, progress, profile, and circle.</p>
             <Link to="/progress" className="focus-ring mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#1A1A1F] px-4 text-sm font-black text-white">
               <Activity size={15} aria-hidden="true" />
               Progress

@@ -7,9 +7,9 @@ import { AppPage } from "../components/ui/AppPrimitives";
 import { findGuide, type GuideEngine } from "../lib/guides-registry";
 
 const ENGINE_LABELS: Record<GuideEngine, string> = {
-  physical: "Physical wellness",
-  potential: "Potential + goals",
-  mental: "Mental wellness"
+  physical: "Health unit",
+  potential: "Mental unit",
+  mental: "Mental unit"
 };
 
 /**
@@ -24,7 +24,7 @@ export function GuidePage() {
   if (!engineId || !slug) return <Navigate to="/home" replace />;
 
   const guide = findGuide(engineId, slug);
-  if (!guide) return <Navigate to={`/engine/${engineId}`} replace />;
+  if (!guide) return <Navigate to={engineId === "physical" ? "/health" : "/mental"} replace />;
 
   const engineLabel = ENGINE_LABELS[guide.engine];
   const Component = guide.component;
@@ -33,7 +33,7 @@ export function GuidePage() {
     <AppPage className="max-w-3xl">
       <nav className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted">
         <Link
-          to={`/engine/${guide.engine}`}
+          to={guide.engine === "physical" ? "/health" : "/mental"}
           className="focus-ring inline-flex items-center gap-1 rounded-kai border border-line bg-white px-3 py-1.5 text-muted hover:border-sage hover:text-sage"
         >
           <ArrowLeft size={14} aria-hidden="true" />

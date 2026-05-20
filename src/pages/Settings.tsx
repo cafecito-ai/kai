@@ -53,7 +53,9 @@ export function Settings() {
 
   return (
     <AppPage className="max-w-xl">
-      <AppHero eyebrow="settings" title="Tune Kai's voice." />
+      <AppHero eyebrow="app section · settings" title="Tune the companion." >
+        Settings control the same Kai experience across home, mental, physical, progress, and circle.
+      </AppHero>
       <AppSurface className="space-y-4 p-5">
         <label className="block text-sm font-semibold">
           Kai name

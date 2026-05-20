@@ -7,14 +7,14 @@ export function Groups() {
   return (
     <AppPage className="max-w-5xl">
       <AppHero
-        eyebrow="groups"
+        eyebrow="app section · circle"
         title={
           <>
-            Social support, without turning growth into a <span className="font-serif font-normal italic text-plum">contest.</span>
+            A private circle that fits the same <span className="font-serif font-normal italic text-plum">loop.</span>
           </>
         }
       >
-        Groups stay inside Kai: small circles, shared wins, check-ins, and privacy-first progress. No public body metrics. No shame boards.
+        Social support lives inside Kai as encouragement, small wins, and opt-in progress context. Sensitive notes, meals, scans, and chats stay private.
       </AppHero>
 
       <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
@@ -22,7 +22,7 @@ export function Groups() {
           <div className="grid size-12 place-items-center rounded-full bg-careWash text-care">
             <UsersRound aria-hidden="true" />
           </div>
-          <h2 className="mt-4 font-display text-3xl font-black tracking-normal">Beta circle</h2>
+          <h2 className="mt-4 font-display text-3xl font-black tracking-normal">Support circle</h2>
           <p className="mt-3 text-sm font-semibold leading-6 text-muted">
             Invite-only circles will let teens share streaks, habits, and encouragement while keeping sensitive answers private.
           </p>
@@ -45,7 +45,7 @@ export function Groups() {
             })}
           </div>
           <Link to="/progress" className="focus-ring mt-5 inline-flex min-h-11 items-center rounded-full bg-ink px-4 text-sm font-black text-paper">
-            See progress room
+            See progress
           </Link>
         </AppSurface>
 

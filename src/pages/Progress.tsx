@@ -6,14 +6,14 @@ export function Progress() {
   return (
     <AppPage>
       <AppHero
-        eyebrow="progress"
+        eyebrow="app section · progress"
         title={
           <>
-            Proof you are showing up, without getting weird about <span className="font-serif font-normal italic text-plum">progress.</span>
+            One timeline for mental and physical <span className="font-serif font-normal italic text-plum">reps.</span>
           </>
         }
       >
-        Streaks, belts, and character growth reward reps across Mental and Physical without turning wellness into a scoreboard.
+        Kai turns check-ins, food notes, scans, breathing, sleep, movement, and goals into one private growth signal.
       </AppHero>
       <ProgressSummary />
       <FriendCompare />

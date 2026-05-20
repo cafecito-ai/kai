@@ -16,10 +16,10 @@ export function Profile() {
   return (
     <AppPage className="max-w-5xl">
       <AppHero
-        eyebrow="profile"
+        eyebrow="app section · profile"
         title={
           <>
-            Your Kai setup, progress, and privacy in one <span className="font-serif font-normal italic text-plum">place.</span>
+            The companion, privacy, and growth model in one <span className="font-serif font-normal italic text-plum">place.</span>
           </>
         }
         action={
@@ -29,7 +29,7 @@ export function Profile() {
           </Link>
         }
       >
-        Profile is an app surface now, not a link back to the public site.
+        Profile keeps Kai's voice, primary unit, consent state, and progress identity together.
       </AppHero>
 
       <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">

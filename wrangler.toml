@@ -1,22 +1,20 @@
-# Cloudflare deploy config for the KAI SPA.
+# Cloudflare Pages config for the kai SPA.
 #
-# Uses the unified Workers + Assets format (replaces the older
-# `pages_build_output_dir` Pages-only format). Vite builds the SPA into
-# ./dist; Cloudflare serves those files as static assets directly from a
-# Worker. No Worker code needed for the frontend deploy — `main` is
-# intentionally omitted so wrangler treats this as an assets-only Worker.
+# This is a Pages project (not a Worker). Pages reads `name` and
+# `pages_build_output_dir`; the rest of the deploy config lives in the
+# Cloudflare dashboard build settings, which must run:
 #
-# `not_found_handling = "single-page-application"` makes Cloudflare return
-# index.html for any unknown route so client-side routing (react-router-dom)
-# handles /home, /chat, /onboarding, /goals, /check-in, /journal, /sleep/log,
-# /_design-tokens, /profile, /groups, /crisis, /demo, /scope without 404ing
-# on hard reload.
+#   Build command:  npm run build
+#   Deploy command: npx wrangler pages deploy ./dist
+#
+# Earlier attempts used the Workers `[assets]` block — that's the right
+# format for a Worker-with-assets project, NOT a Pages project. Cloudflare
+# rejects Workers keys (`main`, `[assets]`, `account_id`, `[ai]`,
+# `[[send_email]]`, etc.) on a Pages config; this file deliberately stays
+# narrow.
 #
 # The backend Worker (kai-api) has its own config at wrangler.worker.toml.
 
 name = "kai"
+pages_build_output_dir = "dist"
 compatibility_date = "2026-05-11"
-
-[assets]
-directory = "./dist"
-not_found_handling = "single-page-application"

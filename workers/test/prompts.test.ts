@@ -13,6 +13,7 @@ function baseContext(overrides: Partial<KaiContext> = {}): KaiContext {
     primaryEngine: "physical",
     intakeSummary: "Sam is a 16-year-old high school junior balancing varsity soccer and AP classes. They want to feel less anxious before games. They could use steady breath practice and sleep.",
     streakOverall: 4,
+    recentPatterns: [],
     ...overrides
   };
 }

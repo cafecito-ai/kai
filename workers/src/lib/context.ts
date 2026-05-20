@@ -1,3 +1,4 @@
+import { getRecentPatterns } from "./patterns-store";
 import type { EngineId, Env } from "../types";
 
 export type KaiTone = "warm" | "balanced" | "direct";
@@ -11,6 +12,9 @@ export type KaiContext = {
   primaryEngine: EngineId;
   intakeSummary: string | null;
   streakOverall: number;
+  /** T-021 — abstracted observations from the pattern engine, capped at 5.
+   *  Empty array if no patterns or the patterns table isn't migrated yet. */
+  recentPatterns: string[];
 };
 
 const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {
@@ -20,7 +24,8 @@ const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {
   kaiTone: "balanced",
   primaryEngine: "physical",
   intakeSummary: null,
-  streakOverall: 0
+  streakOverall: 0,
+  recentPatterns: []
 };
 
 function normaliseTone(value: unknown): KaiTone {
@@ -80,6 +85,17 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     }
   }
 
+  // T-021 — load any recent abstracted patterns. Fails open: if the
+  // table doesn't exist yet (migration not run) or the query errors,
+  // we just pass an empty array and the Mind prompt renders fine.
+  let recentPatterns: string[] = [];
+  try {
+    const rows = await getRecentPatterns(env.DB, userId);
+    recentPatterns = rows.map((r) => r.observation);
+  } catch {
+    recentPatterns = [];
+  }
+
   return {
     userId,
     displayName: user?.display_name?.trim() || FALLBACK_CONTEXT.displayName,
@@ -88,6 +104,7 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     kaiTone: normaliseTone(user?.kai_tone),
     primaryEngine: normaliseEngine(user?.primary_engine),
     intakeSummary,
-    streakOverall
+    streakOverall,
+    recentPatterns
   };
 }

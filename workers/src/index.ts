@@ -16,6 +16,7 @@ import { strengthsRoutes } from "./routes/strengths";
 import { userRoutes } from "./routes/user";
 import { requireAuth } from "./lib/auth";
 import { consumeConsentToken } from "./lib/consent";
+import { recomputeAllUsersPatterns } from "./lib/patterns-store";
 import { recomputeAllProgressSummaries } from "./lib/progress";
 import type { AppVariables, Env } from "./types";
 
@@ -109,6 +110,16 @@ export default {
           console.log("demo food photo cleanup", cleanup);
         } catch (err) {
           console.error("demo food photo cleanup fatal", err);
+        }
+        // T-021 — daily refresh of Mental Health pattern observations.
+        // Spec calls for "user's local 6am" but Cloudflare crons are
+        // single-region; one daily run at 07:00 UTC catches everyone
+        // before most US teens are awake. Patterns expire 14 days out.
+        try {
+          const patterns = await recomputeAllUsersPatterns(env.DB);
+          console.log("daily mental patterns recompute", patterns);
+        } catch (err) {
+          console.error("daily mental patterns recompute fatal", err);
         }
       })()
     );

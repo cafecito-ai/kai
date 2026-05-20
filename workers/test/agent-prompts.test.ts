@@ -18,6 +18,7 @@ const ctx: KaiContext = {
   primaryEngine: "mental",
   intakeSummary: null,
   streakOverall: 0,
+  recentPatterns: [],
 };
 
 describe("renderMindPrompt", () => {

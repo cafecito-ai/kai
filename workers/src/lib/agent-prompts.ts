@@ -37,7 +37,9 @@ export function renderMindPrompt(context: KaiContext): string {
     tonePreference: context.kaiTone,
     focusAreas: [],
     recentMoodScores: [],
-    recentPatterns: [],
+    // T-021 — abstracted observations from the pattern engine.
+    // Already filtered to safe wording by mental-patterns.ts.
+    recentPatterns: context.recentPatterns ?? [],
     activeGoals: [],
     conversationHistory: [],
     timeOfDay: timeOfDay(),

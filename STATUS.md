@@ -5,9 +5,9 @@ Live tracker maintained by the build agent. Each task: `done` / `iterating` / `a
 ---
 
 ## Current task
-**gate-1-approved** (2026-05-19, Seder per Ratner's D-007 delegation; final voice review by Lev deferred to live staging deploy). Starting Phase B — Daily Score system.
+**Phase C complete — awaiting Gate 3 review** (2026-05-20). T-015 → T-021 all in. Mental Health agent surface area: check-in, journal, sleep, screen-time, identity-based goals, and now background pattern recognition feeding the Mind prompt's context window.
 
-T-009 in progress — D1 migration for `daily_scores` + `score_inputs` tables.
+T-021 done — abstracted observations only (no journal content), 14-day window, 14-day TTL, daily cron recompute + on-the-fly via getRecentPatterns.
 
 ## Phase A — Foundations (T-001 → T-008) ✅
 - [x] T-001 — Branch setup and status files (`d22d24c`; B-001 resolved)
@@ -28,8 +28,13 @@ T-009 in progress — D1 migration for `daily_scores` + `score_inputs` tables.
 ## Phase B — Daily Score (T-009 → T-014)
 Pending Gate 1.
 
-## Phase C — Mind agent depth (T-015 → T-021)
-Pending Gate 2.
+## Phase C — Mind agent depth (T-015 → T-021) ✅ Awaiting Gate 3
+- [x] T-015 — Emotional check-in flow (mood 1–5 + optional mind/better; local-first; Mind reflection)
+- [x] T-016 — Journaling mode (sentiment heuristic; mood-keyed offline reflection)
+- [x] T-017 — Sleep awareness logging (hours stepper + slider, quality, 3-night pattern detection)
+- [x] T-018 — Optional screen-time chips on evening check-in (observational only)
+- [x] T-019/T-020 — Identity-based goals (max 3 active, streak counter, day-7/14/30 reframes)
+- [x] T-021 — Mental Health pattern recognition (`mental-patterns.ts` detector; `user_patterns` D1 table; daily cron + on-read fetch; wired into `recentPatterns` slot of Mind prompt)
 
 ## Phase D — Body agent (T-022 → T-028)
 Pending Gate 3.

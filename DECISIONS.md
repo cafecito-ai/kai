@@ -88,3 +88,11 @@ Append-only log. Every non-trivial decision (especially when picking the conserv
 **Reporting line.** Seder day-to-day, Ratner for safety, Lev for voice/visual, Offy funds. Loop: work the graph, self-verify Done_when, halt at every Gate, escalate `requires_safety_review`, log `requires_lev_input`.
 
 ---
+
+## D-018 — T-021 pattern detection runs on abstracted signals only
+**Date:** 2026-05-20 (T-021)
+**Decision:** The Mental Health pattern detector (`workers/src/lib/mental-patterns.ts`) operates on a `DaySignal` type that has no slot for raw text — only numeric fields (mood 1–5, sleepHours, journalSentiment scalar, journalCount, finalScore). The aggregator that builds DaySignals from `score_inputs` rows reads only known numeric keys (`mood`, `hours`, `sentiment`); any `mind` / `better` / `note` / `content` strings on the value JSON are loaded but never read.
+**Why:** AGENT_PLAN T-021 guardrail: "patterns never include specific journal content in summary; only abstracted observations." The cleanest way to enforce that is at the type system boundary, not via a downstream filter — make it impossible to ever include text in a pattern observation because the detector physically can't see it. A test (`mental-patterns.test.ts` → "ignores any text/note fields") asserts the DaySignal shape stays clean even when raw inputs carry text fields.
+**Patterns we surface:** mood trend (3+ days monotonic), mood swing (≥1.5 points over 5 days), sleep streak (3+ nights <6h), sleep variance (>2.5h stddev over 7 days), journaling habit/drop-off, week-over-week score lift/dip. Max 5 patterns per user. Stored in `user_patterns` with 14-day TTL. Recomputed by the daily Cloudflare cron in the existing `scheduled` handler.
+
+---

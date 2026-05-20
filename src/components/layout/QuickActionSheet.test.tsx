@@ -32,6 +32,7 @@ describe("QuickActionSheet", () => {
       "Log sleep",
       "Set a goal",
       "Stretch / move",
+      "Body scan",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }

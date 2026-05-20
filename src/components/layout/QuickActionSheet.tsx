@@ -11,6 +11,7 @@ import {
   Dumbbell,
   Moon,
   NotebookPen,
+  ScanLine,
   Sparkles,
   Target,
   X,
@@ -75,6 +76,13 @@ const ACTIONS = [
     icon: Zap,
     tint: "bg-accent-warm-soft text-accent-warm",
     to: "/energy",
+  },
+  {
+    label: "Body scan",
+    blurb: "3 photos — KAI checks posture only.",
+    icon: ScanLine,
+    tint: "bg-accent-cool-soft text-accent-cool",
+    to: "/scan",
   },
 ] as const;
 

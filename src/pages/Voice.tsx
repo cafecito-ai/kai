@@ -141,10 +141,18 @@ export function Voice() {
         startedAt: Date.now(),
       });
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error && /503/.test(err.message)
-          ? "Voice mode isn't configured yet — Ratner needs to wire up the Bland AI account."
-          : "Couldn't start the call. Try again in a minute.";
+      // Be honest about why this failed instead of "try again in a minute"
+      // — voice depends on (a) the backend Worker being deployed and (b)
+      // Bland AI being provisioned. Neither happens automatically.
+      const errMsg = err instanceof Error ? err.message : "";
+      let msg: string;
+      if (/503/.test(errMsg)) {
+        msg = "Voice mode isn't wired up yet — the Bland AI phone number hasn't been set up by Ratner.";
+      } else if (/(failed to fetch|networkerror|404)/i.test(errMsg)) {
+        msg = "The backend isn't deployed yet, so the call can't be placed. Once the Worker is live and Bland is configured, this'll work.";
+      } else {
+        msg = "Voice isn't available yet. The phone provider hasn't been set up.";
+      }
       setState({ phase: "unavailable", message: msg });
     }
   }
@@ -171,6 +179,18 @@ export function Voice() {
         </p>
         <div className="h-10 w-10" aria-hidden="true" />
       </header>
+
+      {/* "Not wired up yet" banner. The voice UI is built but the Bland
+          AI phone number isn't provisioned and the Worker isn't deployed,
+          so the Call button can't actually place a call. This is honest
+          messaging instead of a generic "try again later" error. */}
+      <div className="mb-4 rounded-glass border border-warning-soft bg-warning-soft px-4 py-3">
+        <p className="text-xs leading-relaxed text-warning">
+          <span className="font-medium">Preview only.</span> The phone-call
+          feature is built but needs a Bland AI account (Ratner) before it
+          can actually dial out. The button below will fail until then.
+        </p>
+      </div>
 
       {/* Orb + waveform */}
       <div className="flex flex-1 flex-col items-center justify-center gap-6">

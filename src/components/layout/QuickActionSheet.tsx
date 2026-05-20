@@ -11,6 +11,7 @@ import {
   Dumbbell,
   Moon,
   NotebookPen,
+  Phone,
   ScanLine,
   Sparkles,
   Target,
@@ -83,6 +84,13 @@ const ACTIONS = [
     icon: ScanLine,
     tint: "bg-accent-cool-soft text-accent-cool",
     to: "/scan",
+  },
+  {
+    label: "Call KAI",
+    blurb: "Actual phone call. 10 min max.",
+    icon: Phone,
+    tint: "bg-accent-cool-soft text-accent-cool",
+    to: "/voice",
   },
 ] as const;
 

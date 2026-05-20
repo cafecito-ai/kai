@@ -16,6 +16,7 @@ import { ScanCapture } from "./pages/scan/ScanCapture";
 import { ScanHistory } from "./pages/scan/ScanHistory";
 import { ScanResult } from "./pages/scan/ScanResult";
 import { ScanWelcome } from "./pages/scan/ScanWelcome";
+import { Voice } from "./pages/Voice";
 import { SleepLog } from "./pages/SleepLog";
 import { WorkoutLog } from "./pages/WorkoutLog";
 import { Demo } from "./pages/Demo";
@@ -93,6 +94,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/scan/capture" element={protectedOnboarding(<ScanCapture />)} />
           <Route path="/scan/history" element={protectedOnboarding(<ScanHistory />)} />
           <Route path="/scan/result/:sessionId" element={protectedOnboarding(<ScanResult />)} />
+          <Route path="/voice" element={protectedOnboarding(<Voice />)} />
           <Route path="/goals" element={protectedOnboarding(<Goals />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />

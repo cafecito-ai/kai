@@ -204,6 +204,28 @@ export const api = {
     request<{ ok: boolean }>(`/api/scan/observations/${sessionId}`, {
       method: "DELETE",
     }),
+  // T-035 — voice eligibility + session control
+  getVoiceEligibility: (localHour: number) =>
+    request<
+      | { allowed: true }
+      | { allowed: false; reason: string; message: string }
+    >(`/api/voice/eligibility?localHour=${localHour}`),
+  startVoiceCall: (body: { toNumber: string; localHour: number }) =>
+    request<{ callId: string; status: string }>(`/api/voice/start`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getRecentVoiceSessions: (limit = 10) =>
+    request<{
+      sessions: Array<{
+        id: string;
+        agent: string | null;
+        startedAt: string;
+        endedAt: string | null;
+        durationSec: number | null;
+        safetyFlagged: boolean;
+      }>;
+    }>(`/api/voice/recent?limit=${limit}`),
   getRecentWorkouts: (limit = 10) =>
     request<{
       workouts: Array<{

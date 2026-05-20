@@ -5,8 +5,8 @@ import { Button } from "../components/ui/Button";
 import { useUserStore } from "../stores/userStore";
 
 const lanes = [
-  { title: "Physical", path: "/engine/physical", icon: Activity, tone: "body" as const, copy: "Food camera, movement, sleep, recovery." },
-  { title: "Mental", path: "/engine/mental", icon: Brain, tone: "reset" as const, copy: "Feelings, confidence, purpose, social pressure." }
+  { title: "Health", path: "/health", icon: Activity, tone: "body" as const, copy: "Food camera, movement, sleep, recovery." },
+  { title: "Mental", path: "/mental", icon: Brain, tone: "reset" as const, copy: "Feelings, confidence, purpose, social pressure." }
 ];
 
 export function Landing() {

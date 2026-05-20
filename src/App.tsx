@@ -22,6 +22,8 @@ import { PolicyPage } from "./pages/PolicyPage";
 import { Progress } from "./pages/Progress";
 import { Scope } from "./pages/Scope";
 import { Settings } from "./pages/Settings";
+import { Groups } from "./pages/Groups";
+import { Profile } from "./pages/Profile";
 
 export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
   const protectedAuth = (children: React.ReactNode) => (authEnabled ? <RequireAuth>{children}</RequireAuth> : children);
@@ -65,11 +67,15 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           />
           <Route path="/onboarding" element={protectedAuth(<Onboarding />)} />
           <Route path="/home" element={protectedOnboarding(<Home />)} />
+          <Route path="/health" element={protectedOnboarding(<EnginePhysical />)} />
+          <Route path="/mental" element={protectedOnboarding(<EngineMental />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
+          <Route path="/groups" element={protectedOnboarding(<Groups />)} />
+          <Route path="/profile" element={protectedOnboarding(<Profile />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/demo" element={<Demo />} />

@@ -50,7 +50,12 @@ function TodayBar() {
   const events = useProgressStore((state) => state.events);
   const streak = useProgressStore((state) => state.streak());
   const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
-  const appRoute = pathname.startsWith("/engine") || pathname === "/progress" || pathname === "/settings";
+  const appRoute =
+    pathname.startsWith("/engine") ||
+    pathname === "/health" ||
+    pathname === "/mental" ||
+    pathname === "/progress" ||
+    pathname === "/settings";
 
   if (!appRoute) return null;
 
@@ -73,7 +78,7 @@ function TodayBar() {
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 text-xs font-black sm:grid-cols-[1fr_1fr_auto]">
           <span className="min-w-0 truncate rounded-full border border-line bg-paper px-2 py-2 text-center text-muted sm:px-3">{todayCount} reps</span>
           <span className="min-w-0 truncate rounded-full border border-line bg-paper px-2 py-2 text-center text-muted sm:px-3">{streak} day streak</span>
-          <Link to={`/engine/${activeEngine}`} className="focus-ring hidden rounded-full bg-ink px-4 py-2 text-paper sm:inline-flex">
+          <Link to={activeEngine === "physical" ? "/health" : "/mental"} className="focus-ring hidden rounded-full bg-ink px-4 py-2 text-paper sm:inline-flex">
             Continue
           </Link>
         </div>
@@ -83,6 +88,8 @@ function TodayBar() {
 }
 
 function engineFromPath(pathname: string): "physical" | "potential" | "mental" | null {
+  if (pathname === "/health") return "physical";
+  if (pathname === "/mental") return "mental";
   if (pathname.startsWith("/engine/potential")) return "mental";
   if (pathname.startsWith("/engine/mental")) return "mental";
   if (pathname.startsWith("/engine/physical")) return "physical";

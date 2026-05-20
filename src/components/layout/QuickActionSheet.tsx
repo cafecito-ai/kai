@@ -14,6 +14,7 @@ import {
   Phone,
   ScanLine,
   Sparkles,
+  Target,
   X,
   Zap,
 } from "lucide-react";
@@ -56,8 +57,13 @@ const ACTIONS = [
     tint: "bg-accent-soft text-accent",
     to: "/sleep/log",
   },
-  // Goals live in Profile, not in the + sheet — they're a setup
-  // (identity-based, set once, refer back), not a daily action.
+  {
+    label: "Set a goal",
+    blurb: "Identity-based, never task-based.",
+    icon: Target,
+    tint: "bg-accent-cool-soft text-accent-cool",
+    to: "/goals",
+  },
   {
     label: "Stretch / move",
     blurb: "3-10 min mobility routines.",

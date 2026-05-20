@@ -21,6 +21,7 @@ import { FoodLog } from "./pages/FoodLog";
 import { GroupDetail } from "./pages/GroupDetail";
 import { GroupInbox } from "./pages/GroupInbox";
 import { GroupLeaderboard } from "./pages/GroupLeaderboard";
+import { Strengths } from "./pages/Strengths";
 import { SleepLog } from "./pages/SleepLog";
 import { WorkoutLog } from "./pages/WorkoutLog";
 import { Demo } from "./pages/Demo";
@@ -101,6 +102,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/scan/history" element={protectedOnboarding(<ScanHistory />)} />
           <Route path="/scan/result/:sessionId" element={protectedOnboarding(<ScanResult />)} />
           <Route path="/voice" element={protectedOnboarding(<Voice />)} />
+          <Route path="/strengths" element={protectedOnboarding(<Strengths />)} />
           <Route path="/goals" element={protectedOnboarding(<Goals />)} />
           {/* Old v0 three-engine routes — kept ONLY as redirects so any
               bookmarked links or stale onboarding state lands on the new

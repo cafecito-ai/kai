@@ -3,12 +3,20 @@
 // phases its functionality will move here. T-004 just needs this to exist
 // so the tabbar's Profile tab has a destination.
 
-import { ChevronRight, Settings as SettingsIcon, Target, User } from "lucide-react";
+// Profile — account + preferences + the deeper "get to know yourself"
+// Strengths Discovery flow.
+//
+// Goals are deliberately NOT linked here — they're set-and-forget
+// daily-action stuff, surfaced from the + sheet ("Set a goal"). Profile
+// is for things that don't fit "do a thing today": who KAI is for you,
+// who YOU are to KAI, and the boring account knobs.
+
+import { ChevronRight, Settings as SettingsIcon, Sparkles, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function Profile() {
   return (
-    <div className="mx-auto max-w-md py-8">
+    <div className="mx-auto max-w-md py-8 px-5">
       <div className="text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-cool-soft">
           <User size={24} className="text-accent-cool" />
@@ -22,28 +30,31 @@ export function Profile() {
       </div>
 
       <div className="mt-8 space-y-2">
+        {/* Strengths Discovery — the 15-question Q&A flow. Replaces the
+            old Goals row here (goals belong in the + quick-action sheet). */}
         <Link
-          to="/goals"
-          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted"
+          to="/strengths"
+          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
         >
           <span className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-cool-soft">
-              <Target size={16} className="text-accent-cool" />
+              <Sparkles size={16} className="text-accent-cool" />
             </span>
             <span>
               <span className="block text-sm font-medium text-text-primary">
-                Goals
+                Strengths discovery
               </span>
               <span className="block text-xs text-text-secondary">
-                Identity-based · max 3 active
+                15 questions · ~15 min · save and resume
               </span>
             </span>
           </span>
           <ChevronRight size={18} className="text-text-muted" />
         </Link>
+
         <Link
           to="/settings"
-          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted"
+          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
         >
           <span className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted">

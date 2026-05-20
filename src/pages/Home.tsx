@@ -27,6 +27,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { HydrationTile } from "../components/HydrationTile";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
@@ -227,6 +228,9 @@ export function Home() {
           color="warm"
         />
       </div>
+
+      {/* Hydration tile — small, daily-reset counter (T-025) */}
+      <HydrationTile />
 
       {/* KAI message */}
       <KaiMessage

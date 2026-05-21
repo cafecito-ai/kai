@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { beltForLevel, calculateLevel, calculateStreak, engineTotals, eventDisplayName, lastNDays } from "./tracker";
+import { beltForLevel, calculateLevel, calculateStreak, engineTotals, eventDisplayName, lastNDays, recommendNextLoop } from "./tracker";
 
 describe("tracker", () => {
   it("calculates level from normalized progress (Section 9 ladder)", () => {
@@ -66,5 +66,49 @@ describe("tracker", () => {
 
   it("formats activity names for teens", () => {
     expect(eventDisplayName({ id: "1", engine: "potential", eventType: "goal_hit", eventValue: 40, occurredAt: "2026-05-11T00:00:00Z" })).toBe("Mental: goal hit");
+  });
+
+  it("starts empty progress with a mental check-in", () => {
+    expect(recommendNextLoop([])).toMatchObject({
+      lane: "mental",
+      to: "/mental?module=checkin"
+    });
+  });
+
+  it("recommends body work when mental progress is ahead", () => {
+    expect(
+      recommendNextLoop([
+        { id: "1", engine: "mental", eventType: "check_in", eventValue: 30, occurredAt: "2026-05-11T00:00:00Z" },
+        { id: "2", engine: "potential", eventType: "goal_hit", eventValue: 20, occurredAt: "2026-05-11T00:00:00Z" },
+        { id: "3", engine: "physical", eventType: "hydration", eventValue: 10, occurredAt: "2026-05-11T00:00:00Z" }
+      ])
+    ).toMatchObject({
+      lane: "physical",
+      to: "/health?module=food"
+    });
+  });
+
+  it("recommends mental work when body progress is ahead", () => {
+    expect(
+      recommendNextLoop([
+        { id: "1", engine: "physical", eventType: "workout", eventValue: 30, occurredAt: "2026-05-11T00:00:00Z" },
+        { id: "2", engine: "mental", eventType: "breath", eventValue: 10, occurredAt: "2026-05-11T00:00:00Z" }
+      ])
+    ).toMatchObject({
+      lane: "mental",
+      to: "/mental?module=checkin"
+    });
+  });
+
+  it("keeps balanced progress in a light reset", () => {
+    expect(
+      recommendNextLoop([
+        { id: "1", engine: "physical", eventType: "workout", eventValue: 20, occurredAt: "2026-05-11T00:00:00Z" },
+        { id: "2", engine: "mental", eventType: "breath", eventValue: 20, occurredAt: "2026-05-11T00:00:00Z" }
+      ])
+    ).toMatchObject({
+      lane: "mental",
+      to: "/mental?module=reset"
+    });
   });
 });

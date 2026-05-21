@@ -1,6 +1,7 @@
 import { Lock, MessageCircle, ShieldCheck, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FriendCompare } from "../components/tracker/FriendCompare";
+import { NextLoopCard } from "../components/tracker/NextLoopCard";
 import { AppHero, AppPage, AppSurface } from "../components/ui/AppPrimitives";
 
 export function Groups() {
@@ -49,7 +50,10 @@ export function Groups() {
           </Link>
         </AppSurface>
 
-        <FriendCompare />
+        <div className="grid gap-4">
+          <NextLoopCard context="compact" />
+          <FriendCompare />
+        </div>
       </div>
     </AppPage>
   );

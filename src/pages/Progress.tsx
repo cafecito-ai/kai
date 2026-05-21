@@ -1,4 +1,5 @@
 import { FriendCompare } from "../components/tracker/FriendCompare";
+import { NextLoopCard } from "../components/tracker/NextLoopCard";
 import { ProgressSummary } from "../components/tracker/ProgressSummary";
 import { AppHero, AppPage } from "../components/ui/AppPrimitives";
 
@@ -15,6 +16,7 @@ export function Progress() {
       >
         Kai turns check-ins, food notes, scans, breathing, sleep, movement, and goals into one private growth signal.
       </AppHero>
+      <NextLoopCard />
       <ProgressSummary />
       <FriendCompare />
     </AppPage>

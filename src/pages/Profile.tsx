@@ -1,6 +1,7 @@
 import { Brain, HeartPulse, Settings as SettingsIcon, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EvolvingCharacter } from "../components/tracker/EvolvingCharacter";
+import { NextLoopCard } from "../components/tracker/NextLoopCard";
 import { ProgressSummary } from "../components/tracker/ProgressSummary";
 import { AppHero, AppPage, AppSurface, MetricPill } from "../components/ui/AppPrimitives";
 import { useProgressStore } from "../stores/progressStore";
@@ -33,26 +34,29 @@ export function Profile() {
       </AppHero>
 
       <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
-        <AppSurface className="p-5 sm:p-6">
-          <div className="flex items-center gap-4">
-            <EvolvingCharacter level={level} />
-            <div className="min-w-0">
-              <p className="eyebrow">companion</p>
-              <h2 className="mt-1 truncate font-display text-3xl font-black tracking-normal">{kaiName}</h2>
-              <p className="mt-1 text-sm font-semibold capitalize text-muted">{kaiTone} voice</p>
+        <div className="grid gap-4">
+          <AppSurface className="p-5 sm:p-6">
+            <div className="flex items-center gap-4">
+              <EvolvingCharacter level={level} />
+              <div className="min-w-0">
+                <p className="eyebrow">companion</p>
+                <h2 className="mt-1 truncate font-display text-3xl font-black tracking-normal">{kaiName}</h2>
+                <p className="mt-1 text-sm font-semibold capitalize text-muted">{kaiTone} voice</p>
+              </div>
             </div>
-          </div>
-          <div className="mt-5 grid grid-cols-3 gap-2">
-            <MetricPill label="Level" value={String(level)} tone="goals" />
-            <MetricPill label="Streak" value={String(streak)} tone="care" />
-            <MetricPill label="Belt" value={belt} tone="body" />
-          </div>
-          <div className="mt-5 grid gap-3">
-            <ProfileRow icon={Brain} label="Primary unit" value={primaryEngine === "physical" ? "Health" : "Mental"} />
-            <ProfileRow icon={HeartPulse} label="Saved reps" value={String(events.length)} />
-            <ProfileRow icon={UserRound} label="Consent" value={consentStatus.replace(/_/g, " ")} />
-          </div>
-        </AppSurface>
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <MetricPill label="Level" value={String(level)} tone="goals" />
+              <MetricPill label="Streak" value={String(streak)} tone="care" />
+              <MetricPill label="Belt" value={belt} tone="body" />
+            </div>
+            <div className="mt-5 grid gap-3">
+              <ProfileRow icon={Brain} label="Primary unit" value={primaryEngine === "physical" ? "Health" : "Mental"} />
+              <ProfileRow icon={HeartPulse} label="Saved reps" value={String(events.length)} />
+              <ProfileRow icon={UserRound} label="Consent" value={consentStatus.replace(/_/g, " ")} />
+            </div>
+          </AppSurface>
+          <NextLoopCard context="compact" />
+        </div>
 
         <ProgressSummary />
       </div>

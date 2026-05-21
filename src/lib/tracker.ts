@@ -73,6 +73,58 @@ export function eventDisplayName(event: ProgressEvent): string {
   return `${ENGINE_LABELS[event.engine]}: ${action}`;
 }
 
+export interface NextLoopRecommendation {
+  lane: "mental" | "physical";
+  label: string;
+  title: string;
+  copy: string;
+  to: string;
+}
+
+export function recommendNextLoop(events: ProgressEvent[]): NextLoopRecommendation {
+  if (events.length === 0) {
+    return {
+      lane: "mental",
+      label: "Start here",
+      title: "Do one mental check-in.",
+      copy: "Name what is happening, pick a reset, and give Kai one signal to build from.",
+      to: "/mental?module=checkin"
+    };
+  }
+
+  const totals = engineTotals(events);
+  const mental = totals.mental + totals.potential;
+  const physical = totals.physical;
+
+  if (physical < mental) {
+    return {
+      lane: "physical",
+      label: "Balance the loop",
+      title: "Add one body signal.",
+      copy: "Log food, hydration, or a scan so Kai can read recovery alongside mood.",
+      to: "/health?module=food"
+    };
+  }
+
+  if (mental < physical) {
+    return {
+      lane: "mental",
+      label: "Balance the loop",
+      title: "Check in before the next move.",
+      copy: "A quick feeling check keeps the health loop from turning into pressure.",
+      to: "/mental?module=checkin"
+    };
+  }
+
+  return {
+    lane: "mental",
+    label: "Keep momentum",
+    title: "Do a short breath reset.",
+    copy: "You have a balanced loop. Bank one calm rep before choosing the next task.",
+    to: "/mental?module=reset"
+  };
+}
+
 function sumByEngine(events: ProgressEvent[], engine: ProgressEvent["engine"]) {
   return events
     .filter((event) => event.engine === engine)

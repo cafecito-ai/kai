@@ -40,7 +40,7 @@ export function UnitWorkspace({
 
   return (
     <AppPage className="max-w-5xl">
-      <section className={`rounded-[30px] border border-[#0A0A0A0F] bg-gradient-to-br ${wash} p-5 shadow-[0_2px_4px_rgba(10,10,10,0.04),0_16px_40px_rgba(10,10,10,0.08)] sm:p-7`}>
+      <section className={`min-w-0 overflow-hidden rounded-[30px] border border-[#0A0A0A0F] bg-gradient-to-br ${wash} p-5 shadow-[0_2px_4px_rgba(10,10,10,0.04),0_16px_40px_rgba(10,10,10,0.08)] sm:p-7`}>
         <div className="flex items-center justify-between gap-3">
           <Link to="/home" className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full bg-white/75 px-3 text-sm font-black text-[#1A1A1F] shadow-sm">
             <ArrowLeft size={16} aria-hidden="true" />
@@ -54,7 +54,7 @@ export function UnitWorkspace({
             <h1 className="mt-3 max-w-3xl break-words font-display text-[2.65rem] font-semibold leading-[0.96] tracking-normal text-[#111116] sm:text-6xl">
               {title}
             </h1>
-            <p className="mt-4 max-w-2xl break-words text-base font-medium leading-7 text-[#5E5E64]">{intro}</p>
+            <p className="mt-4 max-w-full break-words text-base font-medium leading-7 text-[#5E5E64] sm:max-w-2xl">{intro}</p>
           </div>
           <div className="rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-sm">
             <div className={`grid size-11 place-items-center rounded-full bg-white ${iconTone}`}>

@@ -70,8 +70,8 @@ export function Home() {
   return (
     <div className="text-[#1A1A1F]">
       <div className="mx-auto flex w-full max-w-md flex-col pb-6 lg:max-w-5xl">
-        <header className="flex items-start justify-between gap-4 px-1">
-          <div>
+        <header className="grid gap-4 px-1 sm:grid-cols-[1fr_auto] sm:items-start">
+          <div className="min-w-0">
             <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">{day.eyebrow}</p>
             <h1 className="mt-1 font-display text-[2rem] font-semibold leading-none tracking-normal text-[#111116]">{day.headline}.</h1>
             <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#F4F1EB] px-3 py-1.5 text-xs font-bold text-[#1A1A1F]">
@@ -79,7 +79,7 @@ export function Home() {
               {displayStreak}-day streak
             </div>
           </div>
-          <Link to="/mental?module=checkin" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-[#1A1A1F] shadow-[0_8px_32px_rgba(10,10,10,0.08)]">
+          <Link to="/mental?module=checkin" className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-[#1A1A1F] shadow-[0_8px_32px_rgba(10,10,10,0.08)] sm:w-auto">
             <KaiAvatar size={36} label="KAI" pulse />
             Start with KAI
           </Link>
@@ -101,11 +101,13 @@ export function Home() {
                 <span className="inline-flex items-center rounded-full bg-[#DDF5E8] px-3 py-1 font-mono text-[11px] font-semibold text-[#2F9D67]">↗ +6 vs yesterday</span>
               </div>
             </div>
-            <ScoreRing value={score} />
+            <div className="hidden shrink-0 sm:block">
+              <ScoreRing value={score} />
+            </div>
           </div>
         </section>
 
-        <section className="mt-6 grid grid-cols-3 gap-3">
+        <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))]">
           <MiniMetric icon={Brain} label="Mind" value={String(mindScore)} unit="/10" className="bg-[#E4F7F4] text-[#68C5B8]" />
           <MiniMetric icon={Moon} label="Sleep" value="6.4" unit="hrs" className="bg-[#EEEAFF] text-[#7B6EF6]" />
           <MiniMetric icon={Heart} label="Body" value={String(bodyScore)} unit="/10" className="bg-[#FFF0EC] text-[#F29A43]" />
@@ -172,7 +174,7 @@ export function Home() {
 
 function MiniMetric({ icon: Icon, label, value, unit, className }: { icon: typeof Brain; label: string; value: string; unit: string; className: string }) {
   return (
-    <article className="min-h-[128px] rounded-[24px] border border-[#0A0A0A0F] bg-white p-4 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
+    <article className="min-h-[128px] min-w-0 overflow-hidden rounded-[24px] border border-[#0A0A0A0F] bg-white p-4 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
       <span className={`inline-flex size-7 items-center justify-center rounded-full ${className}`}>
         <Icon size={15} aria-hidden="true" />
       </span>

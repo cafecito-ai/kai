@@ -196,9 +196,9 @@ export function Onboarding() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-5xl flex-col justify-center px-1 py-4 text-[#111116]">
-      <section className="overflow-hidden rounded-[34px] border border-[#0A0A0A0F] bg-[#FAFAF7] shadow-[0_24px_90px_rgba(10,10,10,0.12)]">
-        <div className="grid min-h-[720px] lg:grid-cols-[0.78fr_1.22fr]">
+    <main className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-5xl flex-col justify-center overflow-x-hidden px-3 py-4 text-[#111116] sm:px-4">
+      <section className="min-w-0 overflow-hidden rounded-[34px] border border-[#0A0A0A0F] bg-[#FAFAF7] shadow-[0_24px_90px_rgba(10,10,10,0.12)]">
+        <div className="grid min-h-[720px] min-w-0 lg:grid-cols-[0.78fr_1.22fr]">
           <aside className="relative hidden bg-[#111116] p-7 text-white lg:flex lg:flex-col lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white/70">
@@ -226,7 +226,7 @@ export function Onboarding() {
             </div>
           </aside>
 
-          <div className="flex min-w-0 flex-col p-4 sm:p-6 lg:p-8">
+          <div className="flex min-w-0 flex-col overflow-hidden p-4 sm:p-6 lg:p-8">
             <OnboardingHeader step={step} progress={progress} />
             <div className="flex flex-1 flex-col justify-center py-6">
               {error && <p className="mb-4 rounded-[18px] border border-[#E35D4F]/25 bg-[#FFF0EC] p-3 text-sm font-black text-[#C4473E]">{error}</p>}
@@ -300,8 +300,8 @@ function AgeGate({
   return (
     <div>
       <Eyebrow>Start clean</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">First, the safety stuff. Then the fun part.</h2>
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">
+      <h2 className="mt-2 max-w-xl break-words font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">First, the safety stuff. Then the fun part.</h2>
+      <p className="mt-4 max-w-full break-words text-sm font-semibold leading-6 text-[#5E5E64] sm:max-w-lg">
         Kai needs age for teen safety rules. Private answers, meals, goals, and chats stay private.
       </p>
       {fromDemo && <p className="mt-4 rounded-[18px] border border-[#D6D0FF] bg-[#F8F6FF] p-3 text-sm font-black text-[#6C5CE7]">Picked up your demo choices. You can change anything.</p>}

@@ -37,7 +37,7 @@ export function AppShell() {
           Skip to content
         </a>
         <AppContextBar />
-        <main id="main" className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8">
+        <main id="main" className="mx-auto w-full max-w-6xl overflow-x-hidden px-4 pb-28 pt-4 sm:px-6 lg:px-8">
           <Outlet />
         </main>
         <AppComposer />
@@ -72,7 +72,7 @@ function AppContextBar() {
 
   return (
     <aside className="sticky top-0 z-30 border-b border-[#0A0A0A0F] bg-[#FAFAF7]/88 backdrop-blur-xl">
-      <div className="mx-auto grid max-w-6xl gap-2 px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-6xl gap-2 overflow-hidden px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
           <Link to="/home" className="focus-ring grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.08)]" aria-label="Kai home">
             <KaiAvatar size={34} label="Kai" pulse />
@@ -82,10 +82,11 @@ function AppContextBar() {
           </span>
           <div className="min-w-0">
             <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">{sectionLabel(pathname)}</p>
-            <p className="truncate text-sm font-black text-[#1A1A1F]">Mental and Physical stay in one loop.</p>
+            <p className="truncate text-sm font-black text-[#1A1A1F] sm:hidden">One loop.</p>
+            <p className="hidden truncate text-sm font-black text-[#1A1A1F] sm:block">Mental and Physical stay in one loop.</p>
           </div>
         </div>
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 text-xs font-black sm:grid-cols-[1fr_1fr_auto]">
+        <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 overflow-hidden text-xs font-black sm:grid sm:grid-cols-[1fr_1fr_auto]">
           <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{todayCount} reps</span>
           <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{streak} day streak</span>
           <Link to="/home" className="focus-ring hidden rounded-full bg-[#1A1A1F] px-4 py-2 text-white sm:inline-flex">

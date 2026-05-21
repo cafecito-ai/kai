@@ -1,4 +1,4 @@
-import { BookOpen, Brain, CheckCircle2, History, RefreshCw, Target, Wind } from "lucide-react";
+import { BookOpen, Brain, CheckCircle2, History, MessageCircle, RefreshCw, Target, Wind } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
@@ -10,6 +10,7 @@ import { MeditationPlayer } from "../components/mental/MeditationPlayer";
 import { SocialMediaReset } from "../components/mental/SocialMediaReset";
 import { ThoughtReframe } from "../components/mental/ThoughtReframe";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
+import { KaiChat } from "../components/kai/KaiChat";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineEntry, Goal } from "../lib/types";
@@ -236,15 +237,16 @@ export function EngineMental() {
       summary: "Learn fast",
       icon: BookOpen,
       content: (
-        <Suspense fallback={null}>
-          <div className="grid gap-4">
+        <div className="grid gap-4">
+          <MentorCouncilPanel />
+          <Suspense fallback={null}>
             <StressPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "stress_primer_read", eventValue: 6, payload: { articleId } })} />
             <IdentityPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "identity_primer_read", eventValue: 6, payload: { articleId } })} />
             <RelationshipsPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "relationships_primer_read", eventValue: 6, payload: { articleId } })} />
             <EngineGuidesIndex engine="mental" title="Mind + growth guides" intro="Emotion, identity, stress, confidence, relationships, purpose, and habits. Each is short. Kai links here in chat when topics come up." />
             <EngineGuidesIndex engine="potential" eyebrow="legacy goals guides" title="Purpose + doing guides" intro="The old Goals lane is now part of Mental: focus, motivation, money, decisions, and skill-building." />
-          </div>
-        </Suspense>
+          </Suspense>
+        </div>
       )
     },
     {
@@ -278,4 +280,39 @@ export function EngineMental() {
 
 function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");
+}
+
+function MentorCouncilPanel() {
+  const guides = [
+    "Daniel Siegel",
+    "Andrew Huberman",
+    "Viktor Frankl",
+    "James Clear",
+    "Carl Jung",
+    "Stoic philosophy",
+    "Modern teen psychology principles"
+  ];
+
+  return (
+    <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
+        <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset">
+          <MessageCircle />
+        </div>
+        <p className="eyebrow">guide chat</p>
+        <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Learn the pattern, then pick the rep.</h2>
+        <p className="mt-3 text-sm font-semibold leading-6 text-muted">
+          Kai can explain a situation through Daniel Siegel, Andrew Huberman, Viktor Frankl, James Clear, Carl Jung, stoic philosophy, or modern teen psychology principles.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {guides.map((guide) => (
+            <span key={guide} className="rounded-full border border-line bg-paper px-3 py-1.5 text-xs font-black text-ink">
+              {guide}
+            </span>
+          ))}
+        </div>
+      </div>
+      <KaiChat embedded mode="mental" />
+    </section>
+  );
 }

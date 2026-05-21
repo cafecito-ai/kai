@@ -4,14 +4,25 @@ import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
 
-export function KaiChat({ embedded = false }: { embedded?: boolean }) {
+type KaiChatMode = "default" | "mental";
+
+export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boolean; mode?: KaiChatMode }) {
   const { messages, send, sending } = useKaiStore();
   const [draft, setDraft] = useState("");
+  const suggestions =
+    mode === "mental"
+      ? [
+          "teach this through James Clear",
+          "what would Viktor Frankl ask?",
+          "help me use stoic philosophy",
+          "explain this like Daniel Siegel"
+        ]
+      : ["school", "friends", "body", "sleep"];
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (!draft.trim()) return;
-    void send(draft.trim());
+    void send(draft.trim(), mode === "mental" ? "mental" : "kai");
     setDraft("");
   }
 
@@ -21,8 +32,8 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
     <section className={shellClass}>
       <div className="mb-4 flex items-center justify-between border-b border-line bg-warmPaper/70">
         <div className="p-5 pb-4">
-          <p className="eyebrow">kai check-in</p>
-          <h2 className="mt-1 font-display text-3xl font-black tracking-normal">What is taking up space?</h2>
+          <p className="eyebrow">{mode === "mental" ? "mental guide chat" : "kai check-in"}</p>
+          <h2 className="mt-1 font-display text-3xl font-black tracking-normal">{mode === "mental" ? "Ask Kai for a guide lens." : "What is taking up space?"}</h2>
         </div>
         <div className="mr-5">
           <KaiMark size="md" />
@@ -47,7 +58,7 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
         ))}
       </div>
       <div className="mx-4 mb-3 flex flex-wrap gap-2" role="group" aria-label="Topic suggestions">
-        {["school", "friends", "body", "sleep"].map((item) => (
+        {suggestions.map((item) => (
           <button
             key={item}
             type="button"

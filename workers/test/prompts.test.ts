@@ -95,13 +95,21 @@ describe("renderEnginePrompt", () => {
     expect(mental).toContain("SAFETY LAYER PRIORITY: HIGH");
   });
 
-  it("keeps the source-materials TBD placeholder for D4", () => {
+  it("grounds the mental engine in the selected guide list", () => {
     const result = renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }));
-    expect(result).toContain("source_materials_TBD");
+    expect(result).toContain("Daniel Siegel");
+    expect(result).toContain("Andrew Huberman");
+    expect(result).toContain("Viktor Frankl");
+    expect(result).toContain("James Clear");
+    expect(result).toContain("Carl Jung");
+    expect(result).toContain("Stoic philosophy");
+    expect(result).toContain("Modern teen psychology principles");
   });
 
   it("includes hard guardrails specific to each engine", () => {
     expect(renderEnginePrompt("physical", baseContext())).toContain("no pain no gain");
+    expect(renderEnginePrompt("physical", baseContext())).toContain("Log food: To fuel your workouts correctly.");
+    expect(renderEnginePrompt("physical", baseContext())).toContain("Stretch / move: To maintain mobility and prevent injury.");
     expect(renderEnginePrompt("potential", baseContext({ primaryEngine: "potential" }))).toContain("pleasing parents");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("Replace therapy");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("identity-based habits");

@@ -207,8 +207,8 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
 
 function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
   const actions = [
-    { to: "/health?module=food", label: "Food photo", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
-    { to: "/mental?module=checkin", label: "Mental check-in", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
+    { to: "/health?module=food", label: "Log food", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
+    { to: "/mental?module=guides", label: "Guide chat", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
     { to: "/mental?module=reset", label: "Breath reset", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
     { to: "/health?module=scan", label: "Body scan", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" }
   ];

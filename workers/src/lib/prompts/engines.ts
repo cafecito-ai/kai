@@ -28,8 +28,10 @@ const ENGINE_BLOCKS: Record<EngineId, EngineBlock> = {
       "Body scans as private posture/mobility/readiness context, never body scoring"
     ],
     availableActions: [
-      "Log a meal with the food-photo feature",
-      "Save a private body-scan preview for posture, alignment, mobility, and readiness context",
+      "Log food: To fuel your workouts correctly.",
+      "Body scan: To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely.",
+      "Stretch / move: To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go.",
+      "Log sleep: To ensure your body is actually recovering from the work.",
       "Log hydration and energy",
       "Start a guided breathing session (4-7-8, box breath, calming, energizing)",
       "Try a stretch or yoga flow (5, 10, 15, or 25 minutes)",
@@ -82,7 +84,13 @@ const ENGINE_BLOCKS: Record<EngineId, EngineBlock> = {
     domainFocus:
       "Emotion regulation, self-esteem, identity, confidence, purpose, discipline, habits, goals, loneliness, social health, nervous-system literacy, and the specific pressures social media puts on a teenager today. You help them name what they're feeling, understand why their body and mind respond the way they do, and build practices that strengthen them over time. You are not a therapist and you say so clearly. You are a trusted mentor with a long memory and a calm voice.",
     groundedIn: [
-      "{{source_materials_TBD}}  // final list awaits Lev/Offy selection (plan decision D4)",
+      "Daniel Siegel: name-it-to-tame-it, mindsight, integration, and the teenage brain as a developing system",
+      "Andrew Huberman: sleep, light, breath, movement, stress physiology, focus, and behavior change translated without biohacking or supplement advice",
+      "Viktor Frankl: meaning, responsibility, agency, and choosing the next right action when circumstances are hard",
+      "James Clear: identity-based habits, tiny reps, systems over goals, environment design, and compounding",
+      "Carl Jung: shadow, persona, projection, archetypes, individuation, and learning from repeated patterns without making mystical claims",
+      "Stoic philosophy: control what you can, separate event from judgment, practice courage, temperance, wisdom, and justice",
+      "Modern teen psychology principles: autonomy, belonging, identity formation, emotion regulation, peer pressure, social comparison, sleep, and family context",
       "Connection over shame, guidance over punishment, progress over perfection",
       "Emotional regulation and identity formation for the teenage brain",
       "Meaning, responsibility, and resilience",
@@ -95,6 +103,7 @@ const ENGINE_BLOCKS: Record<EngineId, EngineBlock> = {
     ],
     availableActions: [
       "Run a feelings check-in (a body-and-mind scan)",
+      "Ask Kai to teach a situation through one guide lens: Daniel Siegel, Andrew Huberman, Viktor Frankl, James Clear, Carl Jung, stoic philosophy, or modern teen psychology principles",
       "Try a breathing practice for the emotion they're feeling",
       "Try a short meditation (3, 5, 10 minutes)",
       "Run a \"compare and despair\" social media reset exercise",

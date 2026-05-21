@@ -116,20 +116,20 @@ export function Home() {
             to="/mental?module=checkin"
             icon={Brain}
             label="Mental agent"
-            title="Check in, reframe, reset."
-            copy="Kai keeps the emotional work simple: name what is happening, understand the pattern, choose one next move."
+            title="Guide chat, check in, reframe."
+            copy="Learn from Daniel Siegel, Andrew Huberman, Viktor Frankl, James Clear, Carl Jung, stoic philosophy, and modern teen psychology principles."
             stat={`${mentalPoints || 18} pts`}
-            chips={["Mood", "Breath", "Journal"]}
+            chips={["Guides", "Mood", "Breath"]}
             accent="from-[#E4F7F4] to-white text-[#218A7D]"
           />
           <ModuleCard
             to="/health?module=food"
             icon={Dumbbell}
             label="Physical agent"
-            title="Food photo, hydration, body scan."
-            copy="Log fuel, track recovery, and build a private progress loop without turning health into pressure."
+            title="Log food. Body scan. Stretch / move. Log sleep."
+            copy="To fuel your workouts correctly. To keep your posture, alignment, and body composition in check. To maintain mobility and prevent injury. To ensure your body is actually recovering from the work."
             stat={`${physicalPoints || hydration.cups * 4 || 24} pts`}
-            chips={["Food", "Hydrate", "Scan"]}
+            chips={["Log food", "Body scan", "Stretch / move", "Log sleep"]}
             accent="from-[#FFF0EC] to-white text-[#C86B31]"
           />
         </section>

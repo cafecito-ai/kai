@@ -1,12 +1,19 @@
-import { Activity, ArrowRight, Brain, ShieldAlert } from "lucide-react";
+import { Activity, ArrowRight, Brain, Camera, Dumbbell, Moon, ShieldAlert, Utensils } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ActionTile, AppPage, AppSurface, FlowList, KaiMark, SessionHero } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { useUserStore } from "../stores/userStore";
 
 const lanes = [
-  { title: "Health", path: "/health", icon: Activity, tone: "body" as const, copy: "Food camera, movement, sleep, recovery." },
-  { title: "Mental", path: "/mental", icon: Brain, tone: "reset" as const, copy: "Feelings, confidence, purpose, social pressure." }
+  { title: "Health", path: "/health", icon: Activity, tone: "body" as const, copy: "Log food. Body scan. Stretch / move. Log sleep." },
+  { title: "Mental", path: "/mental", icon: Brain, tone: "reset" as const, copy: "Learn from Kai through Daniel Siegel, Andrew Huberman, Viktor Frankl, James Clear, Carl Jung, stoic philosophy, and modern teen psychology principles." }
+];
+
+const physicalActions = [
+  { icon: Utensils, title: "Log food", copy: "To fuel your workouts correctly." },
+  { icon: Camera, title: "Body scan", copy: "To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely." },
+  { icon: Dumbbell, title: "Stretch / move", copy: "To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." },
+  { icon: Moon, title: "Log sleep", copy: "To ensure your body is actually recovering from the work." }
 ];
 
 export function Landing() {
@@ -62,6 +69,21 @@ export function Landing() {
         {lanes.map((lane) => (
           <ActionTile key={lane.path} as={Link} to={lane.path} icon={lane.icon} title={lane.title} copy={lane.copy} tone={lane.tone} active={lane.path.endsWith(visibleEngine)} />
         ))}
+      </section>
+
+      <section aria-label="Physical loop" className="grid gap-2 sm:grid-cols-2">
+        {physicalActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link key={action.title} to={action.title === "Body scan" ? "/health?module=scan" : action.title === "Stretch / move" || action.title === "Log sleep" ? "/health?module=movement" : "/health?module=food"} className="focus-ring rounded-[24px] border border-line bg-white p-4 shadow-sm">
+              <div className="grid size-10 place-items-center rounded-full bg-bodyWash text-body">
+                <Icon size={18} aria-hidden="true" />
+              </div>
+              <h2 className="mt-3 font-display text-2xl font-black tracking-normal">{action.title}</h2>
+              <p className="mt-2 text-sm font-semibold leading-6 text-muted">{action.copy}</p>
+            </Link>
+          );
+        })}
       </section>
 
       <AppSurface className="p-4 sm:p-5">

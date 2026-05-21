@@ -38,7 +38,7 @@ type DemoBuildSlice = {
 
 type VibeId = "stressed" | "locked_in" | "tired" | "motivated" | "lonely" | "confident" | "chaotic" | "bored";
 type SignalId = "sleep" | "energy" | "confidence" | "movement" | "food" | "social";
-type MissionId = "mind" | "body" | "confidence" | "discipline" | "food" | "sleep" | "social" | "goals";
+type MissionId = "mind" | "body" | "stretch" | "confidence" | "discipline" | "food" | "sleep" | "social" | "goals";
 
 function loadDemoBuild(): DemoBuildSlice | null {
   if (typeof window === "undefined") return null;
@@ -85,11 +85,12 @@ const signalCopy: Record<SignalId, { label: string; low: string; mid: string; hi
 
 const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: "mental" | "physical"; route: string }> = [
   { id: "mind", label: "Mind", copy: "Feel less overloaded.", icon: Brain, engine: "mental", route: "/mental?module=checkin" },
-  { id: "body", label: "Body", copy: "Move, recover, feel better.", icon: HeartPulse, engine: "physical", route: "/health?module=movement" },
+  { id: "body", label: "Body scan", copy: "To keep your posture, alignment, and body composition in check.", icon: HeartPulse, engine: "physical", route: "/health?module=scan" },
+  { id: "stretch", label: "Stretch / move", copy: "To maintain mobility and prevent injury.", icon: Dumbbell, engine: "physical", route: "/health?module=movement" },
   { id: "confidence", label: "Confidence", copy: "Stop shrinking yourself.", icon: Sparkles, engine: "mental", route: "/mental?module=purpose" },
   { id: "discipline", label: "Discipline", copy: "Build systems, not hype.", icon: Target, engine: "mental", route: "/mental?module=purpose" },
-  { id: "food", label: "Food", copy: "Log without shame.", icon: Utensils, engine: "physical", route: "/health?module=food" },
-  { id: "sleep", label: "Sleep", copy: "Reset the foundation.", icon: Moon, engine: "physical", route: "/health?module=movement" },
+  { id: "food", label: "Log food", copy: "To fuel your workouts correctly.", icon: Utensils, engine: "physical", route: "/health?module=food" },
+  { id: "sleep", label: "Log sleep", copy: "To ensure your body is actually recovering from the work.", icon: Moon, engine: "physical", route: "/health?module=movement" },
   { id: "social", label: "Social", copy: "Handle pressure and loneliness.", icon: UsersRound, engine: "mental", route: "/mental?module=checkin" },
   { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "mental", route: "/mental?module=purpose" }
 ];
@@ -538,6 +539,7 @@ function normalizeDemoVibes(vibes: string[] | undefined): VibeId[] {
 function inferDemoMission(build: DemoBuildSlice | null): MissionId {
   const text = [build?.goalText, build?.feelingsSummary, build?.mealSummary, ...(build?.tried ?? [])].join(" ").toLowerCase();
   if (/meal|food|fuel|camera/.test(text)) return "food";
+  if (/stretch|move|mobility|injury|form/.test(text)) return "stretch";
   if (/body|scan|workout|sport|sleep|recovery/.test(text)) return "body";
   if (/confidence/.test(text)) return "confidence";
   if (/goal|discipline|future/.test(text)) return "goals";

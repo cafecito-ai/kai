@@ -169,9 +169,9 @@ export function EnginePhysical() {
       content: (
         <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
-            <p className="eyebrow text-soft">start here</p>
-            <h2 className="mt-3 max-w-xl font-display text-4xl font-black leading-none tracking-normal">Fuel notes, not calorie math.</h2>
-            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-paper/70">Capture what happened, how it felt, and what helped. No good/bad meal labels, body scoring, or weight-loss loops.</p>
+            <p className="eyebrow text-soft">Log food</p>
+            <h2 className="mt-3 max-w-xl font-display text-4xl font-black leading-none tracking-normal">Log food</h2>
+            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-paper/70">To fuel your workouts correctly.</p>
             <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Meal context">
               {MEAL_CONTEXTS.map((context) => (
@@ -196,7 +196,7 @@ export function EnginePhysical() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button disabled={saving === "meal_log"} onClick={() => void logMeal("meal_log")}>{saving === "meal_log" ? "Logging" : "Log fuel note"}</Button>
+              <Button disabled={saving === "meal_log"} onClick={() => void logMeal("meal_log")}>{saving === "meal_log" ? "Logging" : "Log food"}</Button>
               <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={!foodPhoto || saving === "food_photo_upload"} onClick={() => void uploadFoodPhoto()}>
                 {saving === "food_photo_upload" ? "Uploading" : "Analyze selected photo"}
               </Button>
@@ -207,13 +207,14 @@ export function EnginePhysical() {
             {foodPhotoResult && <FoodPhotoResultCard result={foodPhotoResult} mealContext={mealContext} />}
           </section>
           <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-            <p className="eyebrow">how body works</p>
-            <h2 className="mt-2 font-display text-2xl font-black leading-none tracking-normal">Descriptive, not judgmental.</h2>
+            <p className="eyebrow">physical loop</p>
+            <h2 className="mt-2 font-display text-2xl font-black leading-none tracking-normal">Fuel, scan, stretch, sleep.</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-muted">Kai keeps context, patterns, and guardrails behind the first rep.</p>
             <div className="mt-4 grid gap-3">
-              <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, when it happened, hunger/fullness, energy after, and useful context." />
-              <PhysicalModule icon={<Camera />} title="Camera tracker" copy="R2 upload, Workers AI vision, USDA estimate, and a review step before memory." />
-              <PhysicalModule icon={<Wind />} title="Guardrail" copy="Risk language redirects to support. No restriction rewards or body comparison." />
+              <PhysicalModule icon={<Utensils />} title="Log food" copy="To fuel your workouts correctly." />
+              <PhysicalModule icon={<Camera />} title="Body scan" copy="To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely." />
+              <PhysicalModule icon={<Wind />} title="Stretch / move" copy="To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." />
+              <PhysicalModule icon={<Moon />} title="Log sleep" copy="To ensure your body is actually recovering from the work." />
             </div>
           </section>
         </div>
@@ -221,29 +222,29 @@ export function EnginePhysical() {
     },
     {
       id: "movement",
-      label: "Movement",
-      summary: "Move + recover",
+      label: "Stretch / move",
+      summary: "Mobility + form",
       icon: Dumbbell,
       content: (
         <div className="grid gap-4 md:grid-cols-3">
-          <ActionCard icon={<Dumbbell />} title="Movement" copy="Practice, sport, walk, lift, stretch — log any session." action={saving === "movement_log" ? "Logging" : "Log 35 min"} onClick={() => void completeEntry({ entryType: "movement_log", title: "Movement", payload: { type: "sport", duration: 35 }, eventType: "workout", eventValue: 30 })} />
-          <ActionCard icon={<Moon />} title="Sleep" copy="Quality, blockers, and one experiment." action={saving === "sleep_log" ? "Logging" : "Log sleep"} onClick={() => void completeEntry({ entryType: "sleep_log", title: "Sleep check", payload: { quality: 7 }, eventType: "sleep_log", eventValue: 18 })} />
+          <ActionCard icon={<Dumbbell />} title="Stretch / move" copy="To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." action={saving === "movement_log" ? "Logging" : "Log stretch / move"} onClick={() => void completeEntry({ entryType: "movement_log", title: "Stretch / move", payload: { type: "stretch_move", duration: 35 }, eventType: "workout", eventValue: 30 })} />
+          <ActionCard icon={<Moon />} title="Log sleep" copy="To ensure your body is actually recovering from the work." action={saving === "sleep_log" ? "Logging" : "Log sleep"} onClick={() => void completeEntry({ entryType: "sleep_log", title: "Log sleep", payload: { quality: 7 }, eventType: "sleep_log", eventValue: 18 })} />
           <ActionCard icon={<Wind />} title="Recovery" copy="Breathing, soreness, hydration, reset." action={saving === "recovery_reset" ? "Saving" : "Complete reset"} onClick={() => void completeEntry({ entryType: "recovery_reset", title: "Recovery reset", payload: { pattern: "box" }, eventType: "breathing_session", eventValue: 20 })} />
         </div>
       )
     },
     {
       id: "scan",
-      label: "Scan",
+      label: "Body scan",
       summary: "Private beta",
       icon: ScanLine,
       content: (
         <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 grid size-12 place-items-center rounded-full bg-bodyWash text-body"><ScanLine /></div>
-            <p className="eyebrow">body scan</p>
-            <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Posture and readiness, not appearance.</h2>
-            <p className="mt-3 text-sm font-semibold leading-6 text-muted">Kai frames scans around alignment, tightness, recovery, and useful mobility suggestions.</p>
+            <p className="eyebrow">Body scan</p>
+            <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Body scan</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-muted">To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely.</p>
             <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-line bg-paper p-3 text-sm font-black text-ink hover:border-ink/35">
               <Camera size={18} aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">{bodyScanPhoto ? bodyScanPhoto.name : "Take or choose a private scan photo"}</span>
@@ -303,7 +304,7 @@ export function EnginePhysical() {
     }
   ];
 
-  return <UnitWorkspace title="Physical agent" label="Health unit" tone="physical" intro="Food camera, movement, sleep, hydration, posture, mobility, and recovery. Useful, pattern-aware, never obsessive." modules={modules} />;
+  return <UnitWorkspace title="Physical agent" label="Health unit" tone="physical" intro="Log food. Body scan. Stretch / move. Log sleep. Useful, pattern-aware, never obsessive." modules={modules} />;
 }
 
 const foodExamples = [

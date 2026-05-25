@@ -6,6 +6,13 @@ export default {
       colors: {
         ink: "#0A0A0A",
         ink2: "#2A2A28",
+        // "v2" ink shades used by Home / Onboarding / AppShell. Slightly
+        // lighter than `ink` to read better at small sizes on warm paper.
+        // Names kept compact so utility classes don't grow unwieldy.
+        inkDeep: "#111116",
+        inkDark: "#1A1A1F",
+        inkSoft: "#5E5E64",
+        inkMute: "#8A8A8F",
         paper: "#FAFAF7",
         warmPaper: "#F4F1EB",
         white: "#FFFFFF",

@@ -31,7 +31,7 @@ export function AppShell() {
 
   if (unifiedAppRoute) {
     return (
-      <div className="min-h-screen bg-[#FAFAF7] text-[#1A1A1F]">
+      <div className="min-h-screen bg-paper text-inkDark">
         <a
           href="#main"
           className="focus-ring sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-kai focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-paper"
@@ -48,7 +48,7 @@ export function AppShell() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAFAF7] text-[#1A1A1F]">
+    <div className="flex min-h-screen flex-col bg-paper text-inkDark">
       <a
         href="#main"
         className="focus-ring sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-kai focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-paper"
@@ -74,7 +74,7 @@ function AppContextBar() {
   const ActiveIcon = lane.icon;
 
   return (
-    <aside className="sticky top-0 z-30 border-b border-[#0A0A0A0F] bg-[#FAFAF7]/88 backdrop-blur-xl">
+    <aside className="sticky top-0 z-30 border-b border-[#0A0A0A0F] bg-paper/88 backdrop-blur-xl">
       <div className="mx-auto grid max-w-6xl gap-2 px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
           <Link to="/home" className="focus-ring grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.08)]" aria-label="Kai home">
@@ -84,13 +84,13 @@ function AppContextBar() {
             <ActiveIcon size={16} aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">{sectionLabel(pathname)}</p>
-            <p className="truncate text-sm font-black text-[#1A1A1F]">Mental and Physical stay in one loop.</p>
+            <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-inkMute">{sectionLabel(pathname)}</p>
+            <p className="truncate text-sm font-black text-inkDark">Mental and Physical stay in one loop.</p>
           </div>
         </div>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 text-xs font-black sm:grid-cols-[1fr_1fr_auto_auto]">
-          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{todayCount} reps</span>
-          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{streak} day streak</span>
+          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-inkMute sm:px-3">{todayCount} reps</span>
+          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-inkMute sm:px-3">{streak} day streak</span>
           {/* Spec §1 + §7 Level 3: always-on crisis access. Must be visible on mobile. */}
           <Link
             to="/crisis"
@@ -100,7 +100,7 @@ function AppContextBar() {
             <ShieldAlert size={14} aria-hidden="true" />
             <span className="hidden sm:inline">Crisis</span>
           </Link>
-          <Link to="/home" className="focus-ring hidden rounded-full bg-[#1A1A1F] px-4 py-2 text-white sm:inline-flex">
+          <Link to="/home" className="focus-ring hidden rounded-full bg-inkDark px-4 py-2 text-white sm:inline-flex">
             Today
           </Link>
         </div>
@@ -151,7 +151,7 @@ function AppDock({ quickOpen, onToggleQuick }: { quickOpen: boolean; onToggleQui
       <button
         type="button"
         onClick={onToggleQuick}
-        className="focus-ring flex h-12 items-center justify-center rounded-[19px] bg-[#1A1A1F] text-white shadow-sm"
+        className="focus-ring flex h-12 items-center justify-center rounded-[19px] bg-inkDark text-white shadow-sm"
         aria-label="Quick app actions"
         aria-expanded={quickOpen}
       >
@@ -170,7 +170,7 @@ function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: 
       to={to}
       className={({ isActive }) =>
         `focus-ring flex h-12 flex-col items-center justify-center rounded-[18px] text-[10px] font-bold transition ${
-          isActive ? "bg-[#1A1A1F] text-white" : "text-[#5E5E64] hover:bg-[#F4F1EB] hover:text-[#1A1A1F]"
+          isActive ? "bg-inkDark text-white" : "text-inkSoft hover:bg-warmPaper hover:text-inkDark"
         }`
       }
     >
@@ -183,17 +183,17 @@ function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: 
 
 function GlobalChatSheet({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-[#111116]/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
+    <div className="fixed inset-0 z-50 flex items-end bg-inkDeep/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
       <div className="mx-auto w-full max-w-md rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <KaiAvatar size={34} label="KAI" pulse />
             <div>
-              <p className="text-sm font-black text-[#111116]">KAI</p>
-              <p className="text-xs font-semibold text-[#8A8A8F]">One companion across the whole app</p>
+              <p className="text-sm font-black text-inkDeep">KAI</p>
+              <p className="text-xs font-semibold text-inkMute">One companion across the whole app</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="focus-ring grid size-10 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close chat">
+          <button type="button" onClick={onClose} className="focus-ring grid size-10 place-items-center rounded-full bg-warmPaper text-inkDark" aria-label="Close chat">
             <X size={18} aria-hidden="true" />
           </button>
         </div>
@@ -216,15 +216,15 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
     { to: "/health?module=food", label: "Food photo", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
     { to: "/mental?module=checkin", label: "Mental check-in", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
     { to: "/mental?module=reset", label: "Breath reset", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
-    { to: "/health?module=scan", label: "Body scan", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" }
+    { to: "/health?module=scan", label: "Body scan", icon: Activity, tone: "bg-warmPaper text-inkDark" }
   ];
 
   return (
     <div className="fixed inset-x-0 bottom-20 z-40 px-5" role="dialog" aria-label="Quick actions">
       <div className="mx-auto w-full max-w-md rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
         <div className="mb-2 flex items-center justify-between px-2">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Quick rep</p>
-          <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close quick actions">
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-inkMute">Quick rep</p>
+          <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-warmPaper text-inkDark" aria-label="Close quick actions">
             <X size={15} aria-hidden="true" />
           </button>
         </div>
@@ -232,7 +232,7 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
           {actions.map((action) => {
             const Icon = action.icon;
             return (
-              <Link key={action.label} to={action.to} onClick={onClose} className="focus-ring flex min-h-14 items-center gap-3 rounded-[18px] bg-[#FAFAF7] px-3 text-left text-sm font-black text-[#1A1A1F]">
+              <Link key={action.label} to={action.to} onClick={onClose} className="focus-ring flex min-h-14 items-center gap-3 rounded-[18px] bg-paper px-3 text-left text-sm font-black text-inkDark">
                 <span className={`grid size-9 place-items-center rounded-full ${action.tone}`}>
                   <Icon size={17} aria-hidden="true" />
                 </span>

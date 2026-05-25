@@ -66,20 +66,20 @@ export function Home() {
   }
 
   return (
-    <div className="text-[#1A1A1F]">
+    <div className="text-inkDark">
       <div className="mx-auto flex w-full max-w-md flex-col pb-6 lg:max-w-5xl">
         <header className="flex items-start justify-between gap-4 px-1">
           <div>
-            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">{day.eyebrow}</p>
-            <h1 className="mt-1 font-display text-[2rem] font-semibold leading-none tracking-normal text-[#111116]">{day.headline}.</h1>
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-inkMute">{day.eyebrow}</p>
+            <h1 className="mt-1 font-display text-[2rem] font-semibold leading-none tracking-normal text-inkDeep">{day.headline}.</h1>
             {streak > 0 && (
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#F4F1EB] px-3 py-1.5 text-xs font-bold text-[#1A1A1F]">
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warmPaper px-3 py-1.5 text-xs font-bold text-inkDark">
                 <Flame size={13} className="text-[#F29A43]" aria-hidden="true" />
                 {streak}-day streak
               </div>
             )}
           </div>
-          <Link to="/mental?module=checkin" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-[#1A1A1F] shadow-[0_8px_32px_rgba(10,10,10,0.08)]">
+          <Link to="/mental?module=checkin" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-inkDark shadow-[0_8px_32px_rgba(10,10,10,0.08)]">
             <KaiAvatar size={36} label="KAI" pulse />
             Start with KAI
           </Link>
@@ -88,12 +88,12 @@ export function Home() {
         <section className="mt-7 rounded-[24px] border border-[#0A0A0A0F] bg-white p-6 shadow-[0_2px_4px_rgba(10,10,10,0.04),0_16px_40px_rgba(10,10,10,0.08)]">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">Today</p>
+              <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-inkMute">Today</p>
               {score !== null ? (
                 <>
                   <p className="mt-2 flex items-baseline gap-1 font-mono">
-                    <span className="text-[4.5rem] font-bold leading-none tracking-[-0.04em] text-[#1A1A1F]">{Math.round(score)}</span>
-                    <span className="text-xl font-semibold text-[#8A8A8F]">/100</span>
+                    <span className="text-[4.5rem] font-bold leading-none tracking-[-0.04em] text-inkDark">{Math.round(score)}</span>
+                    <span className="text-xl font-semibold text-inkMute">/100</span>
                   </p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF5E8] px-3 py-1 text-xs font-bold text-[#2F9D67]">
@@ -105,10 +105,10 @@ export function Home() {
               ) : (
                 <>
                   <p className="mt-2 flex items-baseline gap-1 font-mono">
-                    <span className="text-[4.5rem] font-bold leading-none tracking-[-0.04em] text-[#1A1A1F]">—</span>
-                    <span className="text-xl font-semibold text-[#8A8A8F]">/100</span>
+                    <span className="text-[4.5rem] font-bold leading-none tracking-[-0.04em] text-inkDark">—</span>
+                    <span className="text-xl font-semibold text-inkMute">/100</span>
                   </p>
-                  <p className="mt-3 max-w-xs text-sm font-semibold leading-5 text-[#5E5E64]">
+                  <p className="mt-3 max-w-xs text-sm font-semibold leading-5 text-inkSoft">
                     Log one rep today and the dial fills in.
                   </p>
                 </>
@@ -150,10 +150,10 @@ export function Home() {
         <HydrationPreview hydration={hydration} onBump={bumpHydration} />
 
         <section className="mt-6">
-          <p className="px-1 font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">Recent</p>
+          <p className="px-1 font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-inkMute">Recent</p>
           <div className="mt-3 rounded-[24px] border border-[#0A0A0A0F] bg-white p-5 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
             {recent.length === 0 ? (
-              <p className="text-sm font-semibold leading-6 text-[#5E5E64]">
+              <p className="text-sm font-semibold leading-6 text-inkSoft">
                 Nothing logged yet. Try a check-in or a fuel note — your reps show up here.
               </p>
             ) : (
@@ -162,12 +162,12 @@ export function Home() {
                   const Icon = item.icon;
                   return (
                     <div key={`${item.title}-${item.meta}`} className="flex items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#F4F1EB]">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warmPaper">
                         <Icon size={16} className={item.iconClass} aria-hidden="true" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-[#1A1A1F]">{item.title}</p>
-                        <p className="text-xs font-medium text-[#8A8A8F]">{item.meta}</p>
+                        <p className="truncate text-sm font-bold text-inkDark">{item.title}</p>
+                        <p className="text-xs font-medium text-inkMute">{item.meta}</p>
                       </div>
                       <span className={`rounded-full px-2.5 py-0.5 font-mono text-xs font-semibold ${item.chipClass}`}>{item.chip}</span>
                     </div>
@@ -200,10 +200,10 @@ function MiniMetric({
       <span className={`inline-flex size-7 items-center justify-center rounded-full ${className}`}>
         <Icon size={15} aria-hidden="true" />
       </span>
-      <p className="mt-4 font-mono text-[11px] font-medium uppercase tracking-[0.28em] text-[#8A8A8F]">{label}</p>
-      <p className="mt-2 font-mono text-2xl font-bold text-[#1A1A1F]">
+      <p className="mt-4 font-mono text-[11px] font-medium uppercase tracking-[0.28em] text-inkMute">{label}</p>
+      <p className="mt-2 font-mono text-2xl font-bold text-inkDark">
         {value === null ? "—" : value}
-        {value !== null && unit && <span className="ml-0.5 text-xs font-semibold text-[#8A8A8F]">{unit}</span>}
+        {value !== null && unit && <span className="ml-0.5 text-xs font-semibold text-inkMute">{unit}</span>}
       </p>
     </article>
   );
@@ -234,14 +234,14 @@ function ModuleCard({
         <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/80 shadow-[0_8px_22px_rgba(10,10,10,0.08)]">
           <Icon size={19} aria-hidden="true" />
         </span>
-        <span className="rounded-full bg-white/80 px-3 py-1 font-mono text-[11px] font-bold text-[#1A1A1F]">{stat}</span>
+        <span className="rounded-full bg-white/80 px-3 py-1 font-mono text-[11px] font-bold text-inkDark">{stat}</span>
       </div>
-      <p className="mt-4 font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">{label}</p>
-      <h2 className="mt-2 font-display text-[1.35rem] font-semibold leading-[1.06] text-[#111116]">{title}</h2>
-      <p className="mt-2 text-sm font-medium leading-5 text-[#5E5E64]">{copy}</p>
+      <p className="mt-4 font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-inkMute">{label}</p>
+      <h2 className="mt-2 font-display text-[1.35rem] font-semibold leading-[1.06] text-inkDeep">{title}</h2>
+      <p className="mt-2 text-sm font-medium leading-5 text-inkSoft">{copy}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {chips.map((chip) => (
-          <span key={chip} className="rounded-full bg-white/70 px-3 py-1 text-xs font-bold text-[#1A1A1F]">
+          <span key={chip} className="rounded-full bg-white/70 px-3 py-1 text-xs font-bold text-inkDark">
             {chip}
           </span>
         ))}
@@ -259,25 +259,25 @@ function HydrationPreview({ hydration, onBump }: { hydration: HydrationToday; on
             <span className="font-mono text-sm">▱</span>
           </span>
           <div>
-            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">hydration</p>
-            <p className="font-mono text-sm font-semibold text-[#1A1A1F]">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-inkMute">hydration</p>
+            <p className="font-mono text-sm font-semibold text-inkDark">
               {hydration.cups}
-              <span className="text-[#8A8A8F]"> / {DAILY_CUP_FLOOR}</span>
+              <span className="text-inkMute"> / {DAILY_CUP_FLOOR}</span>
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <button type="button" aria-label="Remove a glass" onClick={() => onBump(-1)} disabled={hydration.cups === 0} className="focus-ring flex size-10 items-center justify-center rounded-full bg-[#F8F6F1] text-[#8A8A8F] disabled:opacity-40">
+          <button type="button" aria-label="Remove a glass" onClick={() => onBump(-1)} disabled={hydration.cups === 0} className="focus-ring flex size-10 items-center justify-center rounded-full bg-[#F8F6F1] text-inkMute disabled:opacity-40">
             <Minus size={15} aria-hidden="true" />
           </button>
-          <button type="button" aria-label="Add a glass" onClick={() => onBump(1)} className="focus-ring flex size-10 items-center justify-center rounded-full bg-[#1A1A1F] text-white">
+          <button type="button" aria-label="Add a glass" onClick={() => onBump(1)} className="focus-ring flex size-10 items-center justify-center rounded-full bg-inkDark text-white">
             <Plus size={18} aria-hidden="true" />
           </button>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-8 gap-1.5" aria-hidden="true">
         {Array.from({ length: DAILY_CUP_FLOOR }, (_, index) => (
-          <div key={index} className={`h-7 rounded-[4px] ${index < hydration.cups ? "bg-[#7B6EF6]" : "bg-[#F4F1EB]"}`} />
+          <div key={index} className={`h-7 rounded-[4px] ${index < hydration.cups ? "bg-[#7B6EF6]" : "bg-warmPaper"}`} />
         ))}
       </div>
     </section>

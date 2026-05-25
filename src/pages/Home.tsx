@@ -21,12 +21,6 @@ import { useProgressStore } from "../stores/progressStore";
 
 const HYDRATION_HOME_KEY = "kai.home.hydration.today.v2";
 
-const fallbackActivity = [
-  { icon: Activity, iconClass: "text-[#F29A43]", title: "Easy run · 32 min", meta: "Yesterday", chip: "+5", chipClass: "bg-[#DDF5E8] text-[#2F9D67]" },
-  { icon: Moon, iconClass: "text-[#7B6EF6]", title: "Slept 6h 24m", meta: "Last night", chip: "-2", chipClass: "bg-[#FFF0CE] text-[#B57619]" },
-  { icon: Brain, iconClass: "text-[#68C5B8]", title: "Evening reflection", meta: "Yesterday", chip: "+3", chipClass: "bg-[#DDF5E8] text-[#2F9D67]" }
-];
-
 export function Home() {
   const events = useProgressStore((state) => state.events);
   const addEvent = useProgressStore((state) => state.addEvent);
@@ -45,15 +39,19 @@ export function Home() {
     return events.filter((event) => event.occurredAt.slice(0, 10) === today);
   }, [events]);
 
-  const score = todayEvents.length > 0 ? Math.min(100, 76 + Math.min(18, todayEvents.reduce((sum, event) => sum + Math.max(0, event.eventValue), 0) / 4)) : 82;
-  const displayStreak = Math.max(streak, 4);
+  // Empty-state rule: brand new users see no fabricated metrics. Score
+  // and per-engine pills are null until they actually log something.
+  const hasTodayEvents = todayEvents.length > 0;
+  const score = hasTodayEvents
+    ? Math.min(100, 60 + Math.min(40, todayEvents.reduce((sum, event) => sum + Math.max(0, event.eventValue), 0) / 4))
+    : null;
   const day = dayParts();
   const recent = recentItems(todayEvents);
   const totals = useMemo(() => engineTotals(events), [events]);
   const mentalPoints = totals.mental + totals.potential;
   const physicalPoints = totals.physical;
-  const mindScore = Math.min(10, Math.max(6, Math.round(mentalPoints / 45) + 6));
-  const bodyScore = Math.min(10, Math.max(6, Math.round(physicalPoints / 45) + 6));
+  const mindScore = mentalPoints > 0 ? Math.min(10, Math.max(1, Math.round(mentalPoints / 45))) : null;
+  const bodyScore = physicalPoints > 0 ? Math.min(10, Math.max(1, Math.round(physicalPoints / 45))) : null;
 
   function bumpHydration(delta: number) {
     const baseline = resetIfNewDay(hydration);
@@ -74,10 +72,12 @@ export function Home() {
           <div>
             <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">{day.eyebrow}</p>
             <h1 className="mt-1 font-display text-[2rem] font-semibold leading-none tracking-normal text-[#111116]">{day.headline}.</h1>
-            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#F4F1EB] px-3 py-1.5 text-xs font-bold text-[#1A1A1F]">
-              <Flame size={13} className="text-[#F29A43]" aria-hidden="true" />
-              {displayStreak}-day streak
-            </div>
+            {streak > 0 && (
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#F4F1EB] px-3 py-1.5 text-xs font-bold text-[#1A1A1F]">
+                <Flame size={13} className="text-[#F29A43]" aria-hidden="true" />
+                {streak}-day streak
+              </div>
+            )}
           </div>
           <Link to="/mental?module=checkin" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-[#1A1A1F] shadow-[0_8px_32px_rgba(10,10,10,0.08)]">
             <KaiAvatar size={36} label="KAI" pulse />
@@ -89,26 +89,39 @@ export function Home() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">Today</p>
-              <p className="mt-2 flex items-baseline gap-1 font-mono">
-                <span className="text-[4.5rem] font-bold leading-none tracking-[-0.04em] text-[#1A1A1F]">{Math.round(score)}</span>
-                <span className="text-xl font-semibold text-[#8A8A8F]">/100</span>
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF5E8] px-3 py-1 text-xs font-bold text-[#2F9D67]">
-                  <Zap size={12} aria-hidden="true" />
-                  Strong start
-                </span>
-                <span className="inline-flex items-center rounded-full bg-[#DDF5E8] px-3 py-1 font-mono text-[11px] font-semibold text-[#2F9D67]">↗ +6 vs yesterday</span>
-              </div>
+              {score !== null ? (
+                <>
+                  <p className="mt-2 flex items-baseline gap-1 font-mono">
+                    <span className="text-[4.5rem] font-bold leading-none tracking-[-0.04em] text-[#1A1A1F]">{Math.round(score)}</span>
+                    <span className="text-xl font-semibold text-[#8A8A8F]">/100</span>
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF5E8] px-3 py-1 text-xs font-bold text-[#2F9D67]">
+                      <Zap size={12} aria-hidden="true" />
+                      Logged today
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 flex items-baseline gap-1 font-mono">
+                    <span className="text-[4.5rem] font-bold leading-none tracking-[-0.04em] text-[#1A1A1F]">—</span>
+                    <span className="text-xl font-semibold text-[#8A8A8F]">/100</span>
+                  </p>
+                  <p className="mt-3 max-w-xs text-sm font-semibold leading-5 text-[#5E5E64]">
+                    Log one rep today and the dial fills in.
+                  </p>
+                </>
+              )}
             </div>
-            <ScoreRing value={score} />
+            <ScoreRing value={score ?? 0} />
           </div>
         </section>
 
         <section className="mt-6 grid grid-cols-3 gap-3">
-          <MiniMetric icon={Brain} label="Mind" value={String(mindScore)} unit="/10" className="bg-[#E4F7F4] text-[#68C5B8]" />
-          <MiniMetric icon={Moon} label="Sleep" value="6.4" unit="hrs" className="bg-[#EEEAFF] text-[#7B6EF6]" />
-          <MiniMetric icon={Heart} label="Body" value={String(bodyScore)} unit="/10" className="bg-[#FFF0EC] text-[#F29A43]" />
+          <MiniMetric icon={Brain} label="Mind" value={mindScore} unit="/10" className="bg-[#E4F7F4] text-[#68C5B8]" />
+          <MiniMetric icon={Moon} label="Sleep" value={null} unit="hrs" className="bg-[#EEEAFF] text-[#7B6EF6]" />
+          <MiniMetric icon={Heart} label="Body" value={bodyScore} unit="/10" className="bg-[#FFF0EC] text-[#F29A43]" />
         </section>
 
         <section className="mt-6 grid gap-3">
@@ -118,7 +131,7 @@ export function Home() {
             label="Mental agent"
             title="Check in, reframe, reset."
             copy="Kai keeps the emotional work simple: name what is happening, understand the pattern, choose one next move."
-            stat={`${mentalPoints || 18} pts`}
+            stat={mentalPoints > 0 ? `${mentalPoints} pts` : "Start"}
             chips={["Mood", "Breath", "Journal"]}
             accent="from-[#E4F7F4] to-white text-[#218A7D]"
           />
@@ -128,7 +141,7 @@ export function Home() {
             label="Physical agent"
             title="Food photo, hydration, body scan."
             copy="Log fuel, track recovery, and build a private progress loop without turning health into pressure."
-            stat={`${physicalPoints || hydration.cups * 4 || 24} pts`}
+            stat={physicalPoints > 0 ? `${physicalPoints} pts` : "Start"}
             chips={["Food", "Hydrate", "Scan"]}
             accent="from-[#FFF0EC] to-white text-[#C86B31]"
           />
@@ -136,33 +149,32 @@ export function Home() {
 
         <HydrationPreview hydration={hydration} onBump={bumpHydration} />
 
-        <section className="relative mt-6 rounded-[24px] border border-[#D7F0EA] bg-[#F4FFFC] p-5 pb-6 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.28em] text-[#8A8A8F]">KAI · {day.timestampLabel}</p>
-          <p className="mt-3 font-display text-[1.02rem] font-semibold leading-[1.24] text-[#111116]">
-            Sleep dipped under 7h again last night — want to start light today and see how you feel by lunch?
-          </p>
-        </section>
-
         <section className="mt-6">
           <p className="px-1 font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">Recent</p>
           <div className="mt-3 rounded-[24px] border border-[#0A0A0A0F] bg-white p-5 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
-            <div className="space-y-4">
-              {recent.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div key={`${item.title}-${item.meta}`} className="flex items-center gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#F4F1EB]">
-                      <Icon size={16} className={item.iconClass} aria-hidden="true" />
+            {recent.length === 0 ? (
+              <p className="text-sm font-semibold leading-6 text-[#5E5E64]">
+                Nothing logged yet. Try a check-in or a fuel note — your reps show up here.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {recent.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={`${item.title}-${item.meta}`} className="flex items-center gap-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#F4F1EB]">
+                        <Icon size={16} className={item.iconClass} aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-[#1A1A1F]">{item.title}</p>
+                        <p className="text-xs font-medium text-[#8A8A8F]">{item.meta}</p>
+                      </div>
+                      <span className={`rounded-full px-2.5 py-0.5 font-mono text-xs font-semibold ${item.chipClass}`}>{item.chip}</span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-[#1A1A1F]">{item.title}</p>
-                      <p className="text-xs font-medium text-[#8A8A8F]">{item.meta}</p>
-                    </div>
-                    <span className={`rounded-full px-2.5 py-0.5 font-mono text-xs font-semibold ${item.chipClass}`}>{item.chip}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
       </div>
@@ -170,7 +182,19 @@ export function Home() {
   );
 }
 
-function MiniMetric({ icon: Icon, label, value, unit, className }: { icon: typeof Brain; label: string; value: string; unit: string; className: string }) {
+function MiniMetric({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  className
+}: {
+  icon: typeof Brain;
+  label: string;
+  value: number | string | null;
+  unit: string;
+  className: string;
+}) {
   return (
     <article className="min-h-[128px] rounded-[24px] border border-[#0A0A0A0F] bg-white p-4 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
       <span className={`inline-flex size-7 items-center justify-center rounded-full ${className}`}>
@@ -178,8 +202,8 @@ function MiniMetric({ icon: Icon, label, value, unit, className }: { icon: typeo
       </span>
       <p className="mt-4 font-mono text-[11px] font-medium uppercase tracking-[0.28em] text-[#8A8A8F]">{label}</p>
       <p className="mt-2 font-mono text-2xl font-bold text-[#1A1A1F]">
-        {value}
-        {unit && <span className="ml-0.5 text-xs font-semibold text-[#8A8A8F]">{unit}</span>}
+        {value === null ? "—" : value}
+        {value !== null && unit && <span className="ml-0.5 text-xs font-semibold text-[#8A8A8F]">{unit}</span>}
       </p>
     </article>
   );
@@ -291,7 +315,6 @@ function ScoreRing({ value }: { value: number }) {
 }
 
 function recentItems(events: ProgressEvent[]) {
-  if (events.length === 0) return fallbackActivity;
   return events.slice(0, 3).map((event) => ({
     icon: event.engine === "physical" ? Activity : SmilePlus,
     iconClass: event.engine === "physical" ? "text-[#F29A43]" : "text-[#68C5B8]",

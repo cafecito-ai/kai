@@ -1,22 +1,15 @@
-import { ArrowRight, Brain, Camera, LifeBuoy, Send, Sparkles, Target } from "lucide-react";
+import { ArrowRight, LifeBuoy, Send, Sparkles } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppPage, KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
+import { inferKaiAction, topKaiActions } from "../lib/kai-actions";
 import { getNextAvailableStep } from "../lib/loop";
 import type { DailyLoopStep, Goal } from "../lib/types";
 import { useGoalStore } from "../stores/goalStore";
 import { useKaiStore } from "../stores/kaiStore";
 import { useLoopStore } from "../stores/loopStore";
 import { useProgressStore } from "../stores/progressStore";
-
-type RouteAction = {
-  title: string;
-  copy: string;
-  to: string;
-  icon: typeof Brain;
-  tone: string;
-};
 
 export function Home() {
   const [draft, setDraft] = useState("");
@@ -47,6 +40,8 @@ export function Home() {
   const lastKaiMessage =
     [...messages].reverse().find((message) => message.role === "assistant")?.content ??
     "Say it messy. We’ll make it simple.";
+  const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const liveAction = useMemo(() => inferKaiAction(draft || lastUserMessage), [draft, lastUserMessage]);
 
   function submitMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,6 +98,21 @@ export function Home() {
             </div>
           </form>
 
+          {(draft.trim() || lastUserMessage) && (
+            <Link
+              to={liveAction.route}
+              className="focus-ring mt-3 flex w-full max-w-[21.5rem] items-center gap-3 rounded-[22px] border border-white/10 bg-white/10 p-3 text-left backdrop-blur-xl transition hover:-translate-y-0.5 sm:max-w-none"
+            >
+              <span className={`grid size-10 shrink-0 place-items-center rounded-full ${liveAction.tone}`}>
+                <liveAction.icon size={18} aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-black uppercase tracking-wider text-paper/45">Kai would open</span>
+                <span className="mt-0.5 block text-sm font-black text-paper">{liveAction.label}</span>
+              </span>
+            </Link>
+          )}
+
           <div className="mt-4 w-full max-w-[21.5rem] rounded-[24px] border border-white/10 bg-white/10 p-4 text-left backdrop-blur-xl sm:max-w-none">
             <p className="text-xs font-black uppercase tracking-wider text-paper/50">Kai</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-paper/80">{lastKaiMessage}</p>
@@ -157,18 +167,18 @@ export function Home() {
       </section>
 
       <section className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        {routeActions.map((action) => (
+        {topKaiActions().slice(0, 3).map((action) => (
           <Link
-            key={action.title}
-            to={action.to}
+            key={action.id}
+            to={action.route}
             className="focus-ring flex min-h-24 items-center gap-3 rounded-[24px] border border-white/70 bg-white/82 p-4 shadow-sm transition hover:-translate-y-0.5"
           >
             <span className={`grid size-11 shrink-0 place-items-center rounded-full ${action.tone}`}>
               <action.icon size={19} aria-hidden="true" />
             </span>
             <span className="min-w-0">
-              <span className="block text-base font-black leading-tight text-ink">{action.title}</span>
-              <span className="mt-1 block text-sm font-semibold leading-5 text-muted">{action.copy}</span>
+              <span className="block text-base font-black leading-tight text-ink">{action.label}</span>
+              <span className="mt-1 block text-sm font-semibold leading-5 text-muted">{action.reason}</span>
             </span>
           </Link>
         ))}
@@ -181,30 +191,6 @@ export function Home() {
     </AppPage>
   );
 }
-
-const routeActions: RouteAction[] = [
-  {
-    title: "Mind",
-    copy: "Talk it out.",
-    to: "/mental?module=checkin",
-    icon: Brain,
-    tone: "bg-[#E4F7F4] text-[#218A7D]"
-  },
-  {
-    title: "Body",
-    copy: "Food, sleep, movement.",
-    to: "/health?module=food",
-    icon: Camera,
-    tone: "bg-[#FFF0EC] text-[#C86B31]"
-  },
-  {
-    title: "Goals",
-    copy: "Make it real.",
-    to: "/engine/potential",
-    icon: Target,
-    tone: "bg-goalsWash text-goals"
-  }
-];
 
 function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
   if (!nextStep) {

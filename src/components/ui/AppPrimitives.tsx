@@ -56,34 +56,34 @@ export function KaiAvatar({ size = 44, label = "Kai", pulse = false, className =
 
   return (
     <span className={`relative inline-grid shrink-0 place-items-center ${className}`} style={{ width: size, height: size }} aria-label={label} role="img">
-      {pulse && <span className="absolute inset-0 rounded-full bg-[#42D8FF]/18 blur-sm motion-safe:animate-pulse" />}
-      <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="relative drop-shadow-[0_16px_34px_rgba(12,20,38,0.28)]">
+      {pulse && <span className="absolute inset-0 rounded-full bg-[#8F5CFF]/18 blur-sm motion-safe:animate-pulse" />}
+      <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="relative drop-shadow-[0_16px_34px_rgba(38,20,74,0.34)]">
         <defs>
-          <radialGradient id={nebulaId} cx="35%" cy="24%" r="72%">
-            <stop offset="0%" stopColor="#F8FDFF" />
-            <stop offset="19%" stopColor="#7DEBFF" />
-            <stop offset="46%" stopColor="#4357FF" />
-            <stop offset="72%" stopColor="#17133F" />
-            <stop offset="100%" stopColor="#050712" />
+          <radialGradient id={nebulaId} cx="38%" cy="28%" r="74%">
+            <stop offset="0%" stopColor="#F8F1FF" />
+            <stop offset="18%" stopColor="#B892FF" />
+            <stop offset="44%" stopColor="#5E34E8" />
+            <stop offset="72%" stopColor="#1B123A" />
+            <stop offset="100%" stopColor="#05050E" />
           </radialGradient>
-          <linearGradient id={auroraId} x1="11" y1="12" x2="53" y2="52" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#9DFFCB" />
-            <stop offset="38%" stopColor="#46D8FF" />
-            <stop offset="68%" stopColor="#8F5CFF" />
-            <stop offset="100%" stopColor="#FF8A6B" />
+          <linearGradient id={auroraId} x1="13" y1="13" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#F4E8FF" />
+            <stop offset="35%" stopColor="#9A6BFF" />
+            <stop offset="68%" stopColor="#5B2FE5" />
+            <stop offset="100%" stopColor="#D9B8FF" />
           </linearGradient>
           <linearGradient id={rimId} x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-            <stop offset="38%" stopColor="#76F4FF" stopOpacity="0.72" />
-            <stop offset="72%" stopColor="#9C7CFF" stopOpacity="0.82" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.56" />
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.88" />
+            <stop offset="38%" stopColor="#A98CFF" stopOpacity="0.62" />
+            <stop offset="72%" stopColor="#6F46F5" stopOpacity="0.82" />
+            <stop offset="100%" stopColor="#F1E7FF" stopOpacity="0.52" />
           </linearGradient>
           <filter id={glowId} x="-35%" y="-35%" width="170%" height="170%">
             <feGaussianBlur stdDeviation="1.9" result="blur" />
             <feColorMatrix
               in="blur"
               type="matrix"
-              values="0 0 0 0 0.25 0 0 0 0 0.74 0 0 0 0 1 0 0 0 0.72 0"
+              values="0 0 0 0 0.53 0 0 0 0 0.32 0 0 0 0 1 0 0 0 0.78 0"
             />
             <feBlend in="SourceGraphic" />
           </filter>
@@ -91,41 +91,41 @@ export function KaiAvatar({ size = 44, label = "Kai", pulse = false, className =
             <feGaussianBlur stdDeviation="0.55" />
           </filter>
         </defs>
-        <circle cx="32" cy="32" r="30" fill="#DDF8FF" opacity="0.34" />
-        <circle cx="32" cy="32" r="27" fill={`url(#${nebulaId})`} stroke={`url(#${rimId})`} strokeWidth="2.2" />
+        <circle cx="32" cy="32" r="30" fill="#CDBBFF" opacity="0.22" />
+        <circle cx="32" cy="32" r="27" fill={`url(#${nebulaId})`} stroke={`url(#${rimId})`} strokeWidth="2" />
         <path
-          d="M13.5 36.5c8.2-13.7 28.7-19.4 38.1-8.8 5.2 5.9-1.2 15.5-12.4 18.4-10.9 2.8-24.7-.8-22.8-8.2 1.4-5.3 12.5-7.7 24.1-5.1"
+          d="M16 36.8c5.7-12.6 26.5-16.4 34.2-6.7 4.9 6.2-2.4 15-14 16.8-10.7 1.7-21.6-2.7-19.4-9.1 1.9-5.4 13.8-6.6 24.4-2.5"
           fill="none"
           stroke={`url(#${auroraId})`}
           strokeLinecap="round"
-          strokeWidth="4.7"
-          opacity="0.72"
+          strokeWidth="4.35"
+          opacity="0.78"
           filter={`url(#${glowId})`}
         />
         <path
-          d="M18.7 42.2c7.8 5.9 22.8 5.2 29.3-1.1 4.4-4.2 2.1-9.5-4.4-11.8-7.6-2.7-19.9-.4-24 4.3"
+          d="M20.2 41.6c7.2 5 20.1 4.7 26.5-.7 4-3.4 2.2-8-3.5-10.1-7.1-2.7-17.8-.7-22 3.1"
           fill="none"
-          stroke="#F7FEFF"
+          stroke="#F8F1FF"
           strokeLinecap="round"
           strokeWidth="1.45"
-          opacity="0.82"
+          opacity="0.86"
         />
         <path
-          d="M22 22.4c7.4-5.7 19.2-4.4 25.1 2.2"
+          d="M22.8 22.5c7-4.9 17.9-3.7 23.4 2.2"
           fill="none"
-          stroke="#9DFFCB"
+          stroke="#CDBBFF"
           strokeLinecap="round"
-          strokeWidth="2.2"
+          strokeWidth="2"
           opacity="0.46"
           filter={`url(#${hazeId})`}
         />
-        <circle cx="23.4" cy="21.2" r="1.5" fill="#FFFFFF" opacity="0.94" />
-        <circle cx="43.6" cy="23.8" r="1.15" fill="#DDF8FF" opacity="0.9" />
-        <circle cx="47.4" cy="38.6" r="1.4" fill="#A6FFCF" opacity="0.85" />
-        <circle cx="18.4" cy="34.4" r="0.95" fill="#FFFFFF" opacity="0.9" />
-        <circle cx="31.6" cy="15.4" r="0.8" fill="#FFFFFF" opacity="0.74" />
-        <circle cx="34.6" cy="49.6" r="0.85" fill="#FFFFFF" opacity="0.72" />
-        <path d="M30.5 25.2l1.5 3 3.2.8-3 1.5-.8 3.2-1.5-3-3.2-.8 3-1.5.8-3.2z" fill="#FFFFFF" opacity="0.88" />
+        <circle cx="23.3" cy="21.4" r="1.45" fill="#FFFFFF" opacity="0.92" />
+        <circle cx="42.9" cy="24.1" r="1.1" fill="#F4E8FF" opacity="0.86" />
+        <circle cx="47.1" cy="38.3" r="1.25" fill="#D9B8FF" opacity="0.82" />
+        <circle cx="18.8" cy="34.2" r="0.9" fill="#FFFFFF" opacity="0.88" />
+        <circle cx="31.2" cy="15.8" r="0.75" fill="#FFFFFF" opacity="0.7" />
+        <circle cx="35" cy="49.2" r="0.8" fill="#F4E8FF" opacity="0.7" />
+        <path d="M30.5 25.5l1.45 2.9 3.05.75-2.88 1.45-.76 3.05-1.45-2.9-3.05-.75 2.88-1.45.76-3.05z" fill="#FFFFFF" opacity="0.9" />
       </svg>
     </span>
   );

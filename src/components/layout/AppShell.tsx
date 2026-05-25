@@ -1,7 +1,8 @@
-import { Activity, Brain, Camera, HeartPulse, Home, Plus, Settings, ShieldAlert, Sparkles, Target, UserRound, X } from "lucide-react";
+import { Activity, Brain, Home, Plus, Settings, ShieldAlert, Target, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { KaiChat } from "../kai/KaiChat";
+import { topKaiActions } from "../../lib/kai-actions";
 import { useProgressStore } from "../../stores/progressStore";
 import { useUserStore } from "../../stores/userStore";
 import { KaiAvatar } from "../ui/AppPrimitives";
@@ -217,15 +218,10 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
 
 function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
   const actions = [
-    { to: "/mental?module=checkin", label: "Talk it out", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
-    { to: "/health?module=food", label: "Log food", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
-    { to: "/engine/potential", label: "Move a goal", icon: Target, tone: "bg-goalsWash text-goals" },
-    { to: "/loop", label: "Reset today", icon: HeartPulse, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
-    { to: "/health?module=scan", label: "Body scan", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
-    { to: "/mental?module=reset", label: "Breathe", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
-    { to: "/progress", label: "Your wins", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
-    { to: "/profile", label: "You", icon: UserRound, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
-    { to: "/settings", label: "Settings", icon: Settings, tone: "bg-[#F4F1EB] text-[#1A1A1F]" }
+    ...topKaiActions(),
+    { id: "wins", route: "/progress", label: "Your wins", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { id: "you", route: "/profile", label: "You", icon: UserRound, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { id: "settings", route: "/settings", label: "Settings", icon: Settings, tone: "bg-[#F4F1EB] text-[#1A1A1F]" }
   ];
 
   return (
@@ -241,7 +237,7 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
           {actions.map((action) => {
             const Icon = action.icon;
             return (
-              <Link key={action.label} to={action.to} onClick={onClose} className="focus-ring flex min-h-14 items-center gap-3 rounded-[18px] bg-[#FAFAF7] px-3 text-left text-sm font-black text-[#1A1A1F]">
+              <Link key={action.id} to={action.route} onClick={onClose} className="focus-ring flex min-h-14 items-center gap-3 rounded-[18px] bg-[#FAFAF7] px-3 text-left text-sm font-black text-[#1A1A1F]">
                 <span className={`grid size-9 place-items-center rounded-full ${action.tone}`}>
                   <Icon size={17} aria-hidden="true" />
                 </span>

@@ -21,7 +21,7 @@ const ENGINES: ChatEngine[] = ["kai", "physical", "potential", "mental"];
 const welcomeMessage: ChatMessage = {
   id: "welcome",
   role: "assistant",
-  content: "Tell me the loud part. I’ll help you turn it into one small move."
+  content: "Say it messy. We’ll make it simple."
 };
 
 function emptyChat(): EngineChatState {
@@ -38,8 +38,16 @@ function initialChats(): Record<ChatEngine, EngineChatState> {
 }
 
 function normalizeMessages(messages: ChatMessage[]) {
-  const visible = messages.filter((message) => message.role === "user" || message.role === "assistant");
+  const visible = messages
+    .filter((message) => message.role === "user" || message.role === "assistant")
+    .map((message) => (message.role === "assistant" ? { ...message, content: cleanAssistantCopy(message.content) } : message));
   return visible.length > 0 ? visible : [welcomeMessage];
+}
+
+function cleanAssistantCopy(content: string) {
+  const oldSystemLanguage = /\b(mental agent|physical agent|health unit|goals unit|mental unit|one companion across)\b/i;
+  if (oldSystemLanguage.test(content)) return welcomeMessage.content;
+  return content;
 }
 
 export const useKaiStore = create<KaiState>((set) => ({
@@ -94,7 +102,7 @@ export const useKaiStore = create<KaiState>((set) => ({
             ...state.chats[engine],
             conversationId: result.conversationId,
             sending: false,
-            messages: [...state.chats[engine].messages, { id: crypto.randomUUID(), role: "assistant", content: result.reply }]
+            messages: [...state.chats[engine].messages, { id: crypto.randomUUID(), role: "assistant", content: cleanAssistantCopy(result.reply) }]
           }
         }
       }));
@@ -111,7 +119,7 @@ export const useKaiStore = create<KaiState>((set) => ({
                 id: crypto.randomUUID(),
                 role: "assistant",
                 content:
-                  "I could not reach Kai right now. Pick one lens anyway: Daniel Siegel for naming it, James Clear for the smallest habit, Viktor Frankl for meaning, stoic philosophy for what you control, or body basics for sleep, food, and movement."
+                  "I’m having trouble connecting, but we can still make this useful. Pick one small next move: talk it out, reset your body, or move one goal."
               }
             ]
           }

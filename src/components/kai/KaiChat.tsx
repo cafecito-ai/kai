@@ -1,6 +1,9 @@
-import { ArrowUp, Brain, HeartPulse, Lightbulb, Send, Sparkles } from "lucide-react";
-import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { ArrowUp, Brain, Lightbulb, Send, Sparkles } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
+import { inferKaiAction, topKaiActions } from "../../lib/kai-actions";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
@@ -17,20 +20,17 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
   const [draft, setDraft] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const suggestions: Array<{ label: string; prompt: string; icon: typeof Sparkles }> =
+  const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const routedAction = useMemo(() => inferKaiAction(lastUserMessage), [lastUserMessage]);
+  const suggestions: Array<{ label: string; prompt: string; icon: LucideIcon }> =
     mode === "mental"
       ? [
-          { label: "Tiny habit", prompt: "teach this through James Clear", icon: Lightbulb },
-          { label: "Meaning", prompt: "what would Viktor Frankl ask?", icon: Sparkles },
-          { label: "Control", prompt: "help me use stoic philosophy", icon: ArrowUp },
-          { label: "Name it", prompt: "explain this like Daniel Siegel", icon: Brain }
+          { label: "Overthinking", prompt: "I’m overthinking and need to calm it down", icon: Brain },
+          { label: "Confidence", prompt: "Help me stop being so hard on myself", icon: Sparkles },
+          { label: "Control", prompt: "Help me focus on what I can control", icon: ArrowUp },
+          { label: "Tiny habit", prompt: "Help me make this a tiny habit", icon: Lightbulb }
         ]
-      : [
-          { label: "School", prompt: "school has been stressing me out", icon: Brain },
-          { label: "Friends", prompt: "something feels off with my friends", icon: Sparkles },
-          { label: "Body", prompt: "my body feels low energy today", icon: HeartPulse },
-          { label: "Sleep", prompt: "I need help getting better sleep tonight", icon: Lightbulb }
-        ];
+      : topKaiActions().slice(0, 4).map((action) => ({ label: action.label, prompt: action.prompt, icon: action.icon }));
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
@@ -78,14 +78,14 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
   }
 
   const shellClass = embedded ? "overflow-hidden rounded-[24px] border border-line bg-white" : "overflow-hidden rounded-calm border border-line bg-white shadow-calm";
-  const title = mode === "mental" ? "Ask Kai for a guide lens." : "What is taking up space?";
-  const helper = mode === "mental" ? "Pick a lens, or write it messy. Kai keeps it practical." : "Say the real version. Kai will help you choose the next useful move.";
+  const title = mode === "mental" ? "Talk it out." : "What’s actually going on?";
+  const helper = mode === "mental" ? "No perfect words. Kai will help you steady it." : "Say it like you’d text it. Kai will pick the next move.";
 
   return (
     <section className={shellClass}>
       <div className="flex items-center justify-between border-b border-line bg-warmPaper/70">
         <div className="p-5 pb-4">
-          <p className="eyebrow">{mode === "mental" ? "mental guide chat" : "kai check-in"}</p>
+          <p className="eyebrow">{mode === "mental" ? "mind" : "kai"}</p>
           <h2 className="mt-1 font-display text-2xl font-black leading-tight tracking-normal sm:text-3xl">{title}</h2>
           <p className="mt-2 max-w-sm text-sm font-semibold leading-5 text-muted">{helper}</p>
         </div>
@@ -119,6 +119,23 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
               <span className="size-2 rounded-full bg-muted/30" />
             </span>
           </div>
+        )}
+        {lastUserMessage && !sending && (
+          <Link
+            to={routedAction.route}
+            className="focus-ring ml-auto block max-w-[92%] rounded-[22px] border border-line bg-white px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5"
+          >
+            <span className="flex items-start gap-3">
+              <span className={`grid size-10 shrink-0 place-items-center rounded-full ${routedAction.tone}`}>
+                <routedAction.icon size={18} aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-black uppercase tracking-wider text-muted">Kai would open</span>
+                <span className="mt-1 block text-base font-black leading-tight text-ink">{routedAction.label}</span>
+                <span className="mt-1 block text-sm font-semibold leading-5 text-muted">{routedAction.reason}</span>
+              </span>
+            </span>
+          </Link>
         )}
         <div ref={messagesEndRef} />
       </div>

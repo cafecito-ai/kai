@@ -15,6 +15,7 @@ describe("kaiStore", () => {
     const state = useKaiStore.getState();
     expect(state.chats.kai.conversationId).toBe("kai-conv");
     expect(state.chats.kai.messages[0]?.content).toBe("general kai");
+    expect(state.chats.kai.nextAction).toBeNull();
     expect(state.chats.mental.conversationId).toBe("mental-conv");
     expect(state.chats.mental.messages[0]?.content).toBe("mental guide");
   });
@@ -26,5 +27,14 @@ describe("kaiStore", () => {
     });
 
     expect(useKaiStore.getState().chats.kai.messages[0]?.content).toBe("Say it messy. We’ll make it simple.");
+  });
+
+  it("infers a next action from hydrated user messages", () => {
+    useKaiStore.getState().hydrate("kai", {
+      conversationId: "action-copy",
+      messages: [{ id: "user-food", role: "user", content: "I need food after practice" }]
+    });
+
+    expect(useKaiStore.getState().chats.kai.nextAction?.id).toBe("food");
   });
 });

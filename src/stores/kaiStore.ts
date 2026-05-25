@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api } from "../lib/api";
+import { inferKaiAction, KAI_ACTIONS, type KaiAction } from "../lib/kai-actions";
 import { localSafetyCheck } from "../lib/safety";
 import type { ChatMessage, EngineId } from "../lib/types";
 
@@ -7,6 +8,7 @@ type ChatEngine = EngineId | "kai";
 type EngineChatState = {
   conversationId: string | null;
   messages: ChatMessage[];
+  nextAction: KaiAction | null;
   sending: boolean;
   hydrated: boolean;
 };
@@ -27,6 +29,7 @@ const welcomeMessage: ChatMessage = {
 function emptyChat(): EngineChatState {
   return {
     conversationId: null,
+    nextAction: null,
     sending: false,
     hydrated: false,
     messages: [welcomeMessage]
@@ -60,7 +63,8 @@ export const useKaiStore = create<KaiState>((set) => ({
           ...state.chats[engine],
           conversationId,
           hydrated: true,
-          messages: normalizeMessages(messages)
+          messages: normalizeMessages(messages),
+          nextAction: inferLastAction(messages)
         }
       }
     })),
@@ -72,7 +76,8 @@ export const useKaiStore = create<KaiState>((set) => ({
         [engine]: {
           ...state.chats[engine],
           sending: true,
-          messages: [...state.chats[engine].messages, userMessage]
+          messages: [...state.chats[engine].messages, userMessage],
+          nextAction: inferKaiAction(message)
         }
       }
     }));
@@ -84,6 +89,7 @@ export const useKaiStore = create<KaiState>((set) => ({
           [engine]: {
             ...state.chats[engine],
             sending: false,
+            nextAction: inferKaiAction(message),
             messages: [
               ...state.chats[engine].messages,
               { id: crypto.randomUUID(), role: "assistant", content: safety.response ?? "Let's get you real support right now." }
@@ -95,6 +101,7 @@ export const useKaiStore = create<KaiState>((set) => ({
     }
     try {
       const result = await api.chat(engine, message, useKaiStore.getState().chats[engine].conversationId);
+      const nextAction = result.nextAction?.id ? KAI_ACTIONS[result.nextAction.id] ?? inferKaiAction(message) : inferKaiAction(message);
       set((state) => ({
         chats: {
           ...state.chats,
@@ -102,6 +109,7 @@ export const useKaiStore = create<KaiState>((set) => ({
             ...state.chats[engine],
             conversationId: result.conversationId,
             sending: false,
+            nextAction,
             messages: [...state.chats[engine].messages, { id: crypto.randomUUID(), role: "assistant", content: cleanAssistantCopy(result.reply) }]
           }
         }
@@ -113,6 +121,7 @@ export const useKaiStore = create<KaiState>((set) => ({
           [engine]: {
             ...state.chats[engine],
             sending: false,
+            nextAction: inferKaiAction(message),
             messages: [
               ...state.chats[engine].messages,
               {
@@ -128,3 +137,8 @@ export const useKaiStore = create<KaiState>((set) => ({
     }
   }
 }));
+
+function inferLastAction(messages: ChatMessage[]) {
+  const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content;
+  return lastUserMessage ? inferKaiAction(lastUserMessage) : null;
+}

@@ -3,6 +3,7 @@ import { callClaude } from "../lib/claude";
 import { buildKaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
+import { inferKaiNextAction } from "../lib/kai-actions";
 import { renderEnginePrompt } from "../lib/prompts/engines";
 import { renderKaiSystemPrompt } from "../lib/prompts/kai";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
@@ -45,16 +46,17 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
+  const nextAction = inferKaiNextAction(message);
   const safety = await classifySafetyFull(env, message);
   if (!safety.safe) {
     const event = await logSafetyEvent(env, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
     if (event && safety.category && safety.severity) {
       await sendSafetyAlert(env, { eventId: event.id, category: safety.category, severity: safety.severity });
     }
-    await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: safety.response ?? "", metadata: { safetyEventId: event?.id } });
-    return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
+    await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: safety.response ?? "", metadata: { safetyEventId: event?.id, nextAction } });
+    return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event, nextAction });
   }
   const reply = await callClaude(env, system, [{ role: "user", content: message }]);
-  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply });
-  return Response.json({ conversationId: conversation, reply });
+  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { nextAction } });
+  return Response.json({ conversationId: conversation, reply, nextAction });
 }

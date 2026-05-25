@@ -13,6 +13,7 @@ import type {
   ProgressEvent,
   UserProfile
 } from "./types";
+import type { KaiActionId } from "./kai-actions";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
@@ -176,7 +177,7 @@ export const api = {
   getUser: () =>
     request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
   chat: (engine: EngineId | "kai", message: string, conversationId?: string | null) =>
-    request<{ conversationId: string; reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
+    request<{ conversationId: string; reply: string; safetyEvent?: unknown; nextAction?: { id: KaiActionId; label: string; route: string; reason: string } }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
       method: "POST",
       body: JSON.stringify({ conversationId, message })
     }),

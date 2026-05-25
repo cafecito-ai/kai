@@ -1,9 +1,9 @@
 import { ArrowUp, Brain, Lightbulb, Send, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
-import { inferKaiAction, topKaiActions } from "../../lib/kai-actions";
+import { topKaiActions } from "../../lib/kai-actions";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
@@ -13,6 +13,7 @@ type KaiChatMode = "default" | "mental";
 export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boolean; mode?: KaiChatMode }) {
   const chatEngine = mode === "mental" ? "mental" : "kai";
   const messages = useKaiStore((state) => state.chats[chatEngine].messages);
+  const nextAction = useKaiStore((state) => state.chats[chatEngine].nextAction);
   const sending = useKaiStore((state) => state.chats[chatEngine].sending);
   const hydrated = useKaiStore((state) => state.chats[chatEngine].hydrated);
   const send = useKaiStore((state) => state.send);
@@ -21,7 +22,6 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
-  const routedAction = useMemo(() => inferKaiAction(lastUserMessage), [lastUserMessage]);
   const suggestions: Array<{ label: string; prompt: string; icon: LucideIcon }> =
     mode === "mental"
       ? [
@@ -120,19 +120,19 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
             </span>
           </div>
         )}
-        {lastUserMessage && !sending && (
+        {lastUserMessage && nextAction && !sending && (
           <Link
-            to={routedAction.route}
+            to={nextAction.route}
             className="focus-ring ml-auto block max-w-[92%] rounded-[22px] border border-line bg-white px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5"
           >
             <span className="flex items-start gap-3">
-              <span className={`grid size-10 shrink-0 place-items-center rounded-full ${routedAction.tone}`}>
-                <routedAction.icon size={18} aria-hidden="true" />
+              <span className={`grid size-10 shrink-0 place-items-center rounded-full ${nextAction.tone}`}>
+                <nextAction.icon size={18} aria-hidden="true" />
               </span>
               <span className="min-w-0">
                 <span className="block text-xs font-black uppercase tracking-wider text-muted">Kai would open</span>
-                <span className="mt-1 block text-base font-black leading-tight text-ink">{routedAction.label}</span>
-                <span className="mt-1 block text-sm font-semibold leading-5 text-muted">{routedAction.reason}</span>
+                <span className="mt-1 block text-base font-black leading-tight text-ink">{nextAction.label}</span>
+                <span className="mt-1 block text-sm font-semibold leading-5 text-muted">{nextAction.reason}</span>
               </span>
             </span>
           </Link>

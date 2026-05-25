@@ -22,6 +22,7 @@ export function Home() {
   const hydrateLoop = useLoopStore((state) => state.hydrateLoop);
   const streak = useProgressStore((state) => state.streak());
   const messages = useKaiStore((state) => state.chats.kai.messages);
+  const nextKaiAction = useKaiStore((state) => state.chats.kai.nextAction);
   const sending = useKaiStore((state) => state.chats.kai.sending);
   const send = useKaiStore((state) => state.send);
 
@@ -41,7 +42,7 @@ export function Home() {
     [...messages].reverse().find((message) => message.role === "assistant")?.content ??
     "Say it messy. We’ll make it simple.";
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
-  const liveAction = useMemo(() => inferKaiAction(draft || lastUserMessage), [draft, lastUserMessage]);
+  const liveAction = useMemo(() => (draft.trim() ? inferKaiAction(draft) : nextKaiAction ?? inferKaiAction(lastUserMessage)), [draft, lastUserMessage, nextKaiAction]);
 
   function submitMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

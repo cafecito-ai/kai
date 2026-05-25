@@ -1,162 +1,127 @@
-import { ArrowRight, Check, Circle, Flame, HeartPulse, RotateCcw, Target } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { LifeBuoy, WifiOff } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { AppHero, AppPage, AppSurface, FlowList, MetricPill } from "../components/ui/AppPrimitives";
-import { Button } from "../components/ui/Button";
-import { KAI_LOOP_STEPS, loopCompletion, resetLoopIfNewDay, toggleLoopStep, type DailyLoopState, type LoopStep } from "../lib/loop";
-import { loadJSON, saveJSON } from "../lib/local-storage";
-import { recommendNextLoop } from "../lib/tracker";
-import { useProgressStore } from "../stores/progressStore";
+import { LoopActionPicker } from "../components/loop/LoopActionPicker";
+import { LoopCheckIn } from "../components/loop/LoopCheckIn";
+import { LoopCompletionCard } from "../components/loop/LoopCompletionCard";
+import { LoopErrorState } from "../components/loop/LoopErrorState";
+import { LoopGoalAction } from "../components/loop/LoopGoalAction";
+import { LoopHeader } from "../components/loop/LoopHeader";
+import { LoopReflection } from "../components/loop/LoopReflection";
+import { LoopSkeleton } from "../components/loop/LoopSkeleton";
+import { LoopStepCard } from "../components/loop/LoopStepCard";
+import { AppPage } from "../components/ui/AppPrimitives";
+import { getNextAvailableStep } from "../lib/loop";
+import { useGoalStore } from "../stores/goalStore";
+import { useLoopStore } from "../stores/loopStore";
 
-const LOOP_STORAGE_KEY = "kai.daily.loop.v1";
+const BODY_ACTIONS = [
+  "Drink water",
+  "5-minute walk",
+  "Stretch neck and shoulders",
+  "Box breathing",
+  "Eat something with protein",
+  "Get outside for 3 minutes",
+  "Put phone away for 10 minutes"
+];
+
+const MIND_ACTIONS = [
+  "Name the feeling",
+  "Reframe the thought",
+  "60-second breathing reset",
+  "Compare-and-despair reset",
+  "Write one honest sentence",
+  "Send one repair text",
+  "Pick the next right thing"
+];
 
 export function Loop() {
-  const events = useProgressStore((state) => state.events);
-  const addEvent = useProgressStore((state) => state.addEvent);
-  const [state, setState] = useState<DailyLoopState>(() => resetLoopIfNewDay(null));
-  const recommendation = useMemo(() => recommendNextLoop(events), [events]);
-  const completion = loopCompletion(state);
-  const completedCount = state.completed.length;
-  const nextStep = KAI_LOOP_STEPS.find((step) => !state.completed.includes(step.id)) ?? KAI_LOOP_STEPS[KAI_LOOP_STEPS.length - 1];
+  const goals = useGoalStore((state) => state.goals);
+  const goalStatus = useGoalStore((state) => state.status);
+  const hydrateGoals = useGoalStore((state) => state.hydrateGoals);
+  const loop = useLoopStore((state) => state.loop);
+  const loopStatus = useLoopStore((state) => state.status);
+  const errorMessage = useLoopStore((state) => state.errorMessage);
+  const hydrateLoop = useLoopStore((state) => state.hydrateLoop);
+  const completeStep = useLoopStore((state) => state.completeStep);
+  const skipStep = useLoopStore((state) => state.skipStep);
+  const resetForToday = useLoopStore((state) => state.resetForToday);
+  const activeGoal = useMemo(() => goals.find((goal) => goal.status === "active") ?? null, [goals]);
 
   useEffect(() => {
-    const stored = loadJSON<DailyLoopState | null>(LOOP_STORAGE_KEY, null, null);
-    const reset = resetLoopIfNewDay(stored);
-    setState(reset);
-    saveJSON(LOOP_STORAGE_KEY, null, reset);
-  }, []);
+    if (goalStatus === "idle") void hydrateGoals();
+  }, [goalStatus, hydrateGoals]);
 
-  function completeStep(step: LoopStep) {
-    setState((current) => {
-      const next = toggleLoopStep(current, step.id);
-      saveJSON(LOOP_STORAGE_KEY, null, next);
-      if (!current.completed.includes(step.id)) {
-        addEvent({
-          engine: step.engine,
-          eventType: step.eventType,
-          eventValue: step.eventValue,
-          payload: { stepId: step.id, source: "loop_route" }
-        });
-      }
-      return next;
-    });
-  }
+  useEffect(() => {
+    if (loopStatus === "idle") void hydrateLoop(goals);
+  }, [goals, hydrateLoop, loopStatus]);
 
-  function resetLoop() {
-    const next = resetLoopIfNewDay(null);
-    setState(next);
-    saveJSON(LOOP_STORAGE_KEY, null, next);
-  }
+  const activeStep = loop ? getNextAvailableStep(loop.steps) : null;
+  const completed = loop?.steps.filter((step) => step.status === "completed").length ?? 0;
+  const complete = loop ? completed === loop.steps.length : false;
+  const saving = loopStatus === "saving";
 
   return (
-    <AppPage className="max-w-6xl">
-      <AppHero
-        eyebrow="app section · loop"
-        title={
-          <>
-            Run the smallest complete Kai <span className="font-serif font-normal italic text-plum">loop.</span>
-          </>
-        }
-        action={
-          <Link to={nextStep.route} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-5 text-sm font-black text-paper">
-            Open next rep
-            <ArrowRight size={17} aria-hidden="true" />
-          </Link>
-        }
-      >
-        Mind, body, goal, closeout. One complete pass.
-      </AppHero>
+    <AppPage>
+      <LoopHeader score={loop?.score ?? 20} completed={completed} total={loop?.steps.length ?? 5} />
 
-      <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
-        <AppSurface className="p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="eyebrow">today</p>
-              <h2 className="mt-2 font-display text-5xl font-black leading-none tracking-normal">{completion}%</h2>
-              <p className="mt-2 text-sm font-semibold leading-6 text-muted">{completedCount} of {KAI_LOOP_STEPS.length} reps complete.</p>
-            </div>
-            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-careWash text-care">
-              <HeartPulse size={24} aria-hidden="true" />
-            </span>
-          </div>
-          <div className="mt-5 h-3 overflow-hidden rounded-full bg-paper">
-            <div className="h-full rounded-full bg-ink transition-all" style={{ width: `${Math.max(8, completion)}%` }} />
-          </div>
-          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <MetricPill label="Mind" value={state.completed.includes("mental_check") ? "Done" : "Open"} tone="reset" />
-            <MetricPill label="Body" value={state.completed.includes("body_signal") ? "Done" : "Open"} tone="body" />
-            <MetricPill label="Goal" value={state.completed.includes("goal_rep") ? "Done" : "Open"} tone="goals" />
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={resetLoop}>
-              <RotateCcw size={16} aria-hidden="true" />
-              Reset today
-            </Button>
-            <Link to="/goal" className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-line bg-white px-5 text-sm font-black text-ink hover:border-ink/35">
-              <Target size={16} aria-hidden="true" />
-              Goal
-            </Link>
-          </div>
-        </AppSurface>
+      {loopStatus === "loading" && !loop && <LoopSkeleton />}
+      {loopStatus === "offline" && (
+        <section className="flex items-center gap-2 rounded-kai border border-care/30 bg-careWash p-3 text-sm font-black text-ink">
+          <WifiOff size={16} aria-hidden="true" />
+          Offline mode. You can keep going; Kai will sync later.
+        </section>
+      )}
+      {errorMessage && (
+        <LoopErrorState
+          message={errorMessage}
+          offline={loopStatus === "offline"}
+          onRetry={() => void hydrateLoop(goals)}
+          onContinue={() => resetForToday(goals)}
+        />
+      )}
 
+      {loop && (
         <div className="grid gap-3">
-          {KAI_LOOP_STEPS.map((step, index) => {
-            const done = state.completed.includes(step.id);
-            return (
-              <AppSurface key={step.id} className={`p-4 sm:p-5 ${done ? "border-sage/20 bg-bodyWash/80" : ""}`}>
-                <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center">
-                  <button
-                    type="button"
-                    onClick={() => completeStep(step)}
-                    className={`focus-ring grid size-12 place-items-center rounded-full ${done ? "bg-sage text-white" : "bg-paper text-muted"}`}
-                    aria-label={`${done ? "Reopen" : "Complete"} ${step.title}`}
-                  >
-                    {done ? <Check size={20} aria-hidden="true" /> : <Circle size={20} aria-hidden="true" />}
-                  </button>
-                  <div className="min-w-0">
-                    <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-muted">Step {index + 1} · {step.label}</p>
-                    <h2 className="mt-1 font-display text-2xl font-black tracking-normal">{step.title}</h2>
-                    <p className="mt-1 text-sm font-semibold leading-6 text-muted">{step.copy}</p>
-                  </div>
-                  <Link to={step.route} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-4 text-sm font-black text-paper">
-                    Open
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </Link>
-                </div>
-              </AppSurface>
-            );
-          })}
+          {loop.steps.map((step, index) => (
+            <LoopStepCard
+              key={step.id}
+              step={step}
+              index={index}
+              active={activeStep?.id === step.id}
+              saving={saving}
+              onSkip={step.id === "reflection" ? undefined : () => void skipStep(step.id)}
+            >
+              {step.id === "check_in" && <LoopCheckIn saving={saving} onComplete={(payload) => void completeStep("check_in", payload)} />}
+              {step.id === "body_action" && (
+                <LoopActionPicker
+                  options={BODY_ACTIONS}
+                  cta="Did the body rep"
+                  saving={saving}
+                  onComplete={(action) => void completeStep("body_action", { action, source: "loop" })}
+                />
+              )}
+              {step.id === "mind_action" && (
+                <LoopActionPicker
+                  options={MIND_ACTIONS}
+                  cta="Did the mind rep"
+                  saving={saving}
+                  onComplete={(action) => void completeStep("mind_action", { action, source: "loop" })}
+                />
+              )}
+              {step.id === "goal_action" && <LoopGoalAction goal={activeGoal} saving={saving} onComplete={(payload) => void completeStep("goal_action", payload)} />}
+              {step.id === "reflection" && <LoopReflection saving={saving} onComplete={(payload) => void completeStep("reflection", payload)} />}
+            </LoopStepCard>
+          ))}
         </div>
-      </div>
+      )}
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_0.78fr]">
-        <AppSurface className="p-5 sm:p-6">
-          <p className="eyebrow">kai recommends</p>
-          <div className="mt-3 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-            <div className="min-w-0">
-              <h2 className="font-display text-3xl font-black tracking-normal">{recommendation.title}</h2>
-              <p className="mt-2 text-sm font-semibold leading-6 text-muted">{recommendation.copy}</p>
-            </div>
-            <Link to={recommendation.to} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-5 text-sm font-black text-paper">
-              {recommendation.label}
-              <Flame size={17} aria-hidden="true" />
-            </Link>
-          </div>
-        </AppSurface>
+      {complete && <LoopCompletionCard />}
 
-        <AppSurface className="p-5 sm:p-6">
-          <p className="eyebrow">demo script</p>
-          <div className="mt-4">
-            <FlowList
-              items={[
-                { label: "Set the goal", copy: "Pick one goal and one reason it matters." },
-                { label: "Run the loop", copy: "Touch mind, body, goal, and closeout." },
-                { label: "Show progress", copy: "Open the private timeline and next recommendation." }
-              ]}
-            />
-          </div>
-        </AppSurface>
-      </section>
+      <Link to="/crisis" className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-danger/30 bg-white px-4 text-sm font-black text-danger">
+        <LifeBuoy size={16} aria-hidden="true" />
+        Crisis resources
+      </Link>
     </AppPage>
   );
 }

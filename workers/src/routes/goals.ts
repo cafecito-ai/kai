@@ -29,10 +29,11 @@ goalsRoutes.post("/goals", async (c) => {
   if (!body.title?.trim()) return c.json({ error: "Title is required" }, 422);
   await ensureUser(c.env.DB, c.get("userId"));
   const id = crypto.randomUUID();
+  const targetDate = normalizeDate(body.targetDate);
   await c.env.DB.prepare("INSERT INTO goals (id, user_id, category, title, description, why_it_matters, next_action, target_date, confidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, c.get("userId"), body.category, body.title.trim(), body.description ?? "", body.whyItMatters ?? null, body.nextAction ?? null, body.targetDate ?? null, body.confidence ?? null)
+    .bind(id, c.get("userId"), body.category, body.title.trim(), body.description ?? "", body.whyItMatters ?? null, body.nextAction ?? null, targetDate, body.confidence ?? null)
     .run();
-  return c.json({ goal: { id, ...body, description: body.description ?? "", status: "active" } });
+  return c.json({ goal: { id, ...body, title: body.title.trim(), description: body.description ?? "", targetDate, status: "active" } });
 });
 
 goalsRoutes.patch("/goals/:goalId", async (c) => {
@@ -40,6 +41,8 @@ goalsRoutes.patch("/goals/:goalId", async (c) => {
   const current = await c.env.DB.prepare("SELECT * FROM goals WHERE id = ? AND user_id = ?").bind(c.req.param("goalId"), c.get("userId")).first<Record<string, unknown>>();
   if (!current) return c.json({ error: "Goal not found" }, 404);
   const status = normalizeStatus(body.status ?? current.status);
+  const title = hasOwn(body, "title") ? body.title?.trim() : current.title;
+  if (!title) return c.json({ error: "Title is required" }, 422);
   await c.env.DB.prepare(
     `UPDATE goals
      SET status = ?,
@@ -55,11 +58,11 @@ goalsRoutes.patch("/goals/:goalId", async (c) => {
   )
     .bind(
       status,
-      body.title ?? current.title,
+      title,
       body.description ?? current.description ?? "",
       body.whyItMatters ?? current.why_it_matters ?? null,
-      body.nextAction ?? current.next_action ?? null,
-      body.targetDate ?? current.target_date ?? null,
+      hasOwn(body, "nextAction") ? body.nextAction ?? null : current.next_action ?? null,
+      hasOwn(body, "targetDate") ? normalizeDate(body.targetDate) : current.target_date ?? null,
       body.confidence ?? current.confidence ?? null,
       status,
       c.req.param("goalId"),
@@ -89,4 +92,14 @@ goalsRoutes.patch("/goals/:goalId", async (c) => {
 
 function normalizeStatus(value: unknown) {
   return value === "paused" || value === "achieved" || value === "released" ? value : "active";
+}
+
+function normalizeDate(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : null;
+}
+
+function hasOwn(value: object, key: string) {
+  return Object.prototype.hasOwnProperty.call(value, key);
 }

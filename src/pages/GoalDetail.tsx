@@ -1,11 +1,14 @@
-import { ArrowLeft, CheckCircle2, Pause, Pencil, Target } from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, PartyPopper, Pause, Pencil, RotateCcw, Target, Wind } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GoalNextAction } from "../components/goals/GoalNextAction";
 import { GoalStatusPill } from "../components/goals/GoalStatusPill";
 import { AppPage } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
+import { api } from "../lib/api";
+import { formatGoalTargetDate } from "../lib/goals";
 import { useGoalStore } from "../stores/goalStore";
+import { useProgressStore } from "../stores/progressStore";
 
 export function GoalDetail() {
   const { goalId } = useParams();
@@ -14,9 +17,12 @@ export function GoalDetail() {
   const errorMessage = useGoalStore((state) => state.errorMessage);
   const hydrateGoals = useGoalStore((state) => state.hydrateGoals);
   const updateGoal = useGoalStore((state) => state.updateGoal);
+  const addEvent = useProgressStore((state) => state.addEvent);
   const saving = status === "saving";
   const goal = useMemo(() => goals.find((item) => item.id === goalId), [goalId, goals]);
   const [nextAction, setNextAction] = useState("");
+  const [reframe, setReframe] = useState("");
+  const [releaseReason, setReleaseReason] = useState("");
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
@@ -25,7 +31,26 @@ export function GoalDetail() {
 
   useEffect(() => {
     setNextAction(goal?.nextAction ?? "");
+    setReframe(goal?.nextAction ?? "");
   }, [goal?.nextAction]);
+
+  async function updateWithProgress(input: {
+    patch: Parameters<typeof updateGoal>[1];
+    eventType: string;
+    eventValue: number;
+    payload?: Record<string, unknown>;
+  }) {
+    if (!goal) return;
+    const updated = await updateGoal(goal.id, input.patch);
+    const payload = {
+      goalId: goal.id,
+      title: goal.title,
+      status: updated.status,
+      ...input.payload
+    };
+    addEvent({ engine: "mental", eventType: input.eventType, eventValue: input.eventValue, payload });
+    void api.logProgress({ engine: "mental", eventType: input.eventType, eventValue: input.eventValue, payload }).catch(() => undefined);
+  }
 
   if (!goalId || (!goal && status !== "loading")) {
     return (
@@ -57,7 +82,28 @@ export function GoalDetail() {
           <GoalStatusPill status={goal.status} />
         </div>
         <p className="mt-5 text-base font-semibold leading-7 text-muted">{goal.whyItMatters || goal.description || "This goal matters enough to start small."}</p>
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-paper px-3 py-2 text-sm font-black text-muted">
+          <CalendarDays size={16} aria-hidden="true" />
+          Target {formatGoalTargetDate(goal.targetDate)}
+        </div>
       </section>
+
+      {goal.status === "achieved" && (
+        <section className="rounded-[28px] border border-body/20 bg-bodyWash p-5 shadow-sm sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white text-body">
+              <PartyPopper aria-hidden="true" />
+            </span>
+            <div>
+              <p className="eyebrow text-body">goal achieved</p>
+              <h2 className="mt-1 font-display text-3xl font-black tracking-normal text-ink">Bank the win. Then choose what stays.</h2>
+              <p className="mt-2 text-sm font-semibold leading-6 text-muted">
+                Kai logs this as progress, not proof that you have to do more. Keep the lesson, not the pressure.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {errorMessage && <p className="rounded-kai border border-danger/25 bg-dangerWash p-3 text-sm font-bold text-danger">{errorMessage}</p>}
 
@@ -67,7 +113,17 @@ export function GoalDetail() {
           {editing && (
             <div className="mt-4 grid gap-3">
               <textarea className="field min-h-28" value={nextAction} onChange={(event) => setNextAction(event.target.value)} />
-              <Button disabled={saving} onClick={() => void updateGoal(goal.id, { nextAction }).then(() => setEditing(false))}>
+              <Button
+                disabled={saving}
+                onClick={() =>
+                  void updateWithProgress({
+                    patch: { nextAction },
+                    eventType: "goal_next_action_updated",
+                    eventValue: 12,
+                    payload: { nextAction }
+                  }).then(() => setEditing(false))
+                }
+              >
                 Save next action
               </Button>
             </div>
@@ -86,17 +142,94 @@ export function GoalDetail() {
 
         <div className="rounded-[24px] border border-white/70 bg-white/80 p-5 shadow-sm">
           <p className="eyebrow">Progress summary</p>
-          <p className="mt-3 text-sm font-semibold leading-6 text-muted">Kai is tracking goal reps through the daily loop. Detailed goal history can build on progress events later.</p>
+          <p className="mt-3 text-sm font-semibold leading-6 text-muted">Kai tracks goal reps through the daily loop and logs status changes into progress.</p>
           <div className="mt-5 grid gap-2">
-            <Button onClick={() => void updateGoal(goal.id, { status: "achieved", achievedAt: new Date().toISOString() })} disabled={saving || goal.status === "achieved"}>
+            <Button
+              onClick={() =>
+                void updateWithProgress({
+                  patch: { status: "achieved", achievedAt: new Date().toISOString() },
+                  eventType: "goal_hit",
+                  eventValue: 40
+                })
+              }
+              disabled={saving || goal.status === "achieved"}
+            >
               <CheckCircle2 size={16} aria-hidden="true" />
               Mark achieved
             </Button>
-            <Button variant="secondary" onClick={() => void updateGoal(goal.id, { status: "paused" })} disabled={saving || goal.status === "paused"}>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                void updateWithProgress({
+                  patch: { status: "paused" },
+                  eventType: "goal_paused",
+                  eventValue: 10
+                })
+              }
+              disabled={saving || goal.status === "paused"}
+            >
               <Pause size={16} aria-hidden="true" />
               Pause
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[24px] border border-white/70 bg-white/80 p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-goalsWash text-goals">
+            <RotateCcw size={18} aria-hidden="true" />
+          </span>
+          <div>
+            <p className="eyebrow">reframe or release</p>
+            <h2 className="mt-1 font-display text-3xl font-black tracking-normal">A goal can change without becoming a failure.</h2>
+            <p className="mt-2 text-sm font-semibold leading-6 text-muted">If the goal is still yours, rewrite the next rep. If it is not yours anymore, release it cleanly.</p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <label className="block text-sm font-black">
+            Reframed next rep
+            <textarea className="field mt-2 min-h-28" value={reframe} onChange={(event) => setReframe(event.target.value)} />
+          </label>
+          <label className="block text-sm font-black">
+            Release note
+            <textarea className="field mt-2 min-h-28" value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} placeholder="What did this teach you?" />
+          </label>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            disabled={saving || !reframe.trim()}
+            onClick={() =>
+              void updateWithProgress({
+                patch: { status: "active", nextAction: reframe },
+                eventType: "goal_reframed",
+                eventValue: 24,
+                payload: { nextAction: reframe }
+              })
+            }
+          >
+            <Wind size={16} aria-hidden="true" />
+            Save reframe
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={saving}
+            onClick={() =>
+              void updateWithProgress({
+                patch: {
+                  status: "released",
+                  nextAction: null,
+                  description: releaseReason.trim() || goal.description || "Released without shame."
+                },
+                eventType: "goal_released",
+                eventValue: 18,
+                payload: { releaseReason: releaseReason.trim() || null }
+              })
+            }
+          >
+            Release without shame
+          </Button>
         </div>
       </section>
     </AppPage>

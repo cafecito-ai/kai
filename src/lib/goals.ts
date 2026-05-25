@@ -6,6 +6,7 @@ export type GoalDraft = {
   category: GoalCategory;
   whyItMatters: string;
   nextAction: string;
+  targetDate: string;
 };
 
 const GOAL_CATEGORIES: GoalCategory[] = [
@@ -90,7 +91,8 @@ export function createGoalDraftFromText(text: string): GoalDraft {
     description: title ? `I want to get better at ${title.toLowerCase()}.` : "",
     category,
     whyItMatters: "It matters because I want to feel proud of keeping one promise to myself.",
-    nextAction
+    nextAction,
+    targetDate: defaultTargetDate()
   };
 }
 
@@ -124,6 +126,19 @@ export function formatGoalStatus(status: GoalStatus): string {
   if (status === "paused") return "Paused";
   if (status === "achieved") return "Achieved";
   return "Released";
+}
+
+export function defaultTargetDate(now = new Date()): string {
+  const date = new Date(now);
+  date.setDate(date.getDate() + 14);
+  return date.toISOString().slice(0, 10);
+}
+
+export function formatGoalTargetDate(targetDate?: string | null): string {
+  if (!targetDate) return "No target date";
+  const date = new Date(`${targetDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "No target date";
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export function isUnsafeGoalText(text: string): boolean {

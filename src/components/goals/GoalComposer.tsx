@@ -31,6 +31,7 @@ export function GoalComposer({
     category: GoalCategory;
     whyItMatters: string;
     nextAction: string;
+    targetDate: string;
   }) => Promise<void>;
 }) {
   const [step, setStep] = useState<GoalComposerStep>("seed");
@@ -39,6 +40,7 @@ export function GoalComposer({
   const [category, setCategory] = useState<GoalCategory>(draft.category);
   const [whyItMatters, setWhyItMatters] = useState(draft.whyItMatters);
   const [nextAction, setNextAction] = useState(draft.nextAction);
+  const [targetDate, setTargetDate] = useState(draft.targetDate);
 
   function continueFlow() {
     if (isUnsafeGoalText(seed)) {
@@ -49,6 +51,7 @@ export function GoalComposer({
       setCategory(draft.category);
       setWhyItMatters(draft.whyItMatters);
       setNextAction(draft.nextAction);
+      setTargetDate(draft.targetDate);
       setStep("category");
     } else if (step === "category") {
       setNextAction(draft.category === category ? draft.nextAction : nextAction);
@@ -67,7 +70,8 @@ export function GoalComposer({
         description: draft.description,
         category,
         whyItMatters,
-        nextAction
+        nextAction,
+        targetDate
       });
     } catch {
       // The store owns the user-facing error. Keep the draft in place.
@@ -118,10 +122,16 @@ export function GoalComposer({
       )}
 
       {step === "action" && (
-        <label className="block text-sm font-black">
-          Next tiny action
-          <textarea className="field mt-2 min-h-32" value={nextAction} onChange={(event) => setNextAction(event.target.value)} />
-        </label>
+        <div className="grid gap-4">
+          <label className="block text-sm font-black">
+            Next tiny action
+            <textarea className="field mt-2 min-h-32" value={nextAction} onChange={(event) => setNextAction(event.target.value)} />
+          </label>
+          <label className="block text-sm font-black">
+            Target date
+            <input className="field mt-2" type="date" value={targetDate} onChange={(event) => setTargetDate(event.target.value)} />
+          </label>
+        </div>
       )}
 
       {step === "review" && (
@@ -129,6 +139,7 @@ export function GoalComposer({
           <p className="text-xs font-black uppercase tracking-wider text-muted">{category}</p>
           <h2 className="mt-2 font-display text-3xl font-black tracking-normal">{draft.title}</h2>
           <p className="mt-3 text-sm font-semibold leading-6 text-muted">{whyItMatters || "This matters enough to start small."}</p>
+          <p className="mt-3 rounded-kai bg-white p-3 text-sm font-black text-muted">Target: {targetDate || "No date yet"}</p>
           <p className="mt-3 rounded-kai bg-white p-3 text-sm font-black text-ink">{nextAction}</p>
         </div>
       )}

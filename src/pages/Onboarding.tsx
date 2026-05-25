@@ -263,10 +263,10 @@ export function Onboarding() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-5xl flex-col justify-center px-1 py-4 text-[#111116]">
-      <section className="overflow-hidden rounded-[34px] border border-[#0A0A0A0F] bg-[#FAFAF7] shadow-[0_24px_90px_rgba(10,10,10,0.12)]">
+    <main className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-5xl flex-col justify-center px-1 py-4 text-inkDeep">
+      <section className="overflow-hidden rounded-[34px] border border-[#0A0A0A0F] bg-paper shadow-[0_24px_90px_rgba(10,10,10,0.12)]">
         <div className="grid min-h-[720px] lg:grid-cols-[0.78fr_1.22fr]">
-          <aside className="relative hidden bg-[#111116] p-7 text-white lg:flex lg:flex-col lg:justify-between">
+          <aside className="relative hidden bg-inkDeep p-7 text-white lg:flex lg:flex-col lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white/70">
                 <ShieldCheck size={14} aria-hidden="true" />
@@ -348,7 +348,7 @@ function OnboardingHeader({ step, progress }: { step: number; progress: number }
   return (
     <header>
       <div className="flex items-center justify-between gap-3">
-        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-[#8A8A8F]">
+        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-inkMute">
           {steps[step]} · {step + 1}/{steps.length}
         </p>
         <Link to="/crisis" className="text-xs font-black text-[#C4473E]">
@@ -356,7 +356,7 @@ function OnboardingHeader({ step, progress }: { step: number; progress: number }
         </Link>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#F0EFEC]">
-        <div className="h-full rounded-full bg-[#111116] transition-all duration-500" style={{ width: `${progress}%` }} />
+        <div className="h-full rounded-full bg-inkDeep transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
     </header>
   );
@@ -383,7 +383,7 @@ function AgeGate({
     <div>
       <Eyebrow>Start clean</Eyebrow>
       <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">First, the safety stuff. Then the fun part.</h2>
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">
+      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-inkSoft">
         Kai needs age for teen safety rules. Private answers, meals, goals, and chats stay private.
       </p>
       {fromDemo && <p className="mt-4 rounded-[18px] border border-[#D6D0FF] bg-[#F8F6FF] p-3 text-sm font-black text-[#6C5CE7]">Picked up your demo choices. You can change anything.</p>}
@@ -403,7 +403,7 @@ function AgeGate({
         </div>
       )}
       {isMinor && consentStatus !== "complete" && (
-        <div className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">
+        <div className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-inkSoft">
           You can’t move on until your parent clicks the consent link. We will send it as soon as you continue.
         </div>
       )}
@@ -426,31 +426,31 @@ function WaitingForConsent({
     <div>
       <Eyebrow>Hold here</Eyebrow>
       <div className="mt-3 flex items-start gap-4">
-        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#F4F1EB] text-[#111116]">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-warmPaper text-inkDeep">
           <Mail size={22} aria-hidden="true" />
         </span>
         <div>
           <h2 className="font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">
             Waiting on your parent.
           </h2>
-          <p className="mt-3 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">
-            We sent a consent link to <span className="font-black text-[#111116]">{parentEmail}</span>. We check every few seconds and move you forward the moment they confirm.
+          <p className="mt-3 max-w-lg text-sm font-semibold leading-6 text-inkSoft">
+            We sent a consent link to <span className="font-black text-inkDeep">{parentEmail}</span>. We check every few seconds and move you forward the moment they confirm.
           </p>
         </div>
       </div>
 
       <div className="mt-6 rounded-[24px] border border-[#0A0A0A0F] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2">
-          <Loader2 className="motion-safe:animate-spin text-[#5E5E64]" size={18} aria-hidden="true" />
-          <p className="text-sm font-black text-[#111116]">Listening for confirmation…</p>
+          <Loader2 className="motion-safe:animate-spin text-inkSoft" size={18} aria-hidden="true" />
+          <p className="text-sm font-black text-inkDeep">Listening for confirmation…</p>
         </div>
-        {consentMessage && <p className="mt-3 text-sm font-semibold leading-6 text-[#5E5E64]">{consentMessage}</p>}
+        {consentMessage && <p className="mt-3 text-sm font-semibold leading-6 text-inkSoft">{consentMessage}</p>}
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={onResend}
             disabled={consentSending}
-            className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full border border-[#0A0A0A0F] bg-[#F4F1EB] px-4 text-sm font-black text-[#111116] disabled:opacity-50"
+            className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full border border-[#0A0A0A0F] bg-warmPaper px-4 text-sm font-black text-inkDeep disabled:opacity-50"
           >
             {consentSending ? "Sending" : "Resend email"}
           </button>
@@ -463,7 +463,7 @@ function WaitingForConsent({
         </div>
       </div>
 
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">
+      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-inkSoft">
         If your parent didn’t get the email, double-check the address by going Back, then send again.
       </p>
     </div>
@@ -490,7 +490,7 @@ function KaiBuilder({
         <KaiAvatar size={72} label={kaiName || "Kai"} pulse />
         <div>
           <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">Choose the voice.</h2>
-          <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Not a therapist. Not a corporate assistant. A useful mentor.</p>
+          <p className="mt-2 text-sm font-semibold text-inkSoft">Not a therapist. Not a corporate assistant. A useful mentor.</p>
         </div>
       </div>
       <label className="mt-6 block text-sm font-black">
@@ -499,13 +499,13 @@ function KaiBuilder({
       </label>
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         {toneChoices.map((tone) => (
-          <button key={tone.id} type="button" onClick={() => setKaiTone(tone.id)} className={`focus-ring min-h-32 rounded-[24px] border p-4 text-left transition ${kaiTone === tone.id ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-white text-[#111116]"}`}>
+          <button key={tone.id} type="button" onClick={() => setKaiTone(tone.id)} className={`focus-ring min-h-32 rounded-[24px] border p-4 text-left transition ${kaiTone === tone.id ? "border-inkDeep bg-inkDeep text-white" : "border-[#0A0A0A0F] bg-white text-inkDeep"}`}>
             <span className="text-lg font-black">{tone.label}</span>
-            <span className={`mt-2 block text-sm font-semibold leading-5 ${kaiTone === tone.id ? "text-white/62" : "text-[#8A8A8F]"}`}>{tone.copy}</span>
+            <span className={`mt-2 block text-sm font-semibold leading-5 ${kaiTone === tone.id ? "text-white/62" : "text-inkMute"}`}>{tone.copy}</span>
           </button>
         ))}
       </div>
-      <p className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">"{selectedTone.preview}"</p>
+      <p className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-inkSoft">"{selectedTone.preview}"</p>
     </div>
   );
 }
@@ -515,13 +515,13 @@ function VibeScan({ selected, onToggle }: { selected: VibeId[]; onToggle: (id: V
     <div>
       <Eyebrow>Vibe scan</Eyebrow>
       <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Pick the 3 that feel most true right now.</h2>
-      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">No perfect answer. Kai just needs the starting weather.</p>
+      <p className="mt-4 text-sm font-semibold text-inkSoft">No perfect answer. Kai just needs the starting weather.</p>
       <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {vibeChoices.map((vibe) => {
           const Icon = vibe.icon;
           const active = selected.includes(vibe.id);
           return (
-            <button key={vibe.id} type="button" onClick={() => onToggle(vibe.id)} className={`focus-ring min-h-24 rounded-[24px] border p-4 text-left transition ${active ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-white text-[#111116]"}`}>
+            <button key={vibe.id} type="button" onClick={() => onToggle(vibe.id)} className={`focus-ring min-h-24 rounded-[24px] border p-4 text-left transition ${active ? "border-inkDeep bg-inkDeep text-white" : "border-[#0A0A0A0F] bg-white text-inkDeep"}`}>
               <Icon size={20} aria-hidden="true" />
               <span className="mt-3 block text-sm font-black">{vibe.label}</span>
               {active && <Check className="mt-2 text-[#A3FF12]" size={16} aria-hidden="true" />}
@@ -550,7 +550,7 @@ function SignalScan({ signals, setSignals }: { signals: Record<SignalId, number>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {[signal.low, signal.mid, signal.high].map((label, index) => (
-                  <button key={label} type="button" onClick={() => setSignals((items) => ({ ...items, [id]: index }))} className={`focus-ring min-h-11 rounded-full text-sm font-black ${signals[id] === index ? "bg-[#111116] text-white" : "bg-[#F4F1EB] text-[#5E5E64]"}`}>
+                  <button key={label} type="button" onClick={() => setSignals((items) => ({ ...items, [id]: index }))} className={`focus-ring min-h-11 rounded-full text-sm font-black ${signals[id] === index ? "bg-inkDeep text-white" : "bg-warmPaper text-inkSoft"}`}>
                     {label}
                   </button>
                 ))}
@@ -573,13 +573,13 @@ function MissionPick({ mission, setMission }: { mission: MissionId; setMission: 
           const Icon = item.icon;
           const active = mission === item.id;
           return (
-            <button key={item.id} type="button" onClick={() => setMission(item.id)} className={`focus-ring flex min-h-24 items-center gap-3 rounded-[24px] border p-4 text-left transition ${active ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-white text-[#111116]"}`}>
-              <span className={`grid size-11 shrink-0 place-items-center rounded-full ${active ? "bg-white/12" : "bg-[#F4F1EB]"}`}>
+            <button key={item.id} type="button" onClick={() => setMission(item.id)} className={`focus-ring flex min-h-24 items-center gap-3 rounded-[24px] border p-4 text-left transition ${active ? "border-inkDeep bg-inkDeep text-white" : "border-[#0A0A0A0F] bg-white text-inkDeep"}`}>
+              <span className={`grid size-11 shrink-0 place-items-center rounded-full ${active ? "bg-white/12" : "bg-warmPaper"}`}>
                 <Icon size={20} aria-hidden="true" />
               </span>
               <span>
                 <span className="block text-base font-black">{item.label}</span>
-                <span className={`mt-1 block text-sm font-semibold ${active ? "text-white/62" : "text-[#8A8A8F]"}`}>{item.copy}</span>
+                <span className={`mt-1 block text-sm font-semibold ${active ? "text-white/62" : "text-inkMute"}`}>{item.copy}</span>
               </span>
             </button>
           );
@@ -594,7 +594,7 @@ function ContextDrop({ context, setContext }: { context: string; setContext: (va
     <div>
       <Eyebrow>Optional context</Eyebrow>
       <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Anything Kai should know?</h2>
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">A messy sentence is enough. Or skip it and let Kai learn as you use the app.</p>
+      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-inkSoft">A messy sentence is enough. Or skip it and let Kai learn as you use the app.</p>
       <textarea className="field mt-6 min-h-40 text-base" value={context} onChange={(event) => setContext(event.target.value)} placeholder="Example: school pressure has been loud, sleep is bad, and I want to feel more confident..." />
     </div>
   );
@@ -624,7 +624,7 @@ function Reveal({
           <KaiAvatar size={76} label={kaiName} pulse />
           <div>
             <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">{kaiName} is ready.</h2>
-            <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Start with one useful rep. The rest can wait.</p>
+            <p className="mt-2 text-sm font-semibold text-inkSoft">Start with one useful rep. The rest can wait.</p>
           </div>
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -633,7 +633,7 @@ function Reveal({
           <RevealStat label="Unit" value={mission.engine === "physical" ? "Body" : "Mind"} />
         </div>
       </div>
-      <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-[#111116] p-5 text-white">
+      <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-inkDeep p-5 text-white">
         <div className="flex items-start gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white/12">
             <MissionIcon size={20} aria-hidden="true" />
@@ -646,7 +646,7 @@ function Reveal({
         </div>
       </div>
       {isMinor && parentEmail.trim() && (
-        <p className="mt-4 rounded-[18px] border border-[#D7F0EA] bg-[#F4FFFC] p-3 text-sm font-semibold leading-6 text-[#5E5E64]">
+        <p className="mt-4 rounded-[18px] border border-[#D7F0EA] bg-[#F4FFFC] p-3 text-sm font-semibold leading-6 text-inkSoft">
           Parent consent email will be sent to {parentEmail.trim()}. Private answers stay private.
         </p>
       )}
@@ -655,7 +655,7 @@ function Reveal({
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-[#8A8A8F]">{children}</p>;
+  return <p className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-inkMute">{children}</p>;
 }
 
 function CalibrationPill({ label, value }: { label: string; value: string }) {
@@ -669,9 +669,9 @@ function CalibrationPill({ label, value }: { label: string; value: string }) {
 
 function RevealStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[20px] bg-[#F4F1EB] p-4">
-      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.22em] text-[#8A8A8F]">{label}</p>
-      <p className="mt-2 truncate text-lg font-black capitalize text-[#111116]">{value}</p>
+    <div className="rounded-[20px] bg-warmPaper p-4">
+      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.22em] text-inkMute">{label}</p>
+      <p className="mt-2 truncate text-lg font-black capitalize text-inkDeep">{value}</p>
     </div>
   );
 }

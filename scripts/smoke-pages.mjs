@@ -45,7 +45,7 @@ const connectionErrorCopy = [
 
 const cases = [
   route("/", ["What's up?", "Kai on deck", "Try this next"], { actionables: ["textarea", "button", "a[href^='/']"] }),
-  route("/onboarding", ["Safety first", "Age", "Parent email"], { actionables: ["button", "input"] }),
+  route("/onboarding", ["Safety first", "Age", "Parent email"], { actionables: ["button", "input"], onboardingHandoff: true }),
   route("/home", ["What's up?", "Kai on deck", "Try this next"], { actionables: ["textarea", "button", "a[href^='/']"], kaiChatHandoff: true }),
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
@@ -128,7 +128,8 @@ function route(pathname, expectedText, options = {}) {
     forbiddenSelectors: options.forbiddenSelectors || [],
     optional: Boolean(options.optional),
     foodPhotoUpload: Boolean(options.foodPhotoUpload),
-    kaiChatHandoff: Boolean(options.kaiChatHandoff)
+    kaiChatHandoff: Boolean(options.kaiChatHandoff),
+    onboardingHandoff: Boolean(options.onboardingHandoff)
   };
 }
 
@@ -225,6 +226,9 @@ async function renderPage(target, testCase) {
     if (testCase.kaiChatHandoff) {
       await assertKaiChatHandoff(client);
     }
+    if (testCase.onboardingHandoff) {
+      await assertOnboardingHandoff(client);
+    }
     return { ...result, consoleErrors: client.consoleErrors };
   } finally {
     await client.close().catch(() => undefined);
@@ -258,6 +262,31 @@ async function assertFoodPhotoUpload(client) {
   } finally {
     await rm(foodPath, { force: true }).catch(() => undefined);
   }
+}
+
+async function assertOnboardingHandoff(client) {
+  await client.evaluate(`(() => {
+    const input = document.querySelector("input[inputmode='numeric']");
+    if (!input) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+    if (setter) setter.call(input, "18");
+    else input.value = "18";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  })()`);
+  for (let index = 0; index < 6; index++) {
+    await clickButtonByText(client, index === 5 ? "Show Kai's read" : "Keep going");
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  await waitForClientCondition(
+    client,
+    `(() => {
+      const text = document.body.innerText.toLowerCase();
+      return text.includes("kai's first message") && text.includes("open home with") && text.includes("kai will surface this move first on home");
+    })()`,
+    "Onboarding did not reach the personalized Kai handoff"
+  );
 }
 
 async function assertKaiChatHandoff(client) {
@@ -295,6 +324,19 @@ async function clickFoodActionLink(client) {
     return true;
   })()`);
   if (!clicked) throw new Error("could not click Kai food action link");
+  await new Promise((resolve) => setTimeout(resolve, 150));
+}
+
+async function clickButtonByText(client, text) {
+  const clicked = await client.evaluate(`(() => {
+    const target = ${JSON.stringify(text)};
+    const button = Array.from(document.querySelectorAll("button")).find((item) => (item.innerText || "").includes(target));
+    if (!button) return false;
+    button.scrollIntoView({ block: "center", inline: "center" });
+    button.click();
+    return true;
+  })()`);
+  if (!clicked) throw new Error(`could not click button containing ${JSON.stringify(text)}`);
   await new Promise((resolve) => setTimeout(resolve, 150));
 }
 

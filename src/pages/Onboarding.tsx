@@ -20,7 +20,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
-import { KAI_ACTIONS } from "../lib/kai-actions";
+import { actionForMission, buildFirstKaiMessage } from "../lib/onboarding-handoff";
+import type { OnboardingMissionId, OnboardingPersonalityId, OnboardingStressorId, OnboardingVibeId } from "../lib/onboarding-handoff";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useKaiStore } from "../stores/kaiStore";
 import { useUserStore } from "../stores/userStore";
@@ -38,11 +39,11 @@ type DemoBuildSlice = {
   mealSummary?: string;
 };
 
-type VibeId = "stressed" | "locked_in" | "tired" | "motivated" | "lonely" | "confident" | "chaotic" | "bored";
-type PersonalityId = "quiet" | "competitive" | "creative" | "social" | "independent" | "overthinker";
-type StressorId = "school" | "sport" | "friends" | "family" | "body" | "phone" | "future" | "motivation";
+type VibeId = OnboardingVibeId;
+type PersonalityId = OnboardingPersonalityId;
+type StressorId = OnboardingStressorId;
 type SignalId = "sleep" | "energy" | "confidence" | "movement" | "food" | "social";
-type MissionId = "mind" | "body" | "stretch" | "confidence" | "discipline" | "food" | "sleep" | "social" | "goals";
+type MissionId = OnboardingMissionId;
 
 function loadDemoBuild(): DemoBuildSlice | null {
   if (typeof window === "undefined") return null;
@@ -108,15 +109,15 @@ const signalCopy: Record<SignalId, { label: string; low: string; mid: string; hi
 };
 
 const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: EngineId; route: string }> = [
-  { id: "mind", label: "Mind", copy: "Feel less overloaded.", icon: Brain, engine: "mental", route: "/mental?module=checkin" },
-  { id: "body", label: "Body scan", copy: "To keep your posture, alignment, and body composition in check.", icon: HeartPulse, engine: "physical", route: "/health?module=scan" },
+  { id: "mind", label: "Mind", copy: "Feel less overloaded.", icon: Brain, engine: "mental", route: "/mental?module=checkin&action=talk" },
+  { id: "body", label: "Body scan", copy: "To keep your posture, alignment, and body composition in check.", icon: HeartPulse, engine: "physical", route: "/health?module=scan&action=scan" },
   { id: "stretch", label: "Stretch / move", copy: "To maintain mobility and prevent injury.", icon: Dumbbell, engine: "physical", route: "/health?module=stretch&action=stretch" },
-  { id: "confidence", label: "Confidence", copy: "Stop shrinking yourself.", icon: Sparkles, engine: "mental", route: "/mental?module=purpose" },
-  { id: "discipline", label: "Discipline", copy: "Build systems, not hype.", icon: Target, engine: "mental", route: "/mental?module=purpose" },
-  { id: "food", label: "Log food", copy: "To fuel your workouts correctly.", icon: Utensils, engine: "physical", route: "/health?module=food" },
+  { id: "confidence", label: "Confidence", copy: "Stop shrinking yourself.", icon: Sparkles, engine: "mental", route: "/mental?module=purpose&action=confidence" },
+  { id: "discipline", label: "Discipline", copy: "Build systems, not hype.", icon: Target, engine: "potential", route: "/goal?action=goal" },
+  { id: "food", label: "Log food", copy: "To fuel your workouts correctly.", icon: Utensils, engine: "physical", route: "/health?module=food&action=food" },
   { id: "sleep", label: "Log sleep", copy: "To ensure your body is actually recovering from the work.", icon: Moon, engine: "physical", route: "/health?module=sleep&action=sleep" },
-  { id: "social", label: "Social", copy: "Handle pressure and loneliness.", icon: UsersRound, engine: "mental", route: "/mental?module=checkin" },
-  { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "potential", route: "/engine/potential" }
+  { id: "social", label: "Social", copy: "Handle pressure and loneliness.", icon: UsersRound, engine: "mental", route: "/mental?module=checkin&action=social" },
+  { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "potential", route: "/goal?action=goal" }
 ];
 
 const steps = ["Safety", "Voice", "Mood", "Baseline", "First move", "Context", "Ready"];
@@ -276,7 +277,7 @@ export function Onboarding() {
               {step === 3 && <SignalScan signals={signals} setSignals={setSignals} />}
               {step === 4 && <MissionPick mission={mission} setMission={setMission} />}
               {step === 5 && <ContextDrop context={context} setContext={setContext} stressors={stressors} setStressors={setStressors} />}
-              {step === 6 && <Reveal kaiName={kaiName || "Kai"} tone={selectedTone} mission={selectedMission} calibration={calibration} isMinor={isMinor} parentEmail={parentEmail} personality={personality} stressors={stressors} />}
+              {step === 6 && <Reveal kaiName={kaiName || "Kai"} tone={selectedTone} mission={selectedMission} calibration={calibration} isMinor={isMinor} parentEmail={parentEmail} personality={personality} stressors={stressors} vibes={vibes} context={context} />}
             </div>
             <footer className="grid gap-2 sm:grid-cols-[auto_1fr]">
               {step > 0 && (
@@ -292,7 +293,7 @@ export function Onboarding() {
                 </Button>
               ) : (
                 <Button type="button" onClick={() => void finish()} disabled={saving} className="min-h-12 w-full">
-                  {saving ? "Saving" : "Open Home"}
+                  {saving ? "Saving" : `Open Home with ${selectedMission.label}`}
                   <ArrowRight size={18} aria-hidden="true" />
                 </Button>
               )}
@@ -590,7 +591,9 @@ function Reveal({
   isMinor,
   parentEmail,
   personality,
-  stressors
+  stressors,
+  vibes,
+  context
 }: {
   kaiName: string;
   tone: (typeof toneChoices)[number];
@@ -600,9 +603,13 @@ function Reveal({
   parentEmail: string;
   personality: PersonalityId;
   stressors: StressorId[];
+  vibes: VibeId[];
+  context: string;
 }) {
   const MissionIcon = mission.icon;
   const personalityLabel = personalityChoices.find((choice) => choice.id === personality)?.label ?? "Learning";
+  const firstMessage = buildFirstKaiMessage({ kaiName, vibes, stressors, personality, mission, context });
+  const focusLabel = mission.engine === "physical" ? "Body" : mission.engine === "potential" ? "Goals" : "Mind";
   return (
     <div>
       <Eyebrow>Kai learned enough</Eyebrow>
@@ -617,11 +624,15 @@ function Reveal({
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <RevealStat label="Voice" value={tone.label} />
           <RevealStat label="Style" value={personalityLabel} />
-          <RevealStat label="Focus" value={mission.engine === "physical" ? "Body" : "Mind"} />
+          <RevealStat label="Focus" value={focusLabel} />
         </div>
         <p className="mt-4 rounded-[18px] bg-[#F4F1EB] p-3 text-sm font-semibold leading-6 text-[#5E5E64]">
           Kai has a {calibration}% starting read{stressors.length ? `, with ${stressors.map((item) => item.replace(/_/g, " ")).join(", ")} marked as loud` : ""}. It will adjust as you use it.
         </p>
+      </div>
+      <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-white p-4 shadow-sm">
+        <p className="font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">Kai's first message</p>
+        <p className="mt-3 text-sm font-semibold leading-6 text-[#5E5E64]">{firstMessage}</p>
       </div>
       <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-[#111116] p-5 text-white">
         <div className="flex items-start gap-3">
@@ -634,6 +645,9 @@ function Reveal({
             <p className="mt-2 text-sm font-semibold leading-6 text-white/62">{mission.copy}</p>
           </div>
         </div>
+        <p className="mt-4 rounded-[18px] border border-white/10 bg-white/10 p-3 text-sm font-semibold leading-6 text-white/62">
+          Kai will surface this move first on Home, then keep adjusting when you chat.
+        </p>
       </div>
       {isMinor && parentEmail.trim() && (
         <p className="mt-4 rounded-[18px] border border-[#D7F0EA] bg-[#F4FFFC] p-3 text-sm font-semibold leading-6 text-[#5E5E64]">
@@ -727,38 +741,4 @@ function buildIntakeAnswers({
     q5: `First suggested route is ${missionChoice.route}.`,
     q6: `Use a supportive, honest mentor style. Avoid shame, clinical diagnosis, toxic productivity, and body comparison.`
   };
-}
-
-function buildFirstKaiMessage({
-  kaiName,
-  vibes,
-  stressors,
-  personality,
-  mission,
-  context
-}: {
-  kaiName: string;
-  vibes: VibeId[];
-  stressors: StressorId[];
-  personality: PersonalityId;
-  mission: (typeof missionChoices)[number];
-  context: string;
-}) {
-  const vibeText = vibes.length ? vibes.map((vibe) => vibe.replace(/_/g, " ")).join(", ") : "not totally sure yet";
-  const stressText = stressors.length ? ` Loud stuff: ${stressors.map((stressor) => stressor.replace(/_/g, " ")).join(", ")}.` : "";
-  const personalityText = personalityChoices.find((choice) => choice.id === personality)?.copy ?? "I will learn your style.";
-  const contextLine = context.trim() ? "I’ll remember the extra context you gave me." : "We’ll learn the rest as we go.";
-  return `${kaiName} here. I’ve got your starting point: ${vibeText}. ${personalityText}${stressText} First focus is ${mission.label.toLowerCase()}. ${contextLine} Tell me what’s actually going on today, and I’ll open the right move.`;
-}
-
-function actionForMission(mission: MissionId) {
-  if (mission === "body") return KAI_ACTIONS.scan;
-  if (mission === "stretch") return KAI_ACTIONS.stretch;
-  if (mission === "food") return KAI_ACTIONS.food;
-  if (mission === "sleep") return KAI_ACTIONS.sleep;
-  if (mission === "goals" || mission === "discipline") return KAI_ACTIONS.goal;
-  if (mission === "confidence") return KAI_ACTIONS.confidence;
-  if (mission === "social") return KAI_ACTIONS.social;
-  if (mission === "mind") return KAI_ACTIONS.talk;
-  return KAI_ACTIONS.talk;
 }

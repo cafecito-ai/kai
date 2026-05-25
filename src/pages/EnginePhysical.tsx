@@ -1,6 +1,5 @@
-import { BookOpen, Camera, CheckCircle2, Dumbbell, Eye, History, Lock, Moon, ScanLine, ShieldCheck, Utensils, Wind } from "lucide-react";
-import { useEffect, useState } from "react";
-import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
+import { Camera, Dumbbell, Eye, Lock, Moon, PlayCircle, ScanLine, ShieldCheck, Sun, Utensils, Wind } from "lucide-react";
+import { useState } from "react";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -15,13 +14,12 @@ import {
 } from "../lib/food-photo";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { localSafetyCheck } from "../lib/safety";
-import type { EngineEntry, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
+import type { FoodPhotoItem, FoodPhotoResult } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
 export function EnginePhysical() {
   const addEvent = useProgressStore((state) => state.addEvent);
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
-  const [entries, setEntries] = useState<EngineEntry[]>([]);
   const [saving, setSaving] = useState("");
   const [foodPhoto, setFoodPhoto] = useState<File | null>(null);
   const [foodSafetyMessage, setFoodSafetyMessage] = useState("");
@@ -31,33 +29,19 @@ export function EnginePhysical() {
   const [bodyScanPhoto, setBodyScanPhoto] = useState<File | null>(null);
   const [bodyScanSaved, setBodyScanSaved] = useState(false);
 
-  useEffect(() => {
-    void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
-  }, []);
-
   async function completeEntry(input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) {
     setFoodSafetyMessage("");
     setSaving(input.entryType);
-    const optimistic: EngineEntry = {
-      id: crypto.randomUUID(),
-      engine: "physical",
-      entryType: input.entryType,
-      title: input.title,
-      payload: input.payload ?? {},
-      completedAt: new Date().toISOString()
-    };
-    setEntries((items) => [optimistic, ...items].slice(0, 8));
     addEvent({ engine: "physical", eventType: input.eventType, eventValue: input.eventValue, payload: input.payload });
     try {
-      const result = await api.createEngineEntry("physical", {
+      await api.createEngineEntry("physical", {
         entryType: input.entryType,
         title: input.title,
         payload: input.payload,
         completed: true
       });
-      setEntries((items) => items.map((item) => (item.id === optimistic.id ? result.entry : item)));
     } catch {
-      // Keep the optimistic entry in demo mode.
+      // Demo mode — the optimistic local progress event still shows in the home dashboard.
     } finally {
       setSaving("");
     }
@@ -221,17 +205,11 @@ export function EnginePhysical() {
       )
     },
     {
-      id: "movement",
-      label: "Movement",
-      summary: "Move + recover",
-      icon: Dumbbell,
-      content: (
-        <div className="grid gap-4 md:grid-cols-3">
-          <ActionCard icon={<Dumbbell />} title="Movement" copy="Practice, sport, walk, lift, stretch — log any session." action={saving === "movement_log" ? "Logging" : "Log 35 min"} onClick={() => void completeEntry({ entryType: "movement_log", title: "Movement", payload: { type: "sport", duration: 35 }, eventType: "workout", eventValue: 30 })} />
-          <ActionCard icon={<Moon />} title="Sleep" copy="Quality, blockers, and one experiment." action={saving === "sleep_log" ? "Logging" : "Log sleep"} onClick={() => void completeEntry({ entryType: "sleep_log", title: "Sleep check", payload: { quality: 7 }, eventType: "sleep_log", eventValue: 18 })} />
-          <ActionCard icon={<Wind />} title="Recovery" copy="Breathing, soreness, hydration, reset." action={saving === "recovery_reset" ? "Saving" : "Complete reset"} onClick={() => void completeEntry({ entryType: "recovery_reset", title: "Recovery reset", payload: { pattern: "box" }, eventType: "breathing_session", eventValue: 20 })} />
-        </div>
-      )
+      id: "sleep",
+      label: "Sleep",
+      summary: "Tap to time it",
+      icon: Moon,
+      content: <SleepPlaceholder saving={saving} completeEntry={completeEntry} />
     },
     {
       id: "scan",
@@ -272,35 +250,11 @@ export function EnginePhysical() {
       )
     },
     {
-      id: "guides",
-      label: "Guides",
-      summary: "Body literacy",
-      icon: BookOpen,
-      content: <EngineGuidesIndex engine="physical" title="Body + safety guides" intro="Quick reads on sleep, nutrition, body literacy, and the harder topics. Each one is 3-5 minutes. Kai links to these when relevant." />
-    },
-    {
-      id: "history",
-      label: "History",
-      summary: `${entries.length} saved`,
-      icon: History,
-      content: (
-        <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-          <p className="eyebrow">body history</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Recent physical entries</h2>
-          <div className="mt-4 space-y-2">
-            {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Body entries yet. Log one fuel, movement, sleep, or recovery note.</p>}
-            {entries.slice(0, 6).map((entry) => (
-              <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
-                <CheckCircle2 className="text-sage" size={18} />
-                <div>
-                  <p className="text-sm font-black">{entry.title || labelForEntry(entry.entryType)}</p>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">{labelForEntry(entry.entryType)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )
+      id: "tracker",
+      label: "Tracker",
+      summary: "Phone down, work out",
+      icon: Dumbbell,
+      content: <TrackerPlaceholder saving={saving} completeEntry={completeEntry} />
     }
   ];
 
@@ -309,7 +263,7 @@ export function EnginePhysical() {
       title="Physical agent"
       label="Health unit"
       tone="physical"
-      intro="Food camera, movement, sleep, hydration, posture, mobility, and recovery. Useful, pattern-aware, never obsessive."
+      intro="Four cards: food camera, body scan, sleep, and a guided physical tracker. Useful, pattern-aware, never obsessive."
       modules={modules}
       banners={<DisclosureBanner />}
     />
@@ -321,10 +275,6 @@ const foodExamples = [
   { title: "yogurt bowl", note: "Yogurt, berries, granola", position: "object-center" },
   { title: "rice bowl", note: "Rice bowl with chicken, greens, avocado", position: "object-right" }
 ];
-
-function labelForEntry(entryType: string) {
-  return entryType.replace(/_/g, " ");
-}
 
 function PhysicalModule({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {
   return (
@@ -407,6 +357,96 @@ function ActionCard({ icon, title, copy, action, onClick }: { icon: React.ReactN
       <p className="my-3 text-sm leading-6 text-muted">{copy}</p>
       <Button variant="secondary" onClick={onClick}>{action}</Button>
     </section>
+  );
+}
+
+/**
+ * Placeholder for the Sleep card. v2 PR #2 replaces this with a real
+ * widget-style flow that times the gap between "Sleep" and "Woke Up".
+ * Today: two buttons that log distinct events. Math comes later.
+ */
+function SleepPlaceholder({ saving, completeEntry }: { saving: string; completeEntry: (input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) => Promise<void> }) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <ActionCard
+        icon={<Moon />}
+        title="Going to sleep"
+        copy="Tap when you're heading to bed. Kai timestamps it and waits for the morning tap."
+        action={saving === "sleep_start" ? "Logging" : "Tap Sleep"}
+        onClick={() =>
+          void completeEntry({
+            entryType: "sleep_start",
+            title: "Tapped Sleep",
+            payload: { at: new Date().toISOString() },
+            eventType: "sleep_start",
+            eventValue: 6
+          })
+        }
+      />
+      <ActionCard
+        icon={<Sun />}
+        title="Just woke up"
+        copy="Tap when you're up. Kai computes hours of sleep without you doing math."
+        action={saving === "sleep_end" ? "Logging" : "Tap Woke Up"}
+        onClick={() =>
+          void completeEntry({
+            entryType: "sleep_end",
+            title: "Tapped Woke Up",
+            payload: { at: new Date().toISOString() },
+            eventType: "sleep_log",
+            eventValue: 18
+          })
+        }
+      />
+    </div>
+  );
+}
+
+/**
+ * Placeholder for the Physical Tracker card. v2 PR #3 replaces this
+ * with pre-recorded guided sessions (phone-down, Kai narrates, timer
+ * counts down). Today: a single "log a session" button so the card
+ * isn't blank during the build.
+ */
+function TrackerPlaceholder({ saving, completeEntry }: { saving: string; completeEntry: (input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) => Promise<void> }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-4 grid size-12 place-items-center rounded-full bg-bodyWash text-body">
+          <PlayCircle />
+        </div>
+        <p className="eyebrow">physical tracker</p>
+        <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Phone down. Kai narrates the rep.</h2>
+        <p className="mt-3 text-sm font-semibold leading-6 text-muted">
+          Place your phone where it can see you. Kai talks you through stretches and form cues. Real guided sessions arrive in the next ship — for now the timer + event log is here.
+        </p>
+        <Button
+          className="mt-4"
+          variant="secondary"
+          disabled={saving === "tracker_session"}
+          onClick={() =>
+            void completeEntry({
+              entryType: "tracker_session",
+              title: "Tracker session",
+              payload: { mode: "placeholder", duration: 600 },
+              eventType: "workout",
+              eventValue: 30
+            })
+          }
+        >
+          {saving === "tracker_session" ? "Logging" : "Log a 10-minute session"}
+        </Button>
+      </section>
+      <section className="rounded-[24px] border border-line bg-warmPaper p-5 shadow-sm sm:p-6">
+        <p className="eyebrow">coming next</p>
+        <h3 className="mt-2 font-display text-2xl font-black tracking-normal">What this card becomes.</h3>
+        <ul className="mt-3 space-y-3 text-sm font-semibold leading-6 text-muted">
+          <li>Pre-recorded sessions — stretch, mobility, form drills.</li>
+          <li>Kai voice cues during the session, no live form correction in v1.</li>
+          <li>Phone-down timer with big visible countdown and a single end-tap.</li>
+        </ul>
+      </section>
+    </div>
   );
 }
 

@@ -50,7 +50,7 @@ export function Profile() {
               <MetricPill label="Belt" value={belt} tone="body" />
             </div>
             <div className="mt-5 grid gap-3">
-              <ProfileRow icon={Brain} label="Primary unit" value={primaryEngine === "physical" ? "Health" : "Mental"} />
+              <ProfileRow icon={Brain} label="Primary unit" value={primaryEngine === "physical" ? "Health" : primaryEngine === "potential" ? "Goals" : "Mental"} />
               <ProfileRow icon={HeartPulse} label="Saved reps" value={String(events.length)} />
               <ProfileRow icon={UserRound} label="Consent" value={consentStatus.replace(/_/g, " ")} />
             </div>

@@ -1,10 +1,10 @@
-import { ArrowRight, Brain, Dumbbell, Sparkles } from "lucide-react";
+import { ArrowRight, Brain, Dumbbell, Sparkles, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { recommendNextLoop } from "../../lib/tracker";
 import { useProgressStore } from "../../stores/progressStore";
 
-const laneMeta: Record<"mental" | "physical", { icon: LucideIcon; tone: string; cta: string }> = {
+const laneMeta: Record<"mental" | "physical" | "potential", { icon: LucideIcon; tone: string; cta: string }> = {
   mental: {
     icon: Brain,
     tone: "bg-[#E4F7F4] text-[#218A7D]",
@@ -14,6 +14,11 @@ const laneMeta: Record<"mental" | "physical", { icon: LucideIcon; tone: string; 
     icon: Dumbbell,
     tone: "bg-[#FFF0EC] text-[#C86B31]",
     cta: "Open Health"
+  },
+  potential: {
+    icon: Target,
+    tone: "bg-goalsWash text-goals",
+    cta: "Open Goals"
   }
 };
 

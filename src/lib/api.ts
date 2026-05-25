@@ -15,6 +15,7 @@ import type {
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
+const STAGING_APP_HOST = "staging.kai-epk.pages.dev";
 const PUBLIC_DEMO_API_PATHS = new Set([
   "/api/demo-kai",
   "/api/demo-food-photo",
@@ -110,9 +111,11 @@ function getDevUser() {
   const host = window.location.hostname;
   const authRequired = import.meta.env.VITE_AUTH_REQUIRED === "1";
   const devUserEnabled = import.meta.env.VITE_ALLOW_DEV_USER === "1";
+  const isKnownStagingApp = host === STAGING_APP_HOST;
   const canUseDevUser =
     host === "localhost" ||
     host === "127.0.0.1" ||
+    isKnownStagingApp ||
     (devUserEnabled && host.endsWith(".pages.dev")) ||
     (devUserEnabled && host === "kai.boostaisearch.ai" && !authRequired);
   if (!canUseDevUser) return null;

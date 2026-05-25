@@ -83,7 +83,7 @@ function AppContextBar() {
           <div className="min-w-0">
             <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">{sectionLabel(pathname)}</p>
             <p className="truncate text-sm font-black text-[#1A1A1F] sm:hidden">One loop.</p>
-            <p className="hidden truncate text-sm font-black text-[#1A1A1F] sm:block">Mental and Physical stay in one loop.</p>
+            <p className="hidden truncate text-sm font-black text-[#1A1A1F] sm:block">Mental, Goals, and Physical stay in one loop.</p>
           </div>
         </div>
         <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 overflow-hidden text-xs font-black sm:grid sm:grid-cols-[1fr_1fr_auto]">
@@ -197,7 +197,10 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
           <Link to="/mental?module=checkin" onClick={onClose} className="focus-ring rounded-full bg-[#E4F7F4] px-4 py-3 text-center text-sm font-black text-[#218A7D]">
             Mental unit
           </Link>
-          <Link to="/health?module=food" onClick={onClose} className="focus-ring rounded-full bg-[#FFF0EC] px-4 py-3 text-center text-sm font-black text-[#C86B31]">
+          <Link to="/engine/potential" onClick={onClose} className="focus-ring rounded-full bg-goalsWash px-4 py-3 text-center text-sm font-black text-goals">
+            Goals unit
+          </Link>
+          <Link to="/health?module=food" onClick={onClose} className="focus-ring rounded-full bg-[#FFF0EC] px-4 py-3 text-center text-sm font-black text-[#C86B31] sm:col-span-2">
             Health unit
           </Link>
         </div>
@@ -209,6 +212,7 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
 function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
   const actions = [
     { to: "/goal", label: "New goal", icon: Target, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { to: "/engine/potential", label: "Goals unit", icon: Target, tone: "bg-goalsWash text-goals" },
     { to: "/groups", label: "Circle", icon: UsersRound, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
     { to: "/settings", label: "Settings", icon: Settings, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
     { to: "/health?module=food", label: "Log food", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
@@ -251,6 +255,7 @@ function isUnifiedAppRoute(pathname: string) {
     pathname.startsWith("/engine") ||
     pathname === "/health" ||
     pathname === "/mental" ||
+    pathname === "/potential" ||
     pathname === "/goal" ||
     pathname === "/goals" ||
     pathname.startsWith("/goals/") ||
@@ -265,6 +270,7 @@ function isUnifiedAppRoute(pathname: string) {
 function sectionLabel(pathname: string) {
   if (pathname === "/health" || pathname.startsWith("/engine/physical")) return "Health unit";
   if (pathname === "/mental" || pathname.startsWith("/engine/mental")) return "Mental unit";
+  if (pathname === "/potential" || pathname.startsWith("/engine/potential")) return "Goals unit";
   if (pathname === "/goal") return "Goal";
   if (pathname === "/goals" || pathname.startsWith("/goals/")) return "Goals";
   if (pathname === "/loop") return "Loop";
@@ -278,14 +284,15 @@ function sectionLabel(pathname: string) {
 function engineFromPath(pathname: string): "physical" | "potential" | "mental" | null {
   if (pathname === "/health") return "physical";
   if (pathname === "/mental") return "mental";
-  if (pathname.startsWith("/engine/potential")) return "mental";
+  if (pathname === "/potential") return "potential";
+  if (pathname.startsWith("/engine/potential")) return "potential";
   if (pathname.startsWith("/engine/mental")) return "mental";
   if (pathname.startsWith("/engine/physical")) return "physical";
   return null;
 }
 
 function laneMeta(engine: "physical" | "potential" | "mental") {
-  if (engine === "potential") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
+  if (engine === "potential") return { label: "Goals", icon: Target, tone: "bg-goalsWash text-goals" };
   if (engine === "mental") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
   return { label: "Body", icon: Activity, tone: "bg-bodyWash text-body" };
 }

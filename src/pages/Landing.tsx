@@ -1,12 +1,13 @@
-import { Activity, ArrowRight, Brain, Camera, Dumbbell, Moon, ShieldAlert, Utensils } from "lucide-react";
+import { Activity, ArrowRight, Brain, Camera, Dumbbell, Moon, ShieldAlert, Target, Utensils } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ActionTile, AppPage, AppSurface, FlowList, KaiMark, SessionHero } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { useUserStore } from "../stores/userStore";
 
 const lanes = [
-  { title: "Health", path: "/health", icon: Activity, tone: "body" as const, copy: "Log food. Body scan. Stretch / move. Log sleep." },
-  { title: "Mental", path: "/mental", icon: Brain, tone: "reset" as const, copy: "Learn from Kai through Daniel Siegel, Andrew Huberman, Viktor Frankl, James Clear, Carl Jung, stoic philosophy, and modern teen psychology principles." }
+  { title: "Health", engine: "physical", path: "/health", icon: Activity, tone: "body" as const, copy: "Log food. Body scan. Stretch / move. Log sleep." },
+  { title: "Goals", engine: "potential", path: "/engine/potential", icon: Target, tone: "goals" as const, copy: "Turn the thing you care about into a real next move." },
+  { title: "Mental", engine: "mental", path: "/mental", icon: Brain, tone: "reset" as const, copy: "Learn from Kai through Daniel Siegel, Andrew Huberman, Viktor Frankl, James Clear, Carl Jung, stoic philosophy, and modern teen psychology principles." }
 ];
 
 const physicalActions = [
@@ -18,8 +19,7 @@ const physicalActions = [
 
 export function Landing() {
   const { kaiName, primaryEngine, onboardingCompletedAt } = useUserStore();
-  const visibleEngine = primaryEngine === "potential" ? "mental" : primaryEngine;
-  const startPath = onboardingCompletedAt ? `/engine/${visibleEngine}` : "/onboarding";
+  const startPath = onboardingCompletedAt ? `/engine/${primaryEngine}` : "/onboarding";
 
   return (
     <AppPage className="max-w-5xl">
@@ -53,7 +53,7 @@ export function Landing() {
             <FlowList
               items={[
                 { label: "Say the loud part", copy: "A messy sentence is enough." },
-                { label: "Pick the agent", copy: "Mental or Physical." },
+                { label: "Pick the agent", copy: "Mental, Goals, or Physical." },
                 { label: "Do one rep", copy: "Small enough to finish today." }
               ]}
             />
@@ -65,9 +65,9 @@ export function Landing() {
         </p>
       </SessionHero>
 
-      <section aria-label="Choose an agent" className="grid gap-2 sm:grid-cols-2">
+      <section aria-label="Choose an agent" className="grid gap-2 sm:grid-cols-3">
         {lanes.map((lane) => (
-          <ActionTile key={lane.path} as={Link} to={lane.path} icon={lane.icon} title={lane.title} copy={lane.copy} tone={lane.tone} active={lane.path.endsWith(visibleEngine)} />
+          <ActionTile key={lane.path} as={Link} to={lane.path} icon={lane.icon} title={lane.title} copy={lane.copy} tone={lane.tone} active={lane.engine === primaryEngine} />
         ))}
       </section>
 

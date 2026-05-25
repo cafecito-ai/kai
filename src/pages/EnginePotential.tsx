@@ -108,7 +108,7 @@ export function EnginePotential() {
           </div>
         </section>
       </div>
-      <SecondaryShelf eyebrow="more goals reps" title="Discovery, planning, and reframing." summary="Open these when the first goal card is not the right rep." count="3 tools">
+      <SecondaryShelf eyebrow="more goals reps" title="Discovery, planning, and reframing." summary="Open these when the first goal card is not the right rep." count="3 tools" defaultOpen>
         <div className="grid gap-4 lg:grid-cols-3">
           <StrengthsDiscoveryCard onComplete={(summary) => createEntry({ entryType: "strengths_discovery", title: "Strengths summary", payload: { summary }, eventType: "strengths_discovery", eventValue: 60 })} />
           <section className="rounded-kai border border-line bg-white p-5 shadow-sm">

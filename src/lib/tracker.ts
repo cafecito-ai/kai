@@ -2,7 +2,7 @@ import type { ProgressEvent } from "./types";
 
 const ENGINE_LABELS: Record<ProgressEvent["engine"], string> = {
   physical: "Body",
-  potential: "Mental",
+  potential: "Goals",
   mental: "Mental",
   kai: "Kai"
 };
@@ -74,7 +74,7 @@ export function eventDisplayName(event: ProgressEvent): string {
 }
 
 export interface NextLoopRecommendation {
-  lane: "mental" | "physical";
+  lane: "mental" | "physical" | "potential";
   label: string;
   title: string;
   copy: string;
@@ -93,10 +93,21 @@ export function recommendNextLoop(events: ProgressEvent[]): NextLoopRecommendati
   }
 
   const totals = engineTotals(events);
-  const mental = totals.mental + totals.potential;
+  const potential = totals.potential;
+  const mental = totals.mental;
   const physical = totals.physical;
 
-  if (physical < mental) {
+  if (potential < mental && potential < physical && mental >= 20 && physical >= 20) {
+    return {
+      lane: "potential",
+      label: "Make it real",
+      title: "Create one goal rep.",
+      copy: "Pick the next visible move so Kai can connect motivation to action.",
+      to: "/engine/potential"
+    };
+  }
+
+  if (physical < mental && (potential === 0 || physical < potential)) {
     return {
       lane: "physical",
       label: "Balance the loop",
@@ -106,7 +117,7 @@ export function recommendNextLoop(events: ProgressEvent[]): NextLoopRecommendati
     };
   }
 
-  if (mental < physical) {
+  if (mental < physical && (potential === 0 || mental < potential)) {
     return {
       lane: "mental",
       label: "Balance the loop",

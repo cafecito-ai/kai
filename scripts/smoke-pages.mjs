@@ -34,6 +34,13 @@ const guideNames = [
   "Modern teen psychology principles"
 ];
 
+const connectionErrorCopy = [
+  "Sign in again to keep going.",
+  "Kai got a weird response. Try again.",
+  "Connection dropped. You can keep going offline.",
+  "Kai hit a snag. Your progress is safe."
+];
+
 const cases = [
   route("/", ["Kai", "Start today", "Set a goal"], { actionables: ["a[href='/loop']", "a[href='/goal']"] }),
   route("/onboarding", ["Start clean", "Age", "Parent email"], { actionables: ["button", "input"] }),
@@ -51,11 +58,17 @@ const cases = [
   route("/health?module=movement", ["Stretch / move", "Log sleep", exactPhysicalCopy[5], exactPhysicalCopy[7]], {
     actionables: ["button"]
   }),
+  route("/engine/potential", ["Potential and goals", "Make the next move visible", "strengths discovery", "Doing-things guides"], {
+    actionables: ["input", "textarea", "button"]
+  }),
+  route("/potential", ["Potential and goals", "Make the next move visible", "strengths discovery", "Doing-things guides"], {
+    actionables: ["input", "textarea", "button"]
+  }),
   route("/mental", ["Mental agent", "Feelings", "confidence", "never clinical"], { actionables: ["button[role='tab']"] }),
   route("/mental?module=guides", ["Mental agent", "Daniel Siegel", "James Clear", ...guideNames], {
     actionables: ["textarea", "button"]
   }),
-  route("/progress", ["Progress", "mental", "physical"], { actionables: ["a"] }),
+  route("/progress", ["Progress", "mental", "goals", "physical"], { actionables: ["a"] }),
   route("/groups", ["circle", "Friend compare"], { actionables: ["a", "button"] }),
   route("/profile", ["Profile", "Kai"], { actionables: ["a"] }),
   route("/settings", ["Settings", "Kai"], { actionables: ["button"] }),
@@ -115,6 +128,12 @@ async function smokeCase(testCase) {
 
   if (page.title.toLowerCase().includes("404") || /not found/i.test(page.rootText)) {
     throw new Error("page appears to be a not-found fallback");
+  }
+
+  for (const errorCopy of connectionErrorCopy) {
+    if (page.text.includes(errorCopy)) {
+      throw new Error(`app connection error visible: ${JSON.stringify(errorCopy)}`);
+    }
   }
 
   for (const expected of testCase.expectedText) {

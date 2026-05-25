@@ -36,9 +36,9 @@ describe("parseEngineRouting", () => {
 });
 
 describe("keywordRouteEngine", () => {
-  it("routes goal-language to mental because goals now live inside the Mental agent", () => {
+  it("routes goal-language to potential", () => {
     const result = keywordRouteEngine({ q1: "I want to make varsity soccer", q2: "", q3: "", q4: "", q5: "practice more", q6: "7" });
-    expect(result.engine).toBe("mental");
+    expect(result.engine).toBe("potential");
     expect(result.reasoning).toMatch(/goal|skill/i);
   });
 

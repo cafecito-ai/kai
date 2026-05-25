@@ -65,7 +65,7 @@ describe("tracker", () => {
   });
 
   it("formats activity names for teens", () => {
-    expect(eventDisplayName({ id: "1", engine: "potential", eventType: "goal_hit", eventValue: 40, occurredAt: "2026-05-11T00:00:00Z" })).toBe("Mental: goal hit");
+    expect(eventDisplayName({ id: "1", engine: "potential", eventType: "goal_hit", eventValue: 40, occurredAt: "2026-05-11T00:00:00Z" })).toBe("Goals: goal hit");
   });
 
   it("starts empty progress with a mental check-in", () => {
@@ -100,11 +100,24 @@ describe("tracker", () => {
     });
   });
 
-  it("keeps balanced progress in a light reset", () => {
+  it("recommends goals once mind and body both have signal", () => {
     expect(
       recommendNextLoop([
         { id: "1", engine: "physical", eventType: "workout", eventValue: 20, occurredAt: "2026-05-11T00:00:00Z" },
         { id: "2", engine: "mental", eventType: "breath", eventValue: 20, occurredAt: "2026-05-11T00:00:00Z" }
+      ])
+    ).toMatchObject({
+      lane: "potential",
+      to: "/engine/potential"
+    });
+  });
+
+  it("keeps balanced three-engine progress in a light reset", () => {
+    expect(
+      recommendNextLoop([
+        { id: "1", engine: "physical", eventType: "workout", eventValue: 20, occurredAt: "2026-05-11T00:00:00Z" },
+        { id: "2", engine: "mental", eventType: "breath", eventValue: 20, occurredAt: "2026-05-11T00:00:00Z" },
+        { id: "3", engine: "potential", eventType: "goal_hit", eventValue: 20, occurredAt: "2026-05-11T00:00:00Z" }
       ])
     ).toMatchObject({
       lane: "mental",

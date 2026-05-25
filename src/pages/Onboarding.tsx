@@ -83,7 +83,7 @@ const signalCopy: Record<SignalId, { label: string; low: string; mid: string; hi
   social: { label: "Social", low: "Heavy", mid: "Normal", high: "Connected", icon: UsersRound }
 };
 
-const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: "mental" | "physical"; route: string }> = [
+const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: EngineId; route: string }> = [
   { id: "mind", label: "Mind", copy: "Feel less overloaded.", icon: Brain, engine: "mental", route: "/mental?module=checkin" },
   { id: "body", label: "Body scan", copy: "To keep your posture, alignment, and body composition in check.", icon: HeartPulse, engine: "physical", route: "/health?module=scan" },
   { id: "stretch", label: "Stretch / move", copy: "To maintain mobility and prevent injury.", icon: Dumbbell, engine: "physical", route: "/health?module=movement" },
@@ -92,7 +92,7 @@ const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: 
   { id: "food", label: "Log food", copy: "To fuel your workouts correctly.", icon: Utensils, engine: "physical", route: "/health?module=food" },
   { id: "sleep", label: "Log sleep", copy: "To ensure your body is actually recovering from the work.", icon: Moon, engine: "physical", route: "/health?module=movement" },
   { id: "social", label: "Social", copy: "Handle pressure and loneliness.", icon: UsersRound, engine: "mental", route: "/mental?module=checkin" },
-  { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "mental", route: "/mental?module=purpose" }
+  { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "potential", route: "/engine/potential" }
 ];
 
 const steps = ["Gate", "Kai", "Vibe", "Signals", "Mission", "Context", "Reveal"];
@@ -168,7 +168,7 @@ export function Onboarding() {
 
     try {
       const intake = await api.submitIntake(buildIntakeAnswers({ vibes, signals, mission, context, kaiTone }));
-      const routedEngine = intake.suggestedEngine === "potential" ? "mental" : intake.suggestedEngine;
+      const routedEngine = intake.suggestedEngine;
       const engine = selectedMission.engine || routedEngine || primaryEngine;
       await api.updateUser({
         kaiName: kaiName || "Kai",
@@ -221,7 +221,7 @@ export function Onboarding() {
               <div className="mt-5 grid grid-cols-3 gap-2">
                 <CalibrationPill label="Vibes" value={String(vibes.length)} />
                 <CalibrationPill label="Read" value={`${calibration}%`} />
-                <CalibrationPill label="Unit" value={selectedMission.engine === "physical" ? "Body" : "Mind"} />
+                <CalibrationPill label="Unit" value={selectedMission.engine === "physical" ? "Body" : selectedMission.engine === "potential" ? "Goals" : "Mind"} />
               </div>
             </div>
           </aside>

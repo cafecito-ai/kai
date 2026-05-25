@@ -45,9 +45,14 @@ export function Home() {
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const memoryItems = useMemo(() => getKaiMemoryItems(messages), [messages]);
   const liveAction = useMemo(() => (draft.trim() ? inferKaiAction(draft) : nextKaiAction ?? inferKaiAction(lastUserMessage)), [draft, lastUserMessage, nextKaiAction]);
+  const hasKaiContext = Boolean(draft.trim() || lastUserMessage || nextKaiAction);
   const nextMove = useMemo(
-    () => (draft.trim() || lastUserMessage || nextKaiAction ? getKaiControlMove(liveAction) : loopMove),
-    [draft, lastUserMessage, liveAction, loopMove, nextKaiAction]
+    () => (hasKaiContext ? getKaiControlMove(liveAction) : loopMove),
+    [hasKaiContext, liveAction, loopMove]
+  );
+  const homeActions = useMemo(
+    () => getHomeActions(hasKaiContext ? liveAction : null),
+    [hasKaiContext, liveAction]
   );
 
   function submitMessage(event: FormEvent<HTMLFormElement>) {
@@ -110,7 +115,7 @@ export function Home() {
             </div>
           </form>
 
-          {(draft.trim() || lastUserMessage || nextKaiAction) && (
+          {hasKaiContext && (
             <Link
               to={liveAction.route}
               className="focus-ring mt-3 flex w-full max-w-[21.5rem] items-center gap-3 rounded-[22px] border border-white/10 bg-white/10 p-3 text-left backdrop-blur-xl transition hover:-translate-y-0.5 sm:max-w-none"
@@ -195,7 +200,7 @@ export function Home() {
       </section>
 
       <section className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        {topKaiActions().slice(0, 3).map((action) => (
+        {homeActions.map((action, index) => (
           <Link
             key={action.id}
             to={action.route}
@@ -205,6 +210,7 @@ export function Home() {
               <action.icon size={19} aria-hidden="true" />
             </span>
             <span className="min-w-0">
+              {index === 0 && hasKaiContext && <span className="mb-1 block text-[10px] font-black uppercase tracking-wider text-muted">Kai's read</span>}
               <span className="block text-base font-black leading-tight text-ink">{action.label}</span>
               <span className="mt-1 block text-sm font-semibold leading-5 text-muted">{action.reason}</span>
             </span>
@@ -238,6 +244,12 @@ function getKaiControlMove(action: KaiAction): HomeMove {
     meta: action.shortLabel,
     secondaryMeta: "open the move"
   };
+}
+
+function getHomeActions(primaryAction: KaiAction | null): KaiAction[] {
+  const baseActions = topKaiActions();
+  if (!primaryAction) return baseActions.slice(0, 3);
+  return [primaryAction, ...baseActions.filter((action) => action.id !== primaryAction.id)].slice(0, 3);
 }
 
 function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]): HomeMove {

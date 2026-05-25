@@ -11,7 +11,15 @@ import { KaiMark } from "../ui/AppPrimitives";
 
 type KaiChatMode = "default" | "mental";
 
-export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boolean; mode?: KaiChatMode }) {
+export function KaiChat({
+  embedded = false,
+  mode = "default",
+  onOpenAction
+}: {
+  embedded?: boolean;
+  mode?: KaiChatMode;
+  onOpenAction?: () => void;
+}) {
   const chatEngine = mode === "mental" ? "mental" : "kai";
   const messages = useKaiStore((state) => state.chats[chatEngine].messages);
   const nextAction = useKaiStore((state) => state.chats[chatEngine].nextAction);
@@ -68,11 +76,6 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
       event.preventDefault();
       void sendDraft();
     }
-  }
-
-  function applySuggestion(prompt: string) {
-    setDraft(prompt);
-    requestAnimationFrame(() => inputRef.current?.focus());
   }
 
   function sendSuggestion(prompt: string) {
@@ -144,6 +147,7 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
         {nextAction && !sending && (
           <Link
             to={nextAction.route}
+            onClick={onOpenAction}
             className="focus-ring ml-auto block max-w-[94%] rounded-[22px] bg-[#111116] px-4 py-3 text-left text-white shadow-sm transition hover:-translate-y-0.5"
           >
             <span className="flex items-start gap-3">
@@ -167,9 +171,8 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
           <button
             key={item.label}
             type="button"
-            onClick={() => applySuggestion(item.prompt)}
-            onDoubleClick={() => sendSuggestion(item.prompt)}
-            aria-label={`Use "${item.prompt}" as your message`}
+            onClick={() => sendSuggestion(item.prompt)}
+            aria-label={`Ask Kai: ${item.prompt}`}
             className="focus-ring inline-flex shrink-0 items-center gap-2 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-muted hover:bg-white hover:text-ink"
           >
             <Icon size={14} aria-hidden="true" />

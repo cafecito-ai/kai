@@ -200,7 +200,7 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
             <X size={18} aria-hidden="true" />
           </button>
         </div>
-        <KaiChat embedded />
+        <KaiChat embedded onOpenAction={onClose} />
       </div>
     </div>
   );

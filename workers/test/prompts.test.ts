@@ -91,6 +91,14 @@ describe("renderKaiSystemPrompt", () => {
     expect(result).toContain("Do not ask more than one question");
   });
 
+  it("frames chat as the control layer for opening the right move", () => {
+    const result = renderKaiSystemPrompt(baseContext());
+    expect(result).toContain("CHAT AS CONTROL LAYER");
+    expect(result).toContain("If their intent is clear, do not stall with \"tell me more\"");
+    expect(result).toContain("posture/alignment -> private body scan");
+    expect(result).toContain("procrastinating/school -> goal move");
+  });
+
   it("marks stored profile and intake values as untrusted data, not instructions", () => {
     const result = renderKaiSystemPrompt(
       baseContext({

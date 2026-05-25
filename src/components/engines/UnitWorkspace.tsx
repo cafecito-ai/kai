@@ -9,6 +9,8 @@ export interface UnitModule {
   summary: string;
   icon: ElementType;
   content: ReactNode;
+  aliases?: string[];
+  actionAliases?: string[];
 }
 
 export function UnitWorkspace({
@@ -27,7 +29,14 @@ export function UnitWorkspace({
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get("module");
   const action = searchParams.get("action");
-  const active = modules.find((module) => module.id === requested) ?? modules[0];
+  const active =
+    modules.find((module) => module.id === requested) ??
+    modules.find((module) => {
+      if (!requested || !module.aliases?.includes(requested)) return false;
+      if (!action || !module.actionAliases?.length) return true;
+      return module.actionAliases.includes(action);
+    }) ??
+    modules[0];
   const tabModules = [active, ...modules.filter((module) => module.id !== active.id)];
   const isPhysical = tone === "physical";
   const HeaderIcon = isPhysical ? HeartPulse : Brain;
@@ -150,8 +159,8 @@ function getKaiOpenedCopy(tone: "mental" | "physical", moduleId: string, action:
   if (tone === "physical") {
     if (moduleId === "food") return "Fuel is the move. Add the photo or the rough note, then Kai can use it without turning food into a score.";
     if (moduleId === "scan") return "This is a private posture and recovery check. No body score, no comparison, no performance pressure.";
-    if (moduleId === "movement" && action === "sleep") return "Recovery is the move. Log sleep honestly, then keep tonight simple.";
-    if (moduleId === "movement" && action === "stretch") return "Your body is asking for a reset. Pick a small stretch or movement rep and let that count.";
+    if (moduleId === "sleep" || (moduleId === "movement" && action === "sleep")) return "Recovery is the move. Log sleep honestly, then keep tonight simple.";
+    if (moduleId === "stretch" || (moduleId === "movement" && action === "stretch")) return "Your body is asking for a reset. Pick a small stretch or movement rep and let that count.";
     if (moduleId === "movement") return "Movement and sleep both count here. Save the honest body signal, then Kai can choose the next recovery move.";
     if (moduleId === "guides") return "Use this when Kai needs to explain the body side without turning it into pressure or body comparison.";
     if (moduleId === "history") return "This is the private body memory Kai uses: food, scan, movement, sleep, and recovery reps.";

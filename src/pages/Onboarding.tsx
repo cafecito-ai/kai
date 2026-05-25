@@ -110,11 +110,11 @@ const signalCopy: Record<SignalId, { label: string; low: string; mid: string; hi
 const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: EngineId; route: string }> = [
   { id: "mind", label: "Mind", copy: "Feel less overloaded.", icon: Brain, engine: "mental", route: "/mental?module=checkin" },
   { id: "body", label: "Body scan", copy: "To keep your posture, alignment, and body composition in check.", icon: HeartPulse, engine: "physical", route: "/health?module=scan" },
-  { id: "stretch", label: "Stretch / move", copy: "To maintain mobility and prevent injury.", icon: Dumbbell, engine: "physical", route: "/health?module=movement" },
+  { id: "stretch", label: "Stretch / move", copy: "To maintain mobility and prevent injury.", icon: Dumbbell, engine: "physical", route: "/health?module=stretch&action=stretch" },
   { id: "confidence", label: "Confidence", copy: "Stop shrinking yourself.", icon: Sparkles, engine: "mental", route: "/mental?module=purpose" },
   { id: "discipline", label: "Discipline", copy: "Build systems, not hype.", icon: Target, engine: "mental", route: "/mental?module=purpose" },
   { id: "food", label: "Log food", copy: "To fuel your workouts correctly.", icon: Utensils, engine: "physical", route: "/health?module=food" },
-  { id: "sleep", label: "Log sleep", copy: "To ensure your body is actually recovering from the work.", icon: Moon, engine: "physical", route: "/health?module=movement" },
+  { id: "sleep", label: "Log sleep", copy: "To ensure your body is actually recovering from the work.", icon: Moon, engine: "physical", route: "/health?module=sleep&action=sleep" },
   { id: "social", label: "Social", copy: "Handle pressure and loneliness.", icon: UsersRound, engine: "mental", route: "/mental?module=checkin" },
   { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "potential", route: "/engine/potential" }
 ];

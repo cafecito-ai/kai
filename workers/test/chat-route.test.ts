@@ -25,7 +25,7 @@ describe("chat routes", () => {
     const body = (await res.json()) as { conversationId: string; message: { content: string }; nextAction: { id: string; route: string } };
     expect(body.conversationId).toBe("kai-conv");
     expect(body.message.content).toBe("Log sleep saved. Recovery is logged. Protect tonight before adding more effort.");
-    expect(body.nextAction).toMatchObject({ id: "sleep", route: "/health?module=movement&action=sleep" });
+    expect(body.nextAction).toMatchObject({ id: "sleep", route: "/health?module=sleep&action=sleep" });
 
     const messageInsert = statements.find((statement) => statement.sql.includes("INSERT INTO messages"));
     expect(messageInsert?.values[2]).toBe("assistant");

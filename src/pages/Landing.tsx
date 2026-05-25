@@ -75,7 +75,7 @@ export function Landing() {
         {physicalActions.map((action) => {
           const Icon = action.icon;
           return (
-            <Link key={action.title} to={action.title === "Body scan" ? "/health?module=scan" : action.title === "Stretch / move" || action.title === "Log sleep" ? "/health?module=movement" : "/health?module=food"} className="focus-ring rounded-[24px] border border-line bg-white p-4 shadow-sm">
+            <Link key={action.title} to={action.title === "Body scan" ? "/health?module=scan&action=scan" : action.title === "Stretch / move" ? "/health?module=stretch&action=stretch" : action.title === "Log sleep" ? "/health?module=sleep&action=sleep" : "/health?module=food&action=food"} className="focus-ring rounded-[24px] border border-line bg-white p-4 shadow-sm">
               <div className="grid size-10 place-items-center rounded-full bg-bodyWash text-body">
                 <Icon size={18} aria-hidden="true" />
               </div>

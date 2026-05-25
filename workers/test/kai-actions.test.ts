@@ -14,7 +14,7 @@ describe("inferKaiNextAction", () => {
     expect(inferKaiNextAction("I am wired and exhausted and need sleep")).toMatchObject({
       id: "sleep",
       label: "Protect sleep",
-      route: "/health?module=movement&action=sleep"
+      route: "/health?module=sleep&action=sleep"
     });
   });
 

@@ -50,7 +50,7 @@ const cases = [
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
   route("/loop", ["One clean loop.", "Body", "mind", "goal"], { actionables: ["button"] }),
   route("/health", ["Take care of your body", "Body moves", ...exactPhysicalCopy], {
-    actionables: ["button[role='tab']", "a[href='/health?module=food&action=food']", "a[href='/health?module=scan&action=scan']", "a[href='/health?module=movement&action=stretch']", "a[href='/health?module=movement&action=sleep']"]
+    actionables: ["button[role='tab']", "a[href='/health?module=food&action=food']", "a[href='/health?module=scan&action=scan']", "a[href='/health?module=stretch&action=stretch']", "a[href='/health?module=sleep&action=sleep']"]
   }),
   route("/health?module=food", ["Take care of your body", "Take or choose a food photo", ...exactPhysicalCopy.slice(0, 2)], {
     actionables: ["textarea", "input[type='file'][accept='image/*']", "button"],
@@ -60,7 +60,10 @@ const cases = [
     actionables: ["input[type='file'][accept='image/*']", "button"],
     forbiddenSelectors: ["input[type='file'][capture]"]
   }),
-  route("/health?module=movement", ["Stretch / move", "Log sleep", exactPhysicalCopy[5], exactPhysicalCopy[7]], {
+  route("/health?module=stretch&action=stretch", ["Stretch / move", exactPhysicalCopy[5]], {
+    actionables: ["button"]
+  }),
+  route("/health?module=sleep&action=sleep", ["Log sleep", exactPhysicalCopy[7]], {
     actionables: ["button"]
   }),
   route("/engine/potential", ["Potential and goals", "Make the next move visible", "strengths discovery", "Doing-things guides"], {

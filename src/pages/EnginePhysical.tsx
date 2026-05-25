@@ -255,8 +255,8 @@ export function EnginePhysical() {
       summary: "Photo + fuel",
       icon: Camera,
       content: (
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="min-w-0 rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
             <p className="eyebrow text-soft">Log food</p>
             <h2 className="mt-3 max-w-[10ch] font-display text-4xl font-black leading-none tracking-normal sm:max-w-xl">Log food</h2>
             <p className="mt-3 max-w-[17rem] text-sm font-medium leading-6 text-paper/70 sm:max-w-xl">To fuel your workouts correctly. Snap it, name it, move on.</p>
@@ -300,7 +300,7 @@ export function EnginePhysical() {
                 </button>
               ))}
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-2 min-[380px]:grid-cols-3">
               {foodExamples.map((example) => (
                 <button key={example.title} type="button" onClick={() => setMeal(example.note)} className="focus-ring overflow-hidden rounded-kai border border-white/15 bg-white/10 text-left">
                   <img src="/images/food-photo-examples.png" alt={example.title} className={`h-20 w-full object-cover ${example.position}`} />
@@ -319,15 +319,15 @@ export function EnginePhysical() {
             </div>
             {foodPhotoResult && <FoodPhotoResultCard result={foodPhotoResult} mealContext={mealContext} />}
           </section>
-          <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
+          <section className="min-w-0 rounded-[24px] border border-line bg-white p-5 shadow-sm">
             <p className="eyebrow">physical loop</p>
             <h2 className="mt-2 font-display text-2xl font-black leading-none tracking-normal">Fuel, scan, stretch, sleep.</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-muted">Kai keeps context, patterns, and guardrails behind the first rep.</p>
             <div className="mt-4 grid gap-3">
               <PhysicalModule to="/health?module=food&action=food" icon={<Utensils />} title="Log food" copy="To fuel your workouts correctly." />
               <PhysicalModule to="/health?module=scan&action=scan" icon={<Camera />} title="Body scan" copy="To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely." />
-              <PhysicalModule to="/health?module=movement&action=stretch" icon={<Wind />} title="Stretch / move" copy="To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." />
-              <PhysicalModule to="/health?module=movement&action=sleep" icon={<Moon />} title="Log sleep" copy="To ensure your body is actually recovering from the work." />
+              <PhysicalModule to="/health?module=stretch&action=stretch" icon={<Wind />} title="Stretch / move" copy="To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." />
+              <PhysicalModule to="/health?module=sleep&action=sleep" icon={<Moon />} title="Log sleep" copy="To ensure your body is actually recovering from the work." />
             </div>
             <PhysicalHistoryPanel title="Saved fuel" kind="food" items={foodHistory} />
           </section>
@@ -335,13 +335,15 @@ export function EnginePhysical() {
       )
     },
     {
-      id: "movement",
+      id: "stretch",
       label: "Stretch / move",
       summary: "Mobility + form",
       icon: Dumbbell,
+      aliases: ["movement"],
+      actionAliases: ["stretch"],
       content: (
-        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-          <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
+        <div className="grid min-w-0 gap-4">
+          <section className="min-w-0 rounded-[24px] border border-line bg-white p-5 shadow-sm">
             <div className="mb-4 grid size-11 place-items-center rounded-full bg-lime text-sage"><Dumbbell /></div>
             <p className="eyebrow">Stretch / move</p>
             <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Tell Kai what your body needs.</h2>
@@ -365,8 +367,19 @@ export function EnginePhysical() {
             {lastMovement && <SavedSignal entry={lastMovement} />}
             <PhysicalHistoryPanel title="Movement history" kind="movement" items={movementHistory} />
           </section>
-
-          <section className="rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm">
+        </div>
+      )
+    },
+    {
+      id: "sleep",
+      label: "Log sleep",
+      summary: "Recovery",
+      icon: Moon,
+      aliases: ["movement"],
+      actionAliases: ["sleep"],
+      content: (
+        <div className="grid min-w-0 gap-4">
+          <section className="min-w-0 rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm">
             <div className="mb-4 grid size-11 place-items-center rounded-full bg-white/10 text-paper"><Moon /></div>
             <p className="eyebrow text-soft">Log sleep</p>
             <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Recovery is the base layer.</h2>
@@ -537,10 +550,10 @@ function physicalCompletionSummary(entryType: string, payload: unknown) {
 
 function PhysicalModule({ to, icon, title, copy }: { to: string; icon: React.ReactNode; title: string; copy: string }) {
   return (
-    <Link to={to} className="focus-ring block rounded-kai border border-line bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-ink/25">
+    <Link to={to} className="focus-ring block min-w-0 rounded-kai border border-line bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-ink/25">
       <div className="mb-3 text-sage">{icon}</div>
-      <h3 className="font-display text-xl font-black tracking-normal">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
+      <h3 className="break-words font-display text-xl font-black tracking-normal">{title}</h3>
+      <p className="mt-2 break-words text-sm leading-6 text-muted">{copy}</p>
     </Link>
   );
 }

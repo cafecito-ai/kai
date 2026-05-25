@@ -12,7 +12,7 @@ describe("kai action routing", () => {
   it("routes tired recovery language to sleep", () => {
     expect(inferKaiAction("I feel wired and exhausted and need better sleep")).toMatchObject({
       id: "sleep",
-      route: "/health?module=movement&action=sleep"
+      route: "/health?module=sleep&action=sleep"
     });
   });
 
@@ -33,7 +33,7 @@ describe("kai action routing", () => {
   it("keeps soreness and tightness on stretch", () => {
     expect(inferKaiAction("My hips are tight and my back hurts")).toMatchObject({
       id: "stretch",
-      route: "/health?module=movement&action=stretch"
+      route: "/health?module=stretch&action=stretch"
     });
   });
 

@@ -13,6 +13,7 @@
     "check": "npm run build && npm run worker:typecheck",
     "lint": "eslint .",
     "smoke:api": "node scripts/smoke-api.mjs",
+    "qa:chat": "node scripts/qa-chat.mjs",
     "smoke:deploy": "node scripts/smoke-deploy.mjs",
     "smoke:pages": "node scripts/smoke-pages.mjs",
     "smoke:staging": "SMOKE_BASE_URL=https://staging.kai-epk.pages.dev node scripts/smoke-pages.mjs",

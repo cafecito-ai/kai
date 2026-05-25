@@ -293,7 +293,7 @@ export function EnginePhysical() {
     {
       id: "food",
       label: "Food",
-      summary: "Photo + fuel",
+      summary: "Photo read",
       icon: Camera,
       content: (
         <div className="grid min-w-0 gap-3 lg:grid-cols-[1.1fr_0.9fr]">
@@ -301,8 +301,8 @@ export function EnginePhysical() {
             <p className="eyebrow text-soft">Log food</p>
             <div className="mt-2 flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="font-display text-3xl font-black leading-none tracking-normal sm:text-4xl">Fuel check</h2>
-                <p className="mt-2 max-w-[19rem] text-sm font-medium leading-6 text-paper/70 sm:max-w-xl">To fuel your workouts correctly. Add the photo; Kai reads it right away.</p>
+                <h2 className="font-display text-[2rem] font-black leading-none tracking-normal sm:text-4xl">Fuel check</h2>
+                <p className="mt-2 max-w-[19rem] text-sm font-medium leading-6 text-paper/70 sm:max-w-xl">To fuel your workouts correctly. Add a food photo and Kai processes it right away.</p>
               </div>
               {saving === "food_photo_upload" && (
                 <span className="shrink-0 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-paper/75">
@@ -317,8 +317,8 @@ export function EnginePhysical() {
                   <Camera size={20} aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-black">{saving === "food_photo_upload" ? "Kai is processing this photo" : foodPhoto ? "Photo ready" : "Add a food photo"}</span>
-                  <span className="mt-1 block break-words text-xs font-semibold leading-5 text-paper/55">{foodPhoto ? foodPhoto.name : "Take one or choose one. It uploads and analyzes automatically."}</span>
+                  <span className="block text-sm font-black">{saving === "food_photo_upload" ? "Kai is processing this photo" : foodPhoto ? "Photo selected" : "Add a food photo"}</span>
+                  <span className="mt-1 block break-words text-xs font-semibold leading-5 text-paper/55">{foodPhoto ? foodPhoto.name : "Tap here. Camera or library opens, then Kai analyzes it automatically."}</span>
                 </span>
                 <span className="hidden rounded-full bg-white px-3 py-2 text-xs font-black text-ink min-[360px]:inline-flex">
                   {foodPhoto ? "Change" : "Open"}
@@ -342,6 +342,14 @@ export function EnginePhysical() {
               />
             </label>
             {foodPhotoMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodPhotoMessage}</p>}
+            {saving === "food_photo_upload" && (
+              <div className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3">
+                <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                  <span className="block h-full w-2/3 rounded-full bg-white motion-safe:animate-pulse" />
+                </div>
+                <p className="mt-2 text-xs font-black uppercase tracking-wider text-paper/60">Uploading, reading, saving</p>
+              </div>
+            )}
             <label className="mt-4 block text-xs font-black uppercase tracking-wider text-paper/45">
               Quick note
               <textarea className="field mt-2 min-h-16 border-white/10 bg-white/10 text-paper placeholder:text-paper/50 sm:min-h-20" value={meal} onChange={(event) => setMeal(event.target.value)} />
@@ -364,7 +372,7 @@ export function EnginePhysical() {
             <div className="mt-4 grid gap-2 min-[390px]:grid-cols-2">
               <Button disabled={saving === "meal_log"} onClick={() => void logMeal("meal_log")}>{saving === "meal_log" ? "Logging" : "Save note"}</Button>
               <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={!foodPhoto || saving === "food_photo_upload"} onClick={() => void uploadFoodPhoto()}>
-                {saving === "food_photo_upload" ? "Processing photo" : foodPhoto ? "Process photo" : "Photo auto-processes"}
+                {saving === "food_photo_upload" ? "Processing" : foodPhoto ? "Process again" : "Tap photo above"}
               </Button>
               <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50 min-[390px]:col-span-2" disabled={saving === "food_example"} onClick={() => void logMeal("food_example")}>
                 Use example note
@@ -390,7 +398,7 @@ export function EnginePhysical() {
     {
       id: "stretch",
       label: "Stretch / move",
-      summary: "Mobility + form",
+      summary: "Move well",
       icon: Dumbbell,
       aliases: ["movement"],
       actionAliases: ["stretch"],
@@ -426,7 +434,7 @@ export function EnginePhysical() {
     {
       id: "sleep",
       label: "Log sleep",
-      summary: "Recovery",
+      summary: "Recover",
       icon: Moon,
       aliases: ["movement"],
       actionAliases: ["sleep"],
@@ -475,12 +483,12 @@ export function EnginePhysical() {
       summary: "Private beta",
       icon: ScanLine,
       content: (
-        <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm sm:p-6">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="min-w-0 rounded-[24px] border border-line bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 grid size-12 place-items-center rounded-full bg-bodyWash text-body"><ScanLine /></div>
             <p className="eyebrow">Body scan</p>
-            <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Body scan</h2>
-            <p className="mt-3 text-sm font-semibold leading-6 text-muted">To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely.</p>
+            <h2 className="mt-2 break-words font-display text-[2rem] font-black leading-none tracking-normal sm:text-3xl">Body scan</h2>
+            <p className="mt-3 max-w-[19rem] break-words text-sm font-semibold leading-6 text-muted sm:max-w-2xl">To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely.</p>
             <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-line bg-paper p-3 text-sm font-black text-ink hover:border-ink/35">
               <Camera size={18} aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">{bodyScanPhoto ? bodyScanPhoto.name : "Take or choose a private scan photo"}</span>
@@ -510,7 +518,7 @@ export function EnginePhysical() {
             <PhysicalHistoryPanel title="Private scan history" kind="scan" items={scanHistory} />
             <BodyScanTimeline items={scanHistory} />
           </section>
-          <section className="rounded-[24px] border border-line bg-warmPaper p-5 shadow-sm sm:p-6">
+          <section className="min-w-0 rounded-[24px] border border-line bg-warmPaper p-5 shadow-sm sm:p-6">
             <p className="eyebrow">what Kai can say</p>
             <h3 className="mt-2 font-display text-2xl font-black tracking-normal">Supportive read, not a diagnosis.</h3>
             <div className="mt-4 space-y-3">
@@ -527,6 +535,7 @@ export function EnginePhysical() {
       label: "Guides",
       summary: "Kai explains",
       icon: BookOpen,
+      hideOnMobileTabs: true,
       content: <EngineGuidesIndex engine="physical" title="Body context Kai can explain" intro="Short reads on sleep, fuel, body literacy, and harder topics. Kai should pull these into chat when they help the next rep make sense." />
     },
     {
@@ -534,6 +543,7 @@ export function EnginePhysical() {
       label: "History",
       summary: `${entries.length} saved`,
       icon: History,
+      hideOnMobileTabs: true,
       content: (
         <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
           <p className="eyebrow">Kai remembers</p>

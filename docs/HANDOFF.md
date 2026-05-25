@@ -26,6 +26,7 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Kai chat persists by engine and hydrates recent conversation history.
 - Kai Worker prompts include structured onboarding answers and recent conversation turns as untrusted personalization context.
 - Kai Worker prompts include bounded summaries of recent saved body, mind, and goal reps, so generated replies can reference food, sleep, movement, recovery, private scan, emotional pattern, social boundary, confidence, and goal context when relevant.
+- Chat QA covers teen-like staging conversations for routing and memory-tone regressions.
 - Worker chat returns structured `nextAction` data for Kai and engine conversations.
 - Frontend and Worker both route intent to:
   - Talk it out
@@ -90,6 +91,7 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Surfaced recent conversation and tool-completion context as `Kai remembers`.
 - Added structured onboarding context and recent turns to the Worker chat prompt.
 - Added recent body, mind, and goal reps to the Worker chat prompt as untrusted context.
+- Added a repeatable staging chat QA harness for sleep, food, scan, confidence, social pressure, screen reset, and goal-routing scenarios.
 - Added private physical and mental history panels inside tool surfaces.
 - Reworked Goals, Loop, and Goals list so goal reps feel carried by Kai.
 - Hardened mobile smoke coverage for all key pages and focused action deep links.
@@ -109,6 +111,8 @@ Most recent verified surface: stable staging alias `https://staging.kai-epk.page
   - `SMOKE_BASE_URL=http://127.0.0.1:4181 npm run smoke:pages`
 - Staging mobile smoke:
   - `npm run smoke:staging`
+- Staging chat QA:
+  - `npm run qa:chat`
 - GitHub Actions CI on PR #84: passing
 - 390px CDP screenshots/metrics captured for:
   - Home
@@ -194,6 +198,12 @@ npx wrangler pages deploy dist --project-name=kai --branch=staging --commit-hash
 
 ```bash
 npm run smoke:staging
+```
+
+- Staging chat QA is:
+
+```bash
+npm run qa:chat
 ```
 
 - Full local app smoke is:

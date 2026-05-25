@@ -82,11 +82,13 @@ describe("renderKaiSystemPrompt", () => {
   it("sets a memory style that feels natural instead of surveillant", () => {
     const result = renderKaiSystemPrompt(baseContext());
     expect(result).toContain("MEMORY STYLE");
+    expect(result).toContain("Normal replies should be 45-90 words");
     expect(result).toContain("Use at most one relevant saved fact");
     expect(result).toContain("Do not list their history");
     expect(result).toContain("Never make it feel like surveillance");
     expect(result).toContain("You only know what they saved or told Kai");
     expect(result).toContain("Always end with one doable next move or one clear question");
+    expect(result).toContain("Do not ask more than one question");
   });
 
   it("marks stored profile and intake values as untrusted data, not instructions", () => {

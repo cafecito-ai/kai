@@ -126,7 +126,8 @@ function route(pathname, expectedText, options = {}) {
     expectedText,
     actionables: options.actionables || [],
     forbiddenSelectors: options.forbiddenSelectors || [],
-    optional: Boolean(options.optional)
+    optional: Boolean(options.optional),
+    foodPhotoUpload: Boolean(options.foodPhotoUpload)
   };
 }
 

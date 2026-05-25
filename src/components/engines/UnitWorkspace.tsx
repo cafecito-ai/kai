@@ -11,6 +11,7 @@ export interface UnitModule {
   content: ReactNode;
   aliases?: string[];
   actionAliases?: string[];
+  hideOnMobileTabs?: boolean;
 }
 
 export function UnitWorkspace({
@@ -56,9 +57,9 @@ export function UnitWorkspace({
 
   return (
     <AppPage className="engine-page-shell gap-3 pb-28 sm:gap-6 sm:pb-12">
-      <section className={`min-w-0 overflow-hidden rounded-[26px] border border-[#0A0A0A0F] bg-gradient-to-br ${wash} p-4 shadow-[0_2px_4px_rgba(10,10,10,0.04),0_16px_40px_rgba(10,10,10,0.08)] sm:rounded-[30px] sm:p-7`}>
+      <section className={`min-w-0 overflow-hidden rounded-[24px] border border-[#0A0A0A0F] bg-gradient-to-br ${wash} p-3 shadow-[0_2px_4px_rgba(10,10,10,0.04),0_16px_40px_rgba(10,10,10,0.08)] sm:rounded-[30px] sm:p-7`}>
         <div className="flex items-center justify-between gap-3">
-          <Link to="/home" className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full bg-white/75 px-3 text-sm font-black text-[#1A1A1F] shadow-sm">
+          <Link to="/home" className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-full bg-white/75 px-3 text-sm font-black text-[#1A1A1F] shadow-sm sm:min-h-10">
             <ArrowLeft size={16} aria-hidden="true" />
             Home
           </Link>
@@ -66,11 +67,11 @@ export function UnitWorkspace({
         </div>
         <div className="mt-4 grid gap-5 sm:mt-7 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end">
           <div className="min-w-0">
-            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">{label}</p>
-            <h1 className="mt-2 max-w-[13ch] break-words font-display text-[1.8rem] font-semibold leading-[0.98] tracking-normal text-[#111116] sm:mt-3 sm:max-w-3xl sm:text-6xl">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.28em] text-[#8A8A8F] sm:text-[11px] sm:tracking-[0.32em]">{label}</p>
+            <h1 className="mt-2 max-w-[13ch] break-words font-display text-[1.55rem] font-semibold leading-[0.98] tracking-normal text-[#111116] min-[390px]:text-[1.7rem] sm:mt-3 sm:max-w-3xl sm:text-6xl">
               {title}
             </h1>
-            <p className="mt-2 max-w-full break-words text-sm font-medium leading-6 text-[#5E5E64] sm:mt-4 sm:max-w-2xl sm:text-base sm:leading-7">{intro}</p>
+            <p className="mt-1.5 max-w-full break-words text-[13px] font-medium leading-5 text-[#5E5E64] sm:mt-4 sm:max-w-2xl sm:text-base sm:leading-7">{intro}</p>
           </div>
           <div className="hidden rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-sm sm:block">
             <div className={`grid size-11 place-items-center rounded-full bg-white ${iconTone}`}>
@@ -87,7 +88,7 @@ export function UnitWorkspace({
       </section>
 
       <section className="rounded-[24px] border border-[#0A0A0A0F] bg-white/80 p-2 shadow-sm backdrop-blur-xl sm:rounded-[30px] sm:p-3">
-        <div className="grid auto-cols-[minmax(7.75rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-1 sm:auto-cols-auto" role="tablist" aria-label={`${title} moves`}>
+        <div className="grid grid-cols-2 gap-2 sm:grid-flow-col sm:auto-cols-[minmax(8.5rem,1fr)] sm:grid-cols-none sm:overflow-x-auto sm:pb-1" role="tablist" aria-label={`${title} moves`}>
           {tabModules.map((module) => {
             const Icon = module.icon;
             const selected = module.id === active.id;
@@ -97,14 +98,14 @@ export function UnitWorkspace({
                 role="tab"
                 aria-selected={selected}
                 to={moduleSearch(module.id)}
-                className={`focus-ring flex min-w-0 items-center gap-2 rounded-[19px] border px-3 py-2.5 text-left transition sm:min-w-[8.5rem] sm:py-3 ${
+                className={`focus-ring flex min-h-[3.5rem] min-w-0 items-center gap-2 rounded-[19px] border px-3 py-2 text-left transition sm:min-h-[4.25rem] sm:min-w-[8.5rem] sm:py-3 ${module.hideOnMobileTabs && !selected ? "hidden sm:flex" : ""} ${
                   selected ? "border-[#1A1A1F] bg-[#1A1A1F] text-white shadow-sm" : "border-[#0A0A0A0F] bg-[#FAFAF7] text-[#1A1A1F]"
                 }`}
               >
                 <Icon className="shrink-0" size={16} aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block whitespace-normal text-[13px] font-black leading-tight sm:text-sm">{module.label}</span>
-                  <span className={`mt-0.5 hidden text-xs font-semibold min-[420px]:block ${selected ? "text-white/65" : "text-[#8A8A8F]"}`}>{module.summary}</span>
+                  <span className={`mt-0.5 hidden text-[11px] font-semibold leading-tight min-[390px]:block ${selected ? "text-white/65" : "text-[#8A8A8F]"}`}>{module.summary}</span>
                 </span>
               </Link>
             );

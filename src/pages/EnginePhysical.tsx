@@ -178,12 +178,14 @@ export function EnginePhysical() {
     }
   }
 
-  async function saveBodyScanPreview() {
+  async function saveBodyScanPreview(selectedPhoto?: File | null) {
     setBodyScanSaved(false);
     setBodyScanMessage("");
+    const photo = selectedPhoto ?? bodyScanPhoto;
     setSaving("body_scan");
+    setBodyScanMessage(photo ? "Photo selected. Kai is checking posture and recovery now." : "Kai is saving a private scan preview.");
     try {
-      const result = await api.uploadBodyScan(bodyScanPhoto);
+      const result = await api.uploadBodyScan(photo);
       setEntries((items) => [result.entry, ...items].slice(0, 8));
       addEvent({ engine: "physical", eventType: "body_scan", eventValue: 22, payload: { scanId: result.scan.id, hasPhoto: Boolean(result.scan.r2Key) } });
       rememberToolCompletion({
@@ -199,7 +201,7 @@ export function EnginePhysical() {
         entryType: "body_scan_preview",
         title: "Private body scan preview",
         payload: {
-          hasPhoto: Boolean(bodyScanPhoto),
+          hasPhoto: Boolean(photo),
           mode: "private_preview",
           focus: ["posture", "mobility", "readiness", "confidence"],
           guardrails: ["no body score", "no comparison", "no attractiveness rating", "teen-safe framing"]
@@ -416,7 +418,18 @@ export function EnginePhysical() {
             <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-line bg-paper p-3 text-sm font-black text-ink hover:border-ink/35">
               <Camera size={18} aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">{bodyScanPhoto ? bodyScanPhoto.name : "Take or choose a private scan photo"}</span>
-              <input className="sr-only" type="file" accept="image/*" onChange={(event) => { setBodyScanSaved(false); setBodyScanPhoto(event.target.files?.[0] ?? null); }} />
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const nextPhoto = event.target.files?.[0] ?? null;
+                  setBodyScanSaved(false);
+                  setBodyScanPhoto(nextPhoto);
+                  if (nextPhoto) void saveBodyScanPreview(nextPhoto);
+                  event.currentTarget.value = "";
+                }}
+              />
             </label>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <BodyScanPrinciple icon={<Lock />} title="Private by default" copy="The teen controls whether a scan is saved. No social sharing." />
@@ -424,9 +437,9 @@ export function EnginePhysical() {
               <BodyScanPrinciple icon={<Eye />} title="Pattern view" copy="Progress means posture, comfort, recovery, and confidence over time." />
               <BodyScanPrinciple icon={<Wind />} title="Next move" copy="Suggestions stay practical: stretch, breathe, recover, hydrate, adjust form." />
             </div>
-            {bodyScanSaved && <p className="mt-4 rounded-kai border border-sage/25 bg-bodyWash p-3 text-sm font-black text-body">{bodyScanMessage || "Private body scan saved."}</p>}
+            {bodyScanMessage && <p className="mt-4 rounded-kai border border-sage/25 bg-bodyWash p-3 text-sm font-black text-body">{bodyScanMessage}</p>}
             <Button className="mt-4" variant="secondary" disabled={saving === "body_scan"} onClick={() => void saveBodyScanPreview()}>
-              {saving === "body_scan" ? "Saving scan" : "Save private body scan"}
+              {saving === "body_scan" ? "Saving scan" : bodyScanSaved ? "Run scan again" : "Save private body scan"}
             </Button>
             <PhysicalHistoryPanel title="Private scan history" kind="scan" items={scanHistory} />
           </section>

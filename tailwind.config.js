@@ -28,6 +28,7 @@ export default {
         resetWash: "#FFE8DD",
         care: "#5B47F0",
         careWash: "#EEEAFF",
+        plumWash: "#EEEAFF",
         sage: "#2D7A3E",
         sky: "#5B47F0",
         coral: "#FF6B45",

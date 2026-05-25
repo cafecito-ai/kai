@@ -7,7 +7,7 @@ import { AppPage, AppSurface, KaiPageHero } from "../components/ui/AppPrimitives
 export function Groups() {
   return (
     <AppPage className="utility-page-shell pb-28 sm:pb-12">
-      <KaiPageHero eyebrow="Kai · circle" title="Support without oversharing.">
+      <KaiPageHero eyebrow="Kai · circle" title="Backup without oversharing.">
         A circle should feel like backup, not surveillance. Kai keeps chats, meals, scans, and private answers out of the feed.
       </KaiPageHero>
 
@@ -16,15 +16,15 @@ export function Groups() {
           <div className="grid size-12 place-items-center rounded-full bg-careWash text-care">
             <UsersRound aria-hidden="true" />
           </div>
-          <h2 className="mt-4 font-display text-3xl font-black leading-none tracking-normal">Support circle</h2>
+          <h2 className="mt-4 font-display text-3xl font-black leading-none tracking-normal">Your circle, when it is safe.</h2>
           <p className="mt-3 max-w-full break-words text-sm font-semibold leading-6 text-muted">
-            Invite-only circles will let teens share streaks, habits, and encouragement while keeping sensitive answers private.
+            Invite-only circles are for encouragement and small wins. The private stuff stays with Kai.
           </p>
           <div className="mt-5 grid gap-3">
             {[
               { icon: ShieldCheck, title: "Private by default", copy: "Mental notes, food photos, scans, and chats never appear in group feeds." },
-              { icon: MessageCircle, title: "Encouragement only", copy: "The feed is built around check-ins, support, and small wins." },
-              { icon: Lock, title: "Parent-safe controls", copy: "Invites, reporting, and safety boundaries are part of the production path." }
+              { icon: MessageCircle, title: "Encouragement only", copy: "The feed is built around check-ins, backup, and small wins." },
+              { icon: Lock, title: "Locked until reviewed", copy: "Invites, reporting, and safety boundaries stay gated before production use." }
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -39,7 +39,7 @@ export function Groups() {
             })}
           </div>
           <Link to="/progress" className="focus-ring mt-5 inline-flex min-h-11 items-center rounded-full bg-ink px-4 text-sm font-black text-paper">
-            See progress
+            See private proof
           </Link>
         </AppSurface>
 

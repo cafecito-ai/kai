@@ -17,16 +17,16 @@ export function Profile() {
   return (
     <AppPage className="utility-page-shell pb-28 sm:pb-12">
       <KaiPageHero
-        eyebrow="Kai · profile"
-        title="Profile is the companion setup."
+        eyebrow="Kai · you"
+        title="What Kai knows about you."
         action={
           <Link to="/settings" className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 text-sm font-black text-ink">
             <SettingsIcon size={16} aria-hidden="true" />
-            Settings
+            Tune Kai
           </Link>
         }
       >
-        Kai keeps your voice, privacy status, and saved reps in one place without turning growth into a scoreboard.
+        Voice, privacy, and saved reps in one place, so Kai feels personal without making your growth public.
       </KaiPageHero>
 
       <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
@@ -35,20 +35,20 @@ export function Profile() {
             <div className="flex items-center gap-4">
               <EvolvingCharacter level={level} />
               <div className="min-w-0">
-                <p className="eyebrow">companion</p>
+                <p className="eyebrow">your coach</p>
                 <h2 className="mt-1 truncate font-display text-3xl font-black tracking-normal">{kaiName}</h2>
                 <p className="mt-1 text-sm font-semibold capitalize text-muted">{kaiTone} voice</p>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <MetricPill label="Level" value={String(level)} tone="goals" />
-              <MetricPill label="Streak" value={String(streak)} tone="care" />
-              <MetricPill label="Belt" value={belt} tone="body" />
+              <MetricPill label="Read level" value={String(level)} tone="goals" />
+              <MetricPill label="Days in" value={String(streak)} tone="care" />
+              <MetricPill label="Mode" value={belt} tone="body" />
             </div>
             <div className="mt-5 grid gap-3">
-              <ProfileRow icon={Brain} label="Default focus" value={primaryEngine === "physical" ? "Body" : primaryEngine === "potential" ? "Goals" : "Mind"} />
+              <ProfileRow icon={Brain} label="Kai starts with" value={primaryEngine === "physical" ? "Body" : primaryEngine === "potential" ? "Goals" : "Mind"} />
               <ProfileRow icon={HeartPulse} label="Saved reps" value={String(events.length)} />
-              <ProfileRow icon={UserRound} label="Consent" value={consentStatus.replace(/_/g, " ")} />
+              <ProfileRow icon={UserRound} label="Safety status" value={consentStatus.replace(/_/g, " ")} />
             </div>
           </AppSurface>
           <NextLoopCard context="compact" />

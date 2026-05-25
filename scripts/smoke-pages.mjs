@@ -71,8 +71,8 @@ const cases = [
   route("/mental?module=guides", ["Talk it through", "Daniel Siegel", "James Clear", ...guideNames], {
     actionables: ["textarea", "button"]
   }),
-  route("/progress", ["Progress", "mental", "goals", "physical"], { actionables: ["a"] }),
-  route("/groups", ["circle", "Friend compare"], { actionables: ["a", "button"] }),
+  route("/progress", ["Private proof", "Kai can remember", "saved rep"], { actionables: ["a"] }),
+  route("/groups", ["circle", "Support circle", "Locked until it is safe"], { actionables: ["a", "button"] }),
   route("/profile", ["Profile", "Kai"], { actionables: ["a"] }),
   route("/settings", ["Settings", "Kai"], { actionables: ["button"] }),
   route("/crisis", ["Crisis", "988"], { actionables: ["a[href^='tel:']"] }),

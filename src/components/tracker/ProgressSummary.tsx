@@ -29,12 +29,12 @@ export function ProgressSummary() {
       <div className="grid gap-3 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="app-panel p-4">
           <div className="mb-2 flex items-center justify-between text-sm font-semibold">
-            <span>Growth chart</span>
-            <span className="text-muted">{events.length} events</span>
+            <span>Private proof</span>
+            <span className="text-muted">{events.length} reps</span>
           </div>
           {events.length === 0 ? (
             <div className="grid min-h-32 place-items-center rounded-kai border border-line bg-paper p-4 text-center text-sm font-semibold leading-6 text-muted">
-              Complete one Mental, Goals, or Physical action to start the chart.
+              Complete one Mind, Body, or Goal action and Kai will start carrying the pattern forward.
             </div>
           ) : (
             <div className="flex h-32 items-end gap-2 rounded-kai border border-line bg-paper p-3">
@@ -52,7 +52,7 @@ export function ProgressSummary() {
         </div>
 
         <div className="app-panel p-4">
-          <p className="eyebrow">engine balance</p>
+          <p className="eyebrow">Kai's read</p>
           <div className="mt-3 space-y-2">
             <EngineTotal icon={<Activity />} label="Body" value={totals.physical} tone="text-sage" />
             <EngineTotal icon={<Target />} label="Goals" value={totals.potential} tone="text-plum" />
@@ -65,19 +65,19 @@ export function ProgressSummary() {
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="eyebrow">recent activity</p>
-            <h2 className="mt-1 font-display text-2xl font-black tracking-normal">What counted</h2>
+            <h2 className="mt-1 font-display text-2xl font-black tracking-normal">What Kai can remember</h2>
           </div>
-          <span className="rounded-full bg-paper px-3 py-1 text-xs font-black text-muted">{events.length} total</span>
+          <span className="rounded-full bg-paper px-3 py-1 text-xs font-black text-muted">{events.length} saved</span>
         </div>
         <div className="space-y-2">
-          {events.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No saved progress yet.</p>}
+          {events.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No saved reps yet. Use Kai once and this becomes memory, not a scoreboard.</p>}
           {events.slice(0, 8).map((event) => (
             <div key={event.id} className="flex items-center justify-between gap-3 rounded-kai border border-line bg-paper p-3">
               <div>
                 <p className="text-sm font-black capitalize">{eventDisplayName(event)}</p>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted">{new Date(event.occurredAt).toLocaleDateString()}</p>
               </div>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-ink">{event.eventValue} pts</span>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-ink">{event.eventValue} proof</span>
             </div>
           ))}
         </div>

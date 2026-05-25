@@ -5,7 +5,7 @@ import { api } from "../../lib/api";
 type Friend = Awaited<ReturnType<typeof api.getFriendCompare>>["friends"][number];
 
 /**
- * Friend compare — opt-in, aggregate only. Section 9.3:
+ * Support circle — opt-in, aggregate only. Section 9.3:
  *   "Does NOT show: any conversation content, any goal content, any
  *    reflection content, any meal photos. Aggregate stats only."
  *
@@ -47,22 +47,21 @@ export function FriendCompare() {
         <div className="mb-3 grid size-12 place-items-center rounded-full bg-white text-muted">
           <Lock />
         </div>
-        <p className="eyebrow">Friend compare</p>
-        <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Coming after privacy review.</h2>
+        <p className="eyebrow">Support circle</p>
+        <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Locked until it is safe.</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          Opt-in only, aggregate stats only: streak, level, weekly score. Never reflection content, never meal photos. The
-          surface stays hidden from teens until a minor-specific privacy review is on the record.
+          Opt-in only, aggregate proof only: streak, level, weekly consistency. Never reflection content, never meal photos. This stays locked until the teen privacy review is on the record.
         </p>
       </section>
     );
   }
 
   if (state === "loading") {
-    return <p className="text-sm text-muted">Loading friend leaderboard…</p>;
+    return <p className="text-sm text-muted">Loading circle…</p>;
   }
 
   if (state === "error") {
-    return <p className="text-sm text-coral">Could not load friend compare. Try again in a moment.</p>;
+    return <p className="text-sm text-coral">Could not load the circle. Try again in a moment.</p>;
   }
 
   return (
@@ -72,14 +71,14 @@ export function FriendCompare() {
           <Users />
         </div>
         <div>
-          <p className="eyebrow">Friend compare</p>
-          <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Opt-in leaderboard</h2>
+          <p className="eyebrow">Support circle</p>
+          <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Opt-in backup</h2>
         </div>
       </div>
-      <p className="text-xs text-muted">Aggregate stats only — no content shared between accounts.</p>
+      <p className="text-xs text-muted">Aggregate proof only. No chats, scans, meals, or goal details shared.</p>
       {friends.length === 0 ? (
         <p className="mt-4 rounded-kai border border-line bg-paper p-3 text-sm text-muted">
-          No friend connections yet. Use Settings to invite someone, then they'll show up here.
+          No circle yet. Invites stay locked until privacy review clears the flow.
         </p>
       ) : (
         <ol className="mt-4 space-y-2">

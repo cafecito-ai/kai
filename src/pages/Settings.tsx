@@ -53,19 +53,19 @@ export function Settings() {
 
   return (
     <AppPage className="settings-page-shell pb-28 sm:pb-12">
-      <KaiPageHero eyebrow="Kai · settings" title="Tune Kai without the noise.">
-        Settings stay simple: how Kai talks, parent consent, and the basics that make this feel like yours.
+      <KaiPageHero eyebrow="Kai · tune" title="Make Kai feel like yours.">
+        Keep the knobs simple: Kai's name, voice, and safety status. No buried admin maze.
       </KaiPageHero>
       <AppSurface className="space-y-4 p-5">
         <label className="block text-sm font-semibold">
-          Kai name
+          What should Kai be called?
           <input className="field mt-2" value={name} onChange={(event) => setName(event.target.value)} />
         </label>
         <label className="block text-sm font-semibold">
-          Tone
+          How should Kai talk?
           <select className="field mt-2" value={tone} onChange={(event) => setTone(event.target.value as KaiTone)}>
-            <option value="warm">Warm</option>
-            <option value="balanced">Balanced</option>
+            <option value="warm">Soft</option>
+            <option value="balanced">Real</option>
             <option value="direct">Direct</option>
           </select>
         </label>
@@ -77,7 +77,7 @@ export function Settings() {
       </AppSurface>
       <AppSurface className="space-y-4 p-5">
         <div>
-          <p className="eyebrow">Parent consent</p>
+          <p className="eyebrow">Safety status</p>
           <h2 className="mt-2 font-display text-2xl font-black tracking-normal">{consentLabel(consentStatus)}</h2>
           <p className="mt-2 text-sm leading-6 text-muted">
             Parent consent confirms beta access for teen accounts. It never exposes private answers, goals, meals, or chats.

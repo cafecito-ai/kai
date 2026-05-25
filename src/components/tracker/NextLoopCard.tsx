@@ -8,17 +8,17 @@ const laneMeta: Record<"mental" | "physical" | "potential", { icon: LucideIcon; 
   mental: {
     icon: Brain,
     tone: "bg-[#E4F7F4] text-[#218A7D]",
-    cta: "Open Mental"
+    cta: "Talk it out"
   },
   physical: {
     icon: Dumbbell,
     tone: "bg-[#FFF0EC] text-[#C86B31]",
-    cta: "Open Health"
+    cta: "Take care of body"
   },
   potential: {
     icon: Target,
     tone: "bg-goalsWash text-goals",
-    cta: "Open Goals"
+    cta: "Move a goal"
   }
 };
 

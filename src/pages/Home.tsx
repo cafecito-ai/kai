@@ -197,6 +197,13 @@ export function Home() {
             <p className="text-sm font-black text-ink">{threadCue?.label ?? "For right now"}</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-muted">{threadCue?.title ?? nextMove.title}</p>
             {threadCue && <p className="mt-2 text-xs font-bold leading-5 text-muted/78">{threadCue.detail}</p>}
+            <Link
+              to={threadCue ? liveAction.route : nextMove.to}
+              className="focus-ring mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-ink px-4 text-sm font-black text-paper transition hover:-translate-y-0.5"
+            >
+              {threadCue ? "Continue the move" : "Open the move"}
+              <ArrowRight size={15} aria-hidden="true" />
+            </Link>
           </div>
         </section>
       </section>

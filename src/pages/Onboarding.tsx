@@ -119,7 +119,7 @@ const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: 
   { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "potential", route: "/engine/potential" }
 ];
 
-const steps = ["Gate", "Kai", "Vibe", "Signals", "Mission", "Context", "Reveal"];
+const steps = ["Safety", "Voice", "Mood", "Baseline", "First move", "Context", "Ready"];
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -267,7 +267,8 @@ export function Onboarding() {
 
           <div className="flex min-w-0 flex-col overflow-hidden p-4 sm:p-6 lg:p-8">
             <OnboardingHeader step={step} progress={progress} />
-            <div className="flex flex-1 flex-col justify-center py-6">
+            <OnboardingCoachCard step={step} kaiName={kaiName || "Kai"} toneLabel={selectedTone.label} missionLabel={selectedMission.label} calibration={calibration} vibesCount={vibes.length} />
+            <div className="flex flex-1 flex-col justify-center py-5">
               {error && <p className="mb-4 rounded-[18px] border border-[#E35D4F]/25 bg-[#FFF0EC] p-3 text-sm font-black text-[#C4473E]">{error}</p>}
               {step === 0 && <AgeGate age={age} setAge={setAge} isMinor={isMinor} parentEmail={parentEmail} setParentEmail={setParentEmail} fromDemo={Boolean(demoBuild)} />}
               {step === 1 && <KaiBuilder kaiName={kaiName} setKaiName={setKaiName} kaiTone={kaiTone} setKaiTone={setKaiTone} selectedTone={selectedTone} personality={personality} setPersonality={setPersonality} />}
@@ -286,12 +287,12 @@ export function Onboarding() {
               )}
               {step < steps.length - 1 ? (
                 <Button type="button" onClick={next} className="min-h-12 w-full">
-                  {step === 5 ? "Show me Kai" : "Next"}
+                  {step === 5 ? "Show Kai's read" : "Keep going"}
                   <ArrowRight size={18} aria-hidden="true" />
                 </Button>
               ) : (
                 <Button type="button" onClick={() => void finish()} disabled={saving} className="min-h-12 w-full">
-                  {saving ? "Saving" : "Meet Kai"}
+                  {saving ? "Saving" : "Open Home"}
                   <ArrowRight size={18} aria-hidden="true" />
                 </Button>
               )}
@@ -321,6 +322,44 @@ function OnboardingHeader({ step, progress }: { step: number; progress: number }
   );
 }
 
+function OnboardingCoachCard({
+  step,
+  kaiName,
+  toneLabel,
+  missionLabel,
+  calibration,
+  vibesCount
+}: {
+  step: number;
+  kaiName: string;
+  toneLabel: string;
+  missionLabel: string;
+  calibration: number;
+  vibesCount: number;
+}) {
+  const copy = [
+    "Quick safety check, then I can learn the real stuff.",
+    `${toneLabel} voice. I’ll keep adjusting once I hear how you actually talk.`,
+    vibesCount ? `Got ${vibesCount} signal${vibesCount === 1 ? "" : "s"}. Pick what feels true, not what sounds impressive.` : "Pick the honest vibe. You do not need a polished answer.",
+    "These baselines help me choose the first move without guessing.",
+    `${missionLabel} first. We can switch anytime from Home.`,
+    "This is where the app gets less generic. Say the part a normal form would miss.",
+    `${calibration}% starting read. Enough to start, not a box you are stuck in.`
+  ][step];
+
+  return (
+    <section className="mt-4 rounded-[26px] border border-[#0A0A0A0F] bg-[#111116] p-3 text-white shadow-[0_18px_50px_rgba(10,10,10,0.14)] sm:p-4 lg:hidden">
+      <div className="flex items-center gap-3">
+        <KaiAvatar size={48} label={kaiName} pulse />
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/42">{kaiName}'s read</p>
+          <p className="mt-1 break-words text-sm font-semibold leading-5 text-white/76">{copy}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function AgeGate({
   age,
   setAge,
@@ -339,9 +378,9 @@ function AgeGate({
   return (
     <div>
       <Eyebrow>Safety first</Eyebrow>
-      <h2 className="mt-2 max-w-xl break-words font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">First, the safety stuff. Then Kai learns you.</h2>
+      <h2 className="mt-2 max-w-xl break-words font-display text-3xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Quick safety check. Then Kai learns you.</h2>
       <p className="mt-4 max-w-full break-words text-sm font-semibold leading-6 text-[#5E5E64] sm:max-w-lg">
-        Kai needs age for teen safety rules. Your answers, meals, goals, and chats stay private.
+        Kai needs age for teen safety rules. Your answers, meals, goals, and chats stay private by default.
       </p>
       {fromDemo && <p className="mt-4 rounded-[18px] border border-[#D6D0FF] bg-[#F8F6FF] p-3 text-sm font-black text-[#6C5CE7]">Picked up your demo choices. You can change anything.</p>}
       <div className="mt-6 grid gap-3 sm:grid-cols-[9rem_1fr]">
@@ -355,7 +394,7 @@ function AgeGate({
         </label>
       </div>
       {isMinor && (
-        <div className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">
+        <div className="mt-4 break-words rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">
           Parent consent confirms beta access. It does not unlock private answers, food logs, goals, or chats.
         </div>
       )}
@@ -384,9 +423,9 @@ function KaiBuilder({
     <div>
       <Eyebrow>Kai's voice</Eyebrow>
       <div className="mt-3 flex items-center gap-4">
-        <KaiAvatar size={72} label={kaiName || "Kai"} pulse />
+        <KaiAvatar size={68} label={kaiName || "Kai"} pulse />
         <div>
-          <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">How should Kai talk to you?</h2>
+          <h2 className="font-display text-3xl font-semibold leading-none tracking-normal sm:text-4xl">How should Kai talk to you?</h2>
           <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Trusted coach energy. Honest, calm, never corny.</p>
         </div>
       </div>
@@ -426,8 +465,8 @@ function VibeScan({ selected, onToggle }: { selected: VibeId[]; onToggle: (id: V
   return (
     <div>
       <Eyebrow>Right now</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What's the current vibe?</h2>
-      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">Pick up to 3. No perfect answer.</p>
+      <h2 className="mt-2 max-w-xl break-words font-display text-3xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What's the current vibe?</h2>
+      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">Pick up to 3. No perfect answer, just the real one.</p>
       <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {vibeChoices.map((vibe) => {
           const Icon = vibe.icon;
@@ -449,8 +488,8 @@ function SignalScan({ signals, setSignals }: { signals: Record<SignalId, number>
   return (
     <div>
       <Eyebrow>Quick read</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What should Kai know before it coaches you?</h2>
-      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">Tap the closest answer. Kai uses this to choose the first move.</p>
+      <h2 className="mt-2 max-w-xl break-words font-display text-3xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Give Kai the quick read.</h2>
+      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">Tap what feels closest. Kai uses this to choose the first move.</p>
       <div className="mt-6 grid gap-3">
         {(Object.keys(signalCopy) as SignalId[]).map((id) => {
           const signal = signalCopy[id];
@@ -480,7 +519,7 @@ function MissionPick({ mission, setMission }: { mission: MissionId; setMission: 
   return (
     <div>
       <Eyebrow>First focus</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What should Kai help with first?</h2>
+      <h2 className="mt-2 max-w-xl break-words font-display text-3xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Where should Kai start?</h2>
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         {missionChoices.map((item) => {
           const Icon = item.icon;
@@ -523,8 +562,8 @@ function ContextDrop({
   return (
     <div>
       <Eyebrow>Real context</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What would make Kai understand you faster?</h2>
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">Messy is fine. This is the stuff a form usually misses.</p>
+      <h2 className="mt-2 max-w-xl break-words font-display text-3xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What should Kai not miss?</h2>
+      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">Messy is fine. This is the stuff a normal setup usually misses.</p>
       <div className="mt-5">
         <p className="text-sm font-black">What's been loud lately?</p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -571,7 +610,7 @@ function Reveal({
         <div className="flex items-center gap-4">
           <KaiAvatar size={76} label={kaiName} pulse />
           <div>
-            <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">{kaiName} is ready.</h2>
+            <h2 className="break-words font-display text-3xl font-semibold leading-none tracking-normal sm:text-4xl">{kaiName} is ready.</h2>
             <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Start on Home. Kai will open the right move from there.</p>
           </div>
         </div>

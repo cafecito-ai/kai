@@ -7,10 +7,12 @@ import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { STRENGTHS_DISCOVERY_QUESTIONS } from "../lib/strengths-questions";
 import type { EngineEntry, Goal } from "../lib/types";
+import { useKaiStore } from "../stores/kaiStore";
 import { useProgressStore } from "../stores/progressStore";
 
 export function EnginePotential() {
   const addEvent = useProgressStore((state) => state.addEvent);
+  const rememberToolCompletion = useKaiStore((state) => state.rememberToolCompletion);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
   const [title, setTitle] = useState("");
@@ -35,6 +37,11 @@ export function EnginePotential() {
     };
     setEntries((items) => [optimistic, ...items].slice(0, 8));
     addEvent({ engine: "potential", eventType: input.eventType, eventValue: input.eventValue, payload: input.payload });
+    rememberToolCompletion({
+      title: input.title,
+      summary: potentialCompletionSummary(input.entryType, input.payload),
+      nextActionId: "goal"
+    });
     try {
       const result = await api.createEngineEntry("potential", {
         entryType: input.entryType,
@@ -174,6 +181,16 @@ function History({ entries }: { entries: EngineEntry[] }) {
 
 function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");
+}
+
+function potentialCompletionSummary(entryType: string, payload: unknown) {
+  const data = payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
+  if (entryType === "goal_created") return "Goal is saved. Kai can help keep the next move small enough to start.";
+  if (entryType === "goal_completed") return "Win logged. Keep the lesson, not the pressure.";
+  if (entryType === "next_step_planned") return "Next step is saved. This is the move to come back to.";
+  if (entryType === "goal_reframed") return "Reframe is saved. Changing the shape is not quitting.";
+  if (typeof data.summary === "string") return "Strengths are saved. Kai can use them when choosing the next goal move.";
+  return "Goal rep is saved. Kai can use it for the next suggestion.";
 }
 
 export function StrengthsDiscoveryCard({ onComplete }: { onComplete: (summary: string) => void }) {

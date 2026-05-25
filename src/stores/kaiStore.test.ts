@@ -48,4 +48,21 @@ describe("kaiStore", () => {
 
     expect(useKaiStore.getState().chats.kai.nextAction?.id).toBe("scan");
   });
+
+  it("adds tool completion summaries back into Kai chat", () => {
+    useKaiStore.getState().hydrate("kai", {
+      conversationId: "tool-context",
+      messages: [{ id: "start", role: "assistant", content: "Say it messy." }]
+    });
+
+    useKaiStore.getState().rememberToolCompletion({
+      title: "Log sleep",
+      summary: "Recovery is logged. Protect tonight before adding more effort.",
+      nextActionId: "sleep"
+    });
+
+    const state = useKaiStore.getState().chats.kai;
+    expect(state.messages[state.messages.length - 1]?.content).toBe("Log sleep saved. Recovery is logged. Protect tonight before adding more effort.");
+    expect(state.nextAction?.id).toBe("sleep");
+  });
 });

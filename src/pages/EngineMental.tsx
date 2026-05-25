@@ -14,6 +14,7 @@ import { KaiChat } from "../components/kai/KaiChat";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineEntry, Goal } from "../lib/types";
+import { useKaiStore } from "../stores/kaiStore";
 import { useProgressStore } from "../stores/progressStore";
 import { StrengthsDiscoveryCard } from "./EnginePotential";
 
@@ -29,6 +30,7 @@ const RelationshipsPrimer = lazy(() =>
 
 export function EngineMental() {
   const addEvent = useProgressStore((state) => state.addEvent);
+  const rememberToolCompletion = useKaiStore((state) => state.rememberToolCompletion);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalTitle, setGoalTitle] = useState("");
@@ -53,6 +55,11 @@ export function EngineMental() {
     };
     setEntries((items) => [optimistic, ...items].slice(0, 8));
     addEvent({ engine: "mental", eventType: input.eventType, eventValue: input.eventValue ?? 24, payload: input.payload ?? { completed: true } });
+    rememberToolCompletion({
+      title: input.title,
+      summary: mentalCompletionSummary(input.eventType, input.payload),
+      nextActionId: mentalNextAction(input.eventType)
+    });
     try {
       const result = await api.createEngineEntry("mental", {
         entryType: input.eventType,
@@ -280,6 +287,24 @@ export function EngineMental() {
 
 function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");
+}
+
+function mentalNextAction(eventType: string) {
+  if (eventType.includes("goal") || eventType.includes("strengths") || eventType.includes("next_step")) return "goal" as const;
+  if (eventType.includes("breathing") || eventType.includes("meditation") || eventType.includes("social")) return "reset" as const;
+  return "talk" as const;
+}
+
+function mentalCompletionSummary(eventType: string, payload: unknown) {
+  const data = payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
+  if (eventType === "feelings_check_in") return "Check-in is saved. Kai has more context for what is loud right now.";
+  if (eventType === "thought_reframe") return "Reframe is saved. Keep the kinder version close for the next hard moment.";
+  if (eventType.includes("breathing") || eventType.includes("meditation")) return "Reset is saved. Notice if your body feels even 5% steadier.";
+  if (eventType === "social_reset") return "Social reset is saved. Protect your attention without making it dramatic.";
+  if (eventType === "letter_written") return "Letter is saved. That is identity work, not just journaling.";
+  if (eventType.includes("goal")) return "Goal rep is saved. One smaller next move beats more pressure.";
+  if (typeof data.summary === "string") return "Strengths are saved. Kai can use them when a goal needs traction.";
+  return "Mind rep is saved. Kai can use it for the next suggestion.";
 }
 
 function MentorCouncilPanel() {

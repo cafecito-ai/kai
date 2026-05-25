@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { api } from "../lib/api";
-import { inferKaiAction, KAI_ACTIONS, type KaiAction } from "../lib/kai-actions";
+import { inferKaiAction, KAI_ACTIONS, type KaiAction, type KaiActionId } from "../lib/kai-actions";
 import { localSafetyCheck } from "../lib/safety";
 import type { ChatMessage, EngineId } from "../lib/types";
 
@@ -16,6 +16,7 @@ type EngineChatState = {
 interface KaiState {
   chats: Record<ChatEngine, EngineChatState>;
   hydrate: (engine: ChatEngine, input: { conversationId: string | null; messages: ChatMessage[]; nextAction?: KaiAction | null }) => void;
+  rememberToolCompletion: (input: { title: string; summary: string; nextActionId?: KaiActionId }) => void;
   send: (message: string, engine?: ChatEngine) => Promise<void>;
 }
 
@@ -65,6 +66,24 @@ export const useKaiStore = create<KaiState>((set) => ({
           hydrated: true,
           messages: normalizeMessages(messages),
           nextAction: nextAction ?? inferLastAction(messages)
+        }
+      }
+    })),
+  rememberToolCompletion: ({ title, summary, nextActionId }) =>
+    set((state) => ({
+      chats: {
+        ...state.chats,
+        kai: {
+          ...state.chats.kai,
+          messages: [
+            ...state.chats.kai.messages,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: `${title} saved. ${summary}`
+            }
+          ],
+          nextAction: nextActionId ? KAI_ACTIONS[nextActionId] : state.chats.kai.nextAction
         }
       }
     })),

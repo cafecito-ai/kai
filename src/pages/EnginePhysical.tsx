@@ -16,10 +16,12 @@ import {
 import { movementInsight, normalizeMovementMinutes, normalizeSleepHours, sleepInsight, type SleepQuality } from "../lib/physical-logs";
 import { localSafetyCheck } from "../lib/safety";
 import type { EngineEntry, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
+import { useKaiStore } from "../stores/kaiStore";
 import { useProgressStore } from "../stores/progressStore";
 
 export function EnginePhysical() {
   const addEvent = useProgressStore((state) => state.addEvent);
+  const rememberToolCompletion = useKaiStore((state) => state.rememberToolCompletion);
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
   const [entries, setEntries] = useState<EngineEntry[]>([]);
   const [saving, setSaving] = useState("");
@@ -53,6 +55,11 @@ export function EnginePhysical() {
     };
     setEntries((items) => [optimistic, ...items].slice(0, 8));
     addEvent({ engine: "physical", eventType: input.eventType, eventValue: input.eventValue, payload: input.payload });
+    rememberToolCompletion({
+      title: input.title,
+      summary: physicalCompletionSummary(input.entryType, input.payload),
+      nextActionId: physicalNextAction(input.entryType)
+    });
     try {
       const result = await api.createEngineEntry("physical", {
         entryType: input.entryType,
@@ -174,6 +181,11 @@ export function EnginePhysical() {
       const result = await api.uploadBodyScan(bodyScanPhoto);
       setEntries((items) => [result.entry, ...items].slice(0, 8));
       addEvent({ engine: "physical", eventType: "body_scan", eventValue: 22, payload: { scanId: result.scan.id, hasPhoto: Boolean(result.scan.r2Key) } });
+      rememberToolCompletion({
+        title: "Body scan",
+        summary: result.scan.analysis.summary,
+        nextActionId: "scan"
+      });
       setBodyScanMessage(result.scan.analysis.summary);
       setBodyScanSaved(true);
       setBodyScanPhoto(null);
@@ -434,6 +446,24 @@ const foodExamples = [
 
 function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");
+}
+
+function physicalNextAction(entryType: string) {
+  if (entryType.includes("meal") || entryType.includes("food")) return "food" as const;
+  if (entryType.includes("sleep")) return "sleep" as const;
+  if (entryType.includes("movement")) return "stretch" as const;
+  if (entryType.includes("scan")) return "scan" as const;
+  return "reset" as const;
+}
+
+function physicalCompletionSummary(entryType: string, payload: unknown) {
+  const data = readPayload(payload);
+  const insight = typeof data.insight === "string" ? data.insight : "";
+  if (insight) return insight;
+  if (entryType.includes("meal") || entryType.includes("food")) return "Fuel is logged. Kai can use it when choosing the next body move.";
+  if (entryType.includes("scan")) return "Private scan context is saved. No body score, no comparison.";
+  if (entryType.includes("recovery")) return "Recovery reset is logged. Keep the next move small and steady.";
+  return "Body rep is logged. Kai can use it for the next suggestion.";
 }
 
 function PhysicalModule({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {

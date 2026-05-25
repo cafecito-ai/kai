@@ -14,6 +14,7 @@ import {
   type MealContextId
 } from "../lib/food-photo";
 import { movementInsight, normalizeMovementMinutes, normalizeSleepHours, sleepInsight, type SleepQuality } from "../lib/physical-logs";
+import { getPhysicalHistoryItems, physicalNextNudge, type PhysicalHistoryKind, type PhysicalHistoryItem } from "../lib/physical-history";
 import { localSafetyCheck } from "../lib/safety";
 import type { EngineEntry, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
 import { useKaiStore } from "../stores/kaiStore";
@@ -235,6 +236,11 @@ export function EnginePhysical() {
 
   const lastMovement = entries.find((entry) => entry.entryType === "movement_log");
   const lastSleep = entries.find((entry) => entry.entryType === "sleep_log");
+  const foodHistory = getPhysicalHistoryItems(entries, "food");
+  const scanHistory = getPhysicalHistoryItems(entries, "scan");
+  const movementHistory = getPhysicalHistoryItems(entries, "movement");
+  const sleepHistory = getPhysicalHistoryItems(entries, "sleep");
+  const resetHistory = getPhysicalHistoryItems(entries, "reset", 2);
 
   const modules: UnitModule[] = [
     {
@@ -292,6 +298,7 @@ export function EnginePhysical() {
               <PhysicalModule icon={<Wind />} title="Stretch / move" copy="To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." />
               <PhysicalModule icon={<Moon />} title="Log sleep" copy="To ensure your body is actually recovering from the work." />
             </div>
+            <PhysicalHistoryPanel title="Saved fuel" kind="food" items={foodHistory} />
           </section>
         </div>
       )
@@ -325,6 +332,7 @@ export function EnginePhysical() {
               {saving === "movement_log" ? "Logging" : "Log stretch / move"}
             </Button>
             {lastMovement && <SavedSignal entry={lastMovement} />}
+            <PhysicalHistoryPanel title="Movement history" kind="movement" items={movementHistory} />
           </section>
 
           <section className="rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm">
@@ -358,6 +366,8 @@ export function EnginePhysical() {
               </Button>
             </div>
             {lastSleep && <SavedSignal entry={lastSleep} inverse />}
+            <PhysicalHistoryPanel title="Sleep history" kind="sleep" items={sleepHistory} inverse />
+            <PhysicalHistoryPanel title="Recovery resets" kind="reset" items={resetHistory} inverse />
           </section>
         </div>
       )
@@ -389,6 +399,7 @@ export function EnginePhysical() {
             <Button className="mt-4" variant="secondary" disabled={saving === "body_scan"} onClick={() => void saveBodyScanPreview()}>
               {saving === "body_scan" ? "Saving scan" : "Save private body scan"}
             </Button>
+            <PhysicalHistoryPanel title="Private scan history" kind="scan" items={scanHistory} />
           </section>
           <section className="rounded-[24px] border border-line bg-warmPaper p-5 shadow-sm sm:p-6">
             <p className="eyebrow">what Kai can say</p>
@@ -546,6 +557,39 @@ function BodyScanPrinciple({ icon, title, copy }: { icon: React.ReactNode; title
       <div className="mb-2 text-body">{icon}</div>
       <h3 className="text-sm font-black">{title}</h3>
       <p className="mt-1 text-xs font-semibold leading-5 text-muted">{copy}</p>
+    </div>
+  );
+}
+
+function PhysicalHistoryPanel({ title, kind, items, inverse = false }: { title: string; kind: PhysicalHistoryKind; items: PhysicalHistoryItem[]; inverse?: boolean }) {
+  return (
+    <div className={`mt-4 rounded-[22px] border p-4 ${inverse ? "border-white/15 bg-white/10" : "border-line bg-paper"}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className={`text-[10px] font-black uppercase tracking-wider ${inverse ? "text-paper/45" : "text-muted"}`}>Kai saved</p>
+          <h3 className={`mt-1 text-base font-black ${inverse ? "text-paper" : "text-ink"}`}>{title}</h3>
+        </div>
+        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${inverse ? "border-white/15 bg-white/10 text-paper/60" : "border-line bg-white text-muted"}`}>
+          private
+        </span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {items.length === 0 && (
+          <p className={`rounded-kai border p-3 text-sm font-semibold leading-6 ${inverse ? "border-white/15 bg-ink/20 text-paper/65" : "border-line bg-white text-muted"}`}>
+            {physicalNextNudge(kind)}
+          </p>
+        )}
+        {items.map((item) => (
+          <div key={item.id} className={`rounded-kai border p-3 ${inverse ? "border-white/15 bg-ink/20" : "border-line bg-white"}`}>
+            <div className="flex items-start justify-between gap-3">
+              <p className={`text-sm font-black ${inverse ? "text-paper" : "text-ink"}`}>{item.title}</p>
+              <p className={`shrink-0 text-[10px] font-black uppercase tracking-wider ${inverse ? "text-paper/45" : "text-muted"}`}>{item.meta}</p>
+            </div>
+            <p className={`mt-1 text-sm font-semibold leading-5 ${inverse ? "text-paper/68" : "text-muted"}`}>{item.body}</p>
+          </div>
+        ))}
+      </div>
+      {items[0] && <p className={`mt-3 text-xs font-black leading-5 ${inverse ? "text-paper/55" : "text-muted"}`}>{physicalNextNudge(kind, items[0])}</p>}
     </div>
   );
 }

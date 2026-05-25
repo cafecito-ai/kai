@@ -3,7 +3,7 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppPage, KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
-import { inferKaiAction, topKaiActions } from "../lib/kai-actions";
+import { inferKaiAction, topKaiActions, type KaiAction } from "../lib/kai-actions";
 import { getKaiMemoryItems } from "../lib/kai-memory";
 import { getNextAvailableStep } from "../lib/loop";
 import type { DailyLoopStep, Goal } from "../lib/types";
@@ -38,13 +38,17 @@ export function Home() {
   const activeGoals = goals.filter((goal) => goal.status === "active");
   const completedSteps = loop?.steps.filter((step) => step.status === "completed").length ?? 0;
   const nextStep = loop ? getNextAvailableStep(loop.steps) : null;
-  const nextMove = useMemo(() => getNextMove(nextStep, activeGoals), [activeGoals, nextStep]);
+  const loopMove = useMemo(() => getNextMove(nextStep, activeGoals), [activeGoals, nextStep]);
   const lastKaiMessage =
     [...messages].reverse().find((message) => message.role === "assistant")?.content ??
     "Say it messy. We’ll make it simple.";
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const memoryItems = useMemo(() => getKaiMemoryItems(messages), [messages]);
   const liveAction = useMemo(() => (draft.trim() ? inferKaiAction(draft) : nextKaiAction ?? inferKaiAction(lastUserMessage)), [draft, lastUserMessage, nextKaiAction]);
+  const nextMove = useMemo(
+    () => (draft.trim() || lastUserMessage || nextKaiAction ? getKaiControlMove(liveAction) : loopMove),
+    [draft, lastUserMessage, liveAction, loopMove, nextKaiAction]
+  );
 
   function submitMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -169,9 +173,9 @@ export function Home() {
             </span>
           </div>
           <div className="mt-5 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-paper/55">
-            <span>{completedSteps}/{loop?.steps.length ?? 5} done</span>
+            <span>{nextMove.meta ?? `${completedSteps}/${loop?.steps.length ?? 5} done`}</span>
             <span aria-hidden="true">.</span>
-            <span>{loop?.score ?? 20}% steady</span>
+            <span>{nextMove.secondaryMeta ?? `${loop?.score ?? 20}% steady`}</span>
           </div>
         </Link>
 
@@ -216,9 +220,30 @@ export function Home() {
   );
 }
 
-function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
+type HomeMove = {
+  eyebrow: string;
+  title: string;
+  copy: string;
+  to: string;
+  meta?: string;
+  secondaryMeta?: string;
+};
+
+function getKaiControlMove(action: KaiAction): HomeMove {
+  return {
+    eyebrow: "Kai's read",
+    title: action.label,
+    copy: action.reason,
+    to: action.route,
+    meta: action.shortLabel,
+    secondaryMeta: "open the move"
+  };
+}
+
+function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]): HomeMove {
   if (!nextStep) {
     return {
+      eyebrow: "Try this next",
       title: "Bank what you finished.",
       copy: "You did enough to count. Close it out or pick what carries into tomorrow.",
       to: "/loop"
@@ -227,6 +252,7 @@ function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
 
   if (nextStep.id === "body_action") {
     return {
+      eyebrow: "Try this next",
       title: "Give your body a win.",
       copy: "Food, sleep, stretch, scan. Pick the one that would actually help.",
       to: "/health?module=food"
@@ -235,6 +261,7 @@ function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
 
   if (nextStep.id === "mind_action") {
     return {
+      eyebrow: "Try this next",
       title: "Say what's been sitting there.",
       copy: "No perfect words. Name it, breathe, then take one clean step.",
       to: "/mental?module=checkin"
@@ -244,6 +271,7 @@ function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
   if (nextStep.id === "goal_action") {
     const activeGoal = activeGoals[0];
     return {
+      eyebrow: "Try this next",
       title: activeGoal?.nextAction || "Move one thing forward.",
       copy: activeGoal ? activeGoal.title : "Pick one thing. Not your whole life.",
       to: activeGoal ? `/goals/${encodeURIComponent(activeGoal.id)}` : "/goal"
@@ -252,6 +280,7 @@ function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
 
   if (nextStep.id === "reflection") {
     return {
+      eyebrow: "Try this next",
       title: "Close it clean.",
       copy: "What changed, even a little? That is the part worth keeping.",
       to: "/loop"
@@ -259,6 +288,7 @@ function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
   }
 
   return {
+    eyebrow: "Try this next",
     title: "Start where you are.",
     copy: "No performance. No pretending. Just the real check-in.",
     to: "/loop"

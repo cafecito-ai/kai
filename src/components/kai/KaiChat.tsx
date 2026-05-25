@@ -22,7 +22,6 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
   const [draft, setDraft] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const memoryItems = getKaiMemoryItems(messages);
   const suggestions: Array<{ label: string; prompt: string; icon: LucideIcon }> =
     mode === "mental"

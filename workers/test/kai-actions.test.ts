@@ -13,7 +13,8 @@ describe("inferKaiNextAction", () => {
   it("routes sleep and recovery messages to sleep protection", () => {
     expect(inferKaiNextAction("I am wired and exhausted and need sleep")).toMatchObject({
       id: "sleep",
-      label: "Protect sleep"
+      label: "Protect sleep",
+      route: "/health?module=movement&action=sleep"
     });
   });
 

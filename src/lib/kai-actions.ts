@@ -16,6 +16,8 @@ export type KaiAction = {
   route: string;
   reason: string;
   prompt: string;
+  chip: string;
+  example: string;
   tone: string;
   icon: LucideIcon;
 };
@@ -28,6 +30,8 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     route: "/mental?module=checkin",
     reason: "This sounds like something to get out of your head first.",
     prompt: "I need to talk this out",
+    chip: "Talk",
+    example: "Something feels off and I need to say it",
     tone: "bg-[#E4F7F4] text-[#218A7D]",
     icon: Brain
   },
@@ -38,6 +42,8 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     route: "/health?module=food",
     reason: "Fuel might be the easiest body win right now.",
     prompt: "Help me figure out what to eat",
+    chip: "Food",
+    example: "I have practice later and do not know what to eat",
     tone: "bg-[#FFF0EC] text-[#C86B31]",
     icon: Utensils
   },
@@ -45,9 +51,11 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     id: "sleep",
     label: "Protect sleep",
     shortLabel: "Sleep",
-    route: "/health?module=movement",
+    route: "/health?module=movement&action=sleep",
     reason: "Recovery is probably the move before more effort.",
     prompt: "Help me sleep better tonight",
+    chip: "Sleep",
+    example: "I slept badly and feel tired but wired",
     tone: "bg-[#EEF4FF] text-[#4267C8]",
     icon: Moon
   },
@@ -55,9 +63,11 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     id: "stretch",
     label: "Stretch it out",
     shortLabel: "Move",
-    route: "/health?module=movement",
+    route: "/health?module=movement&action=stretch",
     reason: "A quick body reset can change the whole mood.",
     prompt: "Give me a quick stretch reset",
+    chip: "Stretch",
+    example: "My body feels tight and I need a quick reset",
     tone: "bg-[#EAFBEF] text-[#2E8A54]",
     icon: HeartPulse
   },
@@ -68,6 +78,8 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     route: "/health?module=scan",
     reason: "Check posture and recovery without judging your body.",
     prompt: "Help me check my posture",
+    chip: "Scan",
+    example: "Can we check my posture and what to improve safely?",
     tone: "bg-[#F4F1EB] text-[#1A1A1F]",
     icon: Camera
   },
@@ -78,6 +90,8 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     route: "/engine/potential",
     reason: "This needs one clear next step, not more pressure.",
     prompt: "Help me move one goal forward",
+    chip: "Goal",
+    example: "I keep procrastinating and need one move",
     tone: "bg-goalsWash text-goals",
     icon: Target
   },
@@ -88,6 +102,8 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     route: "/loop",
     reason: "Start smaller. Get steady, then choose.",
     prompt: "I need a reset",
+    chip: "Reset",
+    example: "I am overwhelmed and need to reset the day",
     tone: "bg-[#EEEAFF] text-[#7B6EF6]",
     icon: Sparkles
   }
@@ -134,4 +150,8 @@ export function inferKaiAction(text: string): KaiAction {
 
 export function topKaiActions(): KaiAction[] {
   return [KAI_ACTIONS.talk, KAI_ACTIONS.food, KAI_ACTIONS.goal, KAI_ACTIONS.reset, KAI_ACTIONS.scan, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch];
+}
+
+export function kaiPromptChips(): KaiAction[] {
+  return [KAI_ACTIONS.talk, KAI_ACTIONS.food, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch, KAI_ACTIONS.goal, KAI_ACTIONS.reset];
 }

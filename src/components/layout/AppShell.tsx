@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { KaiChat } from "../kai/KaiChat";
 import { topKaiActions } from "../../lib/kai-actions";
+import { useKaiStore } from "../../stores/kaiStore";
 import { useProgressStore } from "../../stores/progressStore";
 import { useUserStore } from "../../stores/userStore";
 import { KaiAvatar } from "../ui/AppPrimitives";
@@ -184,6 +185,8 @@ function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: 
 }
 
 function GlobalChatSheet({ onClose }: { onClose: () => void }) {
+  const nextAction = useKaiStore((state) => state.chats.kai.nextAction);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-[#111116]/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
       <div className="mx-auto w-full max-w-md rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
@@ -200,25 +203,27 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <KaiChat embedded />
-        <div className="grid grid-cols-2 gap-2 p-2 pt-3">
-          <Link to="/mental?module=checkin" onClick={onClose} className="focus-ring rounded-full bg-[#E4F7F4] px-4 py-3 text-center text-sm font-black text-[#218A7D]">
-            Mind
-          </Link>
-          <Link to="/engine/potential" onClick={onClose} className="focus-ring rounded-full bg-goalsWash px-4 py-3 text-center text-sm font-black text-goals">
-            Goals
-          </Link>
-          <Link to="/health?module=food" onClick={onClose} className="focus-ring rounded-full bg-[#FFF0EC] px-4 py-3 text-center text-sm font-black text-[#C86B31] sm:col-span-2">
-            Body
-          </Link>
-        </div>
+        {nextAction && (
+          <div className="p-2 pt-3">
+            <Link to={nextAction.route} onClick={onClose} className="focus-ring flex min-h-14 items-center gap-3 rounded-[20px] bg-[#111116] px-3 text-left text-white">
+              <span className={`grid size-10 shrink-0 place-items-center rounded-full ${nextAction.tone}`}>
+                <nextAction.icon size={18} aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-black uppercase tracking-wider text-white/45">Open next</span>
+                <span className="block truncate text-sm font-black">{nextAction.label}</span>
+              </span>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
-  const actions = [
-    ...topKaiActions(),
+  const actions = topKaiActions();
+  const accountActions = [
     { id: "wins", route: "/progress", label: "Your wins", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
     { id: "you", route: "/profile", label: "You", icon: UserRound, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
     { id: "settings", route: "/settings", label: "Settings", icon: Settings, tone: "bg-[#F4F1EB] text-[#1A1A1F]" }
@@ -228,7 +233,7 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-x-0 bottom-20 z-40 px-5" role="dialog" aria-label="Quick actions">
       <div className="mx-auto w-full max-w-md rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
         <div className="mb-2 flex items-center justify-between px-2">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai tools</p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai can open</p>
           <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close quick actions">
             <X size={15} aria-hidden="true" />
           </button>
@@ -241,10 +246,29 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
                 <span className={`grid size-9 place-items-center rounded-full ${action.tone}`}>
                   <Icon size={17} aria-hidden="true" />
                 </span>
-                {action.label}
+                <span className="min-w-0">
+                  <span className="block truncate">{action.label}</span>
+                  <span className="mt-0.5 block truncate text-xs font-semibold text-[#8A8A8F]">{action.reason}</span>
+                </span>
               </Link>
             );
           })}
+        </div>
+        <div className="mt-3 border-t border-[#0A0A0A0F] pt-3">
+          <p className="px-2 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">Keep track</p>
+          <div className="grid grid-cols-3 gap-2">
+            {accountActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link key={action.id} to={action.route} onClick={onClose} className="focus-ring grid min-h-16 place-items-center rounded-[18px] bg-[#FAFAF7] px-2 text-center text-xs font-black text-[#1A1A1F]">
+                  <span className={`grid size-8 place-items-center rounded-full ${action.tone}`}>
+                    <Icon size={15} aria-hidden="true" />
+                  </span>
+                  {action.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

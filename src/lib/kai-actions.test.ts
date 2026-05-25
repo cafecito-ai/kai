@@ -7,7 +7,10 @@ describe("kai action routing", () => {
   });
 
   it("routes tired recovery language to sleep", () => {
-    expect(inferKaiAction("I feel wired and exhausted and need better sleep").id).toBe("sleep");
+    expect(inferKaiAction("I feel wired and exhausted and need better sleep")).toMatchObject({
+      id: "sleep",
+      route: "/health?module=movement&action=sleep"
+    });
   });
 
   it("routes procrastination and discipline language to goals", () => {

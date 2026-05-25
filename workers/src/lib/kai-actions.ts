@@ -30,13 +30,13 @@ export const KAI_NEXT_ACTIONS: Record<KaiActionId, KaiNextAction> = {
   sleep: {
     id: "sleep",
     label: "Protect sleep",
-    route: "/health?module=movement",
+    route: "/health?module=movement&action=sleep",
     reason: "Recovery is probably the move before more effort."
   },
   stretch: {
     id: "stretch",
     label: "Stretch it out",
-    route: "/health?module=movement",
+    route: "/health?module=movement&action=stretch",
     reason: "A quick body reset can change the whole mood."
   },
   scan: {

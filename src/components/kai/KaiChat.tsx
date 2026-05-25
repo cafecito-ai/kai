@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
-import { topKaiActions } from "../../lib/kai-actions";
+import { kaiPromptChips } from "../../lib/kai-actions";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
@@ -30,7 +30,7 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
           { label: "Control", prompt: "Help me focus on what I can control", icon: ArrowUp },
           { label: "Tiny habit", prompt: "Help me make this a tiny habit", icon: Lightbulb }
         ]
-      : topKaiActions().slice(0, 4).map((action) => ({ label: action.label, prompt: action.prompt, icon: action.icon }));
+      : kaiPromptChips().map((action) => ({ label: action.chip, prompt: action.example, icon: action.icon }));
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
@@ -139,7 +139,7 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
         )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="flex gap-2 overflow-x-auto border-t border-line px-3 py-3" role="group" aria-label="Topic suggestions">
+      <div className="flex gap-2 overflow-x-auto border-t border-line px-3 py-3" role="group" aria-label="Things Kai can help with">
         {suggestions.map((item) => {
           const Icon = item.icon;
           return (

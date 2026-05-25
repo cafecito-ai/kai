@@ -12,6 +12,8 @@ export type KaiContext = {
   intakeSummary: string | null;
   intakeDetails: string | null;
   recentPhysicalContext: string | null;
+  recentMentalContext: string | null;
+  recentGoalContext: string | null;
   streakOverall: number;
 };
 
@@ -24,6 +26,8 @@ const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {
   intakeSummary: null,
   intakeDetails: null,
   recentPhysicalContext: null,
+  recentMentalContext: null,
+  recentGoalContext: null,
   streakOverall: 0
 };
 
@@ -74,7 +78,9 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     .catch(() => null);
   intakeSummary = intakeSummary || intakeRow?.summary || null;
   intakeDetails = formatIntakeDetails(intakeRow?.raw_responses);
-  const recentPhysicalContext = await loadRecentPhysicalContext(env, userId);
+  const recentPhysicalContext = await loadRecentEngineContext(env, userId, "physical");
+  const recentMentalContext = await loadRecentEngineContext(env, userId, "mental");
+  const recentGoalContext = await loadRecentGoalContext(env, userId);
 
   let streakOverall = 0;
   if (env.PROGRESS_KV) {
@@ -96,20 +102,22 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     intakeSummary,
     intakeDetails,
     recentPhysicalContext,
+    recentMentalContext,
+    recentGoalContext,
     streakOverall
   };
 }
 
-async function loadRecentPhysicalContext(env: Env, userId: string) {
+async function loadRecentEngineContext(env: Env, userId: string, engine: EngineId) {
   const rows = await env.DB
     .prepare(
       `SELECT entry_type, title, payload, completed_at, created_at
        FROM engine_entries
-       WHERE user_id = ? AND engine = 'physical'
+       WHERE user_id = ? AND engine = ?
        ORDER BY COALESCE(completed_at, created_at) DESC
        LIMIT 6`
     )
-    .bind(userId)
+    .bind(userId, engine)
     .all<{
       entry_type: string | null;
       title: string | null;
@@ -120,18 +128,58 @@ async function loadRecentPhysicalContext(env: Env, userId: string) {
     .catch(() => ({ results: [] }));
 
   const lines = (rows.results ?? [])
-    .map(formatPhysicalEntry)
+    .map((row) => formatEngineEntry(engine, row))
     .filter(Boolean)
     .slice(0, 6);
   return lines.join("\n").slice(0, 1600) || null;
 }
 
-function formatPhysicalEntry(row: { entry_type: string | null; title: string | null; payload: string | null; completed_at: string | null; created_at: string | null }) {
+async function loadRecentGoalContext(env: Env, userId: string) {
+  const goalRows = await env.DB
+    .prepare(
+      `SELECT title, status, category, why_it_matters, next_action, updated_at, created_at
+       FROM goals
+       WHERE user_id = ?
+       ORDER BY COALESCE(updated_at, created_at) DESC
+       LIMIT 5`
+    )
+    .bind(userId)
+    .all<{
+      title: string | null;
+      status: string | null;
+      category: string | null;
+      why_it_matters: string | null;
+      next_action: string | null;
+      updated_at: string | null;
+      created_at: string | null;
+    }>()
+    .catch(() => ({ results: [] }));
+
+  const goalLines = (goalRows.results ?? [])
+    .map(formatGoalRow)
+    .filter(Boolean)
+    .slice(0, 5);
+  const potentialContext = await loadRecentEngineContext(env, userId, "potential");
+  return [...goalLines, potentialContext].filter(Boolean).join("\n").slice(0, 1800) || null;
+}
+
+function formatEngineEntry(engine: EngineId, row: { entry_type: string | null; title: string | null; payload: string | null; completed_at: string | null; created_at: string | null }) {
   const payload = parsePayload(row.payload);
-  const entryType = row.entry_type ?? "physical";
+  const entryType = row.entry_type ?? engine;
   const title = normaliseText(row.title) || labelForEntry(entryType);
   const when = formatDate(row.completed_at || row.created_at);
-  const detail = physicalDetail(entryType, payload);
+  const detail = engine === "mental" ? mentalDetail(entryType, payload) : engine === "potential" ? goalEntryDetail(entryType, payload) : physicalDetail(entryType, payload);
+  return [when, title, detail].filter(Boolean).join(" — ");
+}
+
+function formatGoalRow(row: { title: string | null; status: string | null; category: string | null; why_it_matters: string | null; next_action: string | null; updated_at: string | null; created_at: string | null }) {
+  const when = formatDate(row.updated_at || row.created_at);
+  const title = normaliseText(row.title) || "Goal";
+  const status = normaliseText(row.status) || "active";
+  const category = normaliseText(row.category);
+  const nextAction = normaliseText(row.next_action);
+  const why = normaliseText(row.why_it_matters);
+  const detail = [category, status, nextAction ? `next: ${nextAction}` : "", why ? `why: ${why}` : ""].filter(Boolean).join("; ");
   return [when, title, detail].filter(Boolean).join(" — ");
 }
 
@@ -164,6 +212,63 @@ function physicalDetail(entryType: string, payload: Record<string, unknown>) {
   }
   if (entryType.includes("recovery")) return "recovery reset logged";
   return "physical rep saved";
+}
+
+function mentalDetail(entryType: string, payload: Record<string, unknown>) {
+  const summary = normaliseText(payload.summary);
+  if (summary) return summary;
+
+  if (entryType.includes("feelings") || entryType.includes("check_in")) {
+    const loudest = loudestEmotion(payload);
+    const bodyArea = typeof payload.bodyArea === "string" ? payload.bodyArea.replace(/_/g, " ") : "";
+    if (loudest) return `${loudest} was loudest${bodyArea ? `, mostly in ${bodyArea}` : ""}`;
+    const note = normaliseText(payload.note);
+    return note || "emotional check-in saved";
+  }
+  if (entryType.includes("reframe")) {
+    const reframe = normaliseText(payload.reframe);
+    const thought = normaliseText(payload.thought);
+    return reframe || (thought ? `caught thought: ${thought}` : "reframe saved");
+  }
+  if (entryType.includes("social")) {
+    const boundary = normaliseText(payload.boundary);
+    const replacement = normaliseText(payload.replacement);
+    return [boundary ? `boundary: ${boundary}` : "", replacement ? `instead: ${replacement}` : ""].filter(Boolean).join("; ") || "social reset saved";
+  }
+  if (entryType.includes("breathing") || entryType.includes("meditation")) {
+    const seconds = typeof payload.seconds === "number" ? payload.seconds : typeof payload.elapsedSeconds === "number" ? payload.elapsedSeconds : null;
+    const pattern = normaliseText(payload.patternId) || "reset";
+    return seconds ? `${pattern.replace(/_/g, " ")} for ${Math.round(seconds / 60)} min` : "body reset saved";
+  }
+  if (entryType.includes("letter") || entryType.includes("strengths")) {
+    const body = normaliseText(payload.body);
+    return body || "identity evidence saved";
+  }
+  if (entryType.includes("goal")) return goalEntryDetail(entryType, payload);
+  return "mind rep saved";
+}
+
+function goalEntryDetail(entryType: string, payload: Record<string, unknown>) {
+  const nextStep = normaliseText(payload.nextStep) || normaliseText(payload.nextAction);
+  const title = normaliseText(payload.title);
+  const reframe = normaliseText(payload.reframe);
+  const summary = normaliseText(payload.summary);
+  if (nextStep) return `next move: ${nextStep}`;
+  if (reframe) return `reframe: ${reframe}`;
+  if (summary) return summary;
+  if (title) return `goal: ${title}`;
+  if (entryType.includes("strengths")) return "strengths context saved";
+  return "goal rep saved";
+}
+
+function loudestEmotion(payload: Record<string, unknown>) {
+  const emotions = parseRecord(payload.emotions);
+  let best: { label: string; value: number } | null = null;
+  for (const [key, value] of Object.entries(emotions)) {
+    if (typeof value !== "number") continue;
+    if (!best || value > best.value) best = { label: key.replace(/_/g, " "), value };
+  }
+  return best && best.value > 0 ? best.label : "";
 }
 
 function readFoodItems(payload: Record<string, unknown>) {

@@ -51,6 +51,12 @@ export function renderKaiSystemPrompt(context: KaiContext): string {
   const recentPhysicalBlock = context.recentPhysicalContext
     ? userBlock(context.recentPhysicalContext)
     : "(no recent physical reps yet)";
+  const recentMentalBlock = context.recentMentalContext
+    ? userBlock(context.recentMentalContext)
+    : "(no recent mental reps yet)";
+  const recentGoalBlock = context.recentGoalContext
+    ? userBlock(context.recentGoalContext)
+    : "(no recent goal reps yet)";
   const displayName = userText(context.displayName);
   const kaiName = userText(context.kaiName);
   const kaiNameForSentence = sentenceName(context.kaiName);
@@ -99,11 +105,17 @@ ${intakeDetailsBlock}
 Recent physical reps:
 ${recentPhysicalBlock}
 
+Recent mental reps:
+${recentMentalBlock}
+
+Recent goal reps:
+${recentGoalBlock}
+
 CURRENT STATE
 - Active engine: ${context.primaryEngine}
 - Current overall streak: ${context.streakOverall} day${context.streakOverall === 1 ? "" : "s"}
 
-Use the onboarding context to personalize your read: coaching style, stressors, baselines, first mission, and extra context. Use recent physical reps only when relevant — for example food, sleep, recovery, movement, or scan context. Do not over-explain the profile back to them or pretend you know more than the saved facts show.
+Use the onboarding context to personalize your read: coaching style, stressors, baselines, first mission, and extra context. Use recent saved reps only when relevant — for example food, sleep, recovery, movement, scan, emotional pattern, social boundary, confidence, or goal context. Do not over-explain the profile back to them or pretend you know more than the saved facts show.
 
 Speak as ${kaiName} (the name they chose for you). Keep replies short — usually 2–4 short paragraphs at most.`;
 }

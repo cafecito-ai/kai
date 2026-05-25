@@ -167,7 +167,7 @@ function assertScenario(scenario, result) {
   if (result.reply.includes("Recent physical reps") || result.reply.includes("Recent mental reps") || result.reply.includes("Recent goal reps")) {
     throw new Error("reply leaked internal context labels");
   }
-  if (!["talk", "reset"].includes(scenario.action) && /Want to talk it out or pick a reset\?/i.test(result.reply)) {
+  if (!["talk", "reset"].includes(scenario.action) && /Want to (talk it out or pick a reset|pick a reset or talk it out)\?/i.test(result.reply)) {
     throw new Error("clear routed intent fell back to generic talk/reset copy");
   }
   if (result.nextAction?.id !== scenario.action) {

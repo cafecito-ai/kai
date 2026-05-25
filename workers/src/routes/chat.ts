@@ -90,26 +90,24 @@ function tightenControlLayerReply(reply: string, nextAction: KaiNextAction) {
 
   const genericPatterns = [
     /\bWant to talk it out or pick a reset\?\s*/i,
+    /\bWant to pick a reset or talk it out\?\s*/i,
     /\bCan you tell me more about what'?s going on\?\s*/i,
     /\bCan you tell me more about what is going on\?\s*/i
   ];
   if (!genericPatterns.some((pattern) => pattern.test(trimmed))) return trimmed;
 
-  const opener = controlLayerOpeners[nextAction.id];
-  const withoutGeneric = genericPatterns.reduce((current, pattern) => current.replace(pattern, ""), trimmed).trim();
-  const tail = withoutGeneric && !withoutGeneric.toLowerCase().startsWith(opener.toLowerCase()) ? ` ${withoutGeneric}` : "";
-  return `${opener}${tail}`.replace(/\s+/g, " ").slice(0, 900);
+  return controlLayerFallbacks[nextAction.id];
 }
 
-const controlLayerOpeners: Record<Exclude<KaiActionId, "talk" | "reset">, string> = {
-  food: "Fuel check is the move.",
-  sleep: "Sleep protection is the move.",
-  stretch: "Stretch reset is the move.",
-  scan: "Private body scan is the move.",
-  goal: "One goal move is the play.",
-  confidence: "Confidence proof is the move.",
-  social: "A calm social boundary is the move.",
-  screen: "Screen reset is the move."
+const controlLayerFallbacks: Record<Exclude<KaiActionId, "talk" | "reset">, string> = {
+  food: "Fuel check is the move. Keep it simple: carbs, protein, and water before practice. Open Food and log what you have so Kai can use it for the next read.",
+  sleep: "Sleep protection is the move. Keep today lighter, get water and food in, and protect tonight's wind-down. Open Sleep and log the rough night so Kai can carry it forward.",
+  stretch: "Stretch reset is the move. Pick one tight area, breathe slowly, and do a short mobility rep. Open Stretch so Kai can guide it.",
+  scan: "Private body scan is the move. Check posture and recovery without judging your body. Open Body scan and let Kai turn it into one useful next adjustment.",
+  goal: "One goal move is the play. Shrink the assignment to the next visible rep, not the whole mountain. Open Goal and lock the next action.",
+  confidence: "Confidence proof is the move. Skip fake hype and bank one small piece of evidence today. Open Confidence and choose the proof rep.",
+  social: "A calm social boundary is the move. Separate the group-chat story from what you actually know, then pick one steady response. Open Social and write it cleanly.",
+  screen: "Screen reset is the move. No guilt spiral. Put the phone down for one hour and choose a replacement that gives your brain a break. Open Screen reset."
 };
 
 function normalizeToolText(value: unknown, maxLength: number) {

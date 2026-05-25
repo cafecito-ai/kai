@@ -85,6 +85,7 @@ describe("chat routes", () => {
     expect(body.nextAction).toMatchObject({ id: "social", route: "/mental?module=checkin&action=social" });
     expect(body.reply).toContain("A calm social boundary is the move.");
     expect(body.reply).not.toContain("Want to talk it out or pick a reset?");
+    expect(body.reply).toContain("Open Social");
   });
 });
 

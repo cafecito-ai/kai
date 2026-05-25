@@ -96,7 +96,7 @@ const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: 
   { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "mental", route: "/mental?module=purpose" }
 ];
 
-const steps = ["Gate", "Kai", "Vibe", "Signals", "Mission", "Context", "Reveal"];
+const steps = ["Gate", "Kai", "Vibe", "Signals", "Focus", "Context", "Reveal"];
 
 const CONSENT_POLL_MS = 5000;
 
@@ -566,8 +566,8 @@ function SignalScan({ signals, setSignals }: { signals: Record<SignalId, number>
 function MissionPick({ mission, setMission }: { mission: MissionId; setMission: (value: MissionId) => void }) {
   return (
     <div>
-      <Eyebrow>First mission</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What should Kai help with first?</h2>
+      <Eyebrow>First focus</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What is Kai helping with first?</h2>
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         {missionChoices.map((item) => {
           const Icon = item.icon;
@@ -593,7 +593,7 @@ function ContextDrop({ context, setContext }: { context: string; setContext: (va
   return (
     <div>
       <Eyebrow>Optional context</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Anything Kai should know?</h2>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Anything Kai needs to know?</h2>
       <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-inkSoft">A messy sentence is enough. Or skip it and let Kai learn as you use the app.</p>
       <textarea className="field mt-6 min-h-40 text-base" value={context} onChange={(event) => setContext(event.target.value)} placeholder="Example: school pressure has been loud, sleep is bad, and I want to feel more confident..." />
     </div>

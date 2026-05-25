@@ -85,7 +85,7 @@ function AppContextBar() {
           </span>
           <div className="min-w-0">
             <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-inkMute">{sectionLabel(pathname)}</p>
-            <p className="truncate text-sm font-black text-inkDark">Mental and Physical stay in one loop.</p>
+            <p className="truncate text-sm font-black text-inkDark">Two lanes. One Kai.</p>
           </div>
         </div>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 text-xs font-black sm:grid-cols-[1fr_1fr_auto_auto]">

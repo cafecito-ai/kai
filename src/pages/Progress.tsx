@@ -10,7 +10,7 @@ export function Progress() {
         eyebrow="app section · progress"
         title={
           <>
-            One timeline for mental and physical <span className="font-serif font-normal italic text-plum">reps.</span>
+            Progress for mental and physical <span className="font-serif font-normal italic text-plum">reps.</span>
           </>
         }
       >

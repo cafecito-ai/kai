@@ -24,7 +24,7 @@ export function AppSurface({
   className?: string;
   variant?: "plain" | "soft" | "dark" | "danger";
 }) {
-  const base = "min-w-0 overflow-hidden rounded-[30px] border shadow-sm backdrop-blur-xl";
+  const base = "w-full max-w-full min-w-0 overflow-hidden rounded-[30px] border shadow-sm backdrop-blur-xl";
   const variants = {
     plain: `${base} border-white/65 bg-white/80`,
     soft: `${base} border-white/60 bg-white/60`,
@@ -94,7 +94,7 @@ export function SessionHero({
 }) {
   return (
     <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-stretch">
-      <div className="min-w-0 rounded-[32px] border border-white/70 bg-white/80 p-5 shadow-calm backdrop-blur-xl sm:p-7 lg:p-9">
+      <div className="w-full max-w-full min-w-0 overflow-hidden rounded-[32px] border border-white/70 bg-white/80 p-5 shadow-calm backdrop-blur-xl sm:p-7 lg:p-9">
         <p className="eyebrow">{eyebrow}</p>
         <h1 className="mt-3 max-w-4xl break-words font-display text-3xl font-black leading-[0.96] tracking-normal text-ink sm:text-6xl lg:text-7xl">{title}</h1>
         {children && <div className="mt-4 max-w-2xl break-words text-base font-medium leading-7 text-muted">{children}</div>}
@@ -138,7 +138,7 @@ export function AppHero({
         <div className="min-w-0">
           <p className="eyebrow">{eyebrow}</p>
           <h1 className="app-title mt-2">{title}</h1>
-          {children && <div className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted sm:text-base sm:leading-7">{children}</div>}
+          {children && <div className="mt-3 w-full max-w-full break-words text-sm font-medium leading-6 text-muted sm:max-w-2xl sm:text-base sm:leading-7">{children}</div>}
         </div>
         {action && <div className="min-w-0">{action}</div>}
       </div>

@@ -47,7 +47,7 @@ export function FriendCompare() {
         <div className="mb-3 grid size-12 place-items-center rounded-full bg-white text-muted">
           <Lock />
         </div>
-        <p className="eyebrow">friend compare</p>
+        <p className="eyebrow">Friend compare</p>
         <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Coming after privacy review.</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           Opt-in only, aggregate stats only: streak, level, weekly score. Never reflection content, never meal photos. The
@@ -72,7 +72,7 @@ export function FriendCompare() {
           <Users />
         </div>
         <div>
-          <p className="eyebrow">friend compare</p>
+          <p className="eyebrow">Friend compare</p>
           <h2 className="mt-1 font-display text-2xl font-black tracking-normal">Opt-in leaderboard</h2>
         </div>
       </div>

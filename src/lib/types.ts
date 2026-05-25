@@ -10,14 +10,64 @@ export interface ProgressEvent {
   occurredAt: string;
 }
 
+export type GoalCategory =
+  | "school"
+  | "sport"
+  | "fitness"
+  | "nutrition"
+  | "sleep"
+  | "mental"
+  | "creative"
+  | "music"
+  | "business"
+  | "charity"
+  | "social"
+  | "custom";
+
+export type GoalStatus = "active" | "paused" | "achieved" | "released";
+
 export interface Goal {
   id: string;
-  category: "school" | "instrument" | "sport" | "business" | "charity" | "custom";
+  userId?: string;
+  category: GoalCategory;
   title: string;
-  description?: string;
-  targetDate?: string;
-  status: "active" | "achieved" | "paused" | "released";
+  description: string;
+  whyItMatters?: string;
+  targetDate?: string | null;
+  status: GoalStatus;
+  nextAction?: string | null;
+  confidence?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+  achievedAt?: string | null;
 }
+
+export type LoopStepId =
+  | "check_in"
+  | "body_action"
+  | "mind_action"
+  | "goal_action"
+  | "reflection";
+
+export type LoopStepStatus = "locked" | "available" | "completed" | "skipped";
+
+export type DailyLoopStep = {
+  id: LoopStepId;
+  title: string;
+  subtitle: string;
+  status: LoopStepStatus;
+  completedAt?: string | null;
+  payload?: Record<string, unknown>;
+};
+
+export type DailyLoop = {
+  dateIso: string;
+  score: number;
+  streak: number;
+  steps: DailyLoopStep[];
+  recommendedGoalId?: string | null;
+  kaiMessage: string;
+};
 
 export interface UserProfile {
   kaiName: string;

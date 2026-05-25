@@ -69,7 +69,7 @@ export function EngineMental() {
   async function createGoal() {
     const title = goalTitle.trim();
     if (!title) return;
-    const fallback: Goal = { id: crypto.randomUUID(), category: "custom", title, status: "active" };
+    const fallback: Goal = { id: crypto.randomUUID(), category: "custom", title, description: "Created inside the Mental agent.", status: "active" };
     setGoals((items) => [fallback, ...items]);
     setGoalTitle("");
     try {

@@ -45,11 +45,11 @@ select {
 }
 
 .app-page {
-  @apply mx-auto w-full max-w-6xl min-w-0 space-y-4 overflow-hidden text-ink sm:space-y-5;
+  @apply mx-auto w-full max-w-full min-w-0 space-y-4 overflow-hidden text-ink sm:space-y-5 lg:max-w-6xl;
 }
 
 .app-surface {
-  @apply min-w-0 overflow-hidden rounded-[30px] border border-white/65 bg-white/80 shadow-calm backdrop-blur-xl;
+  @apply w-full max-w-full min-w-0 overflow-hidden rounded-[30px] border border-white/65 bg-white/80 shadow-calm backdrop-blur-xl;
 }
 
 .app-title {

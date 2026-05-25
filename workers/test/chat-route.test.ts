@@ -87,6 +87,30 @@ describe("chat routes", () => {
     expect(body.reply).not.toContain("Want to talk it out or pick a reset?");
     expect(body.reply).toContain("Open Social");
   });
+
+  it("replaces off-topic clear-intent replies with the matching action copy", async () => {
+    const aiReplies = [
+      '{"category":"none","severity":"low","explanation":"no safety signal"}',
+      "Group chat and social pressure can be tough to deal with. Maybe set a boundary."
+    ];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/kai/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-dev-user": "chat-tester" },
+        body: JSON.stringify({ message: "I keep doomscrolling and comparing myself" })
+      }),
+      makeEnv({
+        firstRows: [{}, {}, {}],
+        aiRun: async () => ({ response: aiReplies.shift() ?? "" })
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
+    expect(body.nextAction).toMatchObject({ id: "screen", route: "/mental?module=reset&action=screen" });
+    expect(body.reply).toContain("Screen reset is the move.");
+    expect(body.reply).toContain("Open Screen reset.");
+  });
 });
 
 function makeEnv(opts: {

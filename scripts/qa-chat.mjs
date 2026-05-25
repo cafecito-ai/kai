@@ -170,6 +170,10 @@ function assertScenario(scenario, result) {
   if (!["talk", "reset"].includes(scenario.action) && /Want to (talk it out or pick a reset|pick a reset or talk it out)\?/i.test(result.reply)) {
     throw new Error("clear routed intent fell back to generic talk/reset copy");
   }
+  const signals = actionSignals[scenario.action] || [];
+  if (signals.length > 0 && !signals.some((signal) => result.reply.toLowerCase().includes(signal))) {
+    throw new Error(`reply did not include action-specific language for ${scenario.action}`);
+  }
   if (result.nextAction?.id !== scenario.action) {
     throw new Error(`expected nextAction ${scenario.action}, got ${result.nextAction?.id || "none"}`);
   }
@@ -177,6 +181,16 @@ function assertScenario(scenario, result) {
     throw new Error(`expected route ${scenario.route}, got ${result.nextAction?.route || "none"}`);
   }
 }
+
+const actionSignals = {
+  food: ["fuel", "food", "eat", "meal", "practice"],
+  sleep: ["sleep", "recovery", "wind-down", "tired", "wired"],
+  scan: ["body scan", "posture", "alignment", "private scan"],
+  confidence: ["confidence", "proof", "fake hype", "evidence"],
+  social: ["social", "boundary", "group chat", "left out"],
+  screen: ["screen", "phone", "scroll", "doomscroll", "comparison"],
+  goal: ["goal", "next visible rep", "assignment", "next action"]
+};
 
 async function request(path, init = {}) {
   const response = await fetch(`${baseUrl}${path}`, {

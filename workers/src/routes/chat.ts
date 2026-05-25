@@ -92,12 +92,30 @@ function tightenControlLayerReply(reply: string, nextAction: KaiNextAction) {
     /\bWant to talk it out or pick a reset\?\s*/i,
     /\bWant to pick a reset or talk it out\?\s*/i,
     /\bCan you tell me more about what'?s going on\?\s*/i,
-    /\bCan you tell me more about what is going on\?\s*/i
+    /\bCan you tell me more about what is going on\?\s*/i,
+    /\bCan you tell me more about what'?s making you feel that way\?\s*/i,
+    /\bIs it something specific that'?s making you feel/i
   ];
-  if (!genericPatterns.some((pattern) => pattern.test(trimmed))) return trimmed;
+  if (!genericPatterns.some((pattern) => pattern.test(trimmed)) && hasActionSignal(trimmed, nextAction.id)) return trimmed;
 
   return controlLayerFallbacks[nextAction.id];
 }
+
+function hasActionSignal(reply: string, actionId: Exclude<KaiActionId, "talk" | "reset">) {
+  const lower = reply.toLowerCase();
+  return actionSignals[actionId].some((signal) => lower.includes(signal));
+}
+
+const actionSignals: Record<Exclude<KaiActionId, "talk" | "reset">, string[]> = {
+  food: ["fuel", "food", "eat", "meal", "practice"],
+  sleep: ["sleep", "recovery", "wind-down", "tired", "wired"],
+  stretch: ["stretch", "mobility", "tight", "sore", "body reset"],
+  scan: ["body scan", "posture", "alignment", "private scan"],
+  goal: ["goal", "next visible rep", "assignment", "next action"],
+  confidence: ["confidence", "proof", "fake hype", "evidence"],
+  social: ["social", "boundary", "group chat", "left out"],
+  screen: ["screen", "phone", "scroll", "doomscroll", "comparison"]
+};
 
 const controlLayerFallbacks: Record<Exclude<KaiActionId, "talk" | "reset">, string> = {
   food: "Fuel check is the move. Keep it simple: carbs, protein, and water before practice. Open Food and log what you have so Kai can use it for the next read.",

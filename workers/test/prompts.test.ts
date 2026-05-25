@@ -79,6 +79,16 @@ describe("renderKaiSystemPrompt", () => {
     expect(result).toContain("Use recent saved reps only when relevant");
   });
 
+  it("sets a memory style that feels natural instead of surveillant", () => {
+    const result = renderKaiSystemPrompt(baseContext());
+    expect(result).toContain("MEMORY STYLE");
+    expect(result).toContain("Use at most one relevant saved fact");
+    expect(result).toContain("Do not list their history");
+    expect(result).toContain("Never make it feel like surveillance");
+    expect(result).toContain("You only know what they saved or told Kai");
+    expect(result).toContain("Always end with one doable next move or one clear question");
+  });
+
   it("marks stored profile and intake values as untrusted data, not instructions", () => {
     const result = renderKaiSystemPrompt(
       baseContext({

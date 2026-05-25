@@ -23,6 +23,9 @@ export function describeFoodPhotoResult(result: FoodPhotoResult): string {
     return "Kai couldn't confidently read food in this photo. Type the items you remember and keep the note descriptive.";
   }
   const itemWord = result.items.length === 1 ? "item" : "items";
+  if (result.confidence === "manual_stub") {
+    return `Kai saved ${result.items.length} ${itemWord} from your note. Treat this as a descriptive fuel log, not a score.`;
+  }
   if (result.confidence === "low") {
     return `Kai saw ${result.items.length} ${itemWord}, but confidence is low. Treat this as a draft and edit anything that looks off.`;
   }

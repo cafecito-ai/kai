@@ -62,8 +62,9 @@ export function EnginePhysical() {
     }
   }
 
-  async function logMeal(mode: "meal_log" | "food_photo_stub") {
+  async function logMeal(mode: "meal_log" | "food_example") {
     setFoodPhotoResult(null);
+    setFoodPhotoMessage("");
     const safety = localSafetyCheck(meal);
     if (!safety.safe) {
       setFoodSafetyMessage(
@@ -72,15 +73,32 @@ export function EnginePhysical() {
       return;
     }
 
-    const photoResult = mode === "food_photo_stub" ? await api.analyzeFoodPhoto({ note: meal }) : null;
-    if (photoResult) setFoodPhotoResult(photoResult);
+    let photoResult: FoodPhotoResult | null = null;
+    setSaving(mode);
+    try {
+      photoResult = await api.analyzeFoodPhoto({ note: meal });
+      setFoodPhotoResult(photoResult);
+      setFoodPhotoMessage("Meal saved. Kai turned the note into a reviewable fuel log.");
+    } catch {
+      setFoodPhotoMessage("Connection dropped. Kai saved this as a local fuel note and can sync details later.");
+    }
 
     await completeEntry({
       entryType: mode,
-      title: mode === "meal_log" ? "Fuel note" : "Food photo stub",
+      title: mode === "meal_log" ? "Fuel note" : "Food example",
       payload:
         mode === "meal_log"
-          ? { meal, mealContext, mode: "fuel_note" }
+          ? {
+              meal,
+              mealContext,
+              mode: "fuel_note",
+              mealId: photoResult?.mealId,
+              items: photoResult?.items ?? [],
+              totals: photoResult?.totals ?? null,
+              confidence: photoResult?.confidence,
+              notes: photoResult?.notes,
+              labels: ["meal", "manual", "editable", "no calorie target"]
+            }
           : {
               meal,
               mealContext,
@@ -91,8 +109,8 @@ export function EnginePhysical() {
               notes: photoResult?.notes,
               labels: ["meal", "editable", "no calorie target"]
             },
-      eventType: mode === "meal_log" ? "meal_logged" : "food_photo_stub",
-      eventValue: mode === "meal_log" ? 24 : 12
+      eventType: mode === "meal_log" ? "meal_logged" : "food_example_logged",
+      eventValue: mode === "meal_log" ? 24 : 14
     });
   }
 
@@ -200,8 +218,8 @@ export function EnginePhysical() {
               <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={!foodPhoto || saving === "food_photo_upload"} onClick={() => void uploadFoodPhoto()}>
                 {saving === "food_photo_upload" ? "Uploading" : "Analyze selected photo"}
               </Button>
-              <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={saving === "food_photo_stub"} onClick={() => void logMeal("food_photo_stub")}>
-                Use photo example
+              <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={saving === "food_example"} onClick={() => void logMeal("food_example")}>
+                Use example note
               </Button>
             </div>
             {foodPhotoResult && <FoodPhotoResultCard result={foodPhotoResult} mealContext={mealContext} />}
@@ -330,11 +348,12 @@ function PhysicalModule({ icon, title, copy }: { icon: React.ReactNode; title: s
 function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult; mealContext: MealContextId }) {
   const itemsWithNutrition = result.items.filter((item) => item.nutrition);
   const followups = getFoodPhotoFollowups(result, mealContext);
+  const sourceLabel = result.r2Key ? "camera read" : "fuel note";
   return (
     <div className="mt-4 rounded-kai border border-white/15 bg-white/10 p-4 text-paper">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="eyebrow text-soft">camera read</p>
+          <p className="eyebrow text-soft">{sourceLabel}</p>
           <h3 className="mt-1 font-display text-2xl font-black tracking-normal">Review what Kai saw.</h3>
         </div>
         <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-paper/75">

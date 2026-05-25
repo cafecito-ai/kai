@@ -37,6 +37,20 @@ describe("food-photo framing", () => {
     expect(result).not.toMatch(/good|bad|target/i);
   });
 
+  it("frames manual meal notes as real fuel logs", () => {
+    const result = describeFoodPhotoResult({
+      ...baseResult,
+      confidence: "manual_stub",
+      items: [
+        { name: "turkey sandwich", source: "manual" },
+        { name: "apple", source: "manual" }
+      ]
+    });
+    expect(result).toMatch(/saved 2 items/i);
+    expect(result).toMatch(/descriptive fuel log/i);
+    expect(result).not.toMatch(/stub|grade/i);
+  });
+
   it("formats nutrition as an estimate without daily target language", () => {
     const label = formatFoodNutrition({ calories: 540, protein: 31.2, carbs: 62, fat: 12.6 });
     expect(label).toBe("540 kcal est. • 31g protein • 62g carbs • 13g fat");

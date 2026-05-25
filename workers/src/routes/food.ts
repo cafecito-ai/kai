@@ -5,6 +5,7 @@ import {
   type AnalyzedItem,
   type MealAnalysis
 } from "../lib/food-analysis";
+import { ensureUser } from "../lib/db";
 import type { Env } from "../types";
 
 export const foodRoutes = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
@@ -59,6 +60,7 @@ async function analyzeAndSaveMeal(
 ): Promise<FoodPhotoResponse> {
   const id = crypto.randomUUID();
   const analysis = await analyzeMeal(env, body);
+  await ensureUser(env.DB, userId);
 
   await env.DB
     .prepare(

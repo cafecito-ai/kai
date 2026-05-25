@@ -16,13 +16,16 @@ export function UnitWorkspace({
   label,
   intro,
   tone,
-  modules
+  modules,
+  banners
 }: {
   title: string;
   label: string;
   intro: string;
   tone: "mental" | "physical";
   modules: UnitModule[];
+  /** Safety / disclosure banners that must be visible on every tab (spec §1, §7). */
+  banners?: ReactNode;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get("module");
@@ -69,6 +72,8 @@ export function UnitWorkspace({
           </div>
         </div>
       </section>
+
+      {banners && <div className="grid gap-3">{banners}</div>}
 
       <section className="rounded-[30px] border border-[#0A0A0A0F] bg-white/80 p-3 shadow-sm backdrop-blur-xl">
         <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${title} modules`}>

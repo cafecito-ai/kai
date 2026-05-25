@@ -13,6 +13,7 @@ import {
   MEAL_CONTEXTS,
   type MealContextId
 } from "../lib/food-photo";
+import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { localSafetyCheck } from "../lib/safety";
 import type { EngineEntry, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
@@ -303,7 +304,16 @@ export function EnginePhysical() {
     }
   ];
 
-  return <UnitWorkspace title="Physical agent" label="Health unit" tone="physical" intro="Food camera, movement, sleep, hydration, posture, mobility, and recovery. Useful, pattern-aware, never obsessive." modules={modules} />;
+  return (
+    <UnitWorkspace
+      title="Physical agent"
+      label="Health unit"
+      tone="physical"
+      intro="Food camera, movement, sleep, hydration, posture, mobility, and recovery. Useful, pattern-aware, never obsessive."
+      modules={modules}
+      banners={<DisclosureBanner />}
+    />
+  );
 }
 
 const foodExamples = [

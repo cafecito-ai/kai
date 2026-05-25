@@ -1,11 +1,15 @@
 import { Send, Sparkles } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, Fragment, useState } from "react";
 import { useKaiStore } from "../../stores/kaiStore";
+import { useUserStore } from "../../stores/userStore";
+import { CrisisResourceCard } from "../safety/CrisisResourceCard";
+import { DisclosureBanner } from "../safety/DisclosureBanner";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
 
 export function KaiChat({ embedded = false }: { embedded?: boolean }) {
   const { messages, send, sending } = useKaiStore();
+  const kaiName = useUserStore((state) => state.kaiName);
   const [draft, setDraft] = useState("");
 
   function onSubmit(event: FormEvent) {
@@ -16,34 +20,40 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
   }
 
   const shellClass = embedded ? "overflow-hidden rounded-[24px] border border-line bg-white" : "overflow-hidden rounded-calm border border-line bg-white shadow-calm";
+  const lowerKaiName = kaiName.toLowerCase();
 
   return (
     <section className={shellClass}>
       <div className="mb-4 flex items-center justify-between border-b border-line bg-warmPaper/70">
         <div className="p-5 pb-4">
-          <p className="eyebrow">kai check-in</p>
+          <p className="eyebrow">{lowerKaiName} check-in</p>
           <h2 className="mt-1 font-display text-3xl font-black tracking-normal">What is taking up space?</h2>
         </div>
         <div className="mr-5">
           <KaiMark size="md" />
         </div>
       </div>
+      <div className="mx-4 mb-3">
+        <DisclosureBanner />
+      </div>
       <div
         className="mx-4 mb-4 space-y-3"
         aria-live="polite"
         aria-relevant="additions"
-        aria-label="Chat with Kai"
+        aria-label={`Chat with ${kaiName}`}
       >
         {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`max-w-[88%] rounded-[22px] px-4 py-3 text-sm font-medium leading-6 ${
-              message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
-            }`}
-          >
-            <span className="sr-only">{message.role === "assistant" ? "Kai said: " : "You said: "}</span>
-            {message.content}
-          </div>
+          <Fragment key={message.id}>
+            <div
+              className={`max-w-[88%] rounded-[22px] px-4 py-3 text-sm font-medium leading-6 ${
+                message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
+              }`}
+            >
+              <span className="sr-only">{message.role === "assistant" ? `${kaiName} said: ` : "You said: "}</span>
+              {message.content}
+            </div>
+            {message.safetyEvent && <CrisisResourceCard />}
+          </Fragment>
         ))}
       </div>
       <div className="mx-4 mb-3 flex flex-wrap gap-2" role="group" aria-label="Topic suggestions">
@@ -61,14 +71,14 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
       </div>
       <form onSubmit={onSubmit} className="flex gap-2 border-t border-line bg-paper p-3">
         <label htmlFor="kai-chat-input" className="sr-only">
-          Message to Kai
+          Message to {kaiName}
         </label>
         <input
           id="kai-chat-input"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           className="field min-w-0 flex-1"
-          placeholder={sending ? "kai is thinking" : "say it messy"}
+          placeholder={sending ? `${lowerKaiName} is thinking` : "say it messy"}
           disabled={sending}
         />
         <Button aria-label="Send message" disabled={sending}>

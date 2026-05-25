@@ -38,6 +38,7 @@ import {
   setHydrationTarget,
   type HydrationEntry,
 } from "../lib/local-hydration";
+import { appendLocalInput } from "../lib/local-score";
 
 const PRESETS = [4, 6, 8, 10, 12];
 
@@ -89,8 +90,17 @@ export function HydrationTile({ className = "" }: { className?: string }) {
     if (justCrossed && !alreadyCelebratedToday()) {
       setCelebrating(true);
       markCelebrated();
+      // Hitting the hydration goal contributes to the day's mood
+      // subscore — small but real bump. Logged as an energy_check_in
+      // input with value 4/5 ("steady") since that's the closest
+      // existing source kind that maps to "small positive nudge."
+      // Recorded once per day (dedupe via the celebrate flag above).
+      appendLocalInput({
+        date: new Date().toISOString().slice(0, 10),
+        source: "energy_check_in",
+        value: { energy: 4, note: "hydration goal hit" },
+      });
       const id = window.setTimeout(() => setCelebrating(false), 1600);
-      // Update ref AFTER setting up the timeout so the cleanup is correct.
       prevGlassesRef.current = entry.glasses;
       return () => window.clearTimeout(id);
     }

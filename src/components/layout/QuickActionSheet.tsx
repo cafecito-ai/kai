@@ -21,7 +21,13 @@ import {
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const ACTIONS = [
+// Two tiers per Lev's UX call:
+//   PRIMARY (top, 4 big cards) — the most-frequent daily actions
+//   SECONDARY (below, small chips) — less-frequent or specialty stuff
+// One tap on PRIMARY = go. SECONDARY chips just navigate too — but they
+// take less visual real estate so the sheet doesn't feel overwhelming.
+
+const PRIMARY_ACTIONS = [
   {
     label: "Check in",
     blurb: "Morning or evening reflection.",
@@ -44,54 +50,21 @@ const ACTIONS = [
     to: "/food/log",
   },
   {
-    label: "Journal",
-    blurb: "Write anything — private.",
-    icon: NotebookPen,
-    tint: "bg-accent-soft text-accent",
-    to: "/journal",
-  },
-  {
     label: "Log sleep",
     blurb: "Last night's hours and quality.",
     icon: Moon,
     tint: "bg-accent-soft text-accent",
     to: "/sleep/log",
   },
-  {
-    label: "Set a goal",
-    blurb: "Identity-based, never task-based.",
-    icon: Target,
-    tint: "bg-accent-cool-soft text-accent-cool",
-    to: "/goals",
-  },
-  {
-    label: "Stretch / move",
-    blurb: "3-10 min mobility routines.",
-    icon: Sparkles,
-    tint: "bg-accent-soft text-accent",
-    to: "/mobility",
-  },
-  {
-    label: "Energy check",
-    blurb: "1-5 read on how today feels.",
-    icon: Zap,
-    tint: "bg-accent-warm-soft text-accent-warm",
-    to: "/energy",
-  },
-  {
-    label: "Body scan",
-    blurb: "3 photos — KAI checks posture only.",
-    icon: ScanLine,
-    tint: "bg-accent-cool-soft text-accent-cool",
-    to: "/scan",
-  },
-  {
-    label: "Call KAI",
-    blurb: "Actual phone call. 10 min max.",
-    icon: Phone,
-    tint: "bg-accent-cool-soft text-accent-cool",
-    to: "/voice",
-  },
+] as const;
+
+const SECONDARY_ACTIONS = [
+  { label: "Journal", icon: NotebookPen, to: "/journal" },
+  { label: "Energy check", icon: Zap, to: "/energy" },
+  { label: "Stretch / move", icon: Sparkles, to: "/mobility" },
+  { label: "Set a goal", icon: Target, to: "/goals" },
+  { label: "Body scan", icon: ScanLine, to: "/scan" },
+  { label: "Call KAI", icon: Phone, to: "/voice" },
 ] as const;
 
 type QuickActionSheetProps = {
@@ -164,8 +137,9 @@ export function QuickActionSheet({ open, onClose }: QuickActionSheetProps) {
           </button>
         </div>
 
+        {/* PRIMARY — 4 big tappable cards (Lev's call) */}
         <div className="mt-4 space-y-2">
-          {ACTIONS.map(({ label, blurb, icon: Icon, tint, to }) => (
+          {PRIMARY_ACTIONS.map(({ label, blurb, icon: Icon, tint, to }) => (
             <button
               key={label}
               type="button"
@@ -200,6 +174,36 @@ export function QuickActionSheet({ open, onClose }: QuickActionSheetProps) {
               </span>
             </button>
           ))}
+        </div>
+
+        {/* SECONDARY — small chips (less-frequent / specialty stuff) */}
+        <div className="mt-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            more
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {SECONDARY_ACTIONS.map(({ label, icon: Icon, to }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigate(to);
+                }}
+                className="
+                  focus-ring
+                  inline-flex items-center gap-1.5
+                  rounded-full border border-glass-border
+                  bg-surface px-3 py-1.5
+                  text-xs font-medium text-text-primary
+                  transition hover:bg-surface-muted active:scale-[0.99]
+                "
+              >
+                <Icon size={12} aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

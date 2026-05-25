@@ -13,6 +13,7 @@ import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { KaiChat } from "../components/kai/KaiChat";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
+import { getMentalPatternItems, mentalNextNudge, type MentalPatternItem, type MentalPatternKind } from "../lib/mental-history";
 import type { EngineEntry, Goal } from "../lib/types";
 import { useKaiStore } from "../stores/kaiStore";
 import { useProgressStore } from "../stores/progressStore";
@@ -93,6 +94,13 @@ export function EngineMental() {
     });
   }
 
+  const checkinPatterns = getMentalPatternItems(entries, "checkin");
+  const reframePatterns = getMentalPatternItems(entries, "reframe");
+  const resetPatterns = getMentalPatternItems(entries, "reset");
+  const socialPatterns = getMentalPatternItems(entries, "social");
+  const identityPatterns = getMentalPatternItems(entries, "identity");
+  const goalPatterns = getMentalPatternItems(entries, "goal");
+
   const modules: UnitModule[] = [
     {
       id: "checkin",
@@ -125,6 +133,10 @@ export function EngineMental() {
                 })
               }
             />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <MentalPatternPanel title="Feeling patterns" kind="checkin" items={checkinPatterns} />
+            <MentalPatternPanel title="Reframes to keep" kind="reframe" items={reframePatterns} inverse />
           </div>
         </div>
       )
@@ -176,6 +188,11 @@ export function EngineMental() {
               })
             }
           />
+          <div className="grid gap-4 lg:grid-cols-3">
+            <MentalPatternPanel title="Body resets" kind="reset" items={resetPatterns} />
+            <MentalPatternPanel title="Social boundaries" kind="social" items={socialPatterns} />
+            <MentalPatternPanel title="Identity notes" kind="identity" items={identityPatterns} />
+          </div>
         </div>
       )
     },
@@ -235,6 +252,7 @@ export function EngineMental() {
             </div>
           </div>
           <StrengthsDiscoveryCard onComplete={(summary) => void completeReset({ eventType: "strengths_discovery", title: "Strengths summary", payload: { summary, source: "kai_mental_reset" }, eventValue: 60 })} />
+          <MentalPatternPanel title="Goal patterns" kind="goal" items={goalPatterns} />
         </div>
       )
     },
@@ -305,6 +323,39 @@ function mentalCompletionSummary(eventType: string, payload: unknown) {
   if (eventType.includes("goal")) return "Goal rep is saved. One smaller next move beats more pressure.";
   if (typeof data.summary === "string") return "Strengths are saved. Kai can use them when a goal needs traction.";
   return "Mind rep is saved. Kai can use it for the next suggestion.";
+}
+
+function MentalPatternPanel({ title, kind, items, inverse = false }: { title: string; kind: MentalPatternKind; items: MentalPatternItem[]; inverse?: boolean }) {
+  return (
+    <section className={`rounded-[24px] border p-4 shadow-sm ${inverse ? "border-white/10 bg-ink text-paper" : "border-line bg-white"}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className={`text-[10px] font-black uppercase tracking-wider ${inverse ? "text-paper/45" : "text-muted"}`}>Kai notices</p>
+          <h3 className={`mt-1 text-lg font-black ${inverse ? "text-paper" : "text-ink"}`}>{title}</h3>
+        </div>
+        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${inverse ? "border-white/15 bg-white/10 text-paper/60" : "border-line bg-paper text-muted"}`}>
+          private
+        </span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {items.length === 0 && (
+          <p className={`rounded-kai border p-3 text-sm font-semibold leading-6 ${inverse ? "border-white/15 bg-white/10 text-paper/65" : "border-line bg-paper text-muted"}`}>
+            {mentalNextNudge(kind)}
+          </p>
+        )}
+        {items.map((item) => (
+          <div key={item.id} className={`rounded-kai border p-3 ${inverse ? "border-white/15 bg-white/10" : "border-line bg-paper"}`}>
+            <div className="flex items-start justify-between gap-3">
+              <p className={`text-sm font-black ${inverse ? "text-paper" : "text-ink"}`}>{item.title}</p>
+              <p className={`shrink-0 text-[10px] font-black uppercase tracking-wider ${inverse ? "text-paper/45" : "text-muted"}`}>{item.meta}</p>
+            </div>
+            <p className={`mt-1 text-sm font-semibold leading-5 ${inverse ? "text-paper/68" : "text-muted"}`}>{item.body}</p>
+          </div>
+        ))}
+      </div>
+      {items[0] && <p className={`mt-3 text-xs font-black leading-5 ${inverse ? "text-paper/55" : "text-muted"}`}>{mentalNextNudge(kind, items[0])}</p>}
+    </section>
+  );
 }
 
 function MentorCouncilPanel() {

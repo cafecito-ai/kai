@@ -46,7 +46,7 @@ const connectionErrorCopy = [
 const cases = [
   route("/", ["What's up?", "Kai on deck", "Try this next"], { actionables: ["textarea", "button", "a[href^='/']"] }),
   route("/onboarding", ["Safety first", "Age", "Parent email"], { actionables: ["button", "input"] }),
-  route("/home", ["What's up?", "Kai on deck", "Try this next"], { actionables: ["textarea", "button", "a[href^='/']"] }),
+  route("/home", ["What's up?", "Kai on deck", "Try this next"], { actionables: ["textarea", "button", "a[href^='/']"], kaiChatHandoff: true }),
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
   route("/loop", ["One clean loop.", "Body", "mind", "goal"], { actionables: ["button"] }),
@@ -127,7 +127,8 @@ function route(pathname, expectedText, options = {}) {
     actionables: options.actionables || [],
     forbiddenSelectors: options.forbiddenSelectors || [],
     optional: Boolean(options.optional),
-    foodPhotoUpload: Boolean(options.foodPhotoUpload)
+    foodPhotoUpload: Boolean(options.foodPhotoUpload),
+    kaiChatHandoff: Boolean(options.kaiChatHandoff)
   };
 }
 
@@ -221,6 +222,9 @@ async function renderPage(target, testCase) {
       await assertFoodPhotoUpload(client);
       result = await snapshotPage(client);
     }
+    if (testCase.kaiChatHandoff) {
+      await assertKaiChatHandoff(client);
+    }
     return { ...result, consoleErrors: client.consoleErrors };
   } finally {
     await client.close().catch(() => undefined);
@@ -256,6 +260,44 @@ async function assertFoodPhotoUpload(client) {
   }
 }
 
+async function assertKaiChatHandoff(client) {
+  await clickSelector(client, "button[aria-label='Talk to Kai']");
+  await waitForClientCondition(client, `Boolean(document.querySelector("[role='dialog'][aria-label='Chat with KAI']"))`, "Kai chat sheet did not open");
+  await clickSelector(client, "button[aria-label='Ask Kai: I have practice later and do not know what to eat']");
+  await waitForClientCondition(
+    client,
+    `(() => {
+      const dialog = document.querySelector("[role='dialog'][aria-label='Chat with KAI']");
+      return Boolean(dialog) &&
+        Array.from(dialog.querySelectorAll("a")).some((link) => (link.getAttribute("href") || "").includes("/health") && (link.getAttribute("href") || "").includes("module=food") && (link.getAttribute("href") || "").includes("action=food")) &&
+        dialog.innerText.toLowerCase().includes("kai's read");
+    })()`,
+    "Kai chat chip did not produce a food action"
+  );
+  await clickFoodActionLink(client);
+  await waitForClientCondition(
+    client,
+    `location.pathname === "/health" && location.search.includes("module=food") && !document.querySelector("[role='dialog'][aria-label='Chat with KAI']") && document.body.innerText.includes("Log food")`,
+    "Kai action did not close chat and open Food"
+  );
+}
+
+async function clickFoodActionLink(client) {
+  const clicked = await client.evaluate(`(() => {
+    const dialog = document.querySelector("[role='dialog'][aria-label='Chat with KAI']");
+    const element = Array.from((dialog || document).querySelectorAll("a")).find((link) => {
+      const href = link.getAttribute("href") || "";
+      return href.includes("/health") && href.includes("module=food") && href.includes("action=food");
+    });
+    if (!element) return false;
+    element.scrollIntoView({ block: "center", inline: "center" });
+    element.click();
+    return true;
+  })()`);
+  if (!clicked) throw new Error("could not click Kai food action link");
+  await new Promise((resolve) => setTimeout(resolve, 150));
+}
+
 async function waitForExpectedSnapshot(client, testCase) {
   let last = null;
   const started = Date.now();
@@ -267,6 +309,29 @@ async function waitForExpectedSnapshot(client, testCase) {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   return last ?? snapshotPage(client);
+}
+
+async function clickSelector(client, selector) {
+  const clicked = await client.evaluate(`(() => {
+    const element = document.querySelector(${JSON.stringify(selector)});
+    if (!element) return false;
+    element.scrollIntoView({ block: "center", inline: "center" });
+    element.click();
+    return true;
+  })()`);
+  if (!clicked) throw new Error(`could not click ${selector}`);
+  await new Promise((resolve) => setTimeout(resolve, 150));
+}
+
+async function waitForClientCondition(client, expression, failureMessage, timeoutMs = 20_000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const ok = await client.evaluate(`(() => { try { return Boolean(${expression}); } catch { return false; } })()`);
+    if (ok) return;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  const page = await snapshotPage(client);
+  throw new Error(`${failureMessage}; saw ${JSON.stringify(page.text.slice(0, 260))}`);
 }
 
 async function snapshotPage(client) {

@@ -1,5 +1,6 @@
 import { BookOpen, Camera, CheckCircle2, Dumbbell, Eye, History, Lock, Moon, ScanLine, ShieldCheck, Utensils, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
 import { Button } from "../components/ui/Button";
@@ -129,11 +130,12 @@ export function EnginePhysical() {
     });
   }
 
-  async function uploadFoodPhoto() {
+  async function uploadFoodPhoto(selectedPhoto?: File | null) {
     setFoodSafetyMessage("");
     setFoodPhotoMessage("");
     setFoodPhotoResult(null);
-    if (!foodPhoto) {
+    const photo = selectedPhoto ?? foodPhoto;
+    if (!photo) {
       setFoodPhotoMessage("Choose or take a food photo first.");
       return;
     }
@@ -146,8 +148,9 @@ export function EnginePhysical() {
     }
 
     setSaving("food_photo_upload");
+    setFoodPhotoMessage("Photo selected. Kai is reading it now.");
     try {
-      const photoResult = await api.uploadFoodPhoto(foodPhoto, meal);
+      const photoResult = await api.uploadFoodPhoto(photo, meal);
       setFoodPhotoResult(photoResult);
       setFoodPhotoMessage(photoResult.items.length > 0 ? `Photo saved. Kai saw: ${photoResult.items.map((item) => item.name).join(", ")}.` : "Photo saved. Add a note if Kai could not read the food clearly.");
       await completeEntry({
@@ -271,7 +274,17 @@ export function EnginePhysical() {
                   <img src={foodPhotoPreview} alt="Selected food preview" className="h-36 w-full rounded-[18px] object-cover" />
                 </span>
               )}
-              <input className="sr-only" type="file" accept="image/*" onChange={(event) => setFoodPhoto(event.target.files?.[0] ?? null)} />
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const nextPhoto = event.target.files?.[0] ?? null;
+                  setFoodPhoto(nextPhoto);
+                  if (nextPhoto) void uploadFoodPhoto(nextPhoto);
+                  event.currentTarget.value = "";
+                }}
+              />
             </label>
             {foodPhotoMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodPhotoMessage}</p>}
             <label className="mt-4 block text-xs font-black uppercase tracking-wider text-paper/45">
@@ -309,10 +322,10 @@ export function EnginePhysical() {
             <h2 className="mt-2 font-display text-2xl font-black leading-none tracking-normal">Fuel, scan, stretch, sleep.</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-muted">Kai keeps context, patterns, and guardrails behind the first rep.</p>
             <div className="mt-4 grid gap-3">
-              <PhysicalModule icon={<Utensils />} title="Log food" copy="To fuel your workouts correctly." />
-              <PhysicalModule icon={<Camera />} title="Body scan" copy="To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely." />
-              <PhysicalModule icon={<Wind />} title="Stretch / move" copy="To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." />
-              <PhysicalModule icon={<Moon />} title="Log sleep" copy="To ensure your body is actually recovering from the work." />
+              <PhysicalModule to="/health?module=food&action=food" icon={<Utensils />} title="Log food" copy="To fuel your workouts correctly." />
+              <PhysicalModule to="/health?module=scan&action=scan" icon={<Camera />} title="Body scan" copy="To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely." />
+              <PhysicalModule to="/health?module=movement&action=stretch" icon={<Wind />} title="Stretch / move" copy="To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." />
+              <PhysicalModule to="/health?module=movement&action=sleep" icon={<Moon />} title="Log sleep" copy="To ensure your body is actually recovering from the work." />
             </div>
             <PhysicalHistoryPanel title="Saved fuel" kind="food" items={foodHistory} />
           </section>
@@ -432,9 +445,9 @@ export function EnginePhysical() {
     {
       id: "guides",
       label: "Guides",
-      summary: "Body literacy",
+      summary: "Kai explains",
       icon: BookOpen,
-      content: <EngineGuidesIndex engine="physical" title="Body + safety guides" intro="Quick reads on sleep, nutrition, body literacy, and the harder topics. Each one is 3-5 minutes. Kai links to these when relevant." />
+      content: <EngineGuidesIndex engine="physical" title="Body context Kai can explain" intro="Short reads on sleep, fuel, body literacy, and harder topics. Kai should pull these into chat when they help the next rep make sense." />
     },
     {
       id: "history",
@@ -443,10 +456,10 @@ export function EnginePhysical() {
       icon: History,
       content: (
         <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-          <p className="eyebrow">body history</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Recent physical entries</h2>
+          <p className="eyebrow">Kai remembers</p>
+          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Private body reps</h2>
           <div className="mt-4 space-y-2">
-            {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No saved body reps yet. Log one fuel, movement, sleep, or recovery note.</p>}
+            {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No saved body reps yet. Log one fuel, scan, movement, sleep, or recovery note and Kai will carry it forward.</p>}
             {entries.slice(0, 6).map((entry) => (
               <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
                 <CheckCircle2 className="text-sage" size={18} />
@@ -509,13 +522,13 @@ function physicalCompletionSummary(entryType: string, payload: unknown) {
   return "Body rep is logged. Kai can use it for the next suggestion.";
 }
 
-function PhysicalModule({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {
+function PhysicalModule({ to, icon, title, copy }: { to: string; icon: React.ReactNode; title: string; copy: string }) {
   return (
-    <div className="rounded-kai border border-line bg-white p-4 shadow-sm">
+    <Link to={to} className="focus-ring block rounded-kai border border-line bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-ink/25">
       <div className="mb-3 text-sage">{icon}</div>
       <h3 className="font-display text-xl font-black tracking-normal">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
-    </div>
+    </Link>
   );
 }
 

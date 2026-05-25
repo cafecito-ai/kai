@@ -73,7 +73,7 @@ export function UnitWorkspace({
       </section>
 
       <section className="rounded-[30px] border border-[#0A0A0A0F] bg-white/80 p-3 shadow-sm backdrop-blur-xl">
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${title} moves`}>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:overflow-x-auto sm:pb-1" role="tablist" aria-label={`${title} moves`}>
           {tabModules.map((module) => {
             const Icon = module.icon;
             const selected = module.id === active.id;
@@ -84,13 +84,13 @@ export function UnitWorkspace({
                 role="tab"
                 aria-selected={selected}
                 onClick={() => selectModule(module.id)}
-                className={`focus-ring flex min-w-[8.5rem] items-center gap-2 rounded-[20px] border px-3 py-3 text-left transition ${
+                className={`focus-ring flex min-w-0 items-center gap-2 rounded-[20px] border px-3 py-3 text-left transition sm:min-w-[8.5rem] ${
                   selected ? "border-[#1A1A1F] bg-[#1A1A1F] text-white shadow-sm" : "border-[#0A0A0A0F] bg-[#FAFAF7] text-[#1A1A1F]"
                 }`}
               >
                 <Icon size={17} aria-hidden="true" />
-                <span>
-                  <span className="block text-sm font-black">{module.label}</span>
+                <span className="min-w-0">
+                  <span className="block break-words text-sm font-black leading-tight">{module.label}</span>
                   <span className={`mt-0.5 block text-xs font-semibold ${selected ? "text-white/65" : "text-[#8A8A8F]"}`}>{module.summary}</span>
                 </span>
               </button>
@@ -118,6 +118,12 @@ export function UnitWorkspace({
               </button>
             ))}
           </div>
+          <div className="mt-4 rounded-[22px] border border-[#0A0A0A0F] bg-[#FAFAF7] p-4">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">After this rep</p>
+            <p className="mt-2 text-sm font-semibold leading-5 text-[#5E5E64]">
+              Save one {active.label.toLowerCase()} signal. Kai carries it back to Home and uses it for the next read.
+            </p>
+          </div>
         </aside>
       </section>
     </AppPage>
@@ -129,7 +135,7 @@ function KaiOpenedBanner({ tone, moduleId, action }: { tone: "mental" | "physica
   if (!copy) return null;
   return (
     <div className="mb-3 overflow-hidden rounded-[24px] border border-[#0A0A0A0F] bg-[#111116] p-4 text-white shadow-sm">
-      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-white/45">Kai opened this</p>
+      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-white/45">{action ? "Kai opened this" : "Kai has this ready"}</p>
       <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <p className="text-sm font-semibold leading-6 text-white/76">{copy}</p>
         <Link to="/home" className="focus-ring inline-flex min-h-10 items-center justify-center rounded-full bg-white px-4 text-sm font-black text-[#111116]">
@@ -146,11 +152,16 @@ function getKaiOpenedCopy(tone: "mental" | "physical", moduleId: string, action:
     if (moduleId === "scan") return "This is a private posture and recovery check. No body score, no comparison, no performance pressure.";
     if (moduleId === "movement" && action === "sleep") return "Recovery is the move. Log sleep honestly, then keep tonight simple.";
     if (moduleId === "movement" && action === "stretch") return "Your body is asking for a reset. Pick a small stretch or movement rep and let that count.";
+    if (moduleId === "movement") return "Movement and sleep both count here. Save the honest body signal, then Kai can choose the next recovery move.";
+    if (moduleId === "guides") return "Use this when Kai needs to explain the body side without turning it into pressure or body comparison.";
+    if (moduleId === "history") return "This is the private body memory Kai uses: food, scan, movement, sleep, and recovery reps.";
   }
   if (tone === "mental") {
     if (moduleId === "checkin") return action === "talk" ? "Start with the real sentence. Kai will help turn it into one move." : "Name the pattern first. You do not have to solve the whole mood at once.";
     if (moduleId === "reset") return "Settle your body first. Then decide what deserves your attention.";
     if (moduleId === "purpose") return "Make the goal visible and small enough to start today.";
+    if (moduleId === "guides") return "Kai can pull these ideas into chat when a feeling, habit, confidence issue, or relationship pattern needs language.";
+    if (moduleId === "history") return "This is the private mind memory Kai uses: check-ins, resets, reframes, letters, and goal reps.";
   }
   return null;
 }

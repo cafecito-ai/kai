@@ -259,7 +259,7 @@ export function EngineMental() {
     {
       id: "guides",
       label: "Guides",
-      summary: "Learn fast",
+      summary: "Kai explains",
       icon: BookOpen,
       content: (
         <div className="grid gap-4">
@@ -268,8 +268,8 @@ export function EngineMental() {
             <StressPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "stress_primer_read", eventValue: 6, payload: { articleId } })} />
             <IdentityPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "identity_primer_read", eventValue: 6, payload: { articleId } })} />
             <RelationshipsPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "relationships_primer_read", eventValue: 6, payload: { articleId } })} />
-            <EngineGuidesIndex engine="mental" title="Mind + growth guides" intro="Emotion, identity, stress, confidence, relationships, purpose, and habits. Each is short. Kai links here in chat when topics come up." />
-            <EngineGuidesIndex engine="potential" eyebrow="goals guides" title="Purpose + doing guides" intro="Focus, motivation, money, decisions, and skill-building are here when Kai needs a practical next move." />
+            <EngineGuidesIndex engine="mental" title="Mind context Kai can explain" intro="Emotion, identity, stress, confidence, relationships, purpose, and habits. Kai should pull these into chat when a teen needs words for what is happening." />
+            <EngineGuidesIndex engine="potential" eyebrow="goals guides" title="Purpose context Kai can explain" intro="Focus, motivation, money, decisions, and skill-building stay here for moments when Kai needs a practical next move." />
           </Suspense>
         </div>
       )
@@ -281,10 +281,10 @@ export function EngineMental() {
       icon: History,
       content: (
         <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-          <p className="eyebrow">reset history</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Recent mental work</h2>
+          <p className="eyebrow">Kai remembers</p>
+          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Private mind reps</h2>
           <div className="mt-4 space-y-2">
-            {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Reset entries yet. Complete one check-in, breathing session, or letter.</p>}
+            {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No mind reps yet. Complete one check-in, reset, reframe, or letter and Kai will carry the pattern forward.</p>}
             {entries.slice(0, 6).map((entry) => (
               <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
                 <Brain className="text-coral" size={18} />

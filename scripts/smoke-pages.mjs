@@ -49,7 +49,9 @@ const cases = [
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
   route("/loop", ["One clean loop.", "Body", "mind", "goal"], { actionables: ["button"] }),
-  route("/health", ["Take care of your body", "Body moves", ...exactPhysicalCopy], { actionables: ["button[role='tab']"] }),
+  route("/health", ["Take care of your body", "Body moves", ...exactPhysicalCopy], {
+    actionables: ["button[role='tab']", "a[href='/health?module=food&action=food']", "a[href='/health?module=scan&action=scan']", "a[href='/health?module=movement&action=stretch']", "a[href='/health?module=movement&action=sleep']"]
+  }),
   route("/health?module=food", ["Take care of your body", "Take or choose a food photo", ...exactPhysicalCopy.slice(0, 2)], {
     actionables: ["textarea", "input[type='file'][accept='image/*']", "button"],
     forbiddenSelectors: ["input[type='file'][capture]"]

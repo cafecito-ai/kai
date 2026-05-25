@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AppHero, AppPage, AppSurface } from "../components/ui/AppPrimitives";
+import { AppPage, AppSurface, KaiPageHero } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { KaiTone } from "../lib/types";
@@ -52,10 +52,10 @@ export function Settings() {
   }
 
   return (
-    <AppPage className="max-w-xl">
-      <AppHero eyebrow="kai setup" title="Tune the companion." >
-        Pick how Kai talks, keep consent current, and make the experience feel like yours.
-      </AppHero>
+    <AppPage className="settings-page-shell pb-28 sm:pb-12">
+      <KaiPageHero eyebrow="Kai · settings" title="Tune Kai without the noise.">
+        Settings stay simple: how Kai talks, parent consent, and the basics that make this feel like yours.
+      </KaiPageHero>
       <AppSurface className="space-y-4 p-5">
         <label className="block text-sm font-semibold">
           Kai name

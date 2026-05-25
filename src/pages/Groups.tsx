@@ -2,29 +2,22 @@ import { Lock, MessageCircle, ShieldCheck, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FriendCompare } from "../components/tracker/FriendCompare";
 import { NextLoopCard } from "../components/tracker/NextLoopCard";
-import { AppHero, AppPage, AppSurface } from "../components/ui/AppPrimitives";
+import { AppPage, AppSurface, KaiPageHero } from "../components/ui/AppPrimitives";
 
 export function Groups() {
   return (
-    <AppPage className="max-w-5xl">
-      <AppHero
-        eyebrow="support circle"
-        title={
-          <>
-            Circle support that fits the same <span className="font-serif font-normal italic text-plum">loop.</span>
-          </>
-        }
-      >
-        Social support lives inside Kai as encouragement, small wins, and opt-in progress context. Sensitive notes, meals, scans, and chats stay private.
-      </AppHero>
+    <AppPage className="utility-page-shell pb-28 sm:pb-12">
+      <KaiPageHero eyebrow="Kai · circle" title="Support without oversharing.">
+        A circle should feel like backup, not surveillance. Kai keeps chats, meals, scans, and private answers out of the feed.
+      </KaiPageHero>
 
       <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
         <AppSurface className="p-5 sm:p-6">
           <div className="grid size-12 place-items-center rounded-full bg-careWash text-care">
             <UsersRound aria-hidden="true" />
           </div>
-          <h2 className="mt-4 font-display text-3xl font-black tracking-normal">Support circle</h2>
-          <p className="mt-3 text-sm font-semibold leading-6 text-muted">
+          <h2 className="mt-4 font-display text-3xl font-black leading-none tracking-normal">Support circle</h2>
+          <p className="mt-3 max-w-full break-words text-sm font-semibold leading-6 text-muted">
             Invite-only circles will let teens share streaks, habits, and encouragement while keeping sensitive answers private.
           </p>
           <div className="mt-5 grid gap-3">
@@ -39,7 +32,7 @@ export function Groups() {
                   <Icon size={18} className="mt-0.5 shrink-0 text-care" aria-hidden="true" />
                   <div>
                     <p className="text-sm font-black text-ink">{item.title}</p>
-                    <p className="mt-1 text-sm font-semibold leading-5 text-muted">{item.copy}</p>
+                    <p className="mt-1 break-words text-sm font-semibold leading-5 text-muted">{item.copy}</p>
                   </div>
                 </div>
               );

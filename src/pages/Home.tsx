@@ -73,7 +73,7 @@ export function Home() {
           </span>
           <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-paper/60 sm:mt-5">
             <Sparkles size={14} aria-hidden="true" />
-            No shame. Next move.
+            Real talk. One move.
           </p>
           <h1 className="mt-3 max-w-[9.5ch] break-words font-sans text-[2.45rem] font-black leading-[0.9] tracking-normal text-paper sm:mt-4 sm:max-w-[12ch] sm:text-7xl">
             What's up?

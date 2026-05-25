@@ -38,6 +38,7 @@ export function EnginePhysical() {
   const [movementFocus, setMovementFocus] = useState("hips and back");
   const [sleepHours, setSleepHours] = useState("8");
   const [sleepQuality, setSleepQuality] = useState<SleepQuality>("okay");
+  const foodPhotoPreview = useObjectUrl(foodPhoto);
 
   useEffect(() => {
     void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
@@ -252,9 +253,31 @@ export function EnginePhysical() {
         <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
             <p className="eyebrow text-soft">Log food</p>
-            <h2 className="mt-3 max-w-xl font-display text-4xl font-black leading-none tracking-normal">Log food</h2>
-            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-paper/70">To fuel your workouts correctly.</p>
-            <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
+            <h2 className="mt-3 max-w-[10ch] font-display text-4xl font-black leading-none tracking-normal sm:max-w-xl">Log food</h2>
+            <p className="mt-3 max-w-[17rem] text-sm font-medium leading-6 text-paper/70 sm:max-w-xl">To fuel your workouts correctly. Snap it, name it, move on.</p>
+            {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
+            <label className="focus-ring mt-4 block cursor-pointer overflow-hidden rounded-[24px] border border-white/15 bg-white/10 text-paper transition hover:border-white/40 hover:bg-white/[0.13]">
+              <span className="flex min-h-24 items-center gap-3 p-3">
+                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white text-ink">
+                  <Camera size={20} aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-black">{foodPhoto ? "Photo ready" : "Take or choose a food photo"}</span>
+                  <span className="mt-1 block truncate text-xs font-semibold text-paper/55">{foodPhoto ? foodPhoto.name : "Kai reads it as fuel, not a score."}</span>
+                </span>
+              </span>
+              {foodPhotoPreview && (
+                <span className="block border-t border-white/10 bg-black/25 p-2">
+                  <img src={foodPhotoPreview} alt="Selected food preview" className="h-36 w-full rounded-[18px] object-cover" />
+                </span>
+              )}
+              <input className="sr-only" type="file" accept="image/*" onChange={(event) => setFoodPhoto(event.target.files?.[0] ?? null)} />
+            </label>
+            {foodPhotoMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodPhotoMessage}</p>}
+            <label className="mt-4 block text-xs font-black uppercase tracking-wider text-paper/45">
+              Quick note
+              <textarea className="field mt-2 min-h-20 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
+            </label>
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Meal context">
               {MEAL_CONTEXTS.map((context) => (
                 <button key={context.id} type="button" onClick={() => setMealContext(context.id)} className={`focus-ring shrink-0 rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wider ${mealContext === context.id ? "border-white bg-white text-ink" : "border-white/15 bg-white/10 text-paper/70"}`}>
@@ -262,18 +285,11 @@ export function EnginePhysical() {
                 </button>
               ))}
             </div>
-            {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
-            <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-black text-paper hover:border-white/40">
-              <Camera size={18} aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">{foodPhoto ? foodPhoto.name : "Take or choose a food photo"}</span>
-              <input className="sr-only" type="file" accept="image/*" capture="environment" onChange={(event) => setFoodPhoto(event.target.files?.[0] ?? null)} />
-            </label>
-            {foodPhotoMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodPhotoMessage}</p>}
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
               {foodExamples.map((example) => (
                 <button key={example.title} type="button" onClick={() => setMeal(example.note)} className="focus-ring overflow-hidden rounded-kai border border-white/15 bg-white/10 text-left">
-                  <img src="/images/food-photo-examples.png" alt={example.title} className={`h-24 w-full object-cover ${example.position}`} />
-                  <span className="block px-2 py-1.5 text-[11px] font-black text-paper/80">{example.title}</span>
+                  <img src="/images/food-photo-examples.png" alt={example.title} className={`h-20 w-full object-cover ${example.position}`} />
+                  <span className="block px-2 py-1.5 text-[11px] font-black leading-tight text-paper/80">{example.title}</span>
                 </button>
               ))}
             </div>
@@ -387,7 +403,7 @@ export function EnginePhysical() {
             <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-line bg-paper p-3 text-sm font-black text-ink hover:border-ink/35">
               <Camera size={18} aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">{bodyScanPhoto ? bodyScanPhoto.name : "Take or choose a private scan photo"}</span>
-              <input className="sr-only" type="file" accept="image/*" capture="environment" onChange={(event) => { setBodyScanSaved(false); setBodyScanPhoto(event.target.files?.[0] ?? null); }} />
+              <input className="sr-only" type="file" accept="image/*" onChange={(event) => { setBodyScanSaved(false); setBodyScanPhoto(event.target.files?.[0] ?? null); }} />
             </label>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <BodyScanPrinciple icon={<Lock />} title="Private by default" copy="The teen controls whether a scan is saved. No social sharing." />
@@ -446,7 +462,7 @@ export function EnginePhysical() {
     }
   ];
 
-  return <UnitWorkspace title="Take care of your body" label="Body moves" tone="physical" intro="Log food. Body scan. Stretch / move. Log sleep. Useful, pattern-aware, never obsessive." modules={modules} />;
+  return <UnitWorkspace title="Take care of your body" label="Body moves" tone="physical" intro="Food. Scan. Move. Sleep. Private, useful." modules={modules} />;
 }
 
 const foodExamples = [
@@ -454,6 +470,22 @@ const foodExamples = [
   { title: "yogurt bowl", note: "Yogurt, berries, granola", position: "object-center" },
   { title: "rice bowl", note: "Rice bowl with chicken, greens, avocado", position: "object-right" }
 ];
+
+function useObjectUrl(file: File | null) {
+  const [url, setUrl] = useState("");
+
+  useEffect(() => {
+    if (!file) {
+      setUrl("");
+      return undefined;
+    }
+    const nextUrl = URL.createObjectURL(file);
+    setUrl(nextUrl);
+    return () => URL.revokeObjectURL(nextUrl);
+  }, [file]);
+
+  return url;
+}
 
 function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");

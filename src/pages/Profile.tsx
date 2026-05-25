@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { EvolvingCharacter } from "../components/tracker/EvolvingCharacter";
 import { NextLoopCard } from "../components/tracker/NextLoopCard";
 import { ProgressSummary } from "../components/tracker/ProgressSummary";
-import { AppHero, AppPage, AppSurface, MetricPill } from "../components/ui/AppPrimitives";
+import { AppPage, AppSurface, KaiPageHero, MetricPill } from "../components/ui/AppPrimitives";
 import { useProgressStore } from "../stores/progressStore";
 import { useUserStore } from "../stores/userStore";
 
@@ -15,23 +15,19 @@ export function Profile() {
   const belt = useProgressStore((state) => state.belt());
 
   return (
-    <AppPage className="max-w-5xl">
-      <AppHero
-        eyebrow="kai setup"
-        title={
-          <>
-            The companion, privacy, and growth model in one <span className="font-serif font-normal italic text-plum">place.</span>
-          </>
-        }
+    <AppPage className="utility-page-shell pb-28 sm:pb-12">
+      <KaiPageHero
+        eyebrow="Kai · profile"
+        title="Profile is the companion setup."
         action={
-          <Link to="/settings" className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-black text-paper">
+          <Link to="/settings" className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 text-sm font-black text-ink">
             <SettingsIcon size={16} aria-hidden="true" />
             Settings
           </Link>
         }
       >
-        Kai's voice, safety status, and saved reps stay in one place.
-      </AppHero>
+        Kai keeps your voice, privacy status, and saved reps in one place without turning growth into a scoreboard.
+      </KaiPageHero>
 
       <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
         <div className="grid gap-4">
@@ -44,7 +40,7 @@ export function Profile() {
                 <p className="mt-1 text-sm font-semibold capitalize text-muted">{kaiTone} voice</p>
               </div>
             </div>
-            <div className="mt-5 grid grid-cols-3 gap-2">
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
               <MetricPill label="Level" value={String(level)} tone="goals" />
               <MetricPill label="Streak" value={String(streak)} tone="care" />
               <MetricPill label="Belt" value={belt} tone="body" />

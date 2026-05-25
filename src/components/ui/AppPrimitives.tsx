@@ -200,6 +200,39 @@ export function AppHero({
   );
 }
 
+export function KaiPageHero({
+  eyebrow,
+  title,
+  children,
+  action
+}: {
+  eyebrow: string;
+  title: ReactNode;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-[30px] border border-white/10 bg-ink text-paper shadow-calm">
+      <div className="relative p-5 sm:p-7 lg:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-24 size-52 rounded-full bg-[#8F5CFF]/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-6 size-44 rounded-full bg-[#44D7B6]/20 blur-3xl" />
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <KaiMark size="md" />
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-paper/55">{eyebrow}</p>
+            </div>
+            <h1 className="mt-3 max-w-[18rem] break-words font-display text-[2.25rem] font-black leading-[0.94] tracking-normal sm:max-w-3xl sm:text-6xl">{title}</h1>
+            {children && <div className="mt-3 max-w-[18rem] text-base font-semibold leading-7 text-paper/72 sm:max-w-2xl">{children}</div>}
+          </div>
+          {action && <div className="relative hidden shrink-0 sm:block">{action}</div>}
+        </div>
+        {action && <div className="relative mt-5 sm:hidden">{action}</div>}
+      </div>
+    </section>
+  );
+}
+
 export function ActionTile({
   to,
   as: Component = "a",

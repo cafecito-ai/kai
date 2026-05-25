@@ -12,6 +12,7 @@ const baseUrl = (process.env.SMOKE_BASE_URL || "http://127.0.0.1:4173").replace(
 const chromePath = process.env.CHROME_BIN || findChrome();
 const viewport = { width: 390, height: 844 };
 let currentSelectors = [];
+let currentForbiddenSelectors = [];
 
 const exactPhysicalCopy = [
   "Log food",
@@ -50,10 +51,12 @@ const cases = [
   route("/loop", ["One clean loop.", "Body", "mind", "goal"], { actionables: ["button"] }),
   route("/health", ["Take care of your body", "Body moves", ...exactPhysicalCopy], { actionables: ["button[role='tab']"] }),
   route("/health?module=food", ["Take care of your body", "Take or choose a food photo", ...exactPhysicalCopy.slice(0, 2)], {
-    actionables: ["textarea", "input[type='file'][accept='image/*']", "button"]
+    actionables: ["textarea", "input[type='file'][accept='image/*']", "button"],
+    forbiddenSelectors: ["input[type='file'][capture]"]
   }),
   route("/health?module=scan", ["Body scan", "Private by default", "No body score", exactPhysicalCopy[3]], {
-    actionables: ["input[type='file'][accept='image/*']", "button"]
+    actionables: ["input[type='file'][accept='image/*']", "button"],
+    forbiddenSelectors: ["input[type='file'][capture]"]
   }),
   route("/health?module=movement", ["Stretch / move", "Log sleep", exactPhysicalCopy[5], exactPhysicalCopy[7]], {
     actionables: ["button"]
@@ -112,6 +115,7 @@ function route(pathname, expectedText, options = {}) {
     path: pathname,
     expectedText,
     actionables: options.actionables || [],
+    forbiddenSelectors: options.forbiddenSelectors || [],
     optional: Boolean(options.optional)
   };
 }
@@ -120,6 +124,7 @@ async function smokeCase(testCase) {
   const target = `${baseUrl}${testCase.path}`;
   await assertHttpShell(target);
   currentSelectors = testCase.actionables;
+  currentForbiddenSelectors = testCase.forbiddenSelectors;
   const page = await renderPage(target, testCase);
 
   if (!page.rootText || page.rootText.trim().length < 20) {
@@ -145,6 +150,12 @@ async function smokeCase(testCase) {
   for (const selector of testCase.actionables) {
     if (!page.selectors[selector]) {
       throw new Error(`missing expected actionable selector ${selector}`);
+    }
+  }
+
+  for (const selector of testCase.forbiddenSelectors) {
+    if (page.forbiddenSelectors[selector]) {
+      throw new Error(`forbidden selector present ${selector}`);
     }
   }
 
@@ -224,6 +235,8 @@ async function snapshotPage(client) {
       const rootText = (root?.innerText || "").replace(/\\s+/g, " ").trim();
       const selectors = {};
       for (const selector of ${JSON.stringify(currentSelectors)}) selectors[selector] = Boolean(document.querySelector(selector));
+      const forbiddenSelectors = {};
+      for (const selector of ${JSON.stringify(currentForbiddenSelectors)}) forbiddenSelectors[selector] = Boolean(document.querySelector(selector));
       const visibleButtonsWithoutText = Array.from(document.querySelectorAll("button,[role='button']"))
         .filter((el) => {
           const rect = el.getBoundingClientRect();
@@ -238,6 +251,7 @@ async function snapshotPage(client) {
         text,
         rootText,
         selectors,
+        forbiddenSelectors,
         horizontalOverflow: Math.max(0, body.scrollWidth - html.clientWidth),
         visibleButtonsWithoutText
       };

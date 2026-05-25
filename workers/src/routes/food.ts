@@ -25,7 +25,7 @@ foodRoutes.post("/food-photo-upload", async (c) => {
   const photo = form.photo;
   const note = typeof form.note === "string" ? form.note : undefined;
 
-  if (!(photo instanceof File)) {
+  if (!isUploadedImageFile(photo)) {
     return c.json({ error: "photo file is required" }, 400);
   }
   if (!photo.type.startsWith("image/")) {
@@ -81,4 +81,17 @@ async function analyzeAndSaveMeal(
     r2Key: body.r2Key,
     ...analysis
   };
+}
+
+function isUploadedImageFile(value: unknown): value is File {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "arrayBuffer" in value &&
+      typeof (value as { arrayBuffer?: unknown }).arrayBuffer === "function" &&
+      "type" in value &&
+      typeof (value as { type?: unknown }).type === "string" &&
+      "size" in value &&
+      typeof (value as { size?: unknown }).size === "number"
+  );
 }

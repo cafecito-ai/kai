@@ -52,8 +52,24 @@ select {
   max-width: calc(100vw - 2rem);
 }
 
+.engine-page-shell {
+  max-width: min(64rem, calc(100vw - 2rem));
+}
+
+.utility-page-shell {
+  max-width: min(64rem, calc(100vw - 2rem));
+}
+
+.settings-page-shell {
+  max-width: min(36rem, calc(100vw - 2rem));
+}
+
 @media (min-width: 640px) {
   .goal-page-shell {
+    max-width: 64rem;
+  }
+
+  .engine-page-shell {
     max-width: 64rem;
   }
 }

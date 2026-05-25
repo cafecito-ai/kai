@@ -39,7 +39,7 @@ export function UnitWorkspace({
   }
 
   return (
-    <AppPage className="max-w-5xl">
+    <AppPage className="engine-page-shell pb-28 sm:pb-12">
       <section className={`min-w-0 overflow-hidden rounded-[30px] border border-[#0A0A0A0F] bg-gradient-to-br ${wash} p-5 shadow-[0_2px_4px_rgba(10,10,10,0.04),0_16px_40px_rgba(10,10,10,0.08)] sm:p-7`}>
         <div className="flex items-center justify-between gap-3">
           <Link to="/home" className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full bg-white/75 px-3 text-sm font-black text-[#1A1A1F] shadow-sm">
@@ -51,7 +51,7 @@ export function UnitWorkspace({
         <div className="mt-5 grid gap-5 sm:mt-7 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end">
           <div className="min-w-0">
             <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">{label}</p>
-            <h1 className="mt-3 max-w-3xl break-words font-display text-[2.35rem] font-semibold leading-[0.96] tracking-normal text-[#111116] sm:text-6xl">
+            <h1 className="mt-3 max-w-[13ch] break-words font-display text-[2rem] font-semibold leading-[0.96] tracking-normal text-[#111116] sm:max-w-3xl sm:text-6xl">
               {title}
             </h1>
             <p className="mt-3 max-w-full break-words text-base font-medium leading-7 text-[#5E5E64] sm:mt-4 sm:max-w-2xl">{intro}</p>
@@ -82,7 +82,7 @@ export function UnitWorkspace({
                 role="tab"
                 aria-selected={selected}
                 onClick={() => selectModule(module.id)}
-                className={`focus-ring flex min-w-[9rem] items-center gap-2 rounded-[20px] border px-3 py-3 text-left transition ${
+                className={`focus-ring flex min-w-[8.5rem] items-center gap-2 rounded-[20px] border px-3 py-3 text-left transition ${
                   selected ? "border-[#1A1A1F] bg-[#1A1A1F] text-white shadow-sm" : "border-[#0A0A0A0F] bg-[#FAFAF7] text-[#1A1A1F]"
                 }`}
               >

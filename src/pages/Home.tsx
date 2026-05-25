@@ -18,6 +18,7 @@ import { loadJSON, saveJSON } from "../lib/local-storage";
 import { engineTotals } from "../lib/tracker";
 import type { ProgressEvent } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
+import { useUserStore } from "../stores/userStore";
 
 const HYDRATION_HOME_KEY = "kai.home.hydration.today.v2";
 
@@ -25,6 +26,7 @@ export function Home() {
   const events = useProgressStore((state) => state.events);
   const addEvent = useProgressStore((state) => state.addEvent);
   const streak = useProgressStore((state) => state.streak());
+  const kaiName = useUserStore((state) => state.kaiName);
   const [hydration, setHydration] = useState<HydrationToday>({ dateIso: todayIso(), cups: 0 });
 
   useEffect(() => {
@@ -80,8 +82,8 @@ export function Home() {
             )}
           </div>
           <Link to="/mental?module=checkin" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#0A0A0A0F] bg-white px-4 text-sm font-bold text-inkDark shadow-[0_8px_32px_rgba(10,10,10,0.08)]">
-            <KaiAvatar size={36} label="KAI" pulse />
-            Start with KAI
+            <KaiAvatar size={36} label={kaiName} pulse />
+            Start with {kaiName}
           </Link>
         </header>
 

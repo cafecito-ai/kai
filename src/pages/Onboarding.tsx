@@ -21,6 +21,7 @@ import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineId, KaiTone } from "../lib/types";
+import { useKaiStore } from "../stores/kaiStore";
 import { useUserStore } from "../stores/userStore";
 
 const DEMO_STORAGE_KEY = "kai_demo_build_v1";
@@ -99,7 +100,8 @@ const steps = ["Gate", "Kai", "Vibe", "Signals", "Mission", "Context", "Reveal"]
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
+  const { setKai, setPrimaryEngine, setConsentPending, markOnboardingComplete } = useUserStore();
+  const hydrateKaiChat = useKaiStore((state) => state.hydrate);
   const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
   const [step, setStep] = useState(0);
   const [age, setAge] = useState("16");
@@ -184,12 +186,22 @@ export function Onboarding() {
       }
       setKai(kaiName || "Kai", kaiTone);
       setPrimaryEngine(engine);
-      navigate(selectedMission.route);
+      markOnboardingComplete();
+      hydrateKaiChat("kai", {
+        conversationId: null,
+        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, mission: selectedMission, context }) }]
+      });
+      navigate("/home");
     } catch {
       setError("Could not save onboarding yet. Kai saved the setup locally so you can keep moving.");
       setKai(kaiName || "Kai", kaiTone);
       setPrimaryEngine(primaryEngine);
-      navigate(selectedMission.route);
+      markOnboardingComplete();
+      hydrateKaiChat("kai", {
+        conversationId: null,
+        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, mission: selectedMission, context }) }]
+      });
+      navigate("/home");
     } finally {
       setSaving(false);
     }
@@ -205,9 +217,9 @@ export function Onboarding() {
                 <ShieldCheck size={14} aria-hidden="true" />
                 Private by default
               </div>
-              <h1 className="mt-8 max-w-sm font-display text-5xl font-semibold leading-[0.94] tracking-normal">Build the Kai that actually fits you.</h1>
+              <h1 className="mt-8 max-w-sm font-display text-5xl font-semibold leading-[0.94] tracking-normal">Let Kai learn your starting point.</h1>
               <p className="mt-4 max-w-sm text-sm font-semibold leading-6 text-white/62">
-                Fast setup. No diagnosis. No fake motivation. Kai learns your first pattern and gives you one useful rep.
+                No diagnosis. No fake motivation. Just enough context for Kai to sound like it knows you.
               </p>
             </div>
             <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur">
@@ -221,7 +233,7 @@ export function Onboarding() {
               <div className="mt-5 grid grid-cols-3 gap-2">
                 <CalibrationPill label="Vibes" value={String(vibes.length)} />
                 <CalibrationPill label="Read" value={`${calibration}%`} />
-                <CalibrationPill label="Unit" value={selectedMission.engine === "physical" ? "Body" : selectedMission.engine === "potential" ? "Goals" : "Mind"} />
+                <CalibrationPill label="Focus" value={selectedMission.engine === "physical" ? "Body" : selectedMission.engine === "potential" ? "Goals" : "Mind"} />
               </div>
             </div>
           </aside>
@@ -247,12 +259,12 @@ export function Onboarding() {
               )}
               {step < steps.length - 1 ? (
                 <Button type="button" onClick={next} className="min-h-12 w-full">
-                  {step === 5 ? "Reveal Kai" : "Next"}
+                  {step === 5 ? "Show me Kai" : "Next"}
                   <ArrowRight size={18} aria-hidden="true" />
                 </Button>
               ) : (
                 <Button type="button" onClick={() => void finish()} disabled={saving} className="min-h-12 w-full">
-                  {saving ? "Saving" : "Start my first rep"}
+                  {saving ? "Saving" : "Meet Kai"}
                   <ArrowRight size={18} aria-hidden="true" />
                 </Button>
               )}
@@ -299,10 +311,10 @@ function AgeGate({
 }) {
   return (
     <div>
-      <Eyebrow>Start clean</Eyebrow>
-      <h2 className="mt-2 max-w-xl break-words font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">First, the safety stuff. Then the fun part.</h2>
+      <Eyebrow>Safety first</Eyebrow>
+      <h2 className="mt-2 max-w-xl break-words font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">First, the safety stuff. Then Kai learns you.</h2>
       <p className="mt-4 max-w-full break-words text-sm font-semibold leading-6 text-[#5E5E64] sm:max-w-lg">
-        Kai needs age for teen safety rules. Private answers, meals, goals, and chats stay private.
+        Kai needs age for teen safety rules. Your answers, meals, goals, and chats stay private.
       </p>
       {fromDemo && <p className="mt-4 rounded-[18px] border border-[#D6D0FF] bg-[#F8F6FF] p-3 text-sm font-black text-[#6C5CE7]">Picked up your demo choices. You can change anything.</p>}
       <div className="mt-6 grid gap-3 sm:grid-cols-[9rem_1fr]">
@@ -339,16 +351,16 @@ function KaiBuilder({
 }) {
   return (
     <div>
-      <Eyebrow>Build Kai</Eyebrow>
+      <Eyebrow>Kai's voice</Eyebrow>
       <div className="mt-3 flex items-center gap-4">
         <KaiAvatar size={72} label={kaiName || "Kai"} pulse />
         <div>
-          <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">Choose the voice.</h2>
-          <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Not a therapist. Not a corporate assistant. A useful mentor.</p>
+          <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">How should Kai talk to you?</h2>
+          <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Trusted coach energy. Honest, calm, never corny.</p>
         </div>
       </div>
       <label className="mt-6 block text-sm font-black">
-        Companion name
+        What should Kai be called?
         <input className="field mt-2 text-lg" value={kaiName} maxLength={20} onChange={(event) => setKaiName(event.target.value)} />
       </label>
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -367,9 +379,9 @@ function KaiBuilder({
 function VibeScan({ selected, onToggle }: { selected: VibeId[]; onToggle: (id: VibeId) => void }) {
   return (
     <div>
-      <Eyebrow>Vibe scan</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Pick the 3 that feel most true right now.</h2>
-      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">No perfect answer. Kai just needs the starting weather.</p>
+      <Eyebrow>Right now</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What's the current vibe?</h2>
+      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">Pick up to 3. No perfect answer.</p>
       <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {vibeChoices.map((vibe) => {
           const Icon = vibe.icon;
@@ -390,8 +402,9 @@ function VibeScan({ selected, onToggle }: { selected: VibeId[]; onToggle: (id: V
 function SignalScan({ signals, setSignals }: { signals: Record<SignalId, number>; setSignals: React.Dispatch<React.SetStateAction<Record<SignalId, number>>> }) {
   return (
     <div>
-      <Eyebrow>Life signals</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Give Kai the dashboard.</h2>
+      <Eyebrow>Quick read</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What should Kai know before it coaches you?</h2>
+      <p className="mt-4 text-sm font-semibold text-[#5E5E64]">Tap the closest answer. Kai uses this to choose the first move.</p>
       <div className="mt-6 grid gap-3">
         {(Object.keys(signalCopy) as SignalId[]).map((id) => {
           const signal = signalCopy[id];
@@ -420,7 +433,7 @@ function SignalScan({ signals, setSignals }: { signals: Record<SignalId, number>
 function MissionPick({ mission, setMission }: { mission: MissionId; setMission: (value: MissionId) => void }) {
   return (
     <div>
-      <Eyebrow>First mission</Eyebrow>
+      <Eyebrow>First focus</Eyebrow>
       <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What should Kai help with first?</h2>
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         {missionChoices.map((item) => {
@@ -446,9 +459,9 @@ function MissionPick({ mission, setMission }: { mission: MissionId; setMission: 
 function ContextDrop({ context, setContext }: { context: string; setContext: (value: string) => void }) {
   return (
     <div>
-      <Eyebrow>Optional context</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Anything Kai should know?</h2>
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">A messy sentence is enough. Or skip it and let Kai learn as you use the app.</p>
+      <Eyebrow>Real context</Eyebrow>
+      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What would make Kai understand you faster?</h2>
+      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">Messy is fine. This is the stuff a form usually misses.</p>
       <textarea className="field mt-6 min-h-40 text-base" value={context} onChange={(event) => setContext(event.target.value)} placeholder="Example: school pressure has been loud, sleep is bad, and I want to feel more confident..." />
     </div>
   );
@@ -472,19 +485,19 @@ function Reveal({
   const MissionIcon = mission.icon;
   return (
     <div>
-      <Eyebrow>Kai is calibrated</Eyebrow>
+      <Eyebrow>Kai learned enough</Eyebrow>
       <div className="mt-3 rounded-[30px] border border-[#0A0A0A0F] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-4">
           <KaiAvatar size={76} label={kaiName} pulse />
           <div>
             <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">{kaiName} is ready.</h2>
-            <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Start with one useful rep. The rest can wait.</p>
+            <p className="mt-2 text-sm font-semibold text-[#5E5E64]">Start on Home. Kai will open the right move from there.</p>
           </div>
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <RevealStat label="Voice" value={tone.label} />
           <RevealStat label="Read" value={`${calibration}%`} />
-          <RevealStat label="Unit" value={mission.engine === "physical" ? "Body" : "Mind"} />
+          <RevealStat label="Focus" value={mission.engine === "physical" ? "Body" : "Mind"} />
         </div>
       </div>
       <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-[#111116] p-5 text-white">
@@ -493,7 +506,7 @@ function Reveal({
             <MissionIcon size={20} aria-hidden="true" />
           </span>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">First rep</p>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">First move</p>
             <h3 className="mt-1 text-2xl font-black">{mission.label}</h3>
             <p className="mt-2 text-sm font-semibold leading-6 text-white/62">{mission.copy}</p>
           </div>
@@ -574,4 +587,20 @@ function buildIntakeAnswers({
     q5: `First suggested route is ${missionChoice.route}.`,
     q6: `Use a supportive, honest mentor style. Avoid shame, clinical diagnosis, toxic productivity, and body comparison.`
   };
+}
+
+function buildFirstKaiMessage({
+  kaiName,
+  vibes,
+  mission,
+  context
+}: {
+  kaiName: string;
+  vibes: VibeId[];
+  mission: (typeof missionChoices)[number];
+  context: string;
+}) {
+  const vibeText = vibes.length ? vibes.map((vibe) => vibe.replace(/_/g, " ")).join(", ") : "not totally sure yet";
+  const contextLine = context.trim() ? "I’ll remember the extra context you gave me." : "We’ll learn the rest as we go.";
+  return `${kaiName} here. I’ve got your starting point: ${vibeText}. First focus is ${mission.label.toLowerCase()}. ${contextLine} Tell me what’s actually going on today, and I’ll open the right move.`;
 }

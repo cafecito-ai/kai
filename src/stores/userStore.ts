@@ -14,6 +14,7 @@ interface UserState {
   setKai: (kaiName: string, kaiTone: KaiTone) => void;
   setPrimaryEngine: (engine: EngineId) => void;
   setConsentPending: (parentEmail: string) => void;
+  markOnboardingComplete: () => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -38,5 +39,6 @@ export const useUserStore = create<UserState>((set) => ({
     }),
   setKai: (kaiName, kaiTone) => set({ kaiName, kaiTone }),
   setPrimaryEngine: (primaryEngine) => set({ primaryEngine }),
-  setConsentPending: (parentEmail) => set({ parentEmail, consentStatus: "pending", parentConsentAt: null })
+  setConsentPending: (parentEmail) => set({ parentEmail, consentStatus: "pending", parentConsentAt: null }),
+  markOnboardingComplete: () => set({ onboardingCompletedAt: new Date().toISOString() })
 }));

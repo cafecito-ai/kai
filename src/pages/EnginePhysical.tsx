@@ -13,6 +13,7 @@ import {
   MEAL_CONTEXTS,
   type MealContextId
 } from "../lib/food-photo";
+import { movementInsight, normalizeMovementMinutes, normalizeSleepHours, sleepInsight, type SleepQuality } from "../lib/physical-logs";
 import { localSafetyCheck } from "../lib/safety";
 import type { EngineEntry, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
@@ -30,6 +31,10 @@ export function EnginePhysical() {
   const [bodyScanPhoto, setBodyScanPhoto] = useState<File | null>(null);
   const [bodyScanSaved, setBodyScanSaved] = useState(false);
   const [bodyScanMessage, setBodyScanMessage] = useState("");
+  const [movementMinutes, setMovementMinutes] = useState("10");
+  const [movementFocus, setMovementFocus] = useState("hips and back");
+  const [sleepHours, setSleepHours] = useState("8");
+  const [sleepQuality, setSleepQuality] = useState<SleepQuality>("okay");
 
   useEffect(() => {
     void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
@@ -193,6 +198,32 @@ export function EnginePhysical() {
     }
   }
 
+  function logMovement() {
+    const minutes = normalizeMovementMinutes(movementMinutes);
+    const focus = movementFocus.trim() || "mobility";
+    void completeEntry({
+      entryType: "movement_log",
+      title: "Stretch / move",
+      payload: { type: "stretch_move", minutes, focus, insight: movementInsight(minutes, focus) },
+      eventType: "workout",
+      eventValue: minutes >= 20 ? 30 : 18
+    });
+  }
+
+  function logSleep() {
+    const hours = normalizeSleepHours(sleepHours);
+    void completeEntry({
+      entryType: "sleep_log",
+      title: "Log sleep",
+      payload: { hours, quality: sleepQuality, insight: sleepInsight(hours, sleepQuality) },
+      eventType: "sleep_log",
+      eventValue: hours >= 8 ? 22 : 14
+    });
+  }
+
+  const lastMovement = entries.find((entry) => entry.entryType === "movement_log");
+  const lastSleep = entries.find((entry) => entry.entryType === "sleep_log");
+
   const modules: UnitModule[] = [
     {
       id: "food",
@@ -259,10 +290,63 @@ export function EnginePhysical() {
       summary: "Mobility + form",
       icon: Dumbbell,
       content: (
-        <div className="grid gap-4 md:grid-cols-3">
-          <ActionCard icon={<Dumbbell />} title="Stretch / move" copy="To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." action={saving === "movement_log" ? "Logging" : "Log stretch / move"} onClick={() => void completeEntry({ entryType: "movement_log", title: "Stretch / move", payload: { type: "stretch_move", duration: 35 }, eventType: "workout", eventValue: 30 })} />
-          <ActionCard icon={<Moon />} title="Log sleep" copy="To ensure your body is actually recovering from the work." action={saving === "sleep_log" ? "Logging" : "Log sleep"} onClick={() => void completeEntry({ entryType: "sleep_log", title: "Log sleep", payload: { quality: 7 }, eventType: "sleep_log", eventValue: 18 })} />
-          <ActionCard icon={<Wind />} title="Recovery" copy="Breathing, soreness, hydration, reset." action={saving === "recovery_reset" ? "Saving" : "Complete reset"} onClick={() => void completeEntry({ entryType: "recovery_reset", title: "Recovery reset", payload: { pattern: "box" }, eventType: "breathing_session", eventValue: 20 })} />
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+          <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
+            <div className="mb-4 grid size-11 place-items-center rounded-full bg-lime text-sage"><Dumbbell /></div>
+            <p className="eyebrow">Stretch / move</p>
+            <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Tell Kai what your body needs.</h2>
+            <p className="mt-3 text-sm leading-6 text-muted">To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go.</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-[8rem_1fr]">
+              <label className="text-sm font-black">
+                Minutes
+                <input className="field mt-2" inputMode="numeric" value={movementMinutes} onChange={(event) => setMovementMinutes(event.target.value)} />
+              </label>
+              <label className="text-sm font-black">
+                Focus
+                <input className="field mt-2" value={movementFocus} onChange={(event) => setMovementFocus(event.target.value)} placeholder="hips, back, shoulders..." />
+              </label>
+            </div>
+            <p className="mt-3 rounded-kai border border-line bg-paper p-3 text-sm font-semibold leading-6 text-muted">
+              {movementInsight(normalizeMovementMinutes(movementMinutes), movementFocus)}
+            </p>
+            <Button className="mt-4" variant="secondary" disabled={saving === "movement_log"} onClick={logMovement}>
+              {saving === "movement_log" ? "Logging" : "Log stretch / move"}
+            </Button>
+            {lastMovement && <SavedSignal entry={lastMovement} />}
+          </section>
+
+          <section className="rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm">
+            <div className="mb-4 grid size-11 place-items-center rounded-full bg-white/10 text-paper"><Moon /></div>
+            <p className="eyebrow text-soft">Log sleep</p>
+            <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Recovery is the base layer.</h2>
+            <p className="mt-3 text-sm font-medium leading-6 text-paper/70">To ensure your body is actually recovering from the work.</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-[8rem_1fr]">
+              <label className="text-sm font-black">
+                Hours
+                <input className="field mt-2 border-white/10 bg-white/10 text-paper placeholder:text-paper/45" inputMode="decimal" value={sleepHours} onChange={(event) => setSleepHours(event.target.value)} />
+              </label>
+              <div>
+                <p className="text-sm font-black">Quality</p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {(["rough", "okay", "solid"] as SleepQuality[]).map((quality) => (
+                    <button key={quality} type="button" onClick={() => setSleepQuality(quality)} className={`focus-ring min-h-11 rounded-full text-sm font-black capitalize ${sleepQuality === quality ? "bg-white text-ink" : "bg-white/10 text-paper/70"}`}>
+                      {quality}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper/75">
+              {sleepInsight(normalizeSleepHours(sleepHours), sleepQuality)}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button disabled={saving === "sleep_log"} onClick={logSleep}>{saving === "sleep_log" ? "Logging" : "Log sleep"}</Button>
+              <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={saving === "recovery_reset"} onClick={() => void completeEntry({ entryType: "recovery_reset", title: "Recovery reset", payload: { pattern: "box", focus: "breathing and downshift" }, eventType: "breathing_session", eventValue: 20 })}>
+                {saving === "recovery_reset" ? "Saving" : "Complete reset"}
+              </Button>
+            </div>
+            {lastSleep && <SavedSignal entry={lastSleep} inverse />}
+          </section>
         </div>
       )
     },
@@ -426,17 +510,6 @@ function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
   );
 }
 
-function ActionCard({ icon, title, copy, action, onClick }: { icon: React.ReactNode; title: string; copy: string; action: string; onClick: () => void }) {
-  return (
-    <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-      <div className="mb-4 grid size-11 place-items-center rounded-full bg-lime text-sage">{icon}</div>
-      <h2 className="font-display text-2xl font-black tracking-normal">{title}</h2>
-      <p className="my-3 text-sm leading-6 text-muted">{copy}</p>
-      <Button variant="secondary" onClick={onClick}>{action}</Button>
-    </section>
-  );
-}
-
 function BodyScanPrinciple({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {
   return (
     <div className="rounded-kai border border-line bg-white p-3">
@@ -445,4 +518,19 @@ function BodyScanPrinciple({ icon, title, copy }: { icon: React.ReactNode; title
       <p className="mt-1 text-xs font-semibold leading-5 text-muted">{copy}</p>
     </div>
   );
+}
+
+function SavedSignal({ entry, inverse = false }: { entry: EngineEntry; inverse?: boolean }) {
+  const payload = readPayload(entry.payload);
+  const insight = typeof payload.insight === "string" ? payload.insight : "Saved. Kai will use this as physical context.";
+  return (
+    <div className={`mt-4 rounded-kai border p-3 ${inverse ? "border-white/15 bg-white/10" : "border-line bg-paper"}`}>
+      <p className={`text-xs font-black uppercase tracking-wider ${inverse ? "text-paper/45" : "text-muted"}`}>Last saved</p>
+      <p className={`mt-1 text-sm font-semibold leading-6 ${inverse ? "text-paper/75" : "text-muted"}`}>{insight}</p>
+    </div>
+  );
+}
+
+function readPayload(payload: unknown): Record<string, unknown> {
+  return payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
 }

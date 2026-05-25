@@ -25,6 +25,7 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Tools sheet curated as `Kai can open`, with compact action tiles instead of app navigation.
 - Kai chat persists by engine and hydrates recent conversation history.
 - Kai Worker prompts include structured onboarding answers and recent conversation turns as untrusted personalization context.
+- Kai Worker prompts include a bounded summary of recent saved physical reps, so generated replies can reference food, sleep, movement, recovery, and private scan context when relevant.
 - Worker chat returns structured `nextAction` data for Kai and engine conversations.
 - Frontend and Worker both route intent to:
   - Talk it out
@@ -88,6 +89,7 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Added saved-meal review/edit behavior and a private body-scan timeline.
 - Surfaced recent conversation and tool-completion context as `Kai remembers`.
 - Added structured onboarding context and recent turns to the Worker chat prompt.
+- Added recent physical reps to the Worker chat prompt as untrusted context.
 - Added private physical and mental history panels inside tool surfaces.
 - Reworked Goals, Loop, and Goals list so goal reps feel carried by Kai.
 - Hardened mobile smoke coverage for all key pages and focused action deep links.
@@ -151,7 +153,7 @@ Most recent verified surface: stable staging alias `https://staging.kai-epk.page
 
 ### Highest Priority
 
-- Make Kai responses more context-aware after a tool is opened. Tool completions now write back into chat memory, but the generated reply itself does not yet deeply reason over every saved rep.
+- Make Kai responses more context-aware after a tool is opened across every engine. Physical reps now reach the prompt; mental and goal saved-rep reasoning can go deeper.
 - Evaluate the quality of Worker personalization with real teen-like conversations and tune the prompt/summary shape as needed.
 - Do a real-device visual QA pass on iPhone Safari/Android Chrome, not only 390px headless screenshots.
 

@@ -11,6 +11,7 @@ export type KaiContext = {
   primaryEngine: EngineId;
   intakeSummary: string | null;
   intakeDetails: string | null;
+  recentPhysicalContext: string | null;
   streakOverall: number;
 };
 
@@ -22,6 +23,7 @@ const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {
   primaryEngine: "physical",
   intakeSummary: null,
   intakeDetails: null,
+  recentPhysicalContext: null,
   streakOverall: 0
 };
 
@@ -72,6 +74,7 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     .catch(() => null);
   intakeSummary = intakeSummary || intakeRow?.summary || null;
   intakeDetails = formatIntakeDetails(intakeRow?.raw_responses);
+  const recentPhysicalContext = await loadRecentPhysicalContext(env, userId);
 
   let streakOverall = 0;
   if (env.PROGRESS_KV) {
@@ -92,8 +95,111 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     primaryEngine: normaliseEngine(user?.primary_engine),
     intakeSummary,
     intakeDetails,
+    recentPhysicalContext,
     streakOverall
   };
+}
+
+async function loadRecentPhysicalContext(env: Env, userId: string) {
+  const rows = await env.DB
+    .prepare(
+      `SELECT entry_type, title, payload, completed_at, created_at
+       FROM engine_entries
+       WHERE user_id = ? AND engine = 'physical'
+       ORDER BY COALESCE(completed_at, created_at) DESC
+       LIMIT 6`
+    )
+    .bind(userId)
+    .all<{
+      entry_type: string | null;
+      title: string | null;
+      payload: string | null;
+      completed_at: string | null;
+      created_at: string | null;
+    }>()
+    .catch(() => ({ results: [] }));
+
+  const lines = (rows.results ?? [])
+    .map(formatPhysicalEntry)
+    .filter(Boolean)
+    .slice(0, 6);
+  return lines.join("\n").slice(0, 1600) || null;
+}
+
+function formatPhysicalEntry(row: { entry_type: string | null; title: string | null; payload: string | null; completed_at: string | null; created_at: string | null }) {
+  const payload = parsePayload(row.payload);
+  const entryType = row.entry_type ?? "physical";
+  const title = normaliseText(row.title) || labelForEntry(entryType);
+  const when = formatDate(row.completed_at || row.created_at);
+  const detail = physicalDetail(entryType, payload);
+  return [when, title, detail].filter(Boolean).join(" — ");
+}
+
+function physicalDetail(entryType: string, payload: Record<string, unknown>) {
+  const insight = normaliseText(payload.insight);
+  if (insight) return insight;
+
+  if (entryType.includes("meal") || entryType.includes("food")) {
+    const items = readFoodItems(payload);
+    const context = typeof payload.mealContext === "string" ? payload.mealContext.replace(/_/g, " ") : "";
+    if (items.length > 0) return `fuel: ${items.join(", ")}${context ? ` (${context})` : ""}`;
+    const meal = normaliseText(payload.meal);
+    if (meal) return `fuel: ${meal}`;
+    return "fuel logged without scoring";
+  }
+  if (entryType.includes("scan")) {
+    const analysis = parseRecord(payload.analysis);
+    const summary = normaliseText(analysis.summary);
+    return summary || "private posture/recovery scan saved";
+  }
+  if (entryType.includes("movement")) {
+    const minutes = typeof payload.minutes === "number" ? payload.minutes : null;
+    const focus = normaliseText(payload.focus) || "mobility";
+    return minutes ? `${minutes} minutes for ${focus}` : `movement for ${focus}`;
+  }
+  if (entryType.includes("sleep")) {
+    const hours = typeof payload.hours === "number" ? payload.hours : null;
+    const quality = normaliseText(payload.quality);
+    return hours ? `${hours} hours${quality ? `, ${quality}` : ""}` : "sleep logged";
+  }
+  if (entryType.includes("recovery")) return "recovery reset logged";
+  return "physical rep saved";
+}
+
+function readFoodItems(payload: Record<string, unknown>) {
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  return items
+    .map((item) => (parseRecord(item).name ? normaliseText(parseRecord(item).name) : ""))
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+function parsePayload(value: string | null) {
+  if (!value) return {};
+  try {
+    return parseRecord(JSON.parse(value));
+  } catch {
+    return {};
+  }
+}
+
+function parseRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function normaliseText(value: unknown) {
+  return typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, 220) : "";
+}
+
+function labelForEntry(entryType: string) {
+  return entryType.replace(/_/g, " ");
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
 }
 
 function formatIntakeDetails(raw: string | null | undefined) {

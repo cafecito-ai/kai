@@ -48,6 +48,9 @@ export function renderKaiSystemPrompt(context: KaiContext): string {
   const intakeDetailsBlock = context.intakeDetails
     ? userBlock(context.intakeDetails)
     : "(no structured onboarding answers yet)";
+  const recentPhysicalBlock = context.recentPhysicalContext
+    ? userBlock(context.recentPhysicalContext)
+    : "(no recent physical reps yet)";
   const displayName = userText(context.displayName);
   const kaiName = userText(context.kaiName);
   const kaiNameForSentence = sentenceName(context.kaiName);
@@ -93,11 +96,14 @@ ${intakeBlock}
 Structured onboarding answers:
 ${intakeDetailsBlock}
 
+Recent physical reps:
+${recentPhysicalBlock}
+
 CURRENT STATE
 - Active engine: ${context.primaryEngine}
 - Current overall streak: ${context.streakOverall} day${context.streakOverall === 1 ? "" : "s"}
 
-Use the onboarding context to personalize your read: coaching style, stressors, baselines, first mission, and extra context. Do not over-explain the profile back to them.
+Use the onboarding context to personalize your read: coaching style, stressors, baselines, first mission, and extra context. Use recent physical reps only when relevant — for example food, sleep, recovery, movement, or scan context. Do not over-explain the profile back to them or pretend you know more than the saved facts show.
 
 Speak as ${kaiName} (the name they chose for you). Keep replies short — usually 2–4 short paragraphs at most.`;
 }

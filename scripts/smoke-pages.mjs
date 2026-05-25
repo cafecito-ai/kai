@@ -34,6 +34,13 @@ const guideNames = [
   "Modern teen psychology principles"
 ];
 
+const connectionErrorCopy = [
+  "Sign in again to keep going.",
+  "Kai got a weird response. Try again.",
+  "Connection dropped. You can keep going offline.",
+  "Kai hit a snag. Your progress is safe."
+];
+
 const cases = [
   route("/", ["Kai", "Start today", "Set a goal"], { actionables: ["a[href='/loop']", "a[href='/goal']"] }),
   route("/onboarding", ["Start clean", "Age", "Parent email"], { actionables: ["button", "input"] }),
@@ -115,6 +122,12 @@ async function smokeCase(testCase) {
 
   if (page.title.toLowerCase().includes("404") || /not found/i.test(page.rootText)) {
     throw new Error("page appears to be a not-found fallback");
+  }
+
+  for (const errorCopy of connectionErrorCopy) {
+    if (page.text.includes(errorCopy)) {
+      throw new Error(`app connection error visible: ${JSON.stringify(errorCopy)}`);
+    }
   }
 
   for (const expected of testCase.expectedText) {

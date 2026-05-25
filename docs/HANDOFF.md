@@ -5,142 +5,164 @@ Last updated: 2026-05-25
 ## Review Links
 
 - Stable staging: `https://staging.kai-epk.pages.dev`
-- Latest verified staging deploy: `https://24c731d3.kai-epk.pages.dev`
+- Latest verified staging deploy: `https://642cd3a3.kai-epk.pages.dev`
 - Pull request: `https://github.com/cafecito-ai/kai/pull/84`
 - Source branch: `kai-first-home-companion`
 - Base branch: `engine-scoped-chat-persistence`
+- Current PR head: `327fb02`
 - Production remains gated: `https://kai.boostaisearch.ai`
 
 ## Product State
 
-Kai is now positioned as a mobile-first teen coaching companion, not a tabbed wellness dashboard. The first screen centers Kai, chat, the nebula mark, and one next move. Mind, Body, and Goals still exist, but they are framed as moves Kai can open instead of separate products.
+Kai is now a mobile-first teen coaching companion, not a tabbed wellness dashboard. The first screen centers Kai, chat, the nebula mark, one useful next move, and a quiet bottom dock. Mind, Body, and Goals still exist, but they behave like tools Kai opens from conversation instead of separate app sections.
 
-The current staging build is appropriate for a Lev/client product review. It is not yet a public teen beta without final legal, safety, auth, and clinical review.
+The current staging build is ready for Lev/client handoff review. It is not ready for broad public teen beta until legal, safety, auth, production infrastructure, and clinical review are complete.
 
 ## What Is Real
 
 - Chat-first Home with Kai as the center of gravity.
-- Nebula-style Kai identity shared across Home, app chrome, onboarding, and chat.
-- Simplified mobile shell with Home, Kai, and Tools.
+- Nebula-style Kai identity shared across Home, app chrome, onboarding, chat, and utility pages.
+- Mobile shell with Home, Kai, and Tools as the primary navigation.
+- Global Kai chat sheet with recent memory, prompt chips, and a routed `Kai's read` action.
+- Tools sheet curated as `Kai can open`, with compact action tiles instead of app navigation.
 - Kai chat persists by engine and hydrates recent conversation history.
-- Kai chat returns structured next actions from the Worker.
+- Worker chat returns structured `nextAction` data for Kai and engine conversations.
 - Frontend and Worker both route intent to:
   - Talk it out
+  - Build confidence
+  - Handle social pressure
+  - Reset screen time
   - Log food
   - Protect sleep
   - Stretch it out
   - Body scan
   - Move a goal
   - Reset today
-- Home and chat show `Kai would open` / `Open next` action cards.
-- Tools sheet is curated as `Kai can open`, with profile/settings demoted to account utilities.
-- Onboarding captures age, parent email, Kai name, tone, current vibe, life signals, first focus, and freeform context.
+- Home `Try this next` and shortcuts can switch to Kai's inferred current action.
+- Deep-linked tools show `Kai opened this` copy so the route feels intentional.
+- Onboarding captures age, parent email, Kai name, coaching tone, personality style, current vibes, stressors, sleep/energy/confidence/movement/food/social baselines, first mission, and freeform context.
 - Onboarding marks local completion, seeds a personalized first Kai message, and lands on Home.
 - Under-18 onboarding triggers the parent consent send path when configured.
-- Food logging persists manual fuel notes through the real food-photo API path.
-- Food photo upload path exists and can store R2-backed food photos when configured.
-- Body scan upload path exists and stores private scan entries through the Worker.
-- Sleep and movement capture real inputs and persist entries through the existing engine entry/progress path.
-- Mental check-ins, thought reframes, breathing, social reset, future letter, strengths, and guide reads write progress/entry events.
-- Goals support creation, next action planning, achievement, reframe, and release flows.
+- Food logging supports manual fuel notes and camera/file photo upload through the real food-photo API path.
+- Food photo selection processes immediately and can store R2-backed photos when configured.
+- Body scan selection processes immediately and stores private scan entries through the Worker.
+- Food, body scan, stretch, and sleep are first-class focused mobile routes.
+- Sleep and movement capture real inputs and persist entries through the engine entry/progress path.
+- Physical tool surfaces show recent private saved context and next nudges.
+- Mental check-ins, reframes, resets, social boundaries, identity notes, strengths, and goal patterns show visible private memory.
+- Goals support creation, continuation, next action planning, achievement, reframe, release, and Kai-first goal memory.
 - Progress, profile, groups, settings, crisis, privacy, terms, and parent-facing pages render on mobile staging.
-- Safety layer still intercepts local crisis/self-harm/eating/body-risk language before normal coaching.
+- Safety layer intercepts crisis/self-harm/eating/body-risk language before normal coaching.
 
 ## What Is Beta
 
-- Kai is a coaching product, not therapy or medical care.
-- Body scan is a private beta surface. It stores a scan entry and safe analysis framing, but it is not clinical body composition analysis.
-- Food analysis is descriptive and reviewable. It should not be presented as precise nutrition, calorie targeting, or diet advice.
-- Conversation memory is visible as recent context, not a full long-term personalization model yet.
-- Social/community is framed as privacy-safe support and progress context, not a full production community system.
-- Home-screen widget presence is represented as product direction, not a native iOS widget.
+- Kai is coaching support, not therapy, medical care, diagnosis, or crisis response.
+- Body scan is a private beta surface. It stores a safe posture/recovery-style scan entry; it is not clinical body composition analysis.
+- Food analysis is descriptive and reviewable. It must not be presented as precise nutrition, calorie targeting, or diet advice.
+- Conversation memory is visible recent context, not a complete long-term personalization model.
+- Social/community is a locked privacy-safe support concept, not a full community launch.
+- Home-screen presence is represented as product direction in the PWA/web experience, not native iOS widgets yet.
 - The app is web-first. Native iOS/background presence is future work.
 - Legal copy still needs counsel review before real teen testing.
-- Mental health guidance still needs clinical/safety reviewer sign-off before broader beta.
+- Mental health guidance needs clinical/safety reviewer sign-off before broader beta.
 
 ## What Changed In PR #84
 
 - Made Home chat-first and Kai-centered.
 - Reworked the Kai logo toward a calming galaxy/nebula mark.
-- Replaced dashboard language with teen-coach copy.
+- Replaced dashboard language with teen-coach copy across main and utility routes.
 - Added deterministic chat-to-action routing on the frontend.
 - Added structured Worker `nextAction` responses for Kai and engine chat.
-- Made onboarding hand off to Home with a personalized first Kai message.
+- Added focused mental actions for confidence, social pressure, and screen-time reset.
+- Made Tools feel like Kai actions rather than navigation.
+- Made the global Kai chat sheet cleaner and more mobile-safe.
+- Made onboarding feel Kai-led and personalized.
 - Made onboarding-selected actions show immediately on Home.
-- Made sleep and movement logs input-driven instead of generic buttons.
-- Made chat/tools feel action-routed instead of navigation-routed.
-- Surfaced recent conversation context as `Kai remembers`.
-- Cleaned up high-impact `agent`, `unit`, `module`, and `app section` language on main routes.
+- Made sleep and movement logs input-driven.
+- Made food photos and body scans process immediately on image selection.
+- Split Food, Body scan, Stretch / move, and Log sleep into focused mobile routes.
+- Surfaced recent conversation and tool-completion context as `Kai remembers`.
+- Added private physical and mental history panels inside tool surfaces.
+- Reworked Goals, Loop, and Goals list so goal reps feel carried by Kai.
+- Hardened mobile smoke coverage for all key pages and focused action deep links.
 
 ## Verified Gates
 
-Most recent verified PR head: `48454e2`
+Most recent verified PR head: `327fb02`
 
 - `npm run typecheck`
+- `npm run worker:typecheck`
 - `npm run lint`
   - Passes with existing Fast Refresh warnings in `ArticleBody.tsx` and `main.tsx`.
 - `npm run build`
-- Local mobile smoke: `npm run smoke:pages`
-- Staging mobile smoke: `npm run smoke:staging`
+- Focused action/store/Worker tests:
+  - `npm test -- --run src/lib/kai-actions.test.ts src/stores/kaiStore.test.ts workers/test/kai-actions.test.ts workers/test/chat-route.test.ts`
+- Local mobile smoke:
+  - `SMOKE_BASE_URL=http://127.0.0.1:4180 npm run smoke:pages`
+- Staging mobile smoke:
+  - `npm run smoke:staging`
 - GitHub Actions CI on PR #84: passing
-- 390px local screenshots captured for:
+- 390px CDP screenshots/metrics captured for:
   - Home
   - Onboarding
-  - Physical movement/sleep
-  - Mental check-in
+  - Tools sheet
+  - Kai chat sheet
+  - Physical routes
+  - Mental focused deep links
+  - Goals routes
+  - Utility pages
 
 ## Demo Script For Lev
 
 1. Open `https://staging.kai-epk.pages.dev`.
-2. Start on Home and read the first screen as a teen.
-3. Type a natural message into Kai, for example:
+2. Start on Home and read it as a teen: Kai should feel like the center, not a dashboard.
+3. Type natural messages into Kai:
    - `I slept badly and feel tired but wired`
    - `I have practice later and do not know what to eat`
+   - `Can Kai check my posture and alignment?`
+   - `I feel insecure and not good enough`
+   - `The group chat made me feel left out`
+   - `I keep doomscrolling and comparing myself`
    - `I keep procrastinating and need one move`
 4. Confirm Kai suggests the right next action.
-5. Open the center Kai button and confirm the chat sheet feels like the main controller.
-6. Open Tools and confirm it feels like Kai opening moves, not app tabs.
+5. Open the center Kai button and confirm the chat sheet feels like the controller.
+6. Open Tools and confirm it feels curated around actions, not app tabs.
 7. Open onboarding and check whether it feels like Kai learning the teen.
 8. Open Body:
-   - Log food.
-   - Try movement minutes/focus.
-   - Try sleep hours/quality.
-   - Open Body scan and review the private framing.
+   - Add a food note.
+   - Select a food photo and confirm it starts processing.
+   - Open Body scan and review the private/no-body-score framing.
+   - Log stretch/move minutes and sleep hours/quality.
 9. Open Mind:
    - Complete a feelings check-in.
-   - Try reset / thought reframe.
+   - Try a screen-time/social reset.
+   - Use the confidence/purpose path.
    - Open guides and check whether the mentor/philosophy framing feels useful.
 10. Open Goals and create one concrete goal/next action.
-11. Open Wins/Progress and confirm saved reps show up.
+11. Open Progress and confirm saved reps/memory show up.
 
 ## Remaining Near-Final Gaps
 
-### Highest priority
+### Highest Priority
 
-- Make Kai responses more context-aware after a tool is opened. Today Kai routes well, but tools do not always hand a rich completion summary back into chat.
-- Add richer first-run personalization from onboarding into the ongoing prompt context, not only the first message.
-- Make Home `Try this next` fully align with the latest Kai action and recent saved rep, not only loop status.
+- Make Kai responses more context-aware after a tool is opened. Tool completions now write back into chat memory, but the generated reply itself does not yet deeply reason over every saved rep.
+- Add richer first-run personalization from onboarding into ongoing Worker prompt context, not only local first message/context.
+- Do a real-device visual QA pass on iPhone Safari/Android Chrome, not only 390px headless screenshots.
 
 ### Physical
 
-- Food history should show saved meals with clearer next nudges.
-- Body scan should show previous private scans/progress timeline.
-- Stretch should move from log-only to guided real-time session polish.
-- Sleep should show trend/pattern over multiple nights.
+- Food history exists, but saved meals could use a clearer review/edit flow and richer next nudges.
+- Body scan stores private scans and shows recent history, but needs a stronger visual progress timeline.
+- Stretch is input-driven; real-time camera-guided form correction remains future/beta.
+- Sleep persists entries; multi-night trend/pattern coaching should be deeper.
 
 ### Mental
 
-- Emotional check-ins should create more visible patterns over time.
-- Guides should be referenced by Kai based on chat context rather than discovered mostly as a content area.
-- Confidence, social, and screen-time flows should be exposed more directly as Kai-routed actions.
+- Emotional check-ins create visible patterns, but pattern interpretation should become more personalized over time.
+- Guides exist and mental chat can host mentor framing, but Kai should reference guide concepts more naturally from live conversation.
+- Confidence/social/screen-time are routed actions now; each can still become a deeper dedicated flow.
 
-### Design
-
-- Continue reducing dense text on secondary routes.
-- Do another visual QA pass on real devices, not only 390px headless screenshots.
-- Tighten Physical and Mental tool surfaces so they feel as premium as Home.
-
-### Launch readiness
+### Launch Readiness
 
 - Finalize Clerk/auth behavior for the intended staging/prod review mode.
 - Confirm Worker route bindings for production API calls.
@@ -170,8 +192,8 @@ npm run smoke:staging
 
 ```bash
 npm run typecheck
+npm run worker:typecheck
 npm run lint
 npm run build
 npm run smoke:pages
 ```
-

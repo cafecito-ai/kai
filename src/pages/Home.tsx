@@ -124,7 +124,7 @@ export function Home() {
                 <liveAction.icon size={18} aria-hidden="true" />
               </span>
               <span className="min-w-0">
-                <span className="block text-xs font-black uppercase tracking-wider text-paper/45">Kai would open</span>
+                <span className="block text-xs font-black uppercase tracking-wider text-paper/45">Kai's read</span>
                 <span className="mt-0.5 block text-sm font-black text-paper">{liveAction.label}</span>
               </span>
             </Link>

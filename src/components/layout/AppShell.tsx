@@ -5,6 +5,7 @@ import { KaiChat } from "../kai/KaiChat";
 import { useProgressStore } from "../../stores/progressStore";
 import { useUserStore } from "../../stores/userStore";
 import { KaiAvatar } from "../ui/AppPrimitives";
+import { Footer } from "./Footer";
 
 export function AppShell() {
   const { pathname } = useLocation();
@@ -23,6 +24,7 @@ export function AppShell() {
         <div id="main">
           <Outlet />
         </div>
+        <Footer />
       </div>
     );
   }
@@ -46,16 +48,17 @@ export function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAF7] text-[#1A1A1F]">
+    <div className="flex min-h-screen flex-col bg-[#FAFAF7] text-[#1A1A1F]">
       <a
         href="#main"
         className="focus-ring sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-kai focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-paper"
       >
         Skip to content
       </a>
-      <main id="main" className="mx-auto w-full max-w-6xl px-4 pb-24 pt-4 sm:px-6 lg:px-8">
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-4 sm:px-6 lg:px-8">
         <Outlet />
       </main>
+      <Footer />
     </div>
   );
 }
@@ -85,9 +88,18 @@ function AppContextBar() {
             <p className="truncate text-sm font-black text-[#1A1A1F]">Mental and Physical stay in one loop.</p>
           </div>
         </div>
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 text-xs font-black sm:grid-cols-[1fr_1fr_auto]">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 text-xs font-black sm:grid-cols-[1fr_1fr_auto_auto]">
           <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{todayCount} reps</span>
           <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{streak} day streak</span>
+          {/* Spec §1 + §7 Level 3: always-on crisis access. Must be visible on mobile. */}
+          <Link
+            to="/crisis"
+            aria-label="Crisis resources"
+            className="focus-ring inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-danger/30 bg-white px-3 text-danger"
+          >
+            <ShieldAlert size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">Crisis</span>
+          </Link>
           <Link to="/home" className="focus-ring hidden rounded-full bg-[#1A1A1F] px-4 py-2 text-white sm:inline-flex">
             Today
           </Link>
@@ -128,33 +140,27 @@ function AppDock({ quickOpen, onToggleQuick }: { quickOpen: boolean; onToggleQui
   ];
 
   return (
-    <>
-      <nav
-        className="fixed inset-x-3 bottom-3 z-40 mx-auto grid max-w-md grid-cols-[repeat(2,minmax(0,1fr))_3.25rem_repeat(3,minmax(0,1fr))] gap-1 rounded-[24px] border border-[#0A0A0A0F] bg-white/95 p-1 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl"
-        style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
-        aria-label="Primary app navigation"
+    <nav
+      className="fixed inset-x-3 bottom-3 z-40 mx-auto grid max-w-md grid-cols-[repeat(2,minmax(0,1fr))_3.25rem_repeat(3,minmax(0,1fr))] gap-1 rounded-[24px] border border-[#0A0A0A0F] bg-white/95 p-1 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl"
+      style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
+      aria-label="Primary app navigation"
+    >
+      {links.slice(0, 2).map(({ to, label, icon: Icon }) => (
+        <DockLink key={to} to={to} label={label} icon={Icon} />
+      ))}
+      <button
+        type="button"
+        onClick={onToggleQuick}
+        className="focus-ring flex h-12 items-center justify-center rounded-[19px] bg-[#1A1A1F] text-white shadow-sm"
+        aria-label="Quick app actions"
+        aria-expanded={quickOpen}
       >
-        {links.slice(0, 2).map(({ to, label, icon: Icon }) => (
-          <DockLink key={to} to={to} label={label} icon={Icon} />
-        ))}
-        <button
-          type="button"
-          onClick={onToggleQuick}
-          className="focus-ring flex h-12 items-center justify-center rounded-[19px] bg-[#1A1A1F] text-white shadow-sm"
-          aria-label="Quick app actions"
-          aria-expanded={quickOpen}
-        >
-          <Plus size={24} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />
-        </button>
-        {links.slice(2).map(({ to, label, icon: Icon }) => (
-          <DockLink key={to} to={to} label={label} icon={Icon} />
-        ))}
-        <Link to="/crisis" className="focus-ring absolute -top-11 right-0 hidden min-h-9 items-center gap-2 rounded-full bg-white px-3 text-xs font-black text-danger shadow-sm sm:inline-flex">
-          <ShieldAlert size={14} aria-hidden="true" />
-          Crisis
-        </Link>
-      </nav>
-    </>
+        <Plus size={24} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />
+      </button>
+      {links.slice(2).map(({ to, label, icon: Icon }) => (
+        <DockLink key={to} to={to} label={label} icon={Icon} />
+      ))}
+    </nav>
   );
 }
 

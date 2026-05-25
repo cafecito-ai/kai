@@ -47,11 +47,17 @@ export interface SafetyResult {
   response?: string;
 }
 
+export interface SafetyEventInfo {
+  category?: string;
+  severity?: "low" | "medium" | "high" | "critical";
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
+  safetyEvent?: SafetyEventInfo;
 }
 
 /**

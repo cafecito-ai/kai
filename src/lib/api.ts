@@ -61,7 +61,11 @@ export const api = {
   getUser: () =>
     request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
   chat: (engine: EngineId | "kai", message: string, conversationId?: string | null) =>
-    request<{ conversationId: string; reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
+    request<{
+      conversationId: string;
+      reply: string;
+      safetyEvent?: { id?: string; category?: string; severity?: "low" | "medium" | "high" | "critical" } | null;
+    }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
       method: "POST",
       body: JSON.stringify({ conversationId, message })
     }),

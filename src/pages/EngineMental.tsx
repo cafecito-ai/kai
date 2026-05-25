@@ -93,8 +93,6 @@ export function EngineMental() {
       icon: Brain,
       content: (
         <div className="grid gap-4">
-          <ClinicalReviewBanner />
-          <DisclosureBanner />
           <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
             <FeelingsCheckIn
               onComplete={(payload) => {
@@ -273,7 +271,21 @@ export function EngineMental() {
     }
   ];
 
-  return <UnitWorkspace title="Mental agent" label="Mind unit" tone="mental" intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical." modules={modules} />;
+  return (
+    <UnitWorkspace
+      title="Mental agent"
+      label="Mind unit"
+      tone="mental"
+      intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical."
+      modules={modules}
+      banners={
+        <>
+          <ClinicalReviewBanner />
+          <DisclosureBanner />
+        </>
+      }
+    />
+  );
 }
 
 function labelForEntry(entryType: string) {

@@ -11,7 +11,7 @@ export function Groups() {
         eyebrow="app section · circle"
         title={
           <>
-            A private circle that fits the same <span className="font-serif font-normal italic text-plum">loop.</span>
+            Circle support that fits the same <span className="font-serif font-normal italic text-plum">loop.</span>
           </>
         }
       >

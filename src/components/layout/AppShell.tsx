@@ -122,10 +122,10 @@ function AppComposer() {
 function AppDock({ quickOpen, onToggleQuick }: { quickOpen: boolean; onToggleQuick: () => void }) {
   const links = [
     { to: "/home", label: "Home", icon: Home },
-    { to: "/progress", label: "Progress", icon: HeartPulse },
-    { to: "/groups", label: "Groups", icon: UsersRound },
-    { to: "/profile", label: "Profile", icon: UserRound },
-    { to: "/settings", label: "Settings", icon: Settings }
+    { to: "/loop", label: "Loop", icon: HeartPulse },
+    { to: "/goals", label: "Goals", icon: Target },
+    { to: "/progress", label: "Progress", icon: Activity },
+    { to: "/profile", label: "Profile", icon: UserRound }
   ];
 
   return (
@@ -208,8 +208,9 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
 
 function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
   const actions = [
-    { to: "/loop", label: "Daily loop", icon: HeartPulse, tone: "bg-[#DDF5E8] text-[#2F9D67]" },
-    { to: "/goal", label: "Goal", icon: Target, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { to: "/goal", label: "New goal", icon: Target, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { to: "/groups", label: "Circle", icon: UsersRound, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
+    { to: "/settings", label: "Settings", icon: Settings, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
     { to: "/health?module=food", label: "Log food", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
     { to: "/mental?module=guides", label: "Guide chat", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
     { to: "/mental?module=reset", label: "Breath reset", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },

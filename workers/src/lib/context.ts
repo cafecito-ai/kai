@@ -10,6 +10,7 @@ export type KaiContext = {
   kaiTone: KaiTone;
   primaryEngine: EngineId;
   intakeSummary: string | null;
+  intakeDetails: string | null;
   streakOverall: number;
 };
 
@@ -20,6 +21,7 @@ const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {
   kaiTone: "balanced",
   primaryEngine: "physical",
   intakeSummary: null,
+  intakeDetails: null,
   streakOverall: 0
 };
 
@@ -52,8 +54,10 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     }>()
     .catch(() => null);
 
-  // Intake summary: try KV first (cheap), then D1 (authoritative).
+  // Intake summary: try KV first (cheap), then D1 (authoritative). D1 also
+  // carries structured onboarding answers that make Kai's replies less generic.
   let intakeSummary: string | null = null;
+  let intakeDetails: string | null = null;
   if (env.SESSIONS_KV) {
     try {
       intakeSummary = await env.SESSIONS_KV.get(`intake:${userId}`);
@@ -61,14 +65,13 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
       // ignore
     }
   }
-  if (!intakeSummary) {
-    const row = await env.DB
-      .prepare("SELECT summary FROM user_intake WHERE user_id = ?")
-      .bind(userId)
-      .first<{ summary: string | null }>()
-      .catch(() => null);
-    intakeSummary = row?.summary ?? null;
-  }
+  const intakeRow = await env.DB
+    .prepare("SELECT summary, raw_responses FROM user_intake WHERE user_id = ?")
+    .bind(userId)
+    .first<{ summary: string | null; raw_responses: string | null }>()
+    .catch(() => null);
+  intakeSummary = intakeSummary || intakeRow?.summary || null;
+  intakeDetails = formatIntakeDetails(intakeRow?.raw_responses);
 
   let streakOverall = 0;
   if (env.PROGRESS_KV) {
@@ -88,6 +91,23 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     kaiTone: normaliseTone(user?.kai_tone),
     primaryEngine: normaliseEngine(user?.primary_engine),
     intakeSummary,
+    intakeDetails,
     streakOverall
   };
+}
+
+function formatIntakeDetails(raw: string | null | undefined) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    return Object.entries(parsed as Record<string, unknown>)
+      .filter(([, value]) => typeof value === "string" && value.trim())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}: ${String(value).trim().replace(/\s+/g, " ").slice(0, 420)}`)
+      .join("\n")
+      .slice(0, 1800) || null;
+  } catch {
+    return null;
+  }
 }

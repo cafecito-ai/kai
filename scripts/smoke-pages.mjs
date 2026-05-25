@@ -1,7 +1,8 @@
 /* global WebSocket */
+import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
 import { execFile, execFileSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -50,11 +51,12 @@ const cases = [
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
   route("/loop", ["One clean loop.", "Body", "mind", "goal"], { actionables: ["button"] }),
   route("/health", ["Take care of your body", "Body moves", ...exactPhysicalCopy], {
-    actionables: ["button[role='tab']", "a[href='/health?module=food&action=food']", "a[href='/health?module=scan&action=scan']", "a[href='/health?module=stretch&action=stretch']", "a[href='/health?module=sleep&action=sleep']"]
+    actionables: ["[role='tab']", "a[href='/health?module=food&action=food']", "a[href='/health?module=scan&action=scan']", "a[href='/health?module=stretch&action=stretch']", "a[href='/health?module=sleep&action=sleep']"]
   }),
-  route("/health?module=food", ["Take care of your body", "Take or choose a food photo", ...exactPhysicalCopy.slice(0, 2)], {
+  route("/health?module=food", ["Take care of your body", "Add a food photo", ...exactPhysicalCopy.slice(0, 2)], {
     actionables: ["textarea", "input[type='file'][accept='image/*']", "button"],
-    forbiddenSelectors: ["input[type='file'][capture]"]
+    forbiddenSelectors: ["input[type='file'][capture]"],
+    foodPhotoUpload: true
   }),
   route("/health?module=scan", ["Body scan", "Private by default", "No body score", exactPhysicalCopy[3]], {
     actionables: ["input[type='file'][accept='image/*']", "button"],
@@ -72,10 +74,10 @@ const cases = [
   route("/potential", ["Potential and goals", "Make the next move visible", "strengths discovery", "Doing-things guides"], {
     actionables: ["input", "textarea", "button"]
   }),
-  route("/mental", ["Talk it through", "Feelings", "confidence", "never clinical"], { actionables: ["button[role='tab']"] }),
-  route("/mental?module=checkin&action=social", ["Talk it through", "Say the messy social version first", "Feeling patterns"], { actionables: ["button[role='tab']", "button"] }),
-  route("/mental?module=reset&action=screen", ["Talk it through", "attention reset", "Social boundaries"], { actionables: ["button[role='tab']", "button"] }),
-  route("/mental?module=purpose&action=confidence", ["Talk it through", "Confidence is built from evidence", "Make one next move visible"], { actionables: ["button[role='tab']", "button"] }),
+  route("/mental", ["Talk it through", "Feelings", "confidence", "never clinical"], { actionables: ["[role='tab']"] }),
+  route("/mental?module=checkin&action=social", ["Talk it through", "Say the messy social version first", "Feeling patterns"], { actionables: ["[role='tab']", "button"] }),
+  route("/mental?module=reset&action=screen", ["Talk it through", "attention reset", "Social boundaries"], { actionables: ["[role='tab']", "button"] }),
+  route("/mental?module=purpose&action=confidence", ["Talk it through", "Confidence is built from evidence", "Make one next move visible"], { actionables: ["[role='tab']", "button"] }),
   route("/mental?module=guides", ["Talk it through", "Daniel Siegel", "James Clear", ...guideNames], {
     actionables: ["textarea", "button"]
   }),
@@ -199,6 +201,7 @@ async function renderPage(target, testCase) {
     await client.connect();
     await client.send("Runtime.enable");
     await client.send("Page.enable");
+    await client.send("DOM.enable");
     await client.send("Emulation.setDeviceMetricsOverride", {
       width: viewport.width,
       height: viewport.height,
@@ -212,12 +215,43 @@ async function renderPage(target, testCase) {
     await client.send("Page.navigate", { url: target });
     await waitForLoad(client);
     await waitForRoot(client);
-    const result = await waitForExpectedSnapshot(client, testCase);
+    let result = await waitForExpectedSnapshot(client, testCase);
+    if (testCase.foodPhotoUpload) {
+      await assertFoodPhotoUpload(client);
+      result = await snapshotPage(client);
+    }
     return { ...result, consoleErrors: client.consoleErrors };
   } finally {
     await client.close().catch(() => undefined);
     await closeTab(browser.port, tab.id).catch(() => undefined);
     await browser.close().catch(() => undefined);
+  }
+}
+
+async function assertFoodPhotoUpload(client) {
+  const foodPath = path.join(tmpdir(), `kai-smoke-food-${process.pid}-${Date.now()}.png`);
+  await writeFile(foodPath, Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64"));
+  try {
+    const document = await client.send("DOM.getDocument", { depth: -1, pierce: true });
+    const input = await client.send("DOM.querySelector", {
+      nodeId: document.root.nodeId,
+      selector: "input[type='file'][accept='image/*']"
+    });
+    if (!input.nodeId) throw new Error("food photo input was not found");
+    await client.send("DOM.setFileInputFiles", { nodeId: input.nodeId, files: [foodPath] });
+
+    const started = Date.now();
+    while (Date.now() - started < 15_000) {
+      const page = await snapshotPage(client);
+      if (/Photo saved|Kai saw|Photo saved\. Add a note/i.test(page.text)) return;
+      if (/Could not upload|Connection dropped|Sign in again|weird response|snag/i.test(page.text)) {
+        throw new Error(`food photo upload failed visibly: ${JSON.stringify(page.text.slice(0, 240))}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+    throw new Error("food photo upload did not reach a processed state");
+  } finally {
+    await rm(foodPath, { force: true }).catch(() => undefined);
   }
 }
 

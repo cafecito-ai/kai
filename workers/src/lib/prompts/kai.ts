@@ -45,6 +45,9 @@ export function renderKaiSystemPrompt(context: KaiContext): string {
   const intakeBlock = context.intakeSummary
     ? userBlock(context.intakeSummary)
     : "(no intake summary yet — keep questions open until you learn what they care about)";
+  const intakeDetailsBlock = context.intakeDetails
+    ? userBlock(context.intakeDetails)
+    : "(no structured onboarding answers yet)";
   const displayName = userText(context.displayName);
   const kaiName = userText(context.kaiName);
   const kaiNameForSentence = sentenceName(context.kaiName);
@@ -87,9 +90,14 @@ ${displayName}
 Intake summary:
 ${intakeBlock}
 
+Structured onboarding answers:
+${intakeDetailsBlock}
+
 CURRENT STATE
 - Active engine: ${context.primaryEngine}
 - Current overall streak: ${context.streakOverall} day${context.streakOverall === 1 ? "" : "s"}
+
+Use the onboarding context to personalize your read: coaching style, stressors, baselines, first mission, and extra context. Do not over-explain the profile back to them.
 
 Speak as ${kaiName} (the name they chose for you). Keep replies short — usually 2–4 short paragraphs at most.`;
 }

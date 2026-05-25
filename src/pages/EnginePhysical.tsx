@@ -255,25 +255,37 @@ export function EnginePhysical() {
       summary: "Photo + fuel",
       icon: Camera,
       content: (
-        <div className="grid min-w-0 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="min-w-0 rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
+        <div className="grid min-w-0 gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="min-w-0 rounded-[24px] border border-line bg-ink p-4 text-paper shadow-calm sm:p-6">
             <p className="eyebrow text-soft">Log food</p>
-            <h2 className="mt-3 max-w-[10ch] font-display text-4xl font-black leading-none tracking-normal sm:max-w-xl">Log food</h2>
-            <p className="mt-3 max-w-[17rem] text-sm font-medium leading-6 text-paper/70 sm:max-w-xl">To fuel your workouts correctly. Snap it, name it, move on.</p>
+            <div className="mt-2 flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="font-display text-3xl font-black leading-none tracking-normal sm:text-4xl">Fuel check</h2>
+                <p className="mt-2 max-w-[19rem] text-sm font-medium leading-6 text-paper/70 sm:max-w-xl">To fuel your workouts correctly. Add the photo; Kai reads it right away.</p>
+              </div>
+              {saving === "food_photo_upload" && (
+                <span className="shrink-0 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-paper/75">
+                  Reading
+                </span>
+              )}
+            </div>
             {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
-            <label className="focus-ring mt-4 block cursor-pointer overflow-hidden rounded-[24px] border border-white/15 bg-white/10 text-paper transition hover:border-white/40 hover:bg-white/[0.13]">
-              <span className="flex min-h-24 items-center gap-3 p-3">
+            <label className="focus-ring mt-4 block cursor-pointer overflow-hidden rounded-[22px] border border-white/15 bg-white/10 text-paper transition hover:border-white/40 hover:bg-white/[0.13]">
+              <span className="flex min-h-20 items-center gap-3 p-3">
                 <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white text-ink">
                   <Camera size={20} aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-black">{foodPhoto ? "Photo ready" : "Take or choose a food photo"}</span>
-                  <span className="mt-1 block truncate text-xs font-semibold text-paper/55">{foodPhoto ? foodPhoto.name : "Kai reads it as fuel, not a score."}</span>
+                  <span className="block text-sm font-black">{saving === "food_photo_upload" ? "Kai is processing this photo" : foodPhoto ? "Photo ready" : "Add a food photo"}</span>
+                  <span className="mt-1 block break-words text-xs font-semibold leading-5 text-paper/55">{foodPhoto ? foodPhoto.name : "Take one or choose one. It uploads and analyzes automatically."}</span>
+                </span>
+                <span className="hidden rounded-full bg-white px-3 py-2 text-xs font-black text-ink min-[360px]:inline-flex">
+                  {foodPhoto ? "Change" : "Open"}
                 </span>
               </span>
               {foodPhotoPreview && (
                 <span className="block border-t border-white/10 bg-black/25 p-2">
-                  <img src={foodPhotoPreview} alt="Selected food preview" className="h-36 w-full rounded-[18px] object-cover" />
+                  <img src={foodPhotoPreview} alt="Selected food preview" className="h-32 w-full rounded-[18px] object-cover sm:h-36" />
                 </span>
               )}
               <input
@@ -291,7 +303,7 @@ export function EnginePhysical() {
             {foodPhotoMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodPhotoMessage}</p>}
             <label className="mt-4 block text-xs font-black uppercase tracking-wider text-paper/45">
               Quick note
-              <textarea className="field mt-2 min-h-20 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
+              <textarea className="field mt-2 min-h-16 border-white/10 bg-white/10 text-paper placeholder:text-paper/50 sm:min-h-20" value={meal} onChange={(event) => setMeal(event.target.value)} />
             </label>
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Meal context">
               {MEAL_CONTEXTS.map((context) => (
@@ -300,7 +312,7 @@ export function EnginePhysical() {
                 </button>
               ))}
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-2 min-[380px]:grid-cols-3">
+            <div className="mt-4 grid auto-cols-[8.5rem] grid-flow-col gap-2 overflow-x-auto pb-1 sm:grid-flow-row sm:grid-cols-3 sm:overflow-visible sm:pb-0">
               {foodExamples.map((example) => (
                 <button key={example.title} type="button" onClick={() => setMeal(example.note)} className="focus-ring overflow-hidden rounded-kai border border-white/15 bg-white/10 text-left">
                   <img src="/images/food-photo-examples.png" alt={example.title} className={`h-20 w-full object-cover ${example.position}`} />
@@ -308,12 +320,12 @@ export function EnginePhysical() {
                 </button>
               ))}
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button disabled={saving === "meal_log"} onClick={() => void logMeal("meal_log")}>{saving === "meal_log" ? "Logging" : "Log food"}</Button>
+            <div className="mt-4 grid gap-2 min-[390px]:grid-cols-2">
+              <Button disabled={saving === "meal_log"} onClick={() => void logMeal("meal_log")}>{saving === "meal_log" ? "Logging" : "Save note"}</Button>
               <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={!foodPhoto || saving === "food_photo_upload"} onClick={() => void uploadFoodPhoto()}>
-                {saving === "food_photo_upload" ? "Uploading" : "Analyze selected photo"}
+                {saving === "food_photo_upload" ? "Processing photo" : foodPhoto ? "Process photo" : "Photo auto-processes"}
               </Button>
-              <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={saving === "food_example"} onClick={() => void logMeal("food_example")}>
+              <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50 min-[390px]:col-span-2" disabled={saving === "food_example"} onClick={() => void logMeal("food_example")}>
                 Use example note
               </Button>
             </div>

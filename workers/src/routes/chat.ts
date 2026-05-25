@@ -74,7 +74,11 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
     await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: safety.response ?? "", metadata: { safetyEventId: event?.id, nextAction } });
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event, nextAction });
   }
-  const reply = await callClaude(env, system, [{ role: "user", content: message }]);
+  const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
+  const modelMessages = (recentMessages ?? [])
+    .filter((item): item is typeof item & { role: "user" | "assistant" } => item.role === "user" || item.role === "assistant")
+    .map((item) => ({ role: item.role, content: item.content }));
+  const reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: message }]);
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { nextAction } });
   return Response.json({ conversationId: conversation, reply, nextAction });
 }

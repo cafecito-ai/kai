@@ -24,6 +24,7 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Global Kai chat sheet with recent memory, prompt chips, and a routed `Kai's read` action.
 - Tools sheet curated as `Kai can open`, with compact action tiles instead of app navigation.
 - Kai chat persists by engine and hydrates recent conversation history.
+- Kai Worker prompts include structured onboarding answers and recent conversation turns as untrusted personalization context.
 - Worker chat returns structured `nextAction` data for Kai and engine conversations.
 - Frontend and Worker both route intent to:
   - Talk it out
@@ -43,6 +44,7 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Under-18 onboarding triggers the parent consent send path when configured.
 - Food logging supports manual fuel notes and camera/file photo upload through the real food-photo API path.
 - Food photo selection processes immediately and can store R2-backed photos when configured.
+- Mobile page smoke now exercises the real food photo file input and waits for a processed/saved state.
 - Body scan selection processes immediately and stores private scan entries through the Worker.
 - Food, body scan, stretch, and sleep are first-class focused mobile routes.
 - Sleep and movement capture real inputs and persist entries through the engine entry/progress path.
@@ -79,7 +81,10 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Made sleep and movement logs input-driven.
 - Made food photos and body scans process immediately on image selection.
 - Split Food, Body scan, Stretch / move, and Log sleep into focused mobile routes.
+- Tightened focused Body routes so the first phone viewport reaches the active tool instead of only route chrome.
+- Changed focused engine segments into real links so every segment is directly tappable and deep-linkable.
 - Surfaced recent conversation and tool-completion context as `Kai remembers`.
+- Added structured onboarding context and recent turns to the Worker chat prompt.
 - Added private physical and mental history panels inside tool surfaces.
 - Reworked Goals, Loop, and Goals list so goal reps feel carried by Kai.
 - Hardened mobile smoke coverage for all key pages and focused action deep links.
@@ -96,7 +101,7 @@ Most recent verified surface: stable staging alias `https://staging.kai-epk.page
 - Focused action/store/Worker tests:
   - `npm test -- --run src/lib/kai-actions.test.ts src/stores/kaiStore.test.ts workers/test/kai-actions.test.ts workers/test/chat-route.test.ts`
 - Local mobile smoke:
-  - `SMOKE_BASE_URL=http://127.0.0.1:4180 npm run smoke:pages`
+  - `SMOKE_BASE_URL=http://127.0.0.1:4181 npm run smoke:pages`
 - Staging mobile smoke:
   - `npm run smoke:staging`
 - GitHub Actions CI on PR #84: passing
@@ -144,7 +149,7 @@ Most recent verified surface: stable staging alias `https://staging.kai-epk.page
 ### Highest Priority
 
 - Make Kai responses more context-aware after a tool is opened. Tool completions now write back into chat memory, but the generated reply itself does not yet deeply reason over every saved rep.
-- Add richer first-run personalization from onboarding into ongoing Worker prompt context, not only local first message/context.
+- Evaluate the quality of Worker personalization with real teen-like conversations and tune the prompt/summary shape as needed.
 - Do a real-device visual QA pass on iPhone Safari/Android Chrome, not only 390px headless screenshots.
 
 ### Physical

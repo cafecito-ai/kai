@@ -232,6 +232,11 @@ export const api = {
       body
     });
   },
+  updateMeal: (mealId: string, body: { items: FoodPhotoResult["items"]; notes?: string }) =>
+    request<{ meal: { id: string; items: FoodPhotoResult["items"]; notes?: string } }>(`/api/meals/${encodeURIComponent(mealId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(body)
+    }),
   uploadBodyScan: (file?: File | null) => {
     const body = new FormData();
     if (file) body.set("photo", file);

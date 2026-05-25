@@ -61,6 +61,31 @@ describe("food routes", () => {
     expect(uploads[0]?.key).toBe(payload.r2Key);
     expect(uploads[0]?.contentType).toBe("image/png");
   });
+
+  it("updates a saved meal review for the current user", async () => {
+    const statements: Array<{ sql: string; values: unknown[] }> = [];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/meals/meal-123", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", "x-dev-user": "food-reviewer" },
+        body: JSON.stringify({
+          items: [{ name: "rice bowl", source: "manual" }],
+          notes: "felt steady before practice"
+        })
+      }),
+      makeEnv({ statements })
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { meal: { id: string; items: Array<{ name: string }>; notes: string } };
+    expect(body.meal.id).toBe("meal-123");
+    expect(body.meal.items[0]?.name).toBe("rice bowl");
+    const update = statements.find((statement) => statement.sql.includes("UPDATE meals"));
+    expect(update?.values[0]).toContain("rice bowl");
+    expect(update?.values[1]).toBe("felt steady before practice");
+    expect(update?.values[2]).toBe("meal-123");
+    expect(update?.values[3]).toBe("food-reviewer");
+  });
 });
 
 function makeEnv(opts: { statements?: Array<{ sql: string; values: unknown[] }>; uploads?: Array<{ key: string; contentType?: string }> } = {}) {

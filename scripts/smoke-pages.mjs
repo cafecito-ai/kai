@@ -243,7 +243,7 @@ async function assertFoodPhotoUpload(client) {
     const started = Date.now();
     while (Date.now() - started < 15_000) {
       const page = await snapshotPage(client);
-      if (/Photo saved|Kai saw|Photo saved\. Add a note/i.test(page.text)) return;
+      if ((/Photo saved|Kai saw|Photo saved\. Add a note/i.test(page.text)) && page.text.includes("Fix what Kai saw")) return;
       if (/Could not upload|Connection dropped|Sign in again|weird response|snag/i.test(page.text)) {
         throw new Error(`food photo upload failed visibly: ${JSON.stringify(page.text.slice(0, 240))}`);
       }

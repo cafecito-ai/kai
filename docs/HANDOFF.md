@@ -44,8 +44,10 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Under-18 onboarding triggers the parent consent send path when configured.
 - Food logging supports manual fuel notes and camera/file photo upload through the real food-photo API path.
 - Food photo selection processes immediately and can store R2-backed photos when configured.
+- Saved food reads can be reviewed and corrected from the Food tool, then persisted through the meal review API.
 - Mobile page smoke now exercises the real food photo file input and waits for a processed/saved state.
 - Body scan selection processes immediately and stores private scan entries through the Worker.
+- Body scan shows a private progress timeline when previous scans exist.
 - Food, body scan, stretch, and sleep are first-class focused mobile routes.
 - Sleep and movement capture real inputs and persist entries through the engine entry/progress path.
 - Physical tool surfaces show recent private saved context and next nudges.
@@ -83,6 +85,7 @@ The current staging build is ready for Lev/client handoff review. It is not read
 - Split Food, Body scan, Stretch / move, and Log sleep into focused mobile routes.
 - Tightened focused Body routes so the first phone viewport reaches the active tool instead of only route chrome.
 - Changed focused engine segments into real links so every segment is directly tappable and deep-linkable.
+- Added saved-meal review/edit behavior and a private body-scan timeline.
 - Surfaced recent conversation and tool-completion context as `Kai remembers`.
 - Added structured onboarding context and recent turns to the Worker chat prompt.
 - Added private physical and mental history panels inside tool surfaces.
@@ -133,7 +136,7 @@ Most recent verified surface: stable staging alias `https://staging.kai-epk.page
 7. Open onboarding and check whether it feels like Kai learning the teen.
 8. Open Body:
    - Add a food note.
-   - Select a food photo and confirm it starts processing.
+   - Select a food photo, confirm it starts processing, then open `Fix what Kai saw`.
    - Open Body scan and review the private/no-body-score framing.
    - Log stretch/move minutes and sleep hours/quality.
 9. Open Mind:
@@ -154,8 +157,8 @@ Most recent verified surface: stable staging alias `https://staging.kai-epk.page
 
 ### Physical
 
-- Food history exists, but saved meals could use a clearer review/edit flow and richer next nudges.
-- Body scan stores private scans and shows recent history, but needs a stronger visual progress timeline.
+- Food history and meal review/edit exist; saved meals still need richer pattern nudges over multiple days.
+- Body scan stores private scans and shows a private timeline; richer visual comparison remains future/beta.
 - Stretch is input-driven; real-time camera-guided form correction remains future/beta.
 - Sleep persists entries; multi-night trend/pattern coaching should be deeper.
 

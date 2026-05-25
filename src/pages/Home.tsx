@@ -4,37 +4,22 @@ import {
   Dumbbell,
   Flame,
   Heart,
-  Minus,
   Moon,
-  Plus,
   SmilePlus,
   Zap
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { KaiAvatar } from "../components/ui/AppPrimitives";
-import { DAILY_CUP_FLOOR, incrementCups, resetIfNewDay, todayIso, type HydrationToday } from "../lib/hydration";
-import { loadJSON, saveJSON } from "../lib/local-storage";
 import { engineTotals } from "../lib/tracker";
 import type { ProgressEvent } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 import { useUserStore } from "../stores/userStore";
 
-const HYDRATION_HOME_KEY = "kai.home.hydration.today.v2";
-
 export function Home() {
   const events = useProgressStore((state) => state.events);
-  const addEvent = useProgressStore((state) => state.addEvent);
   const streak = useProgressStore((state) => state.streak());
   const kaiName = useUserStore((state) => state.kaiName);
-  const [hydration, setHydration] = useState<HydrationToday>({ dateIso: todayIso(), cups: 0 });
-
-  useEffect(() => {
-    const stored = loadJSON<HydrationToday | null>(HYDRATION_HOME_KEY, null, null);
-    const reset = resetIfNewDay(stored);
-    setHydration(reset);
-    if (stored && stored.dateIso !== reset.dateIso) saveJSON(HYDRATION_HOME_KEY, null, reset);
-  }, []);
 
   const todayEvents = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -54,18 +39,6 @@ export function Home() {
   const physicalPoints = totals.physical;
   const mindScore = mentalPoints > 0 ? Math.min(10, Math.max(1, Math.round(mentalPoints / 45))) : null;
   const bodyScore = physicalPoints > 0 ? Math.min(10, Math.max(1, Math.round(physicalPoints / 45))) : null;
-
-  function bumpHydration(delta: number) {
-    const baseline = resetIfNewDay(hydration);
-    const next = incrementCups(baseline, delta);
-    let finalState = next;
-    if (delta > 0 && next.cups > baseline.cups && baseline.firstCupLoggedFor !== next.dateIso) {
-      addEvent({ engine: "physical", eventType: "hydration_first_cup", eventValue: 4, payload: { cups: next.cups, source: "home_preview" } });
-      finalState = { ...next, firstCupLoggedFor: next.dateIso };
-    }
-    setHydration(finalState);
-    saveJSON(HYDRATION_HOME_KEY, null, finalState);
-  }
 
   return (
     <div className="text-inkDark">
@@ -130,26 +103,24 @@ export function Home() {
           <ModuleCard
             to="/mental?module=checkin"
             icon={Brain}
-            label="Mental agent"
+            label="Mental"
             title="Check in, reframe, reset."
-            copy="Kai keeps the emotional work simple: name what is happening, understand the pattern, choose one next move."
+            copy="Name what's happening, understand the pattern, choose one next move. Supportive, never clinical."
             stat={mentalPoints > 0 ? `${mentalPoints} pts` : "Start"}
-            chips={["Mood", "Breath", "Journal"]}
+            chips={["Check-in", "Reset", "Purpose"]}
             accent="from-[#E4F7F4] to-white text-[#218A7D]"
           />
           <ModuleCard
             to="/health?module=food"
             icon={Dumbbell}
-            label="Physical agent"
-            title="Food photo, hydration, body scan."
-            copy="Log fuel, track recovery, and build a private progress loop without turning health into pressure."
+            label="Physical"
+            title="Food, scan, sleep, tracker."
+            copy="Four cards. Food camera, body scan, one-tap sleep, phone-down guided sessions. Useful, never obsessive."
             stat={physicalPoints > 0 ? `${physicalPoints} pts` : "Start"}
-            chips={["Food", "Hydrate", "Scan"]}
+            chips={["Food", "Scan", "Sleep", "Tracker"]}
             accent="from-[#FFF0EC] to-white text-[#C86B31]"
           />
         </section>
-
-        <HydrationPreview hydration={hydration} onBump={bumpHydration} />
 
         <section className="mt-6">
           <p className="px-1 font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-inkMute">Recent</p>
@@ -249,40 +220,6 @@ function ModuleCard({
         ))}
       </div>
     </Link>
-  );
-}
-
-function HydrationPreview({ hydration, onBump }: { hydration: HydrationToday; onBump: (delta: number) => void }) {
-  return (
-    <section className="mt-6 rounded-[24px] border border-[#0A0A0A0F] bg-white p-4 shadow-[0_1px_2px_rgba(10,10,10,0.04),0_8px_32px_rgba(10,10,10,0.08)]">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-full bg-[#EEEAFF] text-[#7B6EF6]">
-            <span className="font-mono text-sm">▱</span>
-          </span>
-          <div>
-            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-inkMute">hydration</p>
-            <p className="font-mono text-sm font-semibold text-inkDark">
-              {hydration.cups}
-              <span className="text-inkMute"> / {DAILY_CUP_FLOOR}</span>
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button type="button" aria-label="Remove a glass" onClick={() => onBump(-1)} disabled={hydration.cups === 0} className="focus-ring flex size-10 items-center justify-center rounded-full bg-[#F8F6F1] text-inkMute disabled:opacity-40">
-            <Minus size={15} aria-hidden="true" />
-          </button>
-          <button type="button" aria-label="Add a glass" onClick={() => onBump(1)} className="focus-ring flex size-10 items-center justify-center rounded-full bg-inkDark text-white">
-            <Plus size={18} aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-      <div className="mt-4 grid grid-cols-8 gap-1.5" aria-hidden="true">
-        {Array.from({ length: DAILY_CUP_FLOOR }, (_, index) => (
-          <div key={index} className={`h-7 rounded-[4px] ${index < hydration.cups ? "bg-[#7B6EF6]" : "bg-warmPaper"}`} />
-        ))}
-      </div>
-    </section>
   );
 }
 

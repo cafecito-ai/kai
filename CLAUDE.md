@@ -1,6 +1,8 @@
 # CLAUDE.md — Project North Star
 
 > **Purpose:** Master build specification for the Project North Star platform. Read this entire document before writing any code. Every section is load-bearing.
+>
+> **Reconciliation note (v2):** earlier drafts of this spec described a three-engine product (Physical, Potential & Goals, Mental) on a dark theme with Inter as the type face. The product shipped two engines (Physical and Mental — Potential's goals + strengths work was folded into Mental's "Purpose" tab) on a light "warm paper" theme with **DM Sans + Fraunces**. `design.md` in the repo root is the canonical visual direction; this file matches it. Section 4 (design system), Section 6 (engines), Section 8 (onboarding), and Section 11 (routing) have been updated. Sections that still reference "three engines" in narrative copy are kept where the history matters, and called out inline. Legacy `engine="potential"` rows in D1 are still readable and surface under Mental in History views via `tracker.ts`.
 
 ---
 
@@ -15,14 +17,14 @@ The audience is teenagers under significant pressure from social media, academic
 1. A teenager signs up. With parental consent if under 18.
 2. They meet Kai, the AI mentor. They can rename Kai (Coach, Buddy, Pal, anything) and lightly customize tone.
 3. Kai asks a short series of questions to understand what the teen is dealing with right now.
-4. Based on the answers, Kai routes the teen into one of three engines: Physical Wellness, Potential & Goals, or Mental Wellness.
+4. Based on the answers, Kai routes the teen into one of two engines: **Physical Wellness** (body, food, sleep, movement, recovery) or **Mental Wellness** (feelings, identity, purpose, social pressure, goals, strengths).
 5. The teen engages with that engine — content, exercises, reflections, tracking — and Kai checks in regularly.
 6. A cross-cutting progress tracker visualizes growth: personal charts, an evolving character avatar, and opt-in comparison with friends.
-7. Over time, the teen can engage all three engines and use Kai as their general-purpose mentor.
+7. Over time, the teen can engage both engines and use Kai as their general-purpose mentor.
 
 **What this document covers:**
 
-- Product scope for all three engines, the operator (Kai), the progress tracker, the safety layer, and the onboarding flow.
+- Product scope for both engines, the operator (Kai), the progress tracker, the safety layer, and the onboarding flow.
 - Technical architecture: stack, schema, routes, environment variables.
 - Agent prompts for Kai and each engine, with structure and grounding.
 - Sequenced build tasks across five phases.
@@ -248,49 +250,78 @@ northstar/
 
 ## 4. Design system
 
+`design.md` is the source-of-truth feel doc; this section is the implementation. The Tailwind config in `tailwind.config.js` mirrors these tokens.
+
 ### Brand palette
 
-```css
---color-bg: #0F1419;          /* near-black, slightly warm */
---color-surface: #1A2028;
---color-elevated: #232A33;
---color-border: #2D3640;
+Warm-paper light theme. No glowing-AI gradients, no one-note purple, no dark-mode "techy" vibe. Plum + sage + coral accents land sparingly.
 
---color-text: #F5F7FA;
---color-text-muted: #8B95A3;
---color-text-subtle: #5A6473;
+```js
+// tailwind.config.js — extended theme
+colors: {
+  // Ink + paper
+  ink:        "#0A0A0A",   // primary text, near-black, slightly warm
+  ink2:       "#2A2A28",
+  paper:      "#FAFAF7",   // app background
+  warmPaper:  "#F4F1EB",   // raised neutral surface
+  white:      "#FFFFFF",
+  line:       "#E5E2D9",   // hairline borders
+  muted:      "#6B6B65",   // secondary text
+  soft:       "#A8A8A0",   // tertiary text
 
---color-accent: #4FC3F7;      /* electric blue, primary brand */
---color-accent-hover: #29B6F6;
---color-accent-dim: rgba(79, 195, 247, 0.15);
+  // Lane tones — referenced as `body*` / `reset*` / `care*` (legacy
+  // names from the demo build).
+  body:       "#2D7A3E",   // Physical (sage)
+  bodyWash:   "#DCEEDF",
+  reset:      "#FF6B45",   // Mental (coral)
+  resetWash:  "#FFE8DD",
+  care:       "#5B47F0",   // accent purple ("plum")
+  careWash:   "#EEEAFF",
 
---color-warm: #FFB74D;        /* used sparingly for warmth/streaks */
---color-success: #66BB6A;
---color-warning: #FFA726;
---color-danger: #EF5350;      /* reserved for safety surfaces */
+  // Brand aliases used across components
+  sage:       "#2D7A3E",
+  sky:        "#5B47F0",   // historical alias for plum
+  coral:      "#FF6B45",
+  plum:       "#5B47F0",
+  amber:      "#B76618",
+  lime:       "#DCEEDF",
+
+  // Safety surfaces
+  danger:     "#B42318",
+  dangerWash: "#FFF0EC"
+}
 ```
 
 ### Typography
 
 ```
-Font family: 'Inter Variable', system-ui, -apple-system, sans-serif
-Display family: 'Inter Variable' (use higher weights for display sizes)
+Font family:     'DM Sans', ui-sans-serif, system-ui, sans-serif
+Display family:  'Fraunces', 'DM Sans', ui-serif, serif
+Mono family:     'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo
 
-Display:    clamp(36px, 5vw, 56px)   weight 700  line-height 1.1
-H1:         clamp(28px, 4vw, 40px)   weight 700  line-height 1.2
-H2:         clamp(22px, 3vw, 30px)   weight 600  line-height 1.3
-H3:         clamp(18px, 2.5vw, 22px) weight 600  line-height 1.4
-Body:       16px                      weight 400  line-height 1.6
-Small:      14px                      weight 400  line-height 1.5
-Eyebrow:    12px                      weight 600  letter-spacing 0.08em uppercase
+App title:    clamp(36px, 7vw, 72px) weight 800 line-height 1.0   (.app-title)
+Display:      clamp(28px, 5vw, 56px) weight 700 line-height 1.05  (Fraunces)
+H1:           clamp(28px, 4vw, 40px) weight 700 line-height 1.2
+H2:           clamp(22px, 3vw, 30px) weight 600 line-height 1.3
+H3:           clamp(18px, 2.5vw, 22px) weight 600 line-height 1.4
+Body:         16px                    weight 400 line-height 1.6
+Small:        14px                    weight 400 line-height 1.5
+Eyebrow:      11px                    weight 800 letter-spacing 0.14em uppercase  (.eyebrow)
 ```
+
+Set `<html lang="en">`; fonts load from Google Fonts in `index.html` (DM Sans, Fraunces, JetBrains Mono).
 
 ### Spacing & radius
 
 ```
 Spacing scale: 4, 8, 12, 16, 24, 32, 48, 64, 96, 128 (px)
-Border radius: 8 (cards), 12 (modals), 24 (avatars/character), 9999 (pills)
+Border radius:
+  - rounded-kai   = 18px  (cards, inputs, buttons)
+  - rounded-calm  = 28px  (modals, hero panels)
+  - rounded-full  = 9999  (pills, chips, avatars)
 ```
+
+Newer surfaces in `AppPrimitives.tsx` (`AppPage`, `AppSurface`, `SessionHero`, `StepShell`) use `[28-30px]` radii. Treat that as `rounded-calm`; one-off `rounded-[24px]` etc. should converge on the named tokens during the design unification pass.
 
 ### Motion
 
@@ -441,8 +472,8 @@ avatars/{userId}/current.png      # user-uploaded avatar override
 | Use case | Model | Why |
 |----------|-------|-----|
 | Kai (general operator) | `claude-haiku-4-5` | Fast, cheap, good for short routing turns. |
-| Engine conversations (Physical, Potential) | `claude-sonnet-4-6` | Strong reasoning and persona adherence. |
-| Mental wellness engine | `claude-opus-4-7` | Highest quality and safest. Worth the cost in this domain. |
+| Physical engine conversation | `claude-sonnet-4-6` | Strong reasoning and persona adherence. |
+| Mental engine conversation | `claude-opus-4-7` | Highest quality and safest. Mental covers feelings, identity, and the goals/strengths work that used to live in a third "Potential" engine — it gets the most care. |
 | Onboarding intake summary | `claude-haiku-4-5` | Single-shot summary, low complexity. |
 | Safety classifier (pre-screen all user messages) | `claude-haiku-4-5` with structured output | Fast, runs on every inbound message before the main model. |
 
@@ -575,42 +606,16 @@ your body these days — anything bugging you or just exploring?"
 If they're returning: brief check-in on whatever they were working on last.
 ```
 
-### Engine: Potential & Goals — prompt content
+### Engine: Mental Wellness — prompt content (absorbs the retired Potential engine)
 
-```
-DOMAIN FOCUS
-Discovering hidden strengths and pursuing real goals. School, instruments,
-sports, business, charity, creative work — whatever they're drawn to. You
-help them notice what they're naturally good at, set goals that matter to
-THEM (not to their parents), and stay with it through the hard middle.
+The third engine ("Potential & Goals") was retired during the build. Its substance — strengths discovery, goal-setting, process-over-outcome, growth-mindset framing — is now the **Purpose** tab of the Mental engine, alongside Check-in (feelings + thought-reframe) and Reset (breath, meditation, social-media reset, future-self letter). Below: the Mental engine prompt, which now must carry both feeling-work and goal-work simultaneously without collapsing one into the other.
 
-GROUNDED IN
-- Strengths-based discovery (what they do naturally, not what they're told they should do)
-- Goals that are specific enough to act on, modest enough to actually start
-- Process over outcome — the practice is the point
-- Self-determination over external validation
-- Real failure is allowed; pivoting is not quitting
+Key requirements imported from the old Potential prompt that the Mental prompt MUST honor:
 
-AVAILABLE ACTIONS
-You can suggest the user:
-- Run a strengths-discovery flow (15 minutes of guided questions)
-- Set a new goal (school, instrument, sport, business, charity, custom)
-- Check in on an existing goal
-- Reframe a goal that's not working
-- Celebrate a goal that was hit
-
-WHAT THIS ENGINE NEVER DOES
-- Tells the user what they "should" do with their life
-- Compares them to peers or siblings
-- Encourages goals that are about pleasing parents rather than their own pull
-- Treats failure as failure (it's data)
-- Pushes business/entrepreneurship as inherently better than other paths
-
-OPENING STYLE
-If they're new: "Tell me about something you've been thinking about lately —
-something you'd want to get better at, or build, or learn."
-If returning: ask about whatever goal was last on their mind.
-```
+- **Goals are the user's**, not their parents'. Never push business/entrepreneurship as inherently superior.
+- **Strengths-based discovery** — name what the teen does naturally, don't prescribe a path.
+- **Failure is data, not failure.** Pivoting ≠ quitting.
+- **Compare to no one.** No siblings, no peers.
 
 ### Engine: Mental Wellness — prompt content
 
@@ -795,48 +800,42 @@ A screen that introduces Kai. Three quick choices:
    (Saved to `users.kai_tone`.)
 3. **Voice preview:** A canned sample message from Kai in the chosen tone. Teen can swipe through to compare. "This is how I'll usually sound — you can change this anytime in settings."
 
-### Step 5: Intake questions
+### Step 5: Intake (vibes / signals / mission / context)
 
-A conversational intake. Six questions, asked one at a time. Each answer feeds into a Kai-written intake summary that becomes part of every future context.
+The shipped intake is **not** six open-ended questions — it's a fast, tap-driven flow built to feel like a teen utility, not a clinical questionnaire. Four screens, each a few seconds:
 
-The questions:
+1. **Vibe scan** — pick up to 3 of: Stressed, Locked in, Tired, Motivated, Lonely, Confident, Chaotic, Bored.
+2. **Life signals** — six rows (Sleep, Energy, Confidence, Movement, Food/body, Social) with a 3-state Low / Mid / High selector each.
+3. **First mission** — one of: Mind, Body, Confidence, Discipline, Food, Sleep, Social, Goals. Each maps deterministically to an engine + module route.
+4. **Optional context** — freeform textarea. "A messy sentence is enough." Skippable.
 
-1. "Walk me into a normal day for you. What does it look like from when you wake up to when you go to bed?"
-2. "What's one thing you wish was different about your life right now?"
-3. "What's one thing you actually like about your life right now?"
-4. "Where do you feel pressure these days — and where's it coming from?"
-5. "If you could spend an extra hour every day on anything, no judgment, what would you do with it?"
-6. "On a scale of 1 to 10, how are you actually doing this week? (No need to explain unless you want to.)"
+The teen's selections are synthesized into `q1`–`q6` answer strings (`Onboarding.buildIntakeAnswers`) and sent to `POST /api/onboarding/intake`. The worker writes a 3-sentence summary (using `claude-haiku-4-5`) and returns it alongside a routed `suggestedEngine`. The summary is saved to `user_intake.summary` and KV (`intake:{userId}`).
 
-After Q6, Kai writes a 3-sentence summary (using `claude-haiku-4-5`) capturing the teen's situation, what they care about, and where they could use support. This summary is saved to `user_intake.summary` and KV (`intake:{userId}`).
+> **Spec divergence:** earlier drafts of this spec listed six open-ended questions ("Walk me into a normal day…", etc.). The shipped flow asks the structured prompts above instead. The Kai-written intake summary still grounds every future context, just from a different input shape.
 
-### Step 6: Engine routing
+### Step 6: Reveal + engine routing
 
-Based on the intake summary, Kai routes the teen to a primary engine. Kai does this via a structured-output call:
+The final step is a "Reveal" screen that summarizes the calibration: voice, calibration percentage, primary engine label (Mind or Body), and the first mission with a one-sentence next-rep description.
+
+Routing is structured-output as before, but the only valid values are now `"physical"` or `"mental"`:
 
 ```
 Based on this intake summary, choose the engine most likely to be useful to
-this teenager FIRST. They can use all engines, but pick the one they should
+this teenager FIRST. They can use both engines, but pick the one they should
 START with.
 
 Intake summary: {{intake_summary}}
 
 Return only one of:
 - "physical"
-- "potential"
 - "mental"
 
 Brief reasoning (one sentence): {{reasoning}}
 ```
 
-The teen sees a screen that says: "Based on what you shared, let's start with [Engine Name]. Here's why: {{Kai's one-sentence reasoning}}. You can switch any time."
+> Legacy data: some hydrated profiles still carry `primary_engine = "potential"`. The client maps that to Mental on render; the worker accepts the value through the type but no new code emits it.
 
-Two buttons:
-
-- **"Sounds good. Let's start."** → goes to that engine's home.
-- **"Let me pick something else."** → shows all three engines with one-sentence descriptions, teen picks manually.
-
-`users.primary_engine` is set based on the final choice.
+The button "Start my first rep" navigates straight to the routed engine's module deeplink (e.g. `/mental?module=checkin` or `/health?module=food`). There is no separate "pick something else" branch on the reveal — the engine choice can always be changed from Settings.
 
 ### Step 7: First real conversation
 
@@ -996,21 +995,30 @@ Never show the meal as "good" or "bad." Never compare to a daily target unless t
 ### Frontend routes
 
 ```
-/                       Landing page
+/                       Dashboard (Home) — auth gate; redirects to /onboarding if unfinished
 /sign-in                Clerk sign-in
 /sign-up                Clerk sign-up
 /onboarding             Multi-step onboarding flow
 /home                   Dashboard (post-onboarding)
 /engine/physical        Physical wellness engine
-/engine/potential       Potential & goals engine
-/engine/mental          Mental wellness engine
+/engine/mental          Mental wellness engine (includes Purpose / strengths / goals)
+/health                 Shortcut for /engine/physical with module deeplinks (?module=food|movement|scan)
+/mental                 Shortcut for /engine/mental with module deeplinks (?module=checkin|reset|purpose)
+/engine/:engineId/guides/:slug   Lazy-loaded primer guide pages
 /progress               Cross-cutting progress view
+/groups                 Friend compare (opt-in, aggregate stats only)
+/profile                Public-facing profile (avatar + belts + level)
 /settings               User settings (rename Kai, manage friends, manage data)
 /crisis                 Always-accessible crisis resources page
 /for-parents            Parent-facing info page (no auth required)
 /terms                  Terms of Service
 /privacy                Privacy Policy
+/demo                   Anonymous demo experience (immersive shell)
+/scope                  Internal scope-review doc (immersive shell)
+/ops                    Operations dashboard (auth gated, Boost AI only)
 ```
+
+> `/engine/potential` is retired. Any link still pointing there falls through the wildcard route back to `/`. `EngineId` in the type system still permits `"potential"` so legacy events in D1 keep deserializing — no new code emits it.
 
 ### API routes (Workers)
 
@@ -1129,7 +1137,9 @@ A new teen can land on the home page, sign up, complete parental consent if need
 
 A teen can engage all physical features end-to-end. The food-photo flow returns accurate-enough results to be useful. The character visibly evolves as they engage. Five teens have used it and given feedback.
 
-### Phase 3: Potential & Goals Engine
+### Phase 3: Potential & Goals Engine (retired — folded into Phase 4)
+
+> **What actually happened:** during the build, Potential's content (strengths discovery, goal-setting, reframe, identity habit) was collapsed into the Mental engine as its "Purpose" tab. There is no separate Phase-3 gate G4 — the work below is now part of Mental's surface and is gated by G5 below.
 
 **Tasks (in order):**
 

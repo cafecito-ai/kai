@@ -1,4 +1,4 @@
-import { Activity, Brain, Camera, HeartPulse, Home, Plus, Settings, ShieldAlert, Sparkles, Target, UsersRound, UserRound, X } from "lucide-react";
+import { Activity, Brain, Camera, HeartPulse, Home, Plus, Settings, ShieldAlert, Sparkles, Target, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { KaiChat } from "../kai/KaiChat";
@@ -77,18 +77,18 @@ function AppContextBar() {
           <Link to="/home" className="focus-ring grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.08)]" aria-label="Kai home">
             <KaiAvatar size={34} label="Kai" pulse />
           </Link>
-          <span className={`grid size-8 shrink-0 place-items-center rounded-full ${lane.tone}`}>
+          <span className={`hidden size-8 shrink-0 place-items-center rounded-full sm:grid ${lane.tone}`}>
             <ActiveIcon size={16} aria-hidden="true" />
           </span>
           <div className="min-w-0">
             <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">{sectionLabel(pathname)}</p>
-            <p className="truncate text-sm font-black text-[#1A1A1F] sm:hidden">Always here.</p>
-            <p className="hidden truncate text-sm font-black text-[#1A1A1F] sm:block">Kai routes mind, body, and goals from one place.</p>
+            <p className="truncate text-sm font-black text-[#1A1A1F] sm:hidden">Ask Kai.</p>
+            <p className="hidden truncate text-sm font-black text-[#1A1A1F] sm:block">Tell Kai what is going on. Kai opens the right tool.</p>
           </div>
         </div>
         <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 overflow-hidden text-xs font-black sm:grid sm:grid-cols-[1fr_1fr_auto]">
-          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{todayCount} reps</span>
-          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{streak} day streak</span>
+          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{todayCount} moves</span>
+          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{streak} days in</span>
           <Link to="/home" className="focus-ring hidden rounded-full bg-[#1A1A1F] px-4 py-2 text-white sm:inline-flex">
             Today
           </Link>
@@ -106,50 +106,56 @@ function AppComposer() {
     <>
       {chatOpen && <GlobalChatSheet onClose={() => setChatOpen(false)} />}
       {quickOpen && <GlobalQuickSheet onClose={() => setQuickOpen(false)} />}
-      <button
-        type="button"
-        onClick={() => setChatOpen(true)}
-        className="focus-ring fixed bottom-5 left-5 z-40 grid size-10 place-items-center rounded-full bg-white shadow-[0_12px_40px_rgba(10,10,10,0.14)] sm:bottom-6 sm:left-[calc(50%-18rem)]"
-        aria-label="Talk to Kai"
-      >
-        <KaiAvatar size={34} label="Kai companion" pulse />
-      </button>
-      <AppDock quickOpen={quickOpen} onToggleQuick={() => setQuickOpen((open) => !open)} />
+      <AppDock
+        chatOpen={chatOpen}
+        quickOpen={quickOpen}
+        onOpenChat={() => setChatOpen(true)}
+        onToggleQuick={() => setQuickOpen((open) => !open)}
+      />
     </>
   );
 }
 
-function AppDock({ quickOpen, onToggleQuick }: { quickOpen: boolean; onToggleQuick: () => void }) {
-  const links = [
-    { to: "/home", label: "Home", icon: Home },
-    { to: "/loop", label: "Loop", icon: HeartPulse },
-    { to: "/goals", label: "Goals", icon: Target },
-    { to: "/progress", label: "Progress", icon: Activity },
-    { to: "/profile", label: "Profile", icon: UserRound }
-  ];
-
+function AppDock({
+  chatOpen,
+  quickOpen,
+  onOpenChat,
+  onToggleQuick
+}: {
+  chatOpen: boolean;
+  quickOpen: boolean;
+  onOpenChat: () => void;
+  onToggleQuick: () => void;
+}) {
   return (
     <>
       <nav
-        className="fixed inset-x-3 bottom-3 z-40 mx-auto grid max-w-md grid-cols-[repeat(2,minmax(0,1fr))_3.25rem_repeat(3,minmax(0,1fr))] gap-1 rounded-[24px] border border-[#0A0A0A0F] bg-white/95 p-1 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl"
+        className="fixed inset-x-4 bottom-3 z-40 mx-auto grid max-w-sm grid-cols-[1fr_4rem_1fr] gap-1 rounded-[26px] border border-[#0A0A0A0F] bg-white/95 p-1.5 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl"
         style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
         aria-label="Primary app navigation"
       >
-        {links.slice(0, 2).map(({ to, label, icon: Icon }) => (
-          <DockLink key={to} to={to} label={label} icon={Icon} />
-        ))}
+        <DockLink to="/home" label="Home" icon={Home} />
+        <button
+          type="button"
+          onClick={onOpenChat}
+          className={`focus-ring grid h-14 place-items-center rounded-[21px] bg-[#111116] text-white shadow-sm transition ${chatOpen ? "scale-[0.98]" : "hover:-translate-y-0.5"}`}
+          aria-label="Talk to Kai"
+          aria-expanded={chatOpen}
+        >
+          <KaiAvatar size={40} label="Kai companion" pulse />
+        </button>
         <button
           type="button"
           onClick={onToggleQuick}
-          className="focus-ring flex h-12 items-center justify-center rounded-[19px] bg-[#1A1A1F] text-white shadow-sm"
-          aria-label="Quick app actions"
+          className={`focus-ring flex h-14 flex-col items-center justify-center rounded-[21px] text-[11px] font-black transition ${
+            quickOpen ? "bg-[#111116] text-white" : "text-[#5E5E64] hover:bg-[#F4F1EB] hover:text-[#1A1A1F]"
+          }`}
+          aria-label="Open Kai tools"
           aria-expanded={quickOpen}
         >
-          <Plus size={24} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />
+          <Plus size={19} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />
+          Tools
         </button>
-        {links.slice(2).map(({ to, label, icon: Icon }) => (
-          <DockLink key={to} to={to} label={label} icon={Icon} />
-        ))}
         <Link to="/crisis" className="focus-ring absolute -top-11 right-0 hidden min-h-9 items-center gap-2 rounded-full bg-white px-3 text-xs font-black text-danger shadow-sm sm:inline-flex">
           <ShieldAlert size={14} aria-hidden="true" />
           Crisis
@@ -184,8 +190,8 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
           <div className="flex items-center gap-2">
             <KaiAvatar size={34} label="KAI" pulse />
             <div>
-              <p className="text-sm font-black text-[#111116]">KAI</p>
-              <p className="text-xs font-semibold text-[#8A8A8F]">One companion across the whole app</p>
+              <p className="text-sm font-black text-[#111116]">Kai</p>
+              <p className="text-xs font-semibold text-[#8A8A8F]">Say it straight. We’ll sort it out.</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className="focus-ring grid size-10 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close chat">
@@ -195,13 +201,13 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
         <KaiChat embedded />
         <div className="grid grid-cols-2 gap-2 p-2 pt-3">
           <Link to="/mental?module=checkin" onClick={onClose} className="focus-ring rounded-full bg-[#E4F7F4] px-4 py-3 text-center text-sm font-black text-[#218A7D]">
-            Mental unit
+            Mind
           </Link>
           <Link to="/engine/potential" onClick={onClose} className="focus-ring rounded-full bg-goalsWash px-4 py-3 text-center text-sm font-black text-goals">
-            Goals unit
+            Goals
           </Link>
           <Link to="/health?module=food" onClick={onClose} className="focus-ring rounded-full bg-[#FFF0EC] px-4 py-3 text-center text-sm font-black text-[#C86B31] sm:col-span-2">
-            Health unit
+            Body
           </Link>
         </div>
       </div>
@@ -211,21 +217,22 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
 
 function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
   const actions = [
-    { to: "/goal", label: "New goal", icon: Target, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
-    { to: "/engine/potential", label: "Goals unit", icon: Target, tone: "bg-goalsWash text-goals" },
-    { to: "/groups", label: "Circle", icon: UsersRound, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
-    { to: "/settings", label: "Settings", icon: Settings, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { to: "/mental?module=checkin", label: "Talk it out", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
     { to: "/health?module=food", label: "Log food", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
-    { to: "/mental?module=guides", label: "Guide chat", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
-    { to: "/mental?module=reset", label: "Breath reset", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
-    { to: "/health?module=scan", label: "Body scan", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" }
+    { to: "/engine/potential", label: "Move a goal", icon: Target, tone: "bg-goalsWash text-goals" },
+    { to: "/loop", label: "Reset today", icon: HeartPulse, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
+    { to: "/health?module=scan", label: "Body scan", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { to: "/mental?module=reset", label: "Breathe", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
+    { to: "/progress", label: "Your wins", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { to: "/profile", label: "You", icon: UserRound, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
+    { to: "/settings", label: "Settings", icon: Settings, tone: "bg-[#F4F1EB] text-[#1A1A1F]" }
   ];
 
   return (
     <div className="fixed inset-x-0 bottom-20 z-40 px-5" role="dialog" aria-label="Quick actions">
       <div className="mx-auto w-full max-w-md rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
         <div className="mb-2 flex items-center justify-between px-2">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Quick rep</p>
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai tools</p>
           <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close quick actions">
             <X size={15} aria-hidden="true" />
           </button>
@@ -268,9 +275,9 @@ function isUnifiedAppRoute(pathname: string) {
 }
 
 function sectionLabel(pathname: string) {
-  if (pathname === "/health" || pathname.startsWith("/engine/physical")) return "Health unit";
-  if (pathname === "/mental" || pathname.startsWith("/engine/mental")) return "Mental unit";
-  if (pathname === "/potential" || pathname.startsWith("/engine/potential")) return "Goals unit";
+  if (pathname === "/health" || pathname.startsWith("/engine/physical")) return "Body";
+  if (pathname === "/mental" || pathname.startsWith("/engine/mental")) return "Mind";
+  if (pathname === "/potential" || pathname.startsWith("/engine/potential")) return "Goals";
   if (pathname === "/goal") return "Goal";
   if (pathname === "/goals" || pathname.startsWith("/goals/")) return "Goals";
   if (pathname === "/loop") return "Loop";

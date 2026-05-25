@@ -46,7 +46,7 @@ export function Home() {
   const nextMove = useMemo(() => getNextMove(nextStep, activeGoals), [activeGoals, nextStep]);
   const lastKaiMessage =
     [...messages].reverse().find((message) => message.role === "assistant")?.content ??
-    "Tell me the loud part. I'll help you turn it into one small move.";
+    "Say it messy. We’ll make it simple.";
 
   function submitMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,20 +63,20 @@ export function Home() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(180deg,rgba(7,9,18,0),rgba(70,216,255,0.08))]" />
         <div className="relative flex flex-wrap items-center justify-center gap-2 text-xs font-black uppercase tracking-wider text-paper/50 sm:justify-between">
           <span>{dayLabel()}</span>
-          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-paper">{streak > 0 ? `${streak} day streak` : "Kai is here"}</span>
+          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-paper">{streak > 0 ? `${streak} days in` : "Kai's here"}</span>
         </div>
 
         <div className="relative mx-auto flex w-full max-w-2xl min-w-0 flex-col items-center pt-9 text-center sm:pt-14">
           <KaiAvatar size={112} pulse className="drop-shadow-[0_24px_50px_rgba(79,195,247,0.25)]" />
           <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-paper/60">
             <Sparkles size={14} aria-hidden="true" />
-            Your coach is awake
+            No shame. Next move.
           </p>
           <h1 className="mt-4 max-w-[9.5ch] break-words font-sans text-[2.95rem] font-black leading-[0.9] tracking-normal text-paper sm:max-w-[12ch] sm:text-7xl">
-            What needs Kai today?
+            What's up?
           </h1>
           <p className="mt-4 max-w-[20rem] text-base font-semibold leading-7 text-paper/60 sm:max-w-md">
-            Say the loud thing. Kai will turn it into one calm next move for your mind, body, or goal.
+            Drop the real version. Kai will help you get unstuck and choose the next move.
           </p>
 
           <form onSubmit={submitMessage} className="mt-7 w-full max-w-[21.5rem] rounded-[30px] border border-white/14 bg-white/10 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:max-w-none">
@@ -88,7 +88,7 @@ export function Home() {
                 id="kai-home-message"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="Tell Kai what is going on..."
+                placeholder="Type it like you'd text it..."
                 rows={1}
                 className="max-h-32 min-h-12 min-w-0 flex-1 resize-none border-0 bg-transparent px-3 py-3 text-base font-semibold leading-6 text-paper outline-none placeholder:text-paper/40"
               />
@@ -126,7 +126,7 @@ export function Home() {
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-xs font-black uppercase tracking-wider text-paper/55">Next move</p>
+              <p className="text-xs font-black uppercase tracking-wider text-paper/55">Try this next</p>
               <h2 className="mt-2 break-words font-display text-3xl font-black leading-none tracking-normal sm:text-4xl">{nextMove.title}</h2>
               <p className="mt-3 max-w-xl text-sm font-semibold leading-6 text-paper/70">{nextMove.copy}</p>
             </div>
@@ -135,9 +135,9 @@ export function Home() {
             </span>
           </div>
           <div className="mt-5 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-paper/55">
-            <span>{completedSteps}/{loop?.steps.length ?? 5} daily reps</span>
+            <span>{completedSteps}/{loop?.steps.length ?? 5} done</span>
             <span aria-hidden="true">.</span>
-            <span>{loop?.score ?? 20} rhythm</span>
+            <span>{loop?.score ?? 20}% steady</span>
           </div>
         </Link>
 
@@ -145,12 +145,12 @@ export function Home() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-wider text-muted">Home screen</p>
-              <h2 className="mt-1 font-display text-3xl font-black leading-none tracking-normal text-ink">Kai widget</h2>
+              <h2 className="mt-1 font-display text-3xl font-black leading-none tracking-normal text-ink">Kai on deck</h2>
             </div>
             <KaiAvatar size={58} pulse />
           </div>
           <div className="mt-5 rounded-[24px] border border-line bg-paper p-4">
-            <p className="text-sm font-black text-ink">One thing today</p>
+            <p className="text-sm font-black text-ink">For right now</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-muted">{nextMove.title}</p>
           </div>
         </section>
@@ -185,21 +185,21 @@ export function Home() {
 const routeActions: RouteAction[] = [
   {
     title: "Mind",
-    copy: "Name it. Steady it.",
+    copy: "Talk it out.",
     to: "/mental?module=checkin",
     icon: Brain,
     tone: "bg-[#E4F7F4] text-[#218A7D]"
   },
   {
     title: "Body",
-    copy: "Fuel, scan, recover.",
+    copy: "Food, sleep, movement.",
     to: "/health?module=food",
     icon: Camera,
     tone: "bg-[#FFF0EC] text-[#C86B31]"
   },
   {
     title: "Goals",
-    copy: "One real rep.",
+    copy: "Make it real.",
     to: "/engine/potential",
     icon: Target,
     tone: "bg-goalsWash text-goals"
@@ -210,23 +210,23 @@ function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
   if (!nextStep) {
     return {
       title: "Bank what you finished.",
-      copy: "You already moved today. Check the loop or choose what should stay tomorrow.",
+      copy: "You did enough to count. Close it out or pick what carries into tomorrow.",
       to: "/loop"
     };
   }
 
   if (nextStep.id === "body_action") {
     return {
-      title: "Take care of your body.",
-      copy: "Log food, scan posture, stretch, or protect sleep. Keep it simple and useful.",
+      title: "Give your body a win.",
+      copy: "Food, sleep, stretch, scan. Pick the one that would actually help.",
       to: "/health?module=food"
     };
   }
 
   if (nextStep.id === "mind_action") {
     return {
-      title: "Tell Kai what is heavy.",
-      copy: "Name the feeling, get perspective, then choose the next honest action.",
+      title: "Say what's been sitting there.",
+      copy: "No perfect words. Name it, breathe, then take one clean step.",
       to: "/mental?module=checkin"
     };
   }
@@ -234,23 +234,23 @@ function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
   if (nextStep.id === "goal_action") {
     const activeGoal = activeGoals[0];
     return {
-      title: activeGoal?.nextAction || "Move one goal forward.",
-      copy: activeGoal ? activeGoal.title : "Pick one direction. Not your whole life. One next rep.",
+      title: activeGoal?.nextAction || "Move one thing forward.",
+      copy: activeGoal ? activeGoal.title : "Pick one thing. Not your whole life.",
       to: activeGoal ? `/goals/${encodeURIComponent(activeGoal.id)}` : "/engine/potential"
     };
   }
 
   if (nextStep.id === "reflection") {
     return {
-      title: "Close the day clean.",
-      copy: "Notice what changed, even a little. That is how Kai learns your rhythm.",
+      title: "Close it clean.",
+      copy: "What changed, even a little? That is the part worth keeping.",
       to: "/loop"
     };
   }
 
   return {
-    title: "Check in with Kai.",
-    copy: "Start with where you are. No performance, no pretending.",
+    title: "Start where you are.",
+    copy: "No performance. No pretending. Just the real check-in.",
     to: "/loop"
   };
 }

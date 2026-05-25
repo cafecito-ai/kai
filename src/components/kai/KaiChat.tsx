@@ -4,7 +4,7 @@ import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { kaiPromptChips } from "../../lib/kai-actions";
-import { getKaiRecentContext } from "../../lib/kai-memory";
+import { getKaiMemoryItems } from "../../lib/kai-memory";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
@@ -23,7 +23,7 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
-  const recentContext = getKaiRecentContext(messages);
+  const memoryItems = getKaiMemoryItems(messages);
   const suggestions: Array<{ label: string; prompt: string; icon: LucideIcon }> =
     mode === "mental"
       ? [
@@ -101,10 +101,20 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
         aria-relevant="additions"
         aria-label="Chat with Kai"
       >
-        {recentContext && (
+        {memoryItems.length > 0 && (
           <div className="rounded-[20px] border border-line bg-paper px-4 py-3 text-left shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-wider text-muted">{recentContext.label}</p>
-            <p className="mt-1 text-sm font-semibold leading-5 text-ink">{recentContext.body}</p>
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted">Kai remembers</p>
+            <div className="mt-3 space-y-2">
+              {memoryItems.map((item) => (
+                <div key={item.id} className="flex gap-2">
+                  <span className={`mt-1 size-2 shrink-0 rounded-full ${item.kind === "saved" ? "bg-reset" : "bg-ink/35"}`} />
+                  <span className="min-w-0">
+                    <span className="block text-xs font-black text-ink">{item.label}</span>
+                    <span className="mt-0.5 block text-sm font-semibold leading-5 text-muted">{item.body}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
         {messages.map((message) => (

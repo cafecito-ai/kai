@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { AppPage, KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { inferKaiAction, topKaiActions } from "../lib/kai-actions";
-import { getKaiRecentContext } from "../lib/kai-memory";
+import { getKaiMemoryItems } from "../lib/kai-memory";
 import { getNextAvailableStep } from "../lib/loop";
 import type { DailyLoopStep, Goal } from "../lib/types";
 import { useGoalStore } from "../stores/goalStore";
@@ -43,7 +43,7 @@ export function Home() {
     [...messages].reverse().find((message) => message.role === "assistant")?.content ??
     "Say it messy. We’ll make it simple.";
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
-  const recentContext = useMemo(() => getKaiRecentContext(messages), [messages]);
+  const memoryItems = useMemo(() => getKaiMemoryItems(messages), [messages]);
   const liveAction = useMemo(() => (draft.trim() ? inferKaiAction(draft) : nextKaiAction ?? inferKaiAction(lastUserMessage)), [draft, lastUserMessage, nextKaiAction]);
 
   function submitMessage(event: FormEvent<HTMLFormElement>) {
@@ -120,10 +120,20 @@ export function Home() {
             <p className="text-xs font-black uppercase tracking-wider text-paper/50">Kai</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-paper/80">{lastKaiMessage}</p>
           </div>
-          {recentContext && (
-            <div className="mt-3 w-full max-w-[21.5rem] rounded-[22px] border border-white/10 bg-white/[0.07] p-3 text-left backdrop-blur-xl sm:max-w-none">
-              <p className="text-[10px] font-black uppercase tracking-wider text-paper/40">{recentContext.label}</p>
-              <p className="mt-1 text-sm font-semibold leading-5 text-paper/70">{recentContext.body}</p>
+          {memoryItems.length > 0 && (
+            <div className="mt-3 w-full max-w-[21.5rem] rounded-[24px] border border-white/10 bg-white/[0.07] p-3 text-left backdrop-blur-xl sm:max-w-none">
+              <p className="text-[10px] font-black uppercase tracking-wider text-paper/40">Kai remembers</p>
+              <div className="mt-3 space-y-2">
+                {memoryItems.map((item) => (
+                  <div key={item.id} className="flex gap-2">
+                    <span className={`mt-1 size-2 shrink-0 rounded-full ${item.kind === "saved" ? "bg-[#B892FF]" : "bg-paper/35"}`} />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-black text-paper/80">{item.label}</span>
+                      <span className="mt-0.5 block text-sm font-semibold leading-5 text-paper/62">{item.body}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

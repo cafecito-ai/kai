@@ -174,6 +174,10 @@ function assertScenario(scenario, result) {
   if (signals.length > 0 && !signals.some((signal) => result.reply.toLowerCase().includes(signal))) {
     throw new Error(`reply did not include action-specific language for ${scenario.action}`);
   }
+  const moveSignals = actionMoveSignals[scenario.action] || [];
+  if (moveSignals.length > 0 && !moveSignals.some((signal) => result.reply.toLowerCase().includes(signal))) {
+    throw new Error(`reply did not include a concrete next move for ${scenario.action}`);
+  }
   if (result.nextAction?.id !== scenario.action) {
     throw new Error(`expected nextAction ${scenario.action}, got ${result.nextAction?.id || "none"}`);
   }
@@ -190,6 +194,16 @@ const actionSignals = {
   social: ["social", "boundary", "group chat", "left out"],
   screen: ["screen", "phone", "scroll", "doomscroll", "comparison"],
   goal: ["goal", "next visible rep", "assignment", "next action"]
+};
+
+const actionMoveSignals = {
+  food: ["open food", "log food"],
+  sleep: ["open sleep", "protect sleep"],
+  scan: ["open body scan", "private body scan is the move", "let kai turn it"],
+  confidence: ["open confidence", "choose the proof", "bank one small piece"],
+  social: ["open social", "write it cleanly", "pick one steady response"],
+  screen: ["open screen reset", "put the phone down", "choose a replacement"],
+  goal: ["open goal", "lock the next action", "next visible rep"]
 };
 
 async function request(path, init = {}) {

@@ -112,6 +112,31 @@ describe("chat routes", () => {
     expect(body.reply).toContain("Open Screen reset.");
   });
 
+  it("replaces topical but non-actionable clear-intent replies", async () => {
+    const aiReplies = [
+      '{"category":"none","severity":"low","explanation":"no safety signal"}',
+      "Practice is coming up, and you're wondering about food. What's your current fuel situation like? Did you eat something yet?"
+    ];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/kai/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-dev-user": "chat-tester" },
+        body: JSON.stringify({ message: "I have practice later and do not know what to eat" })
+      }),
+      makeEnv({
+        firstRows: [{}, {}, {}],
+        aiRun: async () => ({ response: aiReplies.shift() ?? "" })
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
+    expect(body.nextAction).toMatchObject({ id: "food", route: "/health?module=food&action=food" });
+    expect(body.reply).toContain("Fuel check is the move.");
+    expect(body.reply).toContain("Open Food");
+    expect(body.reply).not.toContain("What's your current fuel situation");
+  });
+
   it("adds action-specific guide concepts to the model prompt", async () => {
     let capturedPrompt = "";
     const aiReplies = [

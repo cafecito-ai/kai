@@ -189,7 +189,7 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-[#111116]/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
-      <div className="mx-auto w-full max-w-md rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
+      <div className="mx-auto max-h-[calc(100svh-1.5rem)] w-full max-w-md overflow-y-auto rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <KaiAvatar size={34} label="KAI" pulse />
@@ -231,7 +231,7 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-x-0 bottom-20 z-40 px-5" role="dialog" aria-label="Quick actions">
-      <div className="mx-auto w-full max-w-md rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
+      <div className="mx-auto max-h-[calc(100svh-7rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
         <div className="mb-2 flex items-center justify-between px-2">
           <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai can open</p>
           <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close quick actions">
@@ -242,13 +242,13 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
           {actions.map((action) => {
             const Icon = action.icon;
             return (
-              <Link key={action.id} to={action.route} onClick={onClose} className="focus-ring flex min-h-14 items-center gap-3 rounded-[18px] bg-[#FAFAF7] px-3 text-left text-sm font-black text-[#1A1A1F]">
-                <span className={`grid size-9 place-items-center rounded-full ${action.tone}`}>
+              <Link key={action.id} to={action.route} onClick={onClose} className="focus-ring flex min-h-14 items-start gap-3 rounded-[18px] bg-[#FAFAF7] px-3 py-2.5 text-left text-sm font-black text-[#1A1A1F]">
+                <span className={`mt-0.5 grid size-9 shrink-0 place-items-center rounded-full ${action.tone}`}>
                   <Icon size={17} aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate">{action.label}</span>
-                  <span className="mt-0.5 block truncate text-xs font-semibold text-[#8A8A8F]">{action.reason}</span>
+                  <span className="block leading-tight">{action.label}</span>
+                  <span className="mt-1 block text-xs font-semibold leading-4 text-[#8A8A8F]">{action.reason}</span>
                 </span>
               </Link>
             );

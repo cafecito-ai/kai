@@ -4,8 +4,35 @@
   "description": "AI mentor for teenagers. Wellness coaching, not therapy.",
   "start_url": "/",
   "scope": "/",
+  "id": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#FAFAF7",
   "theme_color": "#FAFAF7",
-  "icons": []
+  "categories": ["health", "education", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/kai-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today’s loop",
+      "short_name": "Loop",
+      "url": "/loop"
+    },
+    {
+      "name": "New goal",
+      "short_name": "Goal",
+      "url": "/goal"
+    },
+    {
+      "name": "Crisis resources",
+      "short_name": "Crisis",
+      "url": "/crisis"
+    }
+  ]
 }

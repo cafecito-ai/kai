@@ -6,4 +6,7 @@
 /design/direction-2-y2k-soft.html /design/b.html 301
 /design/direction-3-calm-teen.html /design/c.html 301
 /design/* /design/:splat 200
+/.well-known/assetlinks.json /.well-known/assetlinks.json 200
+/.well-known/apple-app-site-association /.well-known/apple-app-site-association 200
+/icons/* /icons/:splat 200
 /* /index.html 200

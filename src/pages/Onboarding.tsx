@@ -20,6 +20,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
+import { KAI_ACTIONS } from "../lib/kai-actions";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useKaiStore } from "../stores/kaiStore";
 import { useUserStore } from "../stores/userStore";
@@ -189,7 +190,8 @@ export function Onboarding() {
       markOnboardingComplete();
       hydrateKaiChat("kai", {
         conversationId: null,
-        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, mission: selectedMission, context }) }]
+        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, mission: selectedMission, context }) }],
+        nextAction: actionForMission(selectedMission.id)
       });
       navigate("/home");
     } catch {
@@ -199,7 +201,8 @@ export function Onboarding() {
       markOnboardingComplete();
       hydrateKaiChat("kai", {
         conversationId: null,
-        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, mission: selectedMission, context }) }]
+        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, mission: selectedMission, context }) }],
+        nextAction: actionForMission(selectedMission.id)
       });
       navigate("/home");
     } finally {
@@ -603,4 +606,14 @@ function buildFirstKaiMessage({
   const vibeText = vibes.length ? vibes.map((vibe) => vibe.replace(/_/g, " ")).join(", ") : "not totally sure yet";
   const contextLine = context.trim() ? "I’ll remember the extra context you gave me." : "We’ll learn the rest as we go.";
   return `${kaiName} here. I’ve got your starting point: ${vibeText}. First focus is ${mission.label.toLowerCase()}. ${contextLine} Tell me what’s actually going on today, and I’ll open the right move.`;
+}
+
+function actionForMission(mission: MissionId) {
+  if (mission === "body") return KAI_ACTIONS.scan;
+  if (mission === "stretch") return KAI_ACTIONS.stretch;
+  if (mission === "food") return KAI_ACTIONS.food;
+  if (mission === "sleep") return KAI_ACTIONS.sleep;
+  if (mission === "goals" || mission === "discipline") return KAI_ACTIONS.goal;
+  if (mission === "mind" || mission === "confidence" || mission === "social") return KAI_ACTIONS.talk;
+  return KAI_ACTIONS.talk;
 }

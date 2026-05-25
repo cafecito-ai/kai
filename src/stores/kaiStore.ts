@@ -15,7 +15,7 @@ type EngineChatState = {
 
 interface KaiState {
   chats: Record<ChatEngine, EngineChatState>;
-  hydrate: (engine: ChatEngine, input: { conversationId: string | null; messages: ChatMessage[] }) => void;
+  hydrate: (engine: ChatEngine, input: { conversationId: string | null; messages: ChatMessage[]; nextAction?: KaiAction | null }) => void;
   send: (message: string, engine?: ChatEngine) => Promise<void>;
 }
 
@@ -55,7 +55,7 @@ function cleanAssistantCopy(content: string) {
 
 export const useKaiStore = create<KaiState>((set) => ({
   chats: initialChats(),
-  hydrate: (engine, { conversationId, messages }) =>
+  hydrate: (engine, { conversationId, messages, nextAction }) =>
     set((state) => ({
       chats: {
         ...state.chats,
@@ -64,7 +64,7 @@ export const useKaiStore = create<KaiState>((set) => ({
           conversationId,
           hydrated: true,
           messages: normalizeMessages(messages),
-          nextAction: inferLastAction(messages)
+          nextAction: nextAction ?? inferLastAction(messages)
         }
       }
     })),

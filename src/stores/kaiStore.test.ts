@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { KAI_ACTIONS } from "../lib/kai-actions";
 import { useKaiStore } from "./kaiStore";
 
 describe("kaiStore", () => {
@@ -36,5 +37,15 @@ describe("kaiStore", () => {
     });
 
     expect(useKaiStore.getState().chats.kai.nextAction?.id).toBe("food");
+  });
+
+  it("keeps an explicit next action from onboarding handoff", () => {
+    useKaiStore.getState().hydrate("kai", {
+      conversationId: null,
+      messages: [{ id: "welcome", role: "assistant", content: "Kai here. First focus is body scan." }],
+      nextAction: KAI_ACTIONS.scan
+    });
+
+    expect(useKaiStore.getState().chats.kai.nextAction?.id).toBe("scan");
   });
 });

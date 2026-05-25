@@ -99,7 +99,7 @@ export function Home() {
             </div>
           </form>
 
-          {(draft.trim() || lastUserMessage) && (
+          {(draft.trim() || lastUserMessage || nextKaiAction) && (
             <Link
               to={liveAction.route}
               className="focus-ring mt-3 flex w-full max-w-[21.5rem] items-center gap-3 rounded-[22px] border border-white/10 bg-white/10 p-3 text-left backdrop-blur-xl transition hover:-translate-y-0.5 sm:max-w-none"

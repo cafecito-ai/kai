@@ -53,8 +53,8 @@ export function Settings() {
 
   return (
     <AppPage className="max-w-xl">
-      <AppHero eyebrow="app section · settings" title="Tune the companion." >
-        Settings control the same Kai experience across home, mental, physical, progress, and circle.
+      <AppHero eyebrow="kai setup" title="Tune the companion." >
+        Pick how Kai talks, keep consent current, and make the experience feel like yours.
       </AppHero>
       <AppSurface className="space-y-4 p-5">
         <label className="block text-sm font-semibold">

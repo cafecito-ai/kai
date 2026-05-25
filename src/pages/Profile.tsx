@@ -17,7 +17,7 @@ export function Profile() {
   return (
     <AppPage className="max-w-5xl">
       <AppHero
-        eyebrow="app section · profile"
+        eyebrow="kai setup"
         title={
           <>
             The companion, privacy, and growth model in one <span className="font-serif font-normal italic text-plum">place.</span>
@@ -30,7 +30,7 @@ export function Profile() {
           </Link>
         }
       >
-        Profile keeps Kai's voice, primary unit, consent state, and progress identity together.
+        Kai's voice, safety status, and saved reps stay in one place.
       </AppHero>
 
       <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
@@ -50,7 +50,7 @@ export function Profile() {
               <MetricPill label="Belt" value={belt} tone="body" />
             </div>
             <div className="mt-5 grid gap-3">
-              <ProfileRow icon={Brain} label="Primary unit" value={primaryEngine === "physical" ? "Health" : primaryEngine === "potential" ? "Goals" : "Mental"} />
+              <ProfileRow icon={Brain} label="Default focus" value={primaryEngine === "physical" ? "Body" : primaryEngine === "potential" ? "Goals" : "Mind"} />
               <ProfileRow icon={HeartPulse} label="Saved reps" value={String(events.length)} />
               <ProfileRow icon={UserRound} label="Consent" value={consentStatus.replace(/_/g, " ")} />
             </div>

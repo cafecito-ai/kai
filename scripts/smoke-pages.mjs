@@ -48,8 +48,8 @@ const cases = [
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
   route("/loop", ["Give the day a shape.", "Body", "mind", "goal"], { actionables: ["button"] }),
-  route("/health", ["Physical agent", ...exactPhysicalCopy], { actionables: ["button[role='tab']"] }),
-  route("/health?module=food", ["Physical agent", "Take or choose a food photo", ...exactPhysicalCopy.slice(0, 2)], {
+  route("/health", ["Take care of your body", "Body moves", ...exactPhysicalCopy], { actionables: ["button[role='tab']"] }),
+  route("/health?module=food", ["Take care of your body", "Take or choose a food photo", ...exactPhysicalCopy.slice(0, 2)], {
     actionables: ["textarea", "input[type='file'][accept='image/*']", "button"]
   }),
   route("/health?module=scan", ["Body scan", "Private by default", "No body score", exactPhysicalCopy[3]], {
@@ -64,8 +64,8 @@ const cases = [
   route("/potential", ["Potential and goals", "Make the next move visible", "strengths discovery", "Doing-things guides"], {
     actionables: ["input", "textarea", "button"]
   }),
-  route("/mental", ["Mental agent", "Feelings", "confidence", "never clinical"], { actionables: ["button[role='tab']"] }),
-  route("/mental?module=guides", ["Mental agent", "Daniel Siegel", "James Clear", ...guideNames], {
+  route("/mental", ["Talk it through", "Feelings", "confidence", "never clinical"], { actionables: ["button[role='tab']"] }),
+  route("/mental?module=guides", ["Talk it through", "Daniel Siegel", "James Clear", ...guideNames], {
     actionables: ["textarea", "button"]
   }),
   route("/progress", ["Progress", "mental", "goals", "physical"], { actionables: ["a"] }),

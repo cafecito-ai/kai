@@ -60,18 +60,18 @@ export function UnitWorkspace({
             <div className={`grid size-11 place-items-center rounded-full bg-white ${iconTone}`}>
               <HeaderIcon size={21} aria-hidden="true" />
             </div>
-            <p className="mt-4 text-sm font-black text-[#1A1A1F]">Pick one module. Save one rep.</p>
-            <p className="mt-1 text-sm font-semibold leading-5 text-[#8A8A8F]">Every module updates the same home, progress, profile, and circle signal.</p>
+            <p className="mt-4 text-sm font-black text-[#1A1A1F]">Pick one move. Save one rep.</p>
+            <p className="mt-1 text-sm font-semibold leading-5 text-[#8A8A8F]">Kai uses each saved rep to make the next suggestion sharper.</p>
             <Link to="/progress" className="focus-ring mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#1A1A1F] px-4 text-sm font-black text-white">
               <Activity size={15} aria-hidden="true" />
-              Progress
+              Wins
             </Link>
           </div>
         </div>
       </section>
 
       <section className="rounded-[30px] border border-[#0A0A0A0F] bg-white/80 p-3 shadow-sm backdrop-blur-xl">
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${title} modules`}>
+        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${title} moves`}>
           {modules.map((module) => {
             const Icon = module.icon;
             const selected = module.id === active.id;
@@ -100,7 +100,7 @@ export function UnitWorkspace({
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="min-w-0">{active.content}</div>
         <aside className="hidden rounded-[28px] border border-[#0A0A0A0F] bg-white/80 p-4 shadow-sm backdrop-blur-xl lg:block">
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Inside this unit</p>
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai can open</p>
           <div className="mt-3 grid gap-2">
             {modules.map((module) => (
               <button

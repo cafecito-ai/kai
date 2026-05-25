@@ -152,7 +152,7 @@ function AppDock({
           className={`focus-ring flex h-14 flex-col items-center justify-center rounded-[21px] text-[11px] font-black transition ${
             quickOpen ? "bg-[#111116] text-white" : "text-[#5E5E64] hover:bg-[#F4F1EB] hover:text-[#1A1A1F]"
           }`}
-          aria-label="Open Kai tools"
+          aria-label="Open Kai actions"
           aria-expanded={quickOpen}
         >
           <Plus size={19} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />

@@ -7,7 +7,7 @@ export function Progress() {
   return (
     <AppPage>
       <AppHero
-        eyebrow="app section · progress"
+        eyebrow="your wins"
         title={
           <>
             Progress for mental and physical <span className="font-serif font-normal italic text-plum">reps.</span>

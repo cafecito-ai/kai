@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Activity, ArrowLeft, Brain, HeartPulse } from "lucide-react";
 import { AppPage, KaiAvatar } from "../ui/AppPrimitives";
 
-export function EnginePanel({ title, intro, label = "Engine", accent = "text-plum", children }: { title: string; intro: string; label?: string; accent?: string; children: ReactNode }) {
+export function EnginePanel({ title, intro, label = "Engine", children }: { title: string; intro: string; label?: string; children: ReactNode }) {
   const isPhysical = title.toLowerCase().includes("physical") || label.toLowerCase().includes("physical");
   const Icon = isPhysical ? HeartPulse : Brain;
   const wash = isPhysical ? "from-[#FFF0EC] to-white" : "from-[#E4F7F4] to-white";
@@ -22,20 +22,18 @@ export function EnginePanel({ title, intro, label = "Engine", accent = "text-plu
         <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end">
           <div className="min-w-0">
             <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">{label}</p>
-            <h1 className="mt-3 max-w-3xl break-words font-display text-[2.65rem] font-semibold leading-[0.96] tracking-normal text-[#111116] sm:text-6xl">
-              {title} <span className={`font-serif font-normal italic ${accent}`}>agent</span>
-            </h1>
+            <h1 className="mt-3 max-w-3xl break-words font-display text-[2.65rem] font-semibold leading-[0.96] tracking-normal text-[#111116] sm:text-6xl">{title}</h1>
             <div className="mt-4 max-w-2xl break-words text-base font-medium leading-7 text-[#5E5E64]">{intro}</div>
           </div>
           <div className="rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-sm">
             <div className={`grid size-11 place-items-center rounded-full bg-white ${tone}`}>
               <Icon size={21} aria-hidden="true" />
             </div>
-            <p className="mt-4 text-sm font-black text-[#1A1A1F]">This is one unit inside Kai.</p>
-            <p className="mt-1 text-sm font-semibold leading-5 text-[#8A8A8F]">Use a tool here, save the rep, and the same signal updates home, progress, profile, and circle.</p>
+            <p className="mt-4 text-sm font-black text-[#1A1A1F]">Pick one move. Save one rep.</p>
+            <p className="mt-1 text-sm font-semibold leading-5 text-[#8A8A8F]">Kai uses each saved rep to make the next suggestion sharper.</p>
             <Link to="/progress" className="focus-ring mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#1A1A1F] px-4 text-sm font-black text-white">
               <Activity size={15} aria-hidden="true" />
-              Progress
+              Wins
             </Link>
           </div>
         </div>

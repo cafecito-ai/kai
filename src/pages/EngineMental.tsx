@@ -69,11 +69,11 @@ export function EngineMental() {
   async function createGoal() {
     const title = goalTitle.trim();
     if (!title) return;
-    const fallback: Goal = { id: crypto.randomUUID(), category: "custom", title, description: "Created inside the Mental agent.", status: "active" };
+    const fallback: Goal = { id: crypto.randomUUID(), category: "custom", title, description: "Created with Kai after a mental reset.", status: "active" };
     setGoals((items) => [fallback, ...items]);
     setGoalTitle("");
     try {
-      const result = await api.createGoal({ category: "custom", title, description: "Created inside the Mental agent." });
+      const result = await api.createGoal({ category: "custom", title, description: "Created with Kai after a mental reset." });
       setGoals((items) => items.map((goal) => (goal.id === fallback.id ? result.goal : goal)));
     } catch {
       // Keep the optimistic goal in demo mode.
@@ -81,7 +81,7 @@ export function EngineMental() {
     await completeReset({
       eventType: "goal_created",
       title,
-      payload: { title, source: "mental_agent" },
+      payload: { title, source: "kai_mental_reset" },
       eventValue: 22
     });
   }
@@ -227,7 +227,7 @@ export function EngineMental() {
               </section>
             </div>
           </div>
-          <StrengthsDiscoveryCard onComplete={(summary) => void completeReset({ eventType: "strengths_discovery", title: "Strengths summary", payload: { summary, source: "mental_agent" }, eventValue: 60 })} />
+          <StrengthsDiscoveryCard onComplete={(summary) => void completeReset({ eventType: "strengths_discovery", title: "Strengths summary", payload: { summary, source: "kai_mental_reset" }, eventValue: 60 })} />
         </div>
       )
     },
@@ -244,7 +244,7 @@ export function EngineMental() {
             <IdentityPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "identity_primer_read", eventValue: 6, payload: { articleId } })} />
             <RelationshipsPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "relationships_primer_read", eventValue: 6, payload: { articleId } })} />
             <EngineGuidesIndex engine="mental" title="Mind + growth guides" intro="Emotion, identity, stress, confidence, relationships, purpose, and habits. Each is short. Kai links here in chat when topics come up." />
-            <EngineGuidesIndex engine="potential" eyebrow="goals guides" title="Purpose + doing guides" intro="Focus, motivation, money, decisions, and skill-building live in the Goals unit, and Kai can pull them into mental work when they help." />
+            <EngineGuidesIndex engine="potential" eyebrow="goals guides" title="Purpose + doing guides" intro="Focus, motivation, money, decisions, and skill-building are here when Kai needs a practical next move." />
           </Suspense>
         </div>
       )
@@ -275,7 +275,7 @@ export function EngineMental() {
     }
   ];
 
-  return <UnitWorkspace title="Mental agent" label="Mind unit" tone="mental" intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical." modules={modules} />;
+  return <UnitWorkspace title="Talk it through" label="Mind moves" tone="mental" intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical." modules={modules} />;
 }
 
 function labelForEntry(entryType: string) {

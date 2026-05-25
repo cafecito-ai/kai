@@ -8,7 +8,7 @@ export function Groups() {
   return (
     <AppPage className="max-w-5xl">
       <AppHero
-        eyebrow="app section · circle"
+        eyebrow="support circle"
         title={
           <>
             Circle support that fits the same <span className="font-serif font-normal italic text-plum">loop.</span>

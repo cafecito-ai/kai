@@ -407,7 +407,7 @@ export function EnginePhysical() {
           <p className="eyebrow">body history</p>
           <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Recent physical entries</h2>
           <div className="mt-4 space-y-2">
-            {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Body entries yet. Log one fuel, movement, sleep, or recovery note.</p>}
+            {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No saved body reps yet. Log one fuel, movement, sleep, or recovery note.</p>}
             {entries.slice(0, 6).map((entry) => (
               <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
                 <CheckCircle2 className="text-sage" size={18} />
@@ -423,7 +423,7 @@ export function EnginePhysical() {
     }
   ];
 
-  return <UnitWorkspace title="Physical agent" label="Health unit" tone="physical" intro="Log food. Body scan. Stretch / move. Log sleep. Useful, pattern-aware, never obsessive." modules={modules} />;
+  return <UnitWorkspace title="Take care of your body" label="Body moves" tone="physical" intro="Log food. Body scan. Stretch / move. Log sleep. Useful, pattern-aware, never obsessive." modules={modules} />;
 }
 
 const foodExamples = [

@@ -65,7 +65,7 @@ export function EnginePotential() {
   }
 
   return (
-    <EnginePanel title="Potential and goals" label="Goals" accent="text-plum" intro="Find the thing you keep circling, then make it concrete enough to touch.">
+    <EnginePanel title="Potential and goals" label="Goals" intro="Find the thing you keep circling, then make it concrete enough to touch.">
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="rounded-calm border border-line bg-white p-5 shadow-calm sm:p-6">
           <div className="mb-5 grid size-12 place-items-center rounded-full bg-[#EEEAFF] text-plum">

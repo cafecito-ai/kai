@@ -19,7 +19,7 @@ const physicalActions = [
 
 export function Landing() {
   const { kaiName, primaryEngine, onboardingCompletedAt } = useUserStore();
-  const startPath = onboardingCompletedAt ? `/engine/${primaryEngine}` : "/onboarding";
+  const startPath = onboardingCompletedAt ? "/home" : "/onboarding";
 
   return (
     <AppPage className="max-w-5xl">
@@ -34,7 +34,7 @@ export function Landing() {
           <>
             <Link to={startPath}>
               <Button className="w-full sm:w-auto">
-              {onboardingCompletedAt ? "Open today's agent" : "Start with Kai"}
+              {onboardingCompletedAt ? "Open Kai" : "Start with Kai"}
                 <ArrowRight size={18} />
               </Button>
             </Link>
@@ -53,7 +53,7 @@ export function Landing() {
             <FlowList
               items={[
                 { label: "Say the loud part", copy: "A messy sentence is enough." },
-                { label: "Pick the agent", copy: "Mental, Goals, or Physical." },
+                { label: "Let Kai choose", copy: "Mind, body, goals, or reset." },
                 { label: "Do one rep", copy: "Small enough to finish today." }
               ]}
             />
@@ -61,11 +61,11 @@ export function Landing() {
         }
       >
         <p>
-            Tell Kai what is loud today. It helps you choose the right agent and turn it into one small move.
+            Tell Kai what is loud today. Kai opens the right move and keeps it small enough to finish.
         </p>
       </SessionHero>
 
-      <section aria-label="Choose an agent" className="grid gap-2 sm:grid-cols-3">
+      <section aria-label="Choose a path" className="grid gap-2 sm:grid-cols-3">
         {lanes.map((lane) => (
           <ActionTile key={lane.path} as={Link} to={lane.path} icon={lane.icon} title={lane.title} copy={lane.copy} tone={lane.tone} active={lane.engine === primaryEngine} />
         ))}

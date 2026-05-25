@@ -7,9 +7,9 @@ import { AppPage } from "../components/ui/AppPrimitives";
 import { findGuide, type GuideEngine } from "../lib/guides-registry";
 
 const ENGINE_LABELS: Record<GuideEngine, string> = {
-  physical: "Health unit",
-  potential: "Goals unit",
-  mental: "Mental unit"
+  physical: "Body",
+  potential: "Goals",
+  mental: "Mind"
 };
 
 /**

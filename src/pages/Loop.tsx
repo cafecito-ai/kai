@@ -1,6 +1,6 @@
 import { LifeBuoy, WifiOff } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { LoopActionPicker } from "../components/loop/LoopActionPicker";
 import { LoopCheckIn } from "../components/loop/LoopCheckIn";
 import { LoopCompletionCard } from "../components/loop/LoopCompletionCard";
@@ -36,6 +36,7 @@ const MIND_ACTIONS = [
 ];
 
 export function Loop() {
+  const [searchParams] = useSearchParams();
   const goals = useGoalStore((state) => state.goals);
   const goalStatus = useGoalStore((state) => state.status);
   const hydrateGoals = useGoalStore((state) => state.hydrateGoals);
@@ -46,7 +47,11 @@ export function Loop() {
   const completeStep = useLoopStore((state) => state.completeStep);
   const skipStep = useLoopStore((state) => state.skipStep);
   const resetForToday = useLoopStore((state) => state.resetForToday);
-  const activeGoal = useMemo(() => goals.find((goal) => goal.status === "active") ?? null, [goals]);
+  const activeGoal = useMemo(() => {
+    const goalId = searchParams.get("goalId");
+    if (goalId) return goals.find((goal) => goal.id === goalId) ?? null;
+    return goals.find((goal) => goal.status === "active") ?? null;
+  }, [goals, searchParams]);
 
   useEffect(() => {
     if (goalStatus === "idle") void hydrateGoals();
@@ -60,10 +65,11 @@ export function Loop() {
   const completed = loop?.steps.filter((step) => step.status === "completed").length ?? 0;
   const complete = loop ? completed === loop.steps.length : false;
   const saving = loopStatus === "saving";
+  const justCreatedGoal = searchParams.get("goalCreated") === "1";
 
   return (
     <AppPage>
-      <LoopHeader score={loop?.score ?? 20} completed={completed} total={loop?.steps.length ?? 5} />
+      <LoopHeader score={loop?.score ?? 20} completed={completed} total={loop?.steps.length ?? 5} justCreatedGoal={justCreatedGoal} goal={activeGoal} />
 
       {loopStatus === "loading" && !loop && <LoopSkeleton />}
       {loopStatus === "offline" && (

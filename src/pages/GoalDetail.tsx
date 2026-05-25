@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { GoalNextAction } from "../components/goals/GoalNextAction";
 import { GoalStatusPill } from "../components/goals/GoalStatusPill";
-import { AppPage } from "../components/ui/AppPrimitives";
+import { AppPage, KaiMark } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { formatGoalTargetDate } from "../lib/goals";
@@ -48,8 +48,8 @@ export function GoalDetail() {
       status: updated.status,
       ...input.payload
     };
-    addEvent({ engine: "mental", eventType: input.eventType, eventValue: input.eventValue, payload });
-    void api.logProgress({ engine: "mental", eventType: input.eventType, eventValue: input.eventValue, payload }).catch(() => undefined);
+    addEvent({ engine: "potential", eventType: input.eventType, eventValue: input.eventValue, payload });
+    void api.logProgress({ engine: "potential", eventType: input.eventType, eventValue: input.eventValue, payload }).catch(() => undefined);
   }
 
   if (!goalId || (!goal && status !== "loading")) {
@@ -68,23 +68,37 @@ export function GoalDetail() {
   if (!goal) return <AppPage><div className="h-48 animate-pulse rounded-[24px] border border-line bg-white/70" /></AppPage>;
 
   return (
-    <AppPage className="max-w-4xl">
+    <AppPage className="max-w-4xl pb-28 sm:pb-12">
       <Link to="/goals" className="focus-ring inline-flex items-center gap-2 text-sm font-black text-muted">
         <ArrowLeft size={16} aria-hidden="true" />
         Goals
       </Link>
-      <section className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-calm sm:p-7">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="eyebrow">{goal.category}</p>
-            <h1 className="mt-2 break-words font-display text-5xl font-black leading-none tracking-normal text-ink">{goal.title || "Untitled goal"}</h1>
+      <section className="overflow-hidden rounded-[30px] border border-white/10 bg-ink text-paper shadow-calm">
+        <div className="relative p-5 sm:p-7">
+          <div className="pointer-events-none absolute -right-16 -top-24 size-52 rounded-full bg-[#8F5CFF]/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-6 size-44 rounded-full bg-[#44D7B6]/20 blur-3xl" />
+          <div className="relative flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <KaiMark size="md" />
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-paper/55">{goal.category}</p>
+              </div>
+              <h1 className="mt-3 break-words font-display text-[2.35rem] font-black leading-[0.94] tracking-normal sm:text-6xl">{goal.title || "Untitled goal"}</h1>
+            </div>
+            <div className="hidden shrink-0 sm:block">
+              <GoalStatusPill status={goal.status} />
+            </div>
           </div>
-          <GoalStatusPill status={goal.status} />
-        </div>
-        <p className="mt-5 text-base font-semibold leading-7 text-muted">{goal.whyItMatters || goal.description || "This goal matters enough to start small."}</p>
-        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-paper px-3 py-2 text-sm font-black text-muted">
-          <CalendarDays size={16} aria-hidden="true" />
-          Target {formatGoalTargetDate(goal.targetDate)}
+          <p className="relative mt-5 max-w-2xl text-base font-semibold leading-7 text-paper/72">{goal.whyItMatters || goal.description || "This goal matters enough to start small."}</p>
+          <div className="relative mt-5 flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2 text-sm font-black text-paper/72">
+              <CalendarDays size={16} aria-hidden="true" />
+              Target {formatGoalTargetDate(goal.targetDate)}
+            </div>
+            <div className="sm:hidden">
+              <GoalStatusPill status={goal.status} />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -108,7 +122,13 @@ export function GoalDetail() {
       {errorMessage && <p className="rounded-kai border border-danger/25 bg-dangerWash p-3 text-sm font-bold text-danger">{errorMessage}</p>}
 
       <section className="grid gap-4 lg:grid-cols-[1fr_0.85fr]">
-        <div className="rounded-[24px] border border-white/70 bg-white/80 p-5 shadow-sm">
+        <div className="rounded-[28px] border border-white/70 bg-white/88 p-5 shadow-sm backdrop-blur-xl">
+          <div className="mb-4 flex items-start gap-3">
+            <KaiMark size="sm" />
+            <div className="rounded-[22px] rounded-tl-md bg-ink px-4 py-3 text-paper">
+              <p className="text-sm font-black leading-5">This is the move. Keep it small enough that your normal day can hold it.</p>
+            </div>
+          </div>
           <GoalNextAction action={goal.nextAction} />
           {editing && (
             <div className="mt-4 grid gap-3">
@@ -131,7 +151,7 @@ export function GoalDetail() {
           <div className="mt-5 flex flex-wrap gap-2">
             <Link to={`/loop?goalId=${encodeURIComponent(goal.id)}`} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-5 text-sm font-black text-paper">
               <Target size={16} aria-hidden="true" />
-              Do this in today’s loop
+              Do this now
             </Link>
             <Button variant="secondary" onClick={() => setEditing((open) => !open)} disabled={saving}>
               <Pencil size={16} aria-hidden="true" />
@@ -140,9 +160,10 @@ export function GoalDetail() {
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-white/70 bg-white/80 p-5 shadow-sm">
-          <p className="eyebrow">Progress summary</p>
-          <p className="mt-3 text-sm font-semibold leading-6 text-muted">Kai tracks goal reps through the daily loop and logs status changes into progress.</p>
+        <div className="rounded-[28px] border border-white/70 bg-white/88 p-5 shadow-sm backdrop-blur-xl">
+          <p className="eyebrow">Kai tracking</p>
+          <h2 className="mt-1 font-display text-2xl font-black leading-none tracking-normal text-ink">Progress without pressure.</h2>
+          <p className="mt-3 text-sm font-semibold leading-6 text-muted">Kai logs reps and status changes so you can see proof over time without turning the goal into a scoreboard.</p>
           <div className="mt-5 grid gap-2">
             <Button
               onClick={() =>
@@ -155,7 +176,7 @@ export function GoalDetail() {
               disabled={saving || goal.status === "achieved"}
             >
               <CheckCircle2 size={16} aria-hidden="true" />
-              Mark achieved
+              Bank the win
             </Button>
             <Button
               variant="secondary"
@@ -175,15 +196,15 @@ export function GoalDetail() {
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-white/70 bg-white/80 p-5 shadow-sm">
+      <section className="rounded-[28px] border border-white/70 bg-white/88 p-5 shadow-sm backdrop-blur-xl">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-goalsWash text-goals">
             <RotateCcw size={18} aria-hidden="true" />
           </span>
           <div>
-            <p className="eyebrow">reframe or release</p>
-            <h2 className="mt-1 font-display text-3xl font-black tracking-normal">A goal can change without becoming a failure.</h2>
-            <p className="mt-2 text-sm font-semibold leading-6 text-muted">If the goal is still yours, rewrite the next rep. If it is not yours anymore, release it cleanly.</p>
+            <p className="eyebrow">Adjust the promise</p>
+            <h2 className="mt-1 font-display text-3xl font-black leading-none tracking-normal">Change the rep, not your self-respect.</h2>
+            <p className="mt-2 text-sm font-semibold leading-6 text-muted">If the goal still matters, shrink the next move. If it is not yours anymore, release it cleanly.</p>
           </div>
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">

@@ -37,11 +37,11 @@ export async function getConversationMessages(db: D1Database, input: { conversat
   if (!conversation) return null;
 
   const { results } = await db
-    .prepare("SELECT id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?")
+    .prepare("SELECT id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT ?")
     .bind(input.conversationId, input.limit ?? 50)
     .all();
 
-  return (results as Array<Record<string, unknown>>).map((row) => ({
+  return (results as Array<Record<string, unknown>>).reverse().map((row) => ({
     id: String(row.id),
     role: row.role,
     content: String(row.content),

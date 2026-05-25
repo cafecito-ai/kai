@@ -4,6 +4,7 @@ import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { kaiPromptChips } from "../../lib/kai-actions";
+import { getKaiRecentContext } from "../../lib/kai-memory";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
@@ -22,6 +23,7 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const recentContext = getKaiRecentContext(messages);
   const suggestions: Array<{ label: string; prompt: string; icon: LucideIcon }> =
     mode === "mental"
       ? [
@@ -99,6 +101,12 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
         aria-relevant="additions"
         aria-label="Chat with Kai"
       >
+        {recentContext && (
+          <div className="rounded-[20px] border border-line bg-paper px-4 py-3 text-left shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted">{recentContext.label}</p>
+            <p className="mt-1 text-sm font-semibold leading-5 text-ink">{recentContext.body}</p>
+          </div>
+        )}
         {messages.map((message) => (
           <div
             key={message.id}

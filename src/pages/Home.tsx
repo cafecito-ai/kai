@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { AppPage, KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { inferKaiAction, topKaiActions } from "../lib/kai-actions";
+import { getKaiRecentContext } from "../lib/kai-memory";
 import { getNextAvailableStep } from "../lib/loop";
 import type { DailyLoopStep, Goal } from "../lib/types";
 import { useGoalStore } from "../stores/goalStore";
@@ -42,6 +43,7 @@ export function Home() {
     [...messages].reverse().find((message) => message.role === "assistant")?.content ??
     "Say it messy. We’ll make it simple.";
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const recentContext = useMemo(() => getKaiRecentContext(messages), [messages]);
   const liveAction = useMemo(() => (draft.trim() ? inferKaiAction(draft) : nextKaiAction ?? inferKaiAction(lastUserMessage)), [draft, lastUserMessage, nextKaiAction]);
 
   function submitMessage(event: FormEvent<HTMLFormElement>) {
@@ -118,6 +120,12 @@ export function Home() {
             <p className="text-xs font-black uppercase tracking-wider text-paper/50">Kai</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-paper/80">{lastKaiMessage}</p>
           </div>
+          {recentContext && (
+            <div className="mt-3 w-full max-w-[21.5rem] rounded-[22px] border border-white/10 bg-white/[0.07] p-3 text-left backdrop-blur-xl sm:max-w-none">
+              <p className="text-[10px] font-black uppercase tracking-wider text-paper/40">{recentContext.label}</p>
+              <p className="mt-1 text-sm font-semibold leading-5 text-paper/70">{recentContext.body}</p>
+            </div>
+          )}
         </div>
       </section>
 

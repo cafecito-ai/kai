@@ -6,7 +6,7 @@ import { useUserStore } from "../stores/userStore";
 
 const lanes = [
   { title: "Health", engine: "physical", path: "/health", icon: Activity, tone: "body" as const, copy: "Log food. Body scan. Stretch / move. Log sleep." },
-  { title: "Goals", engine: "potential", path: "/engine/potential", icon: Target, tone: "goals" as const, copy: "Turn the thing you care about into a real next move." },
+  { title: "Goals", engine: "potential", path: "/engine/potential", icon: Target, tone: "goals" as const, copy: "Turn what matters into something you can actually do." },
   { title: "Mental", engine: "mental", path: "/mental", icon: Brain, tone: "reset" as const, copy: "Learn from Kai through Daniel Siegel, Andrew Huberman, Viktor Frankl, James Clear, Carl Jung, stoic philosophy, and modern teen psychology principles." }
 ];
 
@@ -48,7 +48,7 @@ export function Landing() {
           <div className="flex h-full flex-col justify-between gap-7">
             <div>
               <KaiMark size="lg" />
-              <p className="mt-5 font-display text-3xl font-black leading-none">One next move, not a life overhaul.</p>
+              <p className="mt-5 font-display text-3xl font-black leading-none">Your pocket coach for real life.</p>
             </div>
             <FlowList
               items={[

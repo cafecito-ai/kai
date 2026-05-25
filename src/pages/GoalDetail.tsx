@@ -241,7 +241,7 @@ export function GoalDetail() {
                 patch: {
                   status: "released",
                   nextAction: null,
-                  description: releaseReason.trim() || goal.description || "Released without shame."
+                  description: releaseReason.trim() || goal.description || "Released cleanly."
                 },
                 eventType: "goal_released",
                 eventValue: 18,
@@ -249,7 +249,7 @@ export function GoalDetail() {
               })
             }
           >
-            Release without shame
+            Release cleanly
           </Button>
         </div>
       </section>

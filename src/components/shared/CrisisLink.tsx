@@ -42,7 +42,7 @@ export function CrisisLink({ tone = "danger", intro, ctaLabel = "Crisis resource
   if (tone === "subtle") {
     return (
       <div className="mt-3 rounded-kai border border-sage/30 bg-lime/40 p-3">
-        <p className="text-xs font-bold uppercase tracking-wider text-sage">Real resources, no shame</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-sage">Real resources, real help</p>
         <p className="mt-1 text-sm leading-5 text-ink">{intoText}</p>
         <Link
           to="/crisis"

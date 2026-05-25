@@ -1,8 +1,8 @@
-import { ShieldAlert, Target } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Sparkles, Target } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GoalComposer } from "../components/goals/GoalComposer";
-import { AppPage } from "../components/ui/AppPrimitives";
+import { AppPage, KaiMark } from "../components/ui/AppPrimitives";
 import { api } from "../lib/api";
 import { useGoalStore } from "../stores/goalStore";
 
@@ -29,17 +29,35 @@ export function Goal() {
   }
 
   return (
-    <AppPage className="max-w-5xl">
-      <section className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-calm sm:p-7">
-        <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-          <div>
-            <p className="eyebrow">Kai · goal</p>
-            <h1 className="mt-2 font-display text-5xl font-black leading-none tracking-normal text-ink">Pick one thing.</h1>
-            <p className="mt-3 max-w-2xl text-base font-semibold leading-7 text-muted">Not your whole life. Just one thing worth moving forward.</p>
+    <AppPage className="goal-page-shell pb-28 pr-4 sm:pb-12 sm:pr-0">
+      <Link to="/home" className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full px-1 text-sm font-black text-muted">
+        <ArrowLeft size={17} aria-hidden="true" />
+        Home
+      </Link>
+
+      <section className="w-full max-w-full overflow-hidden rounded-[30px] border border-white/10 bg-ink text-paper shadow-calm">
+        <div className="relative p-5 sm:p-7">
+          <div className="pointer-events-none absolute -right-16 -top-20 size-52 rounded-full bg-[#8F5CFF]/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 left-8 size-44 rounded-full bg-[#44D7B6]/20 blur-3xl" />
+          <div className="relative min-w-0">
+            <div className="flex items-center gap-3">
+              <KaiMark size="md" />
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-paper/55">Kai · goal move</p>
+            </div>
+            <div className="min-w-0">
+              <h1 className="mt-3 font-display text-[2.42rem] font-black leading-[0.93] tracking-normal sm:text-6xl">Pick one thing.</h1>
+              <p className="mt-3 max-w-[16.5rem] text-base font-semibold leading-7 text-paper/72 sm:max-w-2xl">
+                Say the thing you keep circling. Kai will shrink it into one move you can actually do today.
+              </p>
+            </div>
+            <span className="hidden size-12 shrink-0 place-items-center rounded-full bg-white/10 text-paper sm:grid">
+              <Target aria-hidden="true" />
+            </span>
           </div>
-          <span className="grid size-14 place-items-center rounded-full bg-goalsWash text-goals">
-            <Target aria-hidden="true" />
-          </span>
+          <div className="relative mt-5 flex items-center gap-2 rounded-[22px] border border-white/10 bg-white/8 p-3 text-sm font-bold text-paper/76">
+            <Sparkles size={17} className="shrink-0 text-[#CDBBFF]" aria-hidden="true" />
+            No fake restart. One honest next rep.
+          </div>
         </div>
       </section>
 

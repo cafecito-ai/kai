@@ -246,7 +246,7 @@ function getNextMove(nextStep: DailyLoopStep | null, activeGoals: Goal[]) {
     return {
       title: activeGoal?.nextAction || "Move one thing forward.",
       copy: activeGoal ? activeGoal.title : "Pick one thing. Not your whole life.",
-      to: activeGoal ? `/goals/${encodeURIComponent(activeGoal.id)}` : "/engine/potential"
+      to: activeGoal ? `/goals/${encodeURIComponent(activeGoal.id)}` : "/goal"
     };
   }
 

@@ -48,6 +48,16 @@ select {
   @apply mx-auto w-full max-w-full min-w-0 space-y-4 overflow-hidden text-ink sm:space-y-5 lg:max-w-6xl;
 }
 
+.goal-page-shell {
+  max-width: calc(100vw - 2rem);
+}
+
+@media (min-width: 640px) {
+  .goal-page-shell {
+    max-width: 64rem;
+  }
+}
+
 .app-surface {
   @apply w-full max-w-full min-w-0 overflow-hidden rounded-[30px] border border-white/65 bg-white/80 shadow-calm backdrop-blur-xl;
 }

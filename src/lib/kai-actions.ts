@@ -87,7 +87,7 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     id: "goal",
     label: "Move a goal",
     shortLabel: "Goal",
-    route: "/engine/potential",
+    route: "/goal",
     reason: "This needs one clear next step, not more pressure.",
     prompt: "Help me move one goal forward",
     chip: "Goal",

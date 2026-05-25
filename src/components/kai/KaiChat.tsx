@@ -138,19 +138,19 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
             </span>
           </div>
         )}
-        {lastUserMessage && nextAction && !sending && (
+        {nextAction && !sending && (
           <Link
             to={nextAction.route}
-            className="focus-ring ml-auto block max-w-[92%] rounded-[22px] border border-line bg-white px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5"
+            className="focus-ring ml-auto block max-w-[94%] rounded-[22px] bg-[#111116] px-4 py-3 text-left text-white shadow-sm transition hover:-translate-y-0.5"
           >
             <span className="flex items-start gap-3">
               <span className={`grid size-10 shrink-0 place-items-center rounded-full ${nextAction.tone}`}>
                 <nextAction.icon size={18} aria-hidden="true" />
               </span>
               <span className="min-w-0">
-                <span className="block text-xs font-black uppercase tracking-wider text-muted">Kai would open</span>
-                <span className="mt-1 block text-base font-black leading-tight text-ink">{nextAction.label}</span>
-                <span className="mt-1 block text-sm font-semibold leading-5 text-muted">{nextAction.reason}</span>
+                <span className="block text-xs font-black uppercase tracking-wider text-white/42">Kai's read</span>
+                <span className="mt-1 block text-base font-black leading-tight text-white">{nextAction.label}</span>
+                <span className="mt-1 block text-sm font-semibold leading-5 text-white/64">{nextAction.reason}</span>
               </span>
             </span>
           </Link>

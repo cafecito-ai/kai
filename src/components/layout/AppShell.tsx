@@ -2,7 +2,7 @@ import { Activity, Brain, Home, Plus, Settings, ShieldAlert, Target, UserRound, 
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { KaiChat } from "../kai/KaiChat";
-import { topKaiActions } from "../../lib/kai-actions";
+import { KAI_ACTIONS, type KaiAction } from "../../lib/kai-actions";
 import { useKaiStore } from "../../stores/kaiStore";
 import { useProgressStore } from "../../stores/progressStore";
 import { useUserStore } from "../../stores/userStore";
@@ -185,8 +185,6 @@ function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: 
 }
 
 function GlobalChatSheet({ onClose }: { onClose: () => void }) {
-  const nextAction = useKaiStore((state) => state.chats.kai.nextAction);
-
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-[#111116]/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
       <div className="mx-auto max-h-[calc(100svh-1.5rem)] w-full max-w-md overflow-y-auto rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
@@ -203,26 +201,16 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <KaiChat embedded />
-        {nextAction && (
-          <div className="p-2 pt-3">
-            <Link to={nextAction.route} onClick={onClose} className="focus-ring flex min-h-14 items-center gap-3 rounded-[20px] bg-[#111116] px-3 text-left text-white">
-              <span className={`grid size-10 shrink-0 place-items-center rounded-full ${nextAction.tone}`}>
-                <nextAction.icon size={18} aria-hidden="true" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-xs font-black uppercase tracking-wider text-white/45">Open next</span>
-                <span className="block truncate text-sm font-black">{nextAction.label}</span>
-              </span>
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
 function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
-  const actions = topKaiActions();
+  const nextAction = useKaiStore((state) => state.chats.kai.nextAction);
+  const recommended = nextAction ?? KAI_ACTIONS.talk;
+  const bodyActions = [KAI_ACTIONS.food, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch, KAI_ACTIONS.scan];
+  const mindActions = [KAI_ACTIONS.talk, KAI_ACTIONS.reset, KAI_ACTIONS.goal];
   const accountActions = [
     { id: "wins", route: "/progress", label: "Your wins", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
     { id: "you", route: "/profile", label: "You", icon: UserRound, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
@@ -233,27 +221,17 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-x-0 bottom-20 z-40 px-5" role="dialog" aria-label="Quick actions">
       <div className="mx-auto max-h-[calc(100svh-7rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
         <div className="mb-2 flex items-center justify-between px-2">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai can open</p>
+          <div>
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai can open</p>
+            <p className="mt-1 text-sm font-black text-[#111116]">Pick the move, not the menu.</p>
+          </div>
           <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close quick actions">
             <X size={15} aria-hidden="true" />
           </button>
         </div>
-        <div className="grid gap-2">
-          {actions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Link key={action.id} to={action.route} onClick={onClose} className="focus-ring flex min-h-14 items-start gap-3 rounded-[18px] bg-[#FAFAF7] px-3 py-2.5 text-left text-sm font-black text-[#1A1A1F]">
-                <span className={`mt-0.5 grid size-9 shrink-0 place-items-center rounded-full ${action.tone}`}>
-                  <Icon size={17} aria-hidden="true" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block leading-tight">{action.label}</span>
-                  <span className="mt-1 block text-xs font-semibold leading-4 text-[#8A8A8F]">{action.reason}</span>
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+        <KaiActionLink action={recommended} onClose={onClose} variant="primary" eyebrow="Best next move" />
+        <ActionGroup title="Body" actions={bodyActions.filter((action) => action.id !== recommended.id)} onClose={onClose} />
+        <ActionGroup title="Mind + goals" actions={mindActions.filter((action) => action.id !== recommended.id)} onClose={onClose} />
         <div className="mt-3 border-t border-[#0A0A0A0F] pt-3">
           <p className="px-2 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">Keep track</p>
           <div className="grid grid-cols-3 gap-2">
@@ -272,6 +250,59 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function ActionGroup({ title, actions, onClose }: { title: string; actions: KaiAction[]; onClose: () => void }) {
+  if (actions.length === 0) return null;
+  return (
+    <section className="mt-3">
+      <p className="px-2 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">{title}</p>
+      <div className="grid gap-2">
+        {actions.map((action) => (
+          <KaiActionLink key={action.id} action={action} onClose={onClose} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function KaiActionLink({
+  action,
+  onClose,
+  variant = "secondary",
+  eyebrow
+}: {
+  action: KaiAction;
+  onClose: () => void;
+  variant?: "primary" | "secondary";
+  eyebrow?: string;
+}) {
+  const Icon = action.icon;
+  if (variant === "primary") {
+    return (
+      <Link to={action.route} onClick={onClose} className="focus-ring mt-2 flex min-h-20 items-start gap-3 rounded-[22px] bg-[#111116] px-3 py-3 text-left text-white shadow-sm transition hover:-translate-y-0.5">
+        <span className={`mt-0.5 grid size-11 shrink-0 place-items-center rounded-full ${action.tone}`}>
+          <Icon size={19} aria-hidden="true" />
+        </span>
+        <span className="min-w-0">
+          {eyebrow && <span className="block text-[10px] font-black uppercase tracking-wider text-white/40">{eyebrow}</span>}
+          <span className="mt-1 block text-base font-black leading-tight text-white">{action.label}</span>
+          <span className="mt-1 block text-sm font-semibold leading-5 text-white/64">{action.reason}</span>
+        </span>
+      </Link>
+    );
+  }
+  return (
+    <Link to={action.route} onClick={onClose} className="focus-ring flex min-h-14 items-start gap-3 rounded-[18px] bg-[#FAFAF7] px-3 py-2.5 text-left text-sm font-black text-[#1A1A1F]">
+      <span className={`mt-0.5 grid size-9 shrink-0 place-items-center rounded-full ${action.tone}`}>
+        <Icon size={17} aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block leading-tight">{action.label}</span>
+        <span className="mt-1 block text-xs font-semibold leading-4 text-[#8A8A8F]">{action.reason}</span>
+      </span>
+    </Link>
   );
 }
 

@@ -7,6 +7,8 @@ import {
   Dumbbell,
   Flame,
   HeartPulse,
+  Loader2,
+  Mail,
   Moon,
   ShieldCheck,
   Sparkles,
@@ -15,7 +17,7 @@ import {
   Utensils,
   Zap
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
@@ -96,13 +98,17 @@ const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: 
 
 const steps = ["Gate", "Kai", "Vibe", "Signals", "Mission", "Context", "Reveal"];
 
+const CONSENT_POLL_MS = 5000;
+
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
+  const { setKai, setPrimaryEngine, setConsentPending, hydrate } = useUserStore();
+  const storedConsentStatus = useUserStore((state) => state.consentStatus);
+  const storedParentEmail = useUserStore((state) => state.parentEmail);
   const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
   const [step, setStep] = useState(0);
   const [age, setAge] = useState("16");
-  const [parentEmail, setParentEmail] = useState("");
+  const [parentEmail, setParentEmail] = useState(storedParentEmail ?? "");
   const [kaiName, setKaiName] = useState(() => {
     const name = demoBuild?.kaiName?.trim();
     return name && name.length > 0 ? name : "Kai";
@@ -124,6 +130,8 @@ export function Onboarding() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [consentSending, setConsentSending] = useState(false);
+  const [consentMessage, setConsentMessage] = useState("");
 
   const normalizedAge = Number(age) || undefined;
   const isMinor = Boolean(normalizedAge && normalizedAge < 18);
@@ -133,10 +141,67 @@ export function Onboarding() {
   const progress = ((step + 1) / steps.length) * 100;
   const calibration = useMemo(() => calibrationScore({ vibes, signals, context }), [vibes, signals, context]);
 
+  // Spec §8 Step 2: under-18 cannot proceed past the age gate until the
+  // parent has clicked the consent link. We treat consentStatus from the
+  // hydrated user profile as the source of truth.
+  const awaitingConsent = isMinor && step === 0 && storedConsentStatus === "pending";
+  const consentBlocked = isMinor && storedConsentStatus !== "complete" && storedConsentStatus !== "not_required";
+
+  // Poll the user profile while we wait for parent consent. Auto-advance
+  // when it lands. No-op for adults or once consent is complete.
+  useEffect(() => {
+    if (!awaitingConsent) return;
+    let cancelled = false;
+    const id = window.setInterval(() => {
+      void api
+        .getUser()
+        .then((profile) => {
+          if (cancelled) return;
+          hydrate(profile);
+          if (profile.consentStatus === "complete") {
+            setStep((value) => (value === 0 ? 1 : value));
+          }
+        })
+        .catch(() => undefined);
+    }, CONSENT_POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [awaitingConsent, hydrate]);
+
+  async function requestConsent() {
+    const normalized = parentEmail.trim();
+    if (!normalized) {
+      setError("Add a parent email so we can send the consent link.");
+      return;
+    }
+    setConsentSending(true);
+    setError("");
+    setConsentMessage("");
+    try {
+      await api.sendParentConsent({ parentEmail: normalized, teenName: kaiName || "Kai user" });
+      setConsentPending(normalized);
+      setConsentMessage(`Consent link sent to ${normalized}. We will continue automatically once your parent confirms.`);
+    } catch {
+      setError("Could not send the consent email right now. Try again in a minute.");
+    } finally {
+      setConsentSending(false);
+    }
+  }
+
   function next() {
     setError("");
-    if (step === 0 && isMinor && !parentEmail.trim()) {
-      setError("Parent email is required for teen accounts.");
+    if (step === 0 && isMinor) {
+      if (!parentEmail.trim()) {
+        setError("Parent email is required for teen accounts.");
+        return;
+      }
+      if (storedConsentStatus === "complete") {
+        setStep((value) => Math.min(steps.length - 1, value + 1));
+        return;
+      }
+      void requestConsent();
       return;
     }
     setStep((value) => Math.min(steps.length - 1, value + 1));
@@ -164,6 +229,13 @@ export function Onboarding() {
       setError("Parent email is required for teen accounts.");
       return;
     }
+    if (consentBlocked) {
+      // Spec §8 Step 2: never write onboarding_completed without consent.
+      setSaving(false);
+      setStep(0);
+      setError("Waiting on parent consent before we can finish setup.");
+      return;
+    }
 
     try {
       const intake = await api.submitIntake(buildIntakeAnswers({ vibes, signals, mission, context, kaiTone }));
@@ -177,10 +249,6 @@ export function Onboarding() {
         parentEmail: normalizedParentEmail || undefined,
         onboardingCompleted: true
       });
-      if (isMinor && normalizedParentEmail) {
-        await api.sendParentConsent({ parentEmail: normalizedParentEmail, teenName: kaiName || "Kai user" });
-        setConsentPending(normalizedParentEmail);
-      }
       setKai(kaiName || "Kai", kaiTone);
       setPrimaryEngine(engine);
       navigate(selectedMission.route);
@@ -229,7 +297,15 @@ export function Onboarding() {
             <OnboardingHeader step={step} progress={progress} />
             <div className="flex flex-1 flex-col justify-center py-6">
               {error && <p className="mb-4 rounded-[18px] border border-[#E35D4F]/25 bg-[#FFF0EC] p-3 text-sm font-black text-[#C4473E]">{error}</p>}
-              {step === 0 && <AgeGate age={age} setAge={setAge} isMinor={isMinor} parentEmail={parentEmail} setParentEmail={setParentEmail} fromDemo={Boolean(demoBuild)} />}
+              {step === 0 && awaitingConsent && (
+                <WaitingForConsent
+                  parentEmail={parentEmail}
+                  consentSending={consentSending}
+                  consentMessage={consentMessage}
+                  onResend={() => void requestConsent()}
+                />
+              )}
+              {step === 0 && !awaitingConsent && <AgeGate age={age} setAge={setAge} isMinor={isMinor} parentEmail={parentEmail} setParentEmail={setParentEmail} fromDemo={Boolean(demoBuild)} consentStatus={storedConsentStatus} />}
               {step === 1 && <KaiBuilder kaiName={kaiName} setKaiName={setKaiName} kaiTone={kaiTone} setKaiTone={setKaiTone} selectedTone={selectedTone} />}
               {step === 2 && <VibeScan selected={vibes} onToggle={toggleVibe} />}
               {step === 3 && <SignalScan signals={signals} setSignals={setSignals} />}
@@ -245,14 +321,19 @@ export function Onboarding() {
                 </Button>
               )}
               {step < steps.length - 1 ? (
-                <Button type="button" onClick={next} className="min-h-12 w-full">
-                  {step === 5 ? "Reveal Kai" : "Next"}
-                  <ArrowRight size={18} aria-hidden="true" />
+                <Button
+                  type="button"
+                  onClick={next}
+                  disabled={consentSending || awaitingConsent}
+                  className="min-h-12 w-full"
+                >
+                  {consentSending ? "Sending" : step === 0 && isMinor && storedConsentStatus !== "complete" ? "Send parent consent" : awaitingConsent ? "Waiting for parent" : step === 5 ? "Reveal Kai" : "Next"}
+                  {!awaitingConsent && <ArrowRight size={18} aria-hidden="true" />}
                 </Button>
               ) : (
-                <Button type="button" onClick={() => void finish()} disabled={saving} className="min-h-12 w-full">
-                  {saving ? "Saving" : "Start my first rep"}
-                  <ArrowRight size={18} aria-hidden="true" />
+                <Button type="button" onClick={() => void finish()} disabled={saving || consentBlocked} className="min-h-12 w-full">
+                  {saving ? "Saving" : consentBlocked ? "Waiting for parent" : "Start my first rep"}
+                  {!consentBlocked && <ArrowRight size={18} aria-hidden="true" />}
                 </Button>
               )}
             </footer>
@@ -287,7 +368,8 @@ function AgeGate({
   isMinor,
   parentEmail,
   setParentEmail,
-  fromDemo
+  fromDemo,
+  consentStatus
 }: {
   age: string;
   setAge: (value: string) => void;
@@ -295,6 +377,7 @@ function AgeGate({
   parentEmail: string;
   setParentEmail: (value: string) => void;
   fromDemo: boolean;
+  consentStatus: "not_required" | "pending" | "complete";
 }) {
   return (
     <div>
@@ -314,11 +397,75 @@ function AgeGate({
           <input className="field mt-2 text-lg" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} placeholder="parent@example.com" />
         </label>
       </div>
-      {isMinor && (
-        <div className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">
-          Parent consent confirms beta access. It does not unlock private answers, food logs, goals, or chats.
+      {isMinor && consentStatus === "complete" && (
+        <div className="mt-4 rounded-[18px] border border-[#D7F0EA] bg-[#F4FFFC] p-4 text-sm font-semibold leading-6 text-[#218A7D]">
+          Parent already confirmed access. You can keep going.
         </div>
       )}
+      {isMinor && consentStatus !== "complete" && (
+        <div className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">
+          You can’t move on until your parent clicks the consent link. We will send it as soon as you continue.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WaitingForConsent({
+  parentEmail,
+  consentSending,
+  consentMessage,
+  onResend
+}: {
+  parentEmail: string;
+  consentSending: boolean;
+  consentMessage: string;
+  onResend: () => void;
+}) {
+  return (
+    <div>
+      <Eyebrow>Hold here</Eyebrow>
+      <div className="mt-3 flex items-start gap-4">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#F4F1EB] text-[#111116]">
+          <Mail size={22} aria-hidden="true" />
+        </span>
+        <div>
+          <h2 className="font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">
+            Waiting on your parent.
+          </h2>
+          <p className="mt-3 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">
+            We sent a consent link to <span className="font-black text-[#111116]">{parentEmail}</span>. We check every few seconds and move you forward the moment they confirm.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-[24px] border border-[#0A0A0A0F] bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Loader2 className="motion-safe:animate-spin text-[#5E5E64]" size={18} aria-hidden="true" />
+          <p className="text-sm font-black text-[#111116]">Listening for confirmation…</p>
+        </div>
+        {consentMessage && <p className="mt-3 text-sm font-semibold leading-6 text-[#5E5E64]">{consentMessage}</p>}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onResend}
+            disabled={consentSending}
+            className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full border border-[#0A0A0A0F] bg-[#F4F1EB] px-4 text-sm font-black text-[#111116] disabled:opacity-50"
+          >
+            {consentSending ? "Sending" : "Resend email"}
+          </button>
+          <Link
+            to="/crisis"
+            className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full border border-[#C4473E]/30 bg-white px-4 text-sm font-black text-[#C4473E]"
+          >
+            Crisis support
+          </Link>
+        </div>
+      </div>
+
+      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">
+        If your parent didn’t get the email, double-check the address by going Back, then send again.
+      </p>
     </div>
   );
 }

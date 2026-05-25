@@ -1,4 +1,4 @@
-import { Activity, Brain, Camera, HeartPulse, Home, Plus, Settings, ShieldAlert, Sparkles, UsersRound, UserRound, X } from "lucide-react";
+import { Activity, Brain, Camera, HeartPulse, Home, Plus, Settings, ShieldAlert, Sparkles, Target, UsersRound, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { KaiChat } from "../kai/KaiChat";
@@ -208,6 +208,8 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
 
 function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
   const actions = [
+    { to: "/loop", label: "Daily loop", icon: HeartPulse, tone: "bg-[#DDF5E8] text-[#2F9D67]" },
+    { to: "/goal", label: "Goal", icon: Target, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
     { to: "/health?module=food", label: "Log food", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
     { to: "/mental?module=guides", label: "Guide chat", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
     { to: "/mental?module=reset", label: "Breath reset", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
@@ -248,6 +250,8 @@ function isUnifiedAppRoute(pathname: string) {
     pathname.startsWith("/engine") ||
     pathname === "/health" ||
     pathname === "/mental" ||
+    pathname === "/goal" ||
+    pathname === "/loop" ||
     pathname === "/progress" ||
     pathname === "/groups" ||
     pathname === "/profile" ||
@@ -258,6 +262,8 @@ function isUnifiedAppRoute(pathname: string) {
 function sectionLabel(pathname: string) {
   if (pathname === "/health" || pathname.startsWith("/engine/physical")) return "Health unit";
   if (pathname === "/mental" || pathname.startsWith("/engine/mental")) return "Mental unit";
+  if (pathname === "/goal") return "Goal";
+  if (pathname === "/loop") return "Loop";
   if (pathname === "/progress") return "Progress";
   if (pathname === "/groups") return "Circle";
   if (pathname === "/profile") return "Profile";

@@ -8,6 +8,7 @@ import {
   Moon,
   Plus,
   SmilePlus,
+  Target,
   Zap
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -114,6 +115,26 @@ export function Home() {
         </section>
 
         <section className="mt-6 grid gap-3">
+          <ModuleCard
+            to="/loop"
+            icon={Heart}
+            label="Daily loop"
+            title="Mind, body, goal, close."
+            copy="Run the smallest complete Kai loop for today before jumping between pages."
+            stat={`${todayEvents.length} reps`}
+            chips={["Loop", "Goal", "Close"]}
+            accent="from-[#DDF5E8] to-white text-[#2F9D67]"
+          />
+          <ModuleCard
+            to="/goal"
+            icon={Target}
+            label="Goal"
+            title="Pick one goal small enough to start."
+            copy="Turn the client-demo promise into one concrete commitment and one next rep."
+            stat={activeGoalStat(todayEvents)}
+            chips={["Identity", "Rep", "Review"]}
+            accent="from-[#F4F1EB] to-white text-[#1A1A1F]"
+          />
           <ModuleCard
             to="/mental?module=checkin"
             icon={Brain}
@@ -302,6 +323,10 @@ function recentItems(events: ProgressEvent[]) {
     chip: `+${event.eventValue}`,
     chipClass: "bg-[#DDF5E8] text-[#2F9D67]"
   }));
+}
+
+function activeGoalStat(events: ProgressEvent[]) {
+  return events.some((event) => event.eventType.includes("goal")) ? "active" : "set";
 }
 
 function dayParts(date = new Date()) {

@@ -11,8 +11,10 @@ import { DesignPicker } from "./pages/DesignPicker";
 import { EngineMental } from "./pages/EngineMental";
 import { EnginePhysical } from "./pages/EnginePhysical";
 import { ForParents } from "./pages/ForParents";
+import { Goal } from "./pages/Goal";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
+import { Loop } from "./pages/Loop";
 import { Onboarding } from "./pages/Onboarding";
 import { Ops } from "./pages/Ops";
 import { OpsDemoSession } from "./pages/OpsDemoSession";
@@ -68,6 +70,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/home" element={protectedOnboarding(<Home />)} />
           <Route path="/health" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/mental" element={protectedOnboarding(<EngineMental />)} />
+          <Route path="/goal" element={protectedOnboarding(<Goal />)} />
+          <Route path="/loop" element={protectedOnboarding(<Loop />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />

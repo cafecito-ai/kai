@@ -10,11 +10,11 @@ import { MeditationPlayer } from "../components/mental/MeditationPlayer";
 import { SocialMediaReset } from "../components/mental/SocialMediaReset";
 import { ThoughtReframe } from "../components/mental/ThoughtReframe";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
+import { StrengthsDiscoveryCard } from "../components/strengths/StrengthsDiscoveryCard";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineEntry, Goal } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
-import { StrengthsDiscoveryCard } from "./EnginePotential";
 
 const StressPrimer = lazy(() =>
   import("../components/physical/StressPrimer").then((module) => ({ default: module.StressPrimer }))

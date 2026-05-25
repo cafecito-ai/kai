@@ -270,17 +270,17 @@ function sectionLabel(pathname: string) {
   return "Kai app";
 }
 
-function engineFromPath(pathname: string): "physical" | "potential" | "mental" | null {
+function engineFromPath(pathname: string): "physical" | "mental" | null {
   if (pathname === "/health") return "physical";
   if (pathname === "/mental") return "mental";
-  if (pathname.startsWith("/engine/potential")) return "mental";
   if (pathname.startsWith("/engine/mental")) return "mental";
   if (pathname.startsWith("/engine/physical")) return "physical";
   return null;
 }
 
-function laneMeta(engine: "physical" | "potential" | "mental") {
-  if (engine === "potential") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
-  if (engine === "mental") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
-  return { label: "Body", icon: Activity, tone: "bg-bodyWash text-body" };
+// Legacy "potential" still surfaces from hydrated profiles; map it to
+// Mind. Loose string type absorbs that without re-narrowing the store.
+function laneMeta(engine: string) {
+  if (engine === "physical") return { label: "Body", icon: Activity, tone: "bg-bodyWash text-body" };
+  return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
 }

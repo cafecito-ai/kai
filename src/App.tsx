@@ -69,7 +69,6 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/health" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/mental" element={protectedOnboarding(<EngineMental />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
-          <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />

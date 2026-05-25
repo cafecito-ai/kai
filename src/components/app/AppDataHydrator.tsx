@@ -21,7 +21,7 @@ export function AppDataHydrator() {
       if (cancelled) return;
       if (userResult.status === "fulfilled") hydrateUser(userResult.value);
       if (progressResult.status === "fulfilled") setEvents(progressResult.value.eventsByDay);
-      if (conversationResult.status === "fulfilled") hydrateKai(conversationResult.value);
+      if (conversationResult.status === "fulfilled") hydrateKai("kai", conversationResult.value);
     }
 
     void hydrate();

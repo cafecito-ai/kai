@@ -1,5 +1,6 @@
 import { ArrowUp, Brain, HeartPulse, Lightbulb, Send, Sparkles } from "lucide-react";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { api } from "../../lib/api";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
@@ -7,7 +8,12 @@ import { KaiMark } from "../ui/AppPrimitives";
 type KaiChatMode = "default" | "mental";
 
 export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boolean; mode?: KaiChatMode }) {
-  const { messages, send, sending } = useKaiStore();
+  const chatEngine = mode === "mental" ? "mental" : "kai";
+  const messages = useKaiStore((state) => state.chats[chatEngine].messages);
+  const sending = useKaiStore((state) => state.chats[chatEngine].sending);
+  const hydrated = useKaiStore((state) => state.chats[chatEngine].hydrated);
+  const send = useKaiStore((state) => state.send);
+  const hydrate = useKaiStore((state) => state.hydrate);
   const [draft, setDraft] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -30,6 +36,17 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length, sending]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (hydrated) return;
+    void api.getCurrentConversation(chatEngine).then((conversation) => {
+      if (!cancelled) hydrate(chatEngine, conversation);
+    }).catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [chatEngine, hydrate, hydrated]);
+
   function onSubmit(event: FormEvent) {
     event.preventDefault();
     void sendDraft();
@@ -39,7 +56,7 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
     const message = text.trim();
     if (!message || sending) return;
     setDraft("");
-    await send(message, mode === "mental" ? "mental" : "kai");
+    await send(message, chatEngine);
     inputRef.current?.focus();
   }
 

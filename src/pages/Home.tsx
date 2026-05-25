@@ -56,7 +56,7 @@ export function Home() {
 
   return (
     <AppPage className="max-w-5xl">
-      <section className="relative min-h-[calc(100svh-8.5rem)] w-full max-w-full overflow-hidden rounded-[36px] border border-white/10 bg-[#070912] px-4 py-5 text-paper shadow-[0_28px_80px_rgba(7,9,18,0.24)] backdrop-blur-xl sm:px-7 sm:py-7 lg:min-h-[42rem]">
+      <section className="relative w-full max-w-full overflow-hidden rounded-[36px] border border-white/10 bg-[#070912] px-4 py-4 text-paper shadow-[0_28px_80px_rgba(7,9,18,0.24)] backdrop-blur-xl sm:min-h-[calc(100svh-8.5rem)] sm:px-7 sm:py-7 lg:min-h-[42rem]">
         <div className="pointer-events-none absolute inset-x-6 top-6 h-40 rounded-full bg-[linear-gradient(90deg,rgba(70,216,255,0.18),rgba(157,255,203,0.08),rgba(255,138,107,0.12))] blur-3xl" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(180deg,rgba(7,9,18,0),rgba(70,216,255,0.08))]" />
         <div className="relative flex flex-wrap items-center justify-center gap-2 text-xs font-black uppercase tracking-wider text-paper/50 sm:justify-between">
@@ -64,36 +64,41 @@ export function Home() {
           <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-paper">{streak > 0 ? `${streak} days in` : "Kai's here"}</span>
         </div>
 
-        <div className="relative mx-auto flex w-full max-w-2xl min-w-0 flex-col items-center pt-9 text-center sm:pt-14">
-          <KaiAvatar size={112} pulse className="drop-shadow-[0_24px_50px_rgba(79,195,247,0.25)]" />
-          <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-paper/60">
+        <div className="relative mx-auto flex w-full max-w-2xl min-w-0 flex-col items-center pt-4 text-center sm:pt-14">
+          <span className="sm:hidden">
+            <KaiAvatar size={84} pulse className="drop-shadow-[0_24px_50px_rgba(79,195,247,0.25)]" />
+          </span>
+          <span className="hidden sm:inline-grid">
+            <KaiAvatar size={112} pulse className="drop-shadow-[0_24px_50px_rgba(79,195,247,0.25)]" />
+          </span>
+          <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-paper/60 sm:mt-5">
             <Sparkles size={14} aria-hidden="true" />
             No shame. Next move.
           </p>
-          <h1 className="mt-4 max-w-[9.5ch] break-words font-sans text-[2.95rem] font-black leading-[0.9] tracking-normal text-paper sm:max-w-[12ch] sm:text-7xl">
+          <h1 className="mt-3 max-w-[9.5ch] break-words font-sans text-[2.45rem] font-black leading-[0.9] tracking-normal text-paper sm:mt-4 sm:max-w-[12ch] sm:text-7xl">
             What's up?
           </h1>
-          <p className="mt-4 max-w-[20rem] text-base font-semibold leading-7 text-paper/60 sm:max-w-md">
+          <p className="mt-3 max-w-[20rem] text-sm font-semibold leading-6 text-paper/60 sm:mt-4 sm:max-w-md sm:text-base sm:leading-7">
             Drop the real version. Kai will help you get unstuck and choose the next move.
           </p>
 
-          <form onSubmit={submitMessage} className="mt-7 w-full max-w-[21.5rem] rounded-[30px] border border-white/14 bg-white/10 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:max-w-none">
+          <form onSubmit={submitMessage} className="mt-4 w-full max-w-[21.5rem] rounded-[30px] border border-white/14 bg-white/10 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:mt-7 sm:max-w-none">
             <label htmlFor="kai-home-message" className="sr-only">
               Tell Kai what is going on
             </label>
-            <div className="flex min-h-16 items-end gap-2">
+            <div className="flex min-h-14 items-end gap-2 sm:min-h-16">
               <textarea
                 id="kai-home-message"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Type it like you'd text it..."
                 rows={1}
-                className="max-h-32 min-h-12 min-w-0 flex-1 resize-none border-0 bg-transparent px-3 py-3 text-base font-semibold leading-6 text-paper outline-none placeholder:text-paper/40"
+                className="max-h-32 min-h-10 min-w-0 flex-1 resize-none border-0 bg-transparent px-3 py-2.5 text-base font-semibold leading-6 text-paper outline-none placeholder:text-paper/40 sm:min-h-12 sm:py-3"
               />
               <button
                 type="submit"
                 disabled={!draft.trim() || sending}
-                className="focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-paper text-ink transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                className="focus-ring grid size-11 shrink-0 place-items-center rounded-full bg-paper text-ink transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 sm:size-12"
                 aria-label="Send message to Kai"
               >
                 <Send size={18} aria-hidden="true" />
@@ -116,7 +121,7 @@ export function Home() {
             </Link>
           )}
 
-          <div className="mt-4 w-full max-w-[21.5rem] rounded-[24px] border border-white/10 bg-white/10 p-4 text-left backdrop-blur-xl sm:max-w-none">
+          <div className="mt-3 w-full max-w-[21.5rem] rounded-[24px] border border-white/10 bg-white/10 p-3 text-left backdrop-blur-xl sm:mt-4 sm:max-w-none sm:p-4">
             <p className="text-xs font-black uppercase tracking-wider text-paper/50">Kai</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-paper/80">{lastKaiMessage}</p>
           </div>

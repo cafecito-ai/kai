@@ -48,15 +48,15 @@ export function UnitWorkspace({
           </Link>
           <KaiAvatar size={42} label="KAI" pulse />
         </div>
-        <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end">
+        <div className="mt-5 grid gap-5 sm:mt-7 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end">
           <div className="min-w-0">
             <p className="font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-[#8A8A8F]">{label}</p>
-            <h1 className="mt-3 max-w-3xl break-words font-display text-[2.65rem] font-semibold leading-[0.96] tracking-normal text-[#111116] sm:text-6xl">
+            <h1 className="mt-3 max-w-3xl break-words font-display text-[2.35rem] font-semibold leading-[0.96] tracking-normal text-[#111116] sm:text-6xl">
               {title}
             </h1>
-            <p className="mt-4 max-w-full break-words text-base font-medium leading-7 text-[#5E5E64] sm:max-w-2xl">{intro}</p>
+            <p className="mt-3 max-w-full break-words text-base font-medium leading-7 text-[#5E5E64] sm:mt-4 sm:max-w-2xl">{intro}</p>
           </div>
-          <div className="rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-sm">
+          <div className="hidden rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-sm sm:block">
             <div className={`grid size-11 place-items-center rounded-full bg-white ${iconTone}`}>
               <HeaderIcon size={21} aria-hidden="true" />
             </div>

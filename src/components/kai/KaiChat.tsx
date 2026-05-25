@@ -6,6 +6,7 @@ import { CrisisResourceCard } from "../safety/CrisisResourceCard";
 import { DisclosureBanner } from "../safety/DisclosureBanner";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
+import { KaiTypingIndicator } from "./KaiTypingIndicator";
 
 export function KaiChat({ embedded = false }: { embedded?: boolean }) {
   const { messages, send, sending } = useKaiStore();
@@ -55,6 +56,7 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
             {message.safetyEvent && <CrisisResourceCard />}
           </Fragment>
         ))}
+        {sending && <KaiTypingIndicator />}
       </div>
       <div className="mx-4 mb-3 flex flex-wrap gap-2" role="group" aria-label="Topic suggestions">
         {["school", "friends", "body", "sleep"].map((item) => (

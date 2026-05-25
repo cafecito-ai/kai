@@ -1,6 +1,7 @@
 import type { ElementType, ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Activity, ArrowLeft, Brain, HeartPulse } from "lucide-react";
+import { useUserStore } from "../../stores/userStore";
 import { AppPage, KaiAvatar } from "../ui/AppPrimitives";
 
 export interface UnitModule {
@@ -30,6 +31,7 @@ export function UnitWorkspace({
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get("module");
   const active = modules.find((module) => module.id === requested) ?? modules[0];
+  const kaiName = useUserStore((state) => state.kaiName);
   const isPhysical = tone === "physical";
   const HeaderIcon = isPhysical ? HeartPulse : Brain;
   const wash = isPhysical ? "from-[#FFF0EC] to-white" : "from-[#E4F7F4] to-white";
@@ -49,7 +51,7 @@ export function UnitWorkspace({
             <ArrowLeft size={16} aria-hidden="true" />
             Home
           </Link>
-          <KaiAvatar size={42} label="KAI" pulse />
+          <KaiAvatar size={42} label={kaiName} pulse />
         </div>
         <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end">
           <div className="min-w-0">

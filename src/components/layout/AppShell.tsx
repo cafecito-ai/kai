@@ -65,7 +65,7 @@ export function AppShell() {
 
 function AppContextBar() {
   const { pathname } = useLocation();
-  const { primaryEngine } = useUserStore();
+  const { primaryEngine, kaiName } = useUserStore();
   const events = useProgressStore((state) => state.events);
   const streak = useProgressStore((state) => state.streak());
   const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
@@ -77,8 +77,8 @@ function AppContextBar() {
     <aside className="sticky top-0 z-30 border-b border-[#0A0A0A0F] bg-paper/88 backdrop-blur-xl">
       <div className="mx-auto grid max-w-6xl gap-2 px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
-          <Link to="/home" className="focus-ring grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.08)]" aria-label="Kai home">
-            <KaiAvatar size={34} label="Kai" pulse />
+          <Link to="/home" className="focus-ring grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.08)]" aria-label={`${kaiName} home`}>
+            <KaiAvatar size={34} label={kaiName} pulse />
           </Link>
           <span className={`grid size-8 shrink-0 place-items-center rounded-full ${lane.tone}`}>
             <ActiveIcon size={16} aria-hidden="true" />
@@ -112,6 +112,7 @@ function AppContextBar() {
 function AppComposer() {
   const [chatOpen, setChatOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
+  const kaiName = useUserStore((state) => state.kaiName);
 
   return (
     <>
@@ -121,9 +122,9 @@ function AppComposer() {
         type="button"
         onClick={() => setChatOpen(true)}
         className="focus-ring fixed bottom-5 left-5 z-40 grid size-10 place-items-center rounded-full bg-white shadow-[0_12px_40px_rgba(10,10,10,0.14)] sm:bottom-6 sm:left-[calc(50%-18rem)]"
-        aria-label="Talk to Kai"
+        aria-label={`Talk to ${kaiName}`}
       >
-        <KaiAvatar size={34} label="Kai companion" pulse />
+        <KaiAvatar size={34} label={`${kaiName} companion`} pulse />
       </button>
       <AppDock quickOpen={quickOpen} onToggleQuick={() => setQuickOpen((open) => !open)} />
     </>
@@ -182,14 +183,15 @@ function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: 
 }
 
 function GlobalChatSheet({ onClose }: { onClose: () => void }) {
+  const kaiName = useUserStore((state) => state.kaiName);
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-inkDeep/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
+    <div className="fixed inset-0 z-50 flex items-end bg-inkDeep/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`Chat with ${kaiName}`}>
       <div className="mx-auto w-full max-w-md rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <KaiAvatar size={34} label="KAI" pulse />
+            <KaiAvatar size={34} label={kaiName} pulse />
             <div>
-              <p className="text-sm font-black text-inkDeep">KAI</p>
+              <p className="text-sm font-black text-inkDeep">{kaiName}</p>
               <p className="text-xs font-semibold text-inkMute">One companion across the whole app</p>
             </div>
           </div>

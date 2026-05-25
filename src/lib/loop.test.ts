@@ -1,34 +1,50 @@
 import { describe, expect, it } from "vitest";
-import { KAI_LOOP_STEPS, loopCompletion, resetLoopIfNewDay, toggleLoopStep } from "./loop";
+import {
+  calculateLoopScore,
+  completeLoopStep,
+  createDefaultLoop,
+  getNextAvailableStep,
+  normalizeLoop,
+  normalizeLoopStep,
+  skipLoopStep,
+  todayIso
+} from "./loop";
 
 describe("daily loop helpers", () => {
-  it("starts a new empty loop for a new day", () => {
-    const state = resetLoopIfNewDay(
-      { dateIso: "2026-05-23", completed: ["mental_check", "body_signal"] },
-      new Date("2026-05-24T12:00:00Z")
-    );
-
-    expect(state).toEqual({ dateIso: "2026-05-24", completed: [] });
+  it("returns null for empty or malformed loops", () => {
+    expect(normalizeLoop(null)).toBeNull();
+    expect(normalizeLoop({ dateIso: "2026-05-24", steps: [] })).toBeNull();
+    expect(normalizeLoopStep({ id: "nope" })).toBeNull();
   });
 
-  it("keeps only known unique steps for the same day", () => {
-    const state = resetLoopIfNewDay(
-      { dateIso: "2026-05-24", completed: ["mental_check", "mental_check", "body_signal"] },
-      new Date("2026-05-24T12:00:00Z")
-    );
+  it("creates the default loop and calculates score", () => {
+    const loop = createDefaultLoop([]);
+    expect(loop.score).toBe(20);
+    expect(loop.steps).toHaveLength(5);
+    expect(getNextAvailableStep(loop.steps)?.id).toBe("check_in");
 
-    expect(state.completed).toEqual(["mental_check", "body_signal"]);
+    const complete = loop.steps.map((step) => ({ ...step, status: "completed" as const }));
+    expect(calculateLoopScore(complete)).toBe(100);
   });
 
-  it("toggles completion and calculates progress", () => {
-    let state = resetLoopIfNewDay(null, new Date("2026-05-24T12:00:00Z"));
-    state = toggleLoopStep(state, "mental_check");
-    state = toggleLoopStep(state, "body_signal");
+  it("completes and skips steps while unlocking the next step", () => {
+    let loop = createDefaultLoop([]);
+    loop = completeLoopStep(loop, "check_in", { mood: "Stressed", note: "private text", source: "loop" });
+    expect(loop.score).toBe(35);
+    expect(loop.steps[0].payload).toEqual({ mood: "Stressed", noteLength: 12, source: "loop" });
+    expect(getNextAvailableStep(loop.steps)?.id).toBe("body_action");
 
-    expect(state.completed).toEqual(["mental_check", "body_signal"]);
-    expect(loopCompletion(state)).toBe(Math.round((2 / KAI_LOOP_STEPS.length) * 100));
+    loop = skipLoopStep(loop, "body_action");
+    expect(getNextAvailableStep(loop.steps)?.id).toBe("mind_action");
+  });
 
-    state = toggleLoopStep(state, "mental_check");
-    expect(state.completed).toEqual(["body_signal"]);
+  it("normalizes api loops and date rollover helpers", () => {
+    expect(todayIso(new Date("2026-05-24T12:00:00Z"))).toBe("2026-05-24");
+    const loop = normalizeLoop({
+      date_iso: "2026-05-24",
+      steps: [{ id: "check_in", status: "completed", title: "Check in", subtitle: "How are you?" }]
+    });
+    expect(loop?.dateIso).toBe("2026-05-24");
+    expect(loop?.steps[1].status).toBe("available");
   });
 });

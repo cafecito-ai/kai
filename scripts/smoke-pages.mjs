@@ -42,9 +42,9 @@ const connectionErrorCopy = [
 ];
 
 const cases = [
-  route("/", ["Kai", "Start today", "Set a goal"], { actionables: ["a[href='/loop']", "a[href='/goal']"] }),
+  route("/", ["What needs Kai today?", "Kai widget", "Next move"], { actionables: ["textarea", "button", "a[href^='/']"] }),
   route("/onboarding", ["Start clean", "Age", "Parent email"], { actionables: ["button", "input"] }),
-  route("/home", ["Kai", "Start today", "Set a goal"], { actionables: ["a[href='/loop']", "a[href='/goal']"] }),
+  route("/home", ["What needs Kai today?", "Kai widget", "Next move"], { actionables: ["textarea", "button", "a[href^='/']"] }),
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
   route("/loop", ["Give the day a shape.", "Body", "mind", "goal"], { actionables: ["button"] }),

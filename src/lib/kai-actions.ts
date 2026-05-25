@@ -27,7 +27,7 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     id: "talk",
     label: "Talk it out",
     shortLabel: "Mind",
-    route: "/mental?module=checkin",
+    route: "/mental?module=checkin&action=talk",
     reason: "This sounds like something to get out of your head first.",
     prompt: "I need to talk this out",
     chip: "Talk",
@@ -39,7 +39,7 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     id: "food",
     label: "Log food",
     shortLabel: "Food",
-    route: "/health?module=food",
+    route: "/health?module=food&action=food",
     reason: "Fuel might be the easiest body win right now.",
     prompt: "Help me figure out what to eat",
     chip: "Food",
@@ -75,7 +75,7 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     id: "scan",
     label: "Body scan",
     shortLabel: "Scan",
-    route: "/health?module=scan",
+    route: "/health?module=scan&action=scan",
     reason: "Check posture and recovery without judging your body.",
     prompt: "Help me check my posture",
     chip: "Scan",
@@ -87,7 +87,7 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     id: "goal",
     label: "Move a goal",
     shortLabel: "Goal",
-    route: "/goal",
+    route: "/goal?action=goal",
     reason: "This needs one clear next step, not more pressure.",
     prompt: "Help me move one goal forward",
     chip: "Goal",
@@ -99,7 +99,7 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     id: "reset",
     label: "Reset today",
     shortLabel: "Reset",
-    route: "/loop",
+    route: "/loop?action=reset",
     reason: "Start smaller. Get steady, then choose.",
     prompt: "I need a reset",
     chip: "Reset",
@@ -109,43 +109,54 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
   }
 };
 
-const keywordRules: Array<{ action: KaiActionId; words: string[] }> = [
+const keywordRules: Array<{ action: KaiActionId; words: string[]; weight?: number }> = [
   {
-    action: "food",
-    words: ["food", "eat", "eating", "meal", "hungry", "protein", "calories", "snack", "breakfast", "lunch", "dinner", "fuel"]
-  },
-  {
-    action: "sleep",
-    words: ["sleep", "tired", "exhausted", "bed", "woke", "wired", "recovery", "nap", "insomnia"]
+    action: "scan",
+    weight: 5,
+    words: ["body scan", "scan my body", "check my posture", "posture check", "alignment", "physique", "form check", "camera", "imbalance", "uneven"]
   },
   {
     action: "stretch",
-    words: ["stretch", "tight", "sore", "mobility", "move", "movement", "stiff", "back hurts", "neck hurts", "posture"]
+    weight: 4,
+    words: ["stretch", "tight", "sore", "mobility", "stiff", "back hurts", "neck hurts", "hips", "shoulders", "warm up", "cool down"]
   },
   {
-    action: "scan",
-    words: ["scan", "body scan", "posture", "alignment", "physique", "form", "camera", "imbalance"]
+    action: "food",
+    weight: 4,
+    words: ["food", "eat", "eating", "meal", "hungry", "protein", "calories", "snack", "breakfast", "lunch", "dinner", "fuel", "pre practice", "after practice"]
+  },
+  {
+    action: "sleep",
+    weight: 4,
+    words: ["sleep", "tired", "exhausted", "bed", "woke", "wired", "recovery", "nap", "insomnia", "can't sleep", "cant sleep"]
   },
   {
     action: "goal",
-    words: ["goal", "lock in", "discipline", "habit", "study", "school", "practice", "workout", "business", "create", "finish", "procrastinate"]
+    weight: 3,
+    words: ["goal", "lock in", "discipline", "habit", "study", "school", "homework", "practice", "workout", "business", "create", "finish", "procrastinate", "procrastinating", "assignment", "test"]
   },
   {
     action: "talk",
-    words: ["anxious", "anxiety", "stress", "stressed", "sad", "angry", "lonely", "friends", "confidence", "overthinking", "overthink", "behind", "feel"]
+    weight: 3,
+    words: ["anxious", "anxiety", "stress", "stressed", "sad", "angry", "lonely", "friends", "friend", "confidence", "insecure", "overthinking", "overthink", "behind", "feel", "social", "relationship"]
   },
   {
     action: "reset",
-    words: ["reset", "spiral", "doomscroll", "scroll", "overwhelmed", "can't", "cant", "stuck", "panic", "breathe"]
+    weight: 3,
+    words: ["reset", "spiral", "doomscroll", "scroll", "screen time", "phone", "overwhelmed", "can't", "cant", "stuck", "panic", "breathe"]
   }
 ];
 
 export function inferKaiAction(text: string): KaiAction {
   const normalized = text.toLowerCase();
+  let best: { action: KaiActionId; score: number } | null = null;
   for (const rule of keywordRules) {
-    if (rule.words.some((word) => normalized.includes(word))) return KAI_ACTIONS[rule.action];
+    const matches = rule.words.filter((word) => normalized.includes(word)).length;
+    if (!matches) continue;
+    const score = matches * (rule.weight ?? 1);
+    if (!best || score > best.score) best = { action: rule.action, score };
   }
-  return KAI_ACTIONS.talk;
+  return best ? KAI_ACTIONS[best.action] : KAI_ACTIONS.talk;
 }
 
 export function topKaiActions(): KaiAction[] {

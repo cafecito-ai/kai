@@ -6,7 +6,7 @@ describe("inferKaiNextAction", () => {
     expect(inferKaiNextAction("I forgot to eat and need protein after practice")).toMatchObject({
       id: "food",
       label: "Log food",
-      route: "/health?module=food"
+      route: "/health?module=food&action=food"
     });
   });
 
@@ -21,7 +21,21 @@ describe("inferKaiNextAction", () => {
   it("routes stuck productivity messages to reset before pressure", () => {
     expect(inferKaiNextAction("I am overwhelmed and stuck doomscrolling")).toMatchObject({
       id: "reset",
-      route: "/loop"
+      route: "/loop?action=reset"
+    });
+  });
+
+  it("routes posture checks to body scan instead of stretch", () => {
+    expect(inferKaiNextAction("Can Kai check my posture and alignment?")).toMatchObject({
+      id: "scan",
+      route: "/health?module=scan&action=scan"
+    });
+  });
+
+  it("routes school procrastination to goal creation", () => {
+    expect(inferKaiNextAction("I keep procrastinating on school and need a habit")).toMatchObject({
+      id: "goal",
+      route: "/goal?action=goal"
     });
   });
 });

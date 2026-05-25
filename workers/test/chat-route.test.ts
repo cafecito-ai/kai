@@ -60,7 +60,7 @@ describe("chat routes", () => {
     const body = (await res.json()) as { conversationId: string; messages: Array<{ content: string }>; nextAction: { id: string; route: string } };
     expect(body.conversationId).toBe("kai-conv");
     expect(body.messages[0]?.content).toBe("Body scan saved. No body score, no comparison.");
-    expect(body.nextAction).toMatchObject({ id: "scan", route: "/health?module=scan" });
+    expect(body.nextAction).toMatchObject({ id: "scan", route: "/health?module=scan&action=scan" });
   });
 });
 

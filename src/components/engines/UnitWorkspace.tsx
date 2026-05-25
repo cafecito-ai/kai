@@ -26,7 +26,9 @@ export function UnitWorkspace({
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get("module");
+  const action = searchParams.get("action");
   const active = modules.find((module) => module.id === requested) ?? modules[0];
+  const tabModules = [active, ...modules.filter((module) => module.id !== active.id)];
   const isPhysical = tone === "physical";
   const HeaderIcon = isPhysical ? HeartPulse : Brain;
   const wash = isPhysical ? "from-[#FFF0EC] to-white" : "from-[#E4F7F4] to-white";
@@ -72,7 +74,7 @@ export function UnitWorkspace({
 
       <section className="rounded-[30px] border border-[#0A0A0A0F] bg-white/80 p-3 shadow-sm backdrop-blur-xl">
         <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${title} moves`}>
-          {modules.map((module) => {
+          {tabModules.map((module) => {
             const Icon = module.icon;
             const selected = module.id === active.id;
             return (
@@ -98,7 +100,10 @@ export function UnitWorkspace({
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
-        <div className="min-w-0">{active.content}</div>
+        <div className="min-w-0">
+          <KaiOpenedBanner tone={tone} moduleId={active.id} action={action} />
+          {active.content}
+        </div>
         <aside className="hidden rounded-[28px] border border-[#0A0A0A0F] bg-white/80 p-4 shadow-sm backdrop-blur-xl lg:block">
           <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai can open</p>
           <div className="mt-3 grid gap-2">
@@ -117,4 +122,35 @@ export function UnitWorkspace({
       </section>
     </AppPage>
   );
+}
+
+function KaiOpenedBanner({ tone, moduleId, action }: { tone: "mental" | "physical"; moduleId: string; action: string | null }) {
+  const copy = getKaiOpenedCopy(tone, moduleId, action);
+  if (!copy) return null;
+  return (
+    <div className="mb-3 overflow-hidden rounded-[24px] border border-[#0A0A0A0F] bg-[#111116] p-4 text-white shadow-sm">
+      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-white/45">Kai opened this</p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <p className="text-sm font-semibold leading-6 text-white/76">{copy}</p>
+        <Link to="/home" className="focus-ring inline-flex min-h-10 items-center justify-center rounded-full bg-white px-4 text-sm font-black text-[#111116]">
+          Back to Kai
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function getKaiOpenedCopy(tone: "mental" | "physical", moduleId: string, action: string | null) {
+  if (tone === "physical") {
+    if (moduleId === "food") return "Fuel is the move. Add the photo or the rough note, then Kai can use it without turning food into a score.";
+    if (moduleId === "scan") return "This is a private posture and recovery check. No body score, no comparison, no performance pressure.";
+    if (moduleId === "movement" && action === "sleep") return "Recovery is the move. Log sleep honestly, then keep tonight simple.";
+    if (moduleId === "movement" && action === "stretch") return "Your body is asking for a reset. Pick a small stretch or movement rep and let that count.";
+  }
+  if (tone === "mental") {
+    if (moduleId === "checkin") return action === "talk" ? "Start with the real sentence. Kai will help turn it into one move." : "Name the pattern first. You do not have to solve the whole mood at once.";
+    if (moduleId === "reset") return "Settle your body first. Then decide what deserves your attention.";
+    if (moduleId === "purpose") return "Make the goal visible and small enough to start today.";
+  }
+  return null;
 }

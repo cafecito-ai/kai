@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getKaiMemoryItems, getKaiRecentContext } from "./kai-memory";
+import { getKaiMemoryItems, getKaiRecentContext, getKaiThreadCue } from "./kai-memory";
 
 describe("getKaiRecentContext", () => {
   it("stays quiet until the teen has actually told Kai something", () => {
@@ -47,6 +47,32 @@ describe("getKaiRecentContext", () => {
     ).toMatchObject({
       label: "Kai remembers",
       body: "Private scan context is saved."
+    });
+  });
+
+  it("builds a compact thread cue from the last saved rep and latest message", () => {
+    expect(
+      getKaiThreadCue([
+        { id: "u1", role: "user", content: "I need food before practice" },
+        { id: "a1", role: "assistant", content: "Log food saved. Rice bowl and water logged.", metadata: { source: "tool_completion" } },
+        { id: "u2", role: "user", content: "Now I feel tired and wired" }
+      ])
+    ).toEqual({
+      label: "Still in thread",
+      title: "Log food",
+      detail: "Latest: Now I feel tired and wired"
+    });
+  });
+
+  it("uses the last saved rep as the thread cue before chat continues", () => {
+    expect(
+      getKaiThreadCue([
+        { id: "a1", role: "assistant", content: "Body scan saved. Private posture context saved.", metadata: { source: "tool_completion" } }
+      ])
+    ).toEqual({
+      label: "Last saved",
+      title: "Body scan",
+      detail: "Private posture context saved."
     });
   });
 });

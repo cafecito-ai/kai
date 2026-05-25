@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { AppPage, KaiAvatar } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { inferKaiAction, topKaiActions, type KaiAction } from "../lib/kai-actions";
-import { getKaiMemoryItems } from "../lib/kai-memory";
+import { getKaiMemoryItems, getKaiThreadCue } from "../lib/kai-memory";
 import { getNextAvailableStep } from "../lib/loop";
 import type { DailyLoopStep, Goal } from "../lib/types";
 import { useGoalStore } from "../stores/goalStore";
@@ -44,6 +44,7 @@ export function Home() {
     "Say it messy. We’ll make it simple.";
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const memoryItems = useMemo(() => getKaiMemoryItems(messages), [messages]);
+  const threadCue = useMemo(() => getKaiThreadCue(messages), [messages]);
   const liveAction = useMemo(() => (draft.trim() ? inferKaiAction(draft) : nextKaiAction ?? inferKaiAction(lastUserMessage)), [draft, lastUserMessage, nextKaiAction]);
   const hasKaiContext = Boolean(draft.trim() || lastUserMessage || nextKaiAction);
   const nextMove = useMemo(
@@ -193,8 +194,9 @@ export function Home() {
             <KaiAvatar size={58} pulse />
           </div>
           <div className="mt-5 rounded-[24px] border border-line bg-paper p-4">
-            <p className="text-sm font-black text-ink">For right now</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-muted">{nextMove.title}</p>
+            <p className="text-sm font-black text-ink">{threadCue?.label ?? "For right now"}</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-muted">{threadCue?.title ?? nextMove.title}</p>
+            {threadCue && <p className="mt-2 text-xs font-bold leading-5 text-muted/78">{threadCue.detail}</p>}
           </div>
         </section>
       </section>

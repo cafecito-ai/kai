@@ -13,6 +13,12 @@ export type KaiMemoryItem = {
   kind: "said" | "saved";
 };
 
+export type KaiThreadCue = {
+  label: string;
+  title: string;
+  detail: string;
+};
+
 export function getKaiRecentContext(messages: ChatMessage[]): KaiRecentContext | null {
   const visible = messages.filter((message) => message.role === "user" || message.role === "assistant");
   const userMessages = visible.filter((message) => message.role === "user");
@@ -58,6 +64,35 @@ export function getKaiMemoryItems(messages: ChatMessage[], limit = 3): KaiMemory
     if (items.length >= limit) break;
   }
   return items;
+}
+
+export function getKaiThreadCue(messages: ChatMessage[]): KaiThreadCue | null {
+  const items = getKaiMemoryItems(messages, 5);
+  const saved = items.find((item) => item.kind === "saved");
+  const said = items.find((item) => item.kind === "said");
+  if (!saved && !said) return null;
+
+  if (saved && said) {
+    return {
+      label: "Still in thread",
+      title: saved.label,
+      detail: `Latest: ${said.body}`
+    };
+  }
+
+  if (saved) {
+    return {
+      label: "Last saved",
+      title: saved.label,
+      detail: saved.body
+    };
+  }
+
+  return {
+    label: "Last thing you said",
+    title: said?.body ?? "Keep going",
+    detail: "Kai can keep going from there."
+  };
 }
 
 function clampContext(content: string) {

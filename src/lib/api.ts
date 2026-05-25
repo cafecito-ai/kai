@@ -1,4 +1,17 @@
-import type { ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type {
+  ChatMessage,
+  DailyLoop,
+  DemoFeedbackChoices,
+  DemoFoodPhotoResult,
+  EngineEntry,
+  EngineId,
+  FoodPhotoResult,
+  Goal,
+  KaiTone,
+  LoopStepId,
+  ProgressEvent,
+  UserProfile
+} from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
@@ -13,6 +26,32 @@ const PUBLIC_DEMO_API_PATHS = new Set([
 type TokenGetter = () => Promise<string | null>;
 
 let apiAuthTokenGetter: TokenGetter | null = null;
+
+export type ApiErrorCode =
+  | "NETWORK_ERROR"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "VALIDATION_ERROR"
+  | "RATE_LIMITED"
+  | "SERVER_ERROR"
+  | "INVALID_RESPONSE";
+
+export class KaiApiError extends Error {
+  code: ApiErrorCode;
+  status: number | null;
+  userMessage: string;
+  details?: unknown;
+
+  constructor(input: { code: ApiErrorCode; status: number | null; userMessage: string; details?: unknown }) {
+    super(input.userMessage);
+    this.name = "KaiApiError";
+    this.code = input.code;
+    this.status = input.status;
+    this.userMessage = input.userMessage;
+    this.details = input.details;
+  }
+}
 
 export function setApiAuthTokenGetter(getter: TokenGetter | null) {
   apiAuthTokenGetter = getter;
@@ -31,30 +70,102 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await apiAuthTokenGetter?.();
   const devUser = getDevUser();
   const isFormData = init?.body instanceof FormData;
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      ...(isFormData ? {} : { "content-type": "application/json" }),
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(!token && devUser ? { "x-dev-user": devUser } : {}),
-      ...init?.headers
-    }
-  });
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-  return res.json() as Promise<T>;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        ...(isFormData ? {} : { "content-type": "application/json" }),
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...(!token && devUser ? { "x-dev-user": devUser } : {}),
+        ...init?.headers
+      }
+    });
+  } catch (error) {
+    throw new KaiApiError({
+      code: "NETWORK_ERROR",
+      status: null,
+      userMessage: "Connection dropped. You can keep going offline.",
+      details: error
+    });
+  }
+
+  const text = await res.text().catch(() => "");
+  const parsed = parseResponseJson(text, res);
+  if (!res.ok) {
+    throw new KaiApiError({
+      code: codeForStatus(res.status),
+      status: res.status,
+      userMessage: messageForStatus(res.status),
+      details: parsed ?? text
+    });
+  }
+  if (res.status === 204 || text.trim() === "") return {} as T;
+  if (!parsed.ok) throw parsed.error;
+  return parsed.value as T;
 }
 
 function getDevUser() {
   if (typeof window === "undefined") return null;
   const host = window.location.hostname;
   const authRequired = import.meta.env.VITE_AUTH_REQUIRED === "1";
+  const devUserEnabled = import.meta.env.VITE_ALLOW_DEV_USER === "1";
   const canUseDevUser =
     host === "localhost" ||
     host === "127.0.0.1" ||
-    host.endsWith(".pages.dev") ||
-    (host === "kai.boostaisearch.ai" && !authRequired);
+    (devUserEnabled && host.endsWith(".pages.dev")) ||
+    (devUserEnabled && host === "kai.boostaisearch.ai" && !authRequired);
   if (!canUseDevUser) return null;
   return localStorage.getItem("kai.devUser") || "demo-teen";
+}
+
+function parseResponseJson(text: string, res: Response): { ok: true; value: unknown } | { ok: false; error: KaiApiError } {
+  if (res.status === 204 || text.trim() === "") return { ok: true, value: {} };
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return {
+      ok: false,
+      error: new KaiApiError({
+        code: "INVALID_RESPONSE",
+        status: res.status,
+        userMessage: "Kai got a weird response. Try again.",
+        details: text.slice(0, 300)
+      })
+    };
+  }
+  try {
+    return { ok: true, value: JSON.parse(text) };
+  } catch (error) {
+    return {
+      ok: false,
+      error: new KaiApiError({
+        code: "INVALID_RESPONSE",
+        status: res.status,
+        userMessage: "Kai got a weird response. Try again.",
+        details: error
+      })
+    };
+  }
+}
+
+function codeForStatus(status: number): ApiErrorCode {
+  if (status === 401) return "UNAUTHORIZED";
+  if (status === 403) return "FORBIDDEN";
+  if (status === 404) return "NOT_FOUND";
+  if (status === 422 || status === 400) return "VALIDATION_ERROR";
+  if (status === 429) return "RATE_LIMITED";
+  if (status >= 500) return "SERVER_ERROR";
+  return "INVALID_RESPONSE";
+}
+
+function messageForStatus(status: number) {
+  if (status === 401) return "Sign in again to keep going.";
+  if (status === 403) return "You don’t have access to that yet.";
+  if (status === 404) return "Kai couldn’t find that.";
+  if (status === 422 || status === 400) return "Something in that answer needs another look.";
+  if (status === 429) return "Kai needs a second. Try again in a moment.";
+  if (status >= 500) return "Kai hit a snag. Your progress is safe.";
+  return "Kai got a weird response. Try again.";
 }
 
 export const api = {
@@ -82,6 +193,17 @@ export const api = {
     request<{ goal: Goal }>("/api/goals", { method: "POST", body: JSON.stringify(goal) }),
   updateGoal: (goalId: string, body: Partial<Goal>) =>
     request<{ goal: Goal }>(`/api/goals/${goalId}`, { method: "PATCH", body: JSON.stringify(body) }),
+  getTodayLoop: () => request<{ loop: DailyLoop }>("/api/loop/today"),
+  completeLoopStep: (body: { stepId: LoopStepId; payload?: Record<string, unknown> }) =>
+    request<{ loop: DailyLoop }>("/api/loop/step", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  syncLoopEvents: (body: { events: ProgressEvent[] }) =>
+    request<{ loop: DailyLoop }>("/api/loop/sync", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
   getEngineEntries: (engine: EngineId) =>
     request<{ entries: EngineEntry[] }>(`/api/engines/${engine}/entries`),
   createEngineEntry: (engine: EngineId, body: { entryType: string; title?: string; payload?: unknown; completed?: boolean }) =>

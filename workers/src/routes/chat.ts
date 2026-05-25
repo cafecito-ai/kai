@@ -78,10 +78,39 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const modelMessages = (recentMessages ?? [])
     .filter((item): item is typeof item & { role: "user" | "assistant" } => item.role === "user" || item.role === "assistant")
     .map((item) => ({ role: item.role, content: item.content }));
-  const reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: message }]);
+  const rawReply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: message }]);
+  const reply = tightenControlLayerReply(rawReply, nextAction);
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { nextAction } });
   return Response.json({ conversationId: conversation, reply, nextAction });
 }
+
+function tightenControlLayerReply(reply: string, nextAction: KaiNextAction) {
+  const trimmed = reply.trim();
+  if (!trimmed || nextAction.id === "talk" || nextAction.id === "reset") return trimmed;
+
+  const genericPatterns = [
+    /\bWant to talk it out or pick a reset\?\s*/i,
+    /\bCan you tell me more about what'?s going on\?\s*/i,
+    /\bCan you tell me more about what is going on\?\s*/i
+  ];
+  if (!genericPatterns.some((pattern) => pattern.test(trimmed))) return trimmed;
+
+  const opener = controlLayerOpeners[nextAction.id];
+  const withoutGeneric = genericPatterns.reduce((current, pattern) => current.replace(pattern, ""), trimmed).trim();
+  const tail = withoutGeneric && !withoutGeneric.toLowerCase().startsWith(opener.toLowerCase()) ? ` ${withoutGeneric}` : "";
+  return `${opener}${tail}`.replace(/\s+/g, " ").slice(0, 900);
+}
+
+const controlLayerOpeners: Record<Exclude<KaiActionId, "talk" | "reset">, string> = {
+  food: "Fuel check is the move.",
+  sleep: "Sleep protection is the move.",
+  stretch: "Stretch reset is the move.",
+  scan: "Private body scan is the move.",
+  goal: "One goal move is the play.",
+  confidence: "Confidence proof is the move.",
+  social: "A calm social boundary is the move.",
+  screen: "Screen reset is the move."
+};
 
 function normalizeToolText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return "";

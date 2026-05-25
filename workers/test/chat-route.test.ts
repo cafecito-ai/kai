@@ -62,12 +62,37 @@ describe("chat routes", () => {
     expect(body.messages[0]?.content).toBe("Body scan saved. No body score, no comparison.");
     expect(body.nextAction).toMatchObject({ id: "scan", route: "/health?module=scan&action=scan" });
   });
+
+  it("tightens generic model fallback when the user clearly needs an action", async () => {
+    const aiReplies = [
+      '{"category":"none","severity":"low","explanation":"no safety signal"}',
+      "Want to talk it out or pick a reset? If you want to talk it out, I'm here to listen."
+    ];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/kai/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-dev-user": "chat-tester" },
+        body: JSON.stringify({ message: "The group chat made me feel left out" })
+      }),
+      makeEnv({
+        firstRows: [{}, {}, {}],
+        aiRun: async () => ({ response: aiReplies.shift() ?? "" })
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
+    expect(body.nextAction).toMatchObject({ id: "social", route: "/mental?module=checkin&action=social" });
+    expect(body.reply).toContain("A calm social boundary is the move.");
+    expect(body.reply).not.toContain("Want to talk it out or pick a reset?");
+  });
 });
 
 function makeEnv(opts: {
   statements?: Array<{ sql: string; values: unknown[] }>;
   firstRows?: Array<Record<string, unknown>>;
   allResults?: Array<Record<string, unknown>>;
+  aiRun?: (model: string, input: unknown) => Promise<{ response?: string; text?: string }>;
 } = {}) {
   const firstRows = [...(opts.firstRows ?? [])];
   return {
@@ -99,6 +124,10 @@ function makeEnv(opts: {
     SESSIONS_KV: {
       get: async () => null,
       put: async () => undefined
+    },
+    AI_TEXT_MODEL: "@cf/test",
+    AI: {
+      run: opts.aiRun ?? (async () => ({ response: "" }))
     }
   };
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { KaiContext } from "../src/lib/context";
 import { renderEnginePrompt } from "../src/lib/prompts/engines";
-import { renderKaiSystemPrompt } from "../src/lib/prompts/kai";
+import { renderGuideConceptsForAction, renderKaiSystemPrompt } from "../src/lib/prompts/kai";
 
 function baseContext(overrides: Partial<KaiContext> = {}): KaiContext {
   return {
@@ -97,6 +97,21 @@ describe("renderKaiSystemPrompt", () => {
     expect(result).toContain("If their intent is clear, do not stall with \"tell me more\"");
     expect(result).toContain("posture/alignment -> private body scan");
     expect(result).toContain("procrastinating/school -> goal move");
+  });
+
+  it("renders action-specific guide concepts for Kai's live reply", () => {
+    const confidence = renderGuideConceptsForAction("confidence");
+    expect(confidence).toContain("GUIDE CONCEPTS FOR THIS TURN");
+    expect(confidence).toContain("James Clear");
+    expect(confidence).toContain("confidence comes from repeated evidence");
+    expect(confidence).toContain("Viktor Frankl");
+    expect(confidence).toContain("Use at most one");
+    expect(confidence).toContain("do not name-drop");
+
+    const scan = renderGuideConceptsForAction("scan");
+    expect(scan).toContain("posture and alignment");
+    expect(scan).toContain("not body judgment");
+    expect(scan).toContain("avoid comparison and body shame");
   });
 
   it("marks stored profile and intake values as untrusted data, not instructions", () => {

@@ -1,4 +1,5 @@
 import type { KaiContext } from "../context";
+import type { KaiActionId } from "../kai-actions";
 
 /**
  * Static fallback prompt — used when a context isn't available (dev, tests,
@@ -134,4 +135,64 @@ CURRENT STATE
 Use the onboarding context to personalize your read: coaching style, stressors, baselines, first mission, and extra context. Use recent saved reps only when relevant — for example food, sleep, recovery, movement, scan, emotional pattern, social boundary, confidence, or goal context. Do not over-explain the profile back to them or pretend you know more than the saved facts show.
 
 Speak as ${kaiName} (the name they chose for you). Keep replies short — usually 2–4 short paragraphs at most.`;
+}
+
+const GUIDE_CONCEPTS: Record<KaiActionId, string[]> = {
+  talk: [
+    "Daniel Siegel: name what is happening so the feeling becomes understandable, not mysterious.",
+    "Carl Jung: emotions are signals to get curious about, not proof that something is wrong with the teen.",
+    "Stoic philosophy: separate what happened, what it means, and what is controllable next."
+  ],
+  reset: [
+    "Daniel Siegel: regulate first, then problem-solve; a dysregulated brain does not need a lecture.",
+    "Andrew Huberman: slow breathing and a simple environment shift can move the nervous system out of alarm.",
+    "Stoic philosophy: shrink the moment to the next controllable action."
+  ],
+  confidence: [
+    "James Clear: confidence comes from repeated evidence of the identity they are building, not fake hype.",
+    "Viktor Frankl: purpose and responsibility can make a hard moment feel worth facing.",
+    "Carl Jung: insecurity often points at a part of the self asking to be seen, not attacked."
+  ],
+  social: [
+    "Modern teen psychology: connection over shame; social pain is real and should not be mocked.",
+    "Daniel Siegel: help them separate the story in their head from what they actually know.",
+    "Stoic philosophy: boundaries are about the teen's next action, not controlling everyone else."
+  ],
+  screen: [
+    "Andrew Huberman: dopamine balance is about friction and replacement, not moral failure.",
+    "Modern teen psychology: comparison loops hit identity hard; reduce exposure before trying to out-think it.",
+    "James Clear: make the better option easier for the next hour, not forever."
+  ],
+  goal: [
+    "James Clear: systems beat motivation; make the next rep obvious and small.",
+    "Viktor Frankl: connect the action to a reason that matters to the teen.",
+    "Stoic philosophy: act on the next controllable move instead of the whole mountain."
+  ],
+  food: [
+    "Physical coaching: food is fuel and recovery support, not a score or body judgment.",
+    "Andrew Huberman: energy, training, sleep, and hydration interact; do not treat food in isolation.",
+    "Modern teen psychology: avoid shame and obsession; focus on feeling steady and supported."
+  ],
+  sleep: [
+    "Andrew Huberman: recovery, light, wind-down rhythm, and consistency matter more than willpower.",
+    "James Clear: build the sleep system around cues and friction, not motivation at midnight.",
+    "Physical coaching: tired teens need recovery protection before more grind."
+  ],
+  stretch: [
+    "Physical coaching: mobility protects performance; no forcing and no pain-as-proof.",
+    "Andrew Huberman: slow exhales and controlled movement help downshift stress.",
+    "Modern teen psychology: body work should feel supportive, not like punishment."
+  ],
+  scan: [
+    "Physical coaching: posture and alignment are private signals for safer training, not body judgment.",
+    "Modern teen psychology: avoid comparison and body shame; frame scans around comfort, confidence, and performance.",
+    "James Clear: use the scan to choose one small adjustment, not to obsess over everything."
+  ]
+};
+
+export function renderGuideConceptsForAction(actionId: KaiActionId): string {
+  const concepts = GUIDE_CONCEPTS[actionId] ?? GUIDE_CONCEPTS.talk;
+  return `GUIDE CONCEPTS FOR THIS TURN
+These are Kai-native coaching concepts, not article links. Use at most one if it naturally helps the reply. Do not dump the list, do not say "as a guide says," and do not name-drop unless the teen directly asks where the idea comes from.
+${concepts.map((concept) => `- ${concept}`).join("\n")}`;
 }

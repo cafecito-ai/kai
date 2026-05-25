@@ -5,7 +5,7 @@ import { createMessage, getConversationMessages, getLatestConversation, getOrCre
 import { sendSafetyAlert } from "../lib/email";
 import { inferKaiNextAction, KAI_NEXT_ACTIONS, type KaiActionId, type KaiNextAction } from "../lib/kai-actions";
 import { renderEnginePrompt } from "../lib/prompts/engines";
-import { renderKaiSystemPrompt } from "../lib/prompts/kai";
+import { renderGuideConceptsForAction, renderKaiSystemPrompt } from "../lib/prompts/kai";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
@@ -65,6 +65,7 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
   const nextAction = inferKaiNextAction(message);
+  const systemWithGuideContext = `${system}\n\n${renderGuideConceptsForAction(nextAction.id)}`;
   const safety = await classifySafetyFull(env, message);
   if (!safety.safe) {
     const event = await logSafetyEvent(env, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
@@ -78,7 +79,7 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const modelMessages = (recentMessages ?? [])
     .filter((item): item is typeof item & { role: "user" | "assistant" } => item.role === "user" || item.role === "assistant")
     .map((item) => ({ role: item.role, content: item.content }));
-  const rawReply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: message }]);
+  const rawReply = await callClaude(env, systemWithGuideContext, modelMessages.length ? modelMessages : [{ role: "user", content: message }]);
   const reply = tightenControlLayerReply(rawReply, nextAction);
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { nextAction } });
   return Response.json({ conversationId: conversation, reply, nextAction });

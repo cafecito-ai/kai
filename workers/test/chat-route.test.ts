@@ -111,6 +111,36 @@ describe("chat routes", () => {
     expect(body.reply).toContain("Screen reset is the move.");
     expect(body.reply).toContain("Open Screen reset.");
   });
+
+  it("adds action-specific guide concepts to the model prompt", async () => {
+    let capturedPrompt = "";
+    const aiReplies = [
+      '{"category":"none","severity":"low","explanation":"no safety signal"}',
+      "Confidence proof is the move. Pick one tiny rep that gives you evidence."
+    ];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/kai/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-dev-user": "chat-tester" },
+        body: JSON.stringify({ message: "I feel insecure and not good enough" })
+      }),
+      makeEnv({
+        firstRows: [{}, {}, {}],
+        aiRun: async (_model, input) => {
+          const prompt = typeof input === "object" && input && "prompt" in input ? String((input as { prompt?: unknown }).prompt ?? "") : "";
+          if (prompt.includes("GUIDE CONCEPTS FOR THIS TURN")) capturedPrompt = prompt;
+          return { response: aiReplies.shift() ?? "" };
+        }
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(capturedPrompt).toContain("GUIDE CONCEPTS FOR THIS TURN");
+    expect(capturedPrompt).toContain("confidence comes from repeated evidence");
+    expect(capturedPrompt).toContain("Viktor Frankl");
+    expect(capturedPrompt).toContain("Do not dump the list");
+    expect(capturedPrompt).not.toContain("posture and alignment are private signals");
+  });
 });
 
 function makeEnv(opts: {

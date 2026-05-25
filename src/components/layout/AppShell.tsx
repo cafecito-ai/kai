@@ -251,6 +251,8 @@ function isUnifiedAppRoute(pathname: string) {
     pathname === "/health" ||
     pathname === "/mental" ||
     pathname === "/goal" ||
+    pathname === "/goals" ||
+    pathname.startsWith("/goals/") ||
     pathname === "/loop" ||
     pathname === "/progress" ||
     pathname === "/groups" ||
@@ -263,6 +265,7 @@ function sectionLabel(pathname: string) {
   if (pathname === "/health" || pathname.startsWith("/engine/physical")) return "Health unit";
   if (pathname === "/mental" || pathname.startsWith("/engine/mental")) return "Mental unit";
   if (pathname === "/goal") return "Goal";
+  if (pathname === "/goals" || pathname.startsWith("/goals/")) return "Goals";
   if (pathname === "/loop") return "Loop";
   if (pathname === "/progress") return "Progress";
   if (pathname === "/groups") return "Circle";

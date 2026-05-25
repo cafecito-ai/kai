@@ -12,6 +12,8 @@ import { EngineMental } from "./pages/EngineMental";
 import { EnginePhysical } from "./pages/EnginePhysical";
 import { ForParents } from "./pages/ForParents";
 import { Goal } from "./pages/Goal";
+import { GoalDetail } from "./pages/GoalDetail";
+import { Goals } from "./pages/Goals";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Loop } from "./pages/Loop";
@@ -71,6 +73,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/health" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/mental" element={protectedOnboarding(<EngineMental />)} />
           <Route path="/goal" element={protectedOnboarding(<Goal />)} />
+          <Route path="/goals" element={protectedOnboarding(<Goals />)} />
+          <Route path="/goals/:goalId" element={protectedOnboarding(<GoalDetail />)} />
           <Route path="/loop" element={protectedOnboarding(<Loop />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={<Navigate to="/engine/mental" replace />} />

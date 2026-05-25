@@ -1,6 +1,7 @@
-import { Camera, Dumbbell, Eye, Lock, Moon, PlayCircle, ScanLine, ShieldCheck, Sun, Utensils, Wind } from "lucide-react";
+import { Camera, Dumbbell, Eye, Lock, Moon, PlayCircle, ScanLine, ShieldCheck, Utensils, Wind } from "lucide-react";
 import { useState } from "react";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
+import { SleepWidget, sleepEventValue } from "../components/physical/SleepWidget";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import {
@@ -209,7 +210,28 @@ export function EnginePhysical() {
       label: "Sleep",
       summary: "Tap to time it",
       icon: Moon,
-      content: <SleepPlaceholder saving={saving} completeEntry={completeEntry} />
+      content: (
+        <SleepWidget
+          onSleepStart={(session) =>
+            void completeEntry({
+              entryType: "sleep_start",
+              title: "Tapped Sleep",
+              payload: session,
+              eventType: "sleep_start",
+              eventValue: 6
+            })
+          }
+          onWokeUp={(result) =>
+            void completeEntry({
+              entryType: "sleep_end",
+              title: "Tapped Woke Up",
+              payload: result,
+              eventType: "sleep_log",
+              eventValue: sleepEventValue(result.durationMinutes)
+            })
+          }
+        />
+      )
     },
     {
       id: "scan",
@@ -345,59 +367,6 @@ function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
         </p>
       </div>
       {item.nutrition && <p className="mt-1 text-xs font-semibold text-paper/65">{formatFoodNutrition(item.nutrition)}</p>}
-    </div>
-  );
-}
-
-function ActionCard({ icon, title, copy, action, onClick }: { icon: React.ReactNode; title: string; copy: string; action: string; onClick: () => void }) {
-  return (
-    <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
-      <div className="mb-4 grid size-11 place-items-center rounded-full bg-lime text-sage">{icon}</div>
-      <h2 className="font-display text-2xl font-black tracking-normal">{title}</h2>
-      <p className="my-3 text-sm leading-6 text-muted">{copy}</p>
-      <Button variant="secondary" onClick={onClick}>{action}</Button>
-    </section>
-  );
-}
-
-/**
- * Placeholder for the Sleep card. v2 PR #2 replaces this with a real
- * widget-style flow that times the gap between "Sleep" and "Woke Up".
- * Today: two buttons that log distinct events. Math comes later.
- */
-function SleepPlaceholder({ saving, completeEntry }: { saving: string; completeEntry: (input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) => Promise<void> }) {
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <ActionCard
-        icon={<Moon />}
-        title="Going to sleep"
-        copy="Tap when you're heading to bed. Kai timestamps it and waits for the morning tap."
-        action={saving === "sleep_start" ? "Logging" : "Tap Sleep"}
-        onClick={() =>
-          void completeEntry({
-            entryType: "sleep_start",
-            title: "Tapped Sleep",
-            payload: { at: new Date().toISOString() },
-            eventType: "sleep_start",
-            eventValue: 6
-          })
-        }
-      />
-      <ActionCard
-        icon={<Sun />}
-        title="Just woke up"
-        copy="Tap when you're up. Kai computes hours of sleep without you doing math."
-        action={saving === "sleep_end" ? "Logging" : "Tap Woke Up"}
-        onClick={() =>
-          void completeEntry({
-            entryType: "sleep_end",
-            title: "Tapped Woke Up",
-            payload: { at: new Date().toISOString() },
-            eventType: "sleep_log",
-            eventValue: 18
-          })
-        }
-      />
     </div>
   );
 }

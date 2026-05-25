@@ -39,6 +39,8 @@ type DemoBuildSlice = {
 };
 
 type VibeId = "stressed" | "locked_in" | "tired" | "motivated" | "lonely" | "confident" | "chaotic" | "bored";
+type PersonalityId = "quiet" | "competitive" | "creative" | "social" | "independent" | "overthinker";
+type StressorId = "school" | "sport" | "friends" | "family" | "body" | "phone" | "future" | "motivation";
 type SignalId = "sleep" | "energy" | "confidence" | "movement" | "food" | "social";
 type MissionId = "mind" | "body" | "stretch" | "confidence" | "discipline" | "food" | "sleep" | "social" | "goals";
 
@@ -76,13 +78,33 @@ const vibeChoices: Array<{ id: VibeId; label: string; icon: typeof Brain }> = [
   { id: "bored", label: "Bored", icon: Target }
 ];
 
+const personalityChoices: Array<{ id: PersonalityId; label: string; copy: string }> = [
+  { id: "quiet", label: "Quiet", copy: "I open up slowly." },
+  { id: "competitive", label: "Competitive", copy: "I like a clear target." },
+  { id: "creative", label: "Creative", copy: "I need room to think." },
+  { id: "social", label: "Social", copy: "People affect my mood." },
+  { id: "independent", label: "Independent", copy: "Do not baby me." },
+  { id: "overthinker", label: "Overthinker", copy: "My brain runs loops." }
+];
+
+const stressorChoices: Array<{ id: StressorId; label: string }> = [
+  { id: "school", label: "School" },
+  { id: "sport", label: "Sport" },
+  { id: "friends", label: "Friends" },
+  { id: "family", label: "Family" },
+  { id: "body", label: "Body" },
+  { id: "phone", label: "Phone" },
+  { id: "future", label: "Future" },
+  { id: "motivation", label: "Motivation" }
+];
+
 const signalCopy: Record<SignalId, { label: string; low: string; mid: string; high: string; icon: typeof Brain }> = {
   sleep: { label: "Sleep", low: "Rough", mid: "Okay", high: "Solid", icon: Moon },
   energy: { label: "Energy", low: "Low", mid: "Fine", high: "High", icon: Zap },
   confidence: { label: "Confidence", low: "Quiet", mid: "Mixed", high: "Strong", icon: Sparkles },
-  movement: { label: "Movement", low: "None", mid: "Some", high: "Active", icon: Dumbbell },
-  food: { label: "Food/body", low: "Messy", mid: "Neutral", high: "Good", icon: Utensils },
-  social: { label: "Social", low: "Heavy", mid: "Normal", high: "Connected", icon: UsersRound }
+  movement: { label: "Movement baseline", low: "Barely", mid: "Some", high: "Active", icon: Dumbbell },
+  food: { label: "Food/body baseline", low: "Messy", mid: "Neutral", high: "Good", icon: Utensils },
+  social: { label: "Social pressure", low: "Heavy", mid: "Normal", high: "Connected", icon: UsersRound }
 };
 
 const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: EngineId; route: string }> = [
@@ -112,7 +134,9 @@ export function Onboarding() {
     return name && name.length > 0 ? name : "Kai";
   });
   const [kaiTone, setKaiTone] = useState<KaiTone>(() => (isValidKaiTone(demoBuild?.kaiTone) ? demoBuild.kaiTone : "balanced"));
+  const [personality, setPersonality] = useState<PersonalityId>("overthinker");
   const [vibes, setVibes] = useState<VibeId[]>(() => normalizeDemoVibes(demoBuild?.vibes));
+  const [stressors, setStressors] = useState<StressorId[]>([]);
   const [signals, setSignals] = useState<Record<SignalId, number>>({
     sleep: 1,
     energy: 1,
@@ -135,7 +159,7 @@ export function Onboarding() {
   const selectedTone = toneChoices.find((tone) => tone.id === kaiTone) ?? toneChoices[0];
   const primaryEngine: EngineId = selectedMission.engine;
   const progress = ((step + 1) / steps.length) * 100;
-  const calibration = useMemo(() => calibrationScore({ vibes, signals, context }), [vibes, signals, context]);
+  const calibration = useMemo(() => calibrationScore({ vibes, stressors, signals, context, personality }), [vibes, stressors, signals, context, personality]);
 
   function next() {
     setError("");
@@ -170,7 +194,7 @@ export function Onboarding() {
     }
 
     try {
-      const intake = await api.submitIntake(buildIntakeAnswers({ vibes, signals, mission, context, kaiTone }));
+      const intake = await api.submitIntake(buildIntakeAnswers({ vibes, stressors, signals, mission, context, kaiTone, personality }));
       const routedEngine = intake.suggestedEngine;
       const engine = selectedMission.engine || routedEngine || primaryEngine;
       await api.updateUser({
@@ -190,7 +214,7 @@ export function Onboarding() {
       markOnboardingComplete();
       hydrateKaiChat("kai", {
         conversationId: null,
-        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, mission: selectedMission, context }) }],
+        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, stressors, personality, mission: selectedMission, context }) }],
         nextAction: actionForMission(selectedMission.id)
       });
       navigate("/home");
@@ -201,7 +225,7 @@ export function Onboarding() {
       markOnboardingComplete();
       hydrateKaiChat("kai", {
         conversationId: null,
-        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, mission: selectedMission, context }) }],
+        messages: [{ id: "onboarding-welcome", role: "assistant", content: buildFirstKaiMessage({ kaiName: kaiName || "Kai", vibes, stressors, personality, mission: selectedMission, context }) }],
         nextAction: actionForMission(selectedMission.id)
       });
       navigate("/home");
@@ -246,12 +270,12 @@ export function Onboarding() {
             <div className="flex flex-1 flex-col justify-center py-6">
               {error && <p className="mb-4 rounded-[18px] border border-[#E35D4F]/25 bg-[#FFF0EC] p-3 text-sm font-black text-[#C4473E]">{error}</p>}
               {step === 0 && <AgeGate age={age} setAge={setAge} isMinor={isMinor} parentEmail={parentEmail} setParentEmail={setParentEmail} fromDemo={Boolean(demoBuild)} />}
-              {step === 1 && <KaiBuilder kaiName={kaiName} setKaiName={setKaiName} kaiTone={kaiTone} setKaiTone={setKaiTone} selectedTone={selectedTone} />}
+              {step === 1 && <KaiBuilder kaiName={kaiName} setKaiName={setKaiName} kaiTone={kaiTone} setKaiTone={setKaiTone} selectedTone={selectedTone} personality={personality} setPersonality={setPersonality} />}
               {step === 2 && <VibeScan selected={vibes} onToggle={toggleVibe} />}
               {step === 3 && <SignalScan signals={signals} setSignals={setSignals} />}
               {step === 4 && <MissionPick mission={mission} setMission={setMission} />}
-              {step === 5 && <ContextDrop context={context} setContext={setContext} />}
-              {step === 6 && <Reveal kaiName={kaiName || "Kai"} tone={selectedTone} mission={selectedMission} calibration={calibration} isMinor={isMinor} parentEmail={parentEmail} />}
+              {step === 5 && <ContextDrop context={context} setContext={setContext} stressors={stressors} setStressors={setStressors} />}
+              {step === 6 && <Reveal kaiName={kaiName || "Kai"} tone={selectedTone} mission={selectedMission} calibration={calibration} isMinor={isMinor} parentEmail={parentEmail} personality={personality} stressors={stressors} />}
             </div>
             <footer className="grid gap-2 sm:grid-cols-[auto_1fr]">
               {step > 0 && (
@@ -344,13 +368,17 @@ function KaiBuilder({
   setKaiName,
   kaiTone,
   setKaiTone,
-  selectedTone
+  selectedTone,
+  personality,
+  setPersonality
 }: {
   kaiName: string;
   setKaiName: (value: string) => void;
   kaiTone: KaiTone;
   setKaiTone: (value: KaiTone) => void;
   selectedTone: (typeof toneChoices)[number];
+  personality: PersonalityId;
+  setPersonality: (value: PersonalityId) => void;
 }) {
   return (
     <div>
@@ -375,6 +403,21 @@ function KaiBuilder({
         ))}
       </div>
       <p className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-[#5E5E64]">"{selectedTone.preview}"</p>
+      <div className="mt-5">
+        <p className="text-sm font-black">What should Kai assume about you at first?</p>
+        <p className="mt-1 text-sm font-semibold text-[#5E5E64]">This is just a starting read. Kai will adapt as you use it.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {personalityChoices.map((choice) => {
+            const active = personality === choice.id;
+            return (
+              <button key={choice.id} type="button" onClick={() => setPersonality(choice.id)} className={`focus-ring min-h-24 rounded-[22px] border p-3 text-left transition ${active ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-white text-[#111116]"}`}>
+                <span className="block text-sm font-black">{choice.label}</span>
+                <span className={`mt-1 block text-xs font-semibold leading-5 ${active ? "text-white/62" : "text-[#8A8A8F]"}`}>{choice.copy}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -459,12 +502,42 @@ function MissionPick({ mission, setMission }: { mission: MissionId; setMission: 
   );
 }
 
-function ContextDrop({ context, setContext }: { context: string; setContext: (value: string) => void }) {
+function ContextDrop({
+  context,
+  setContext,
+  stressors,
+  setStressors
+}: {
+  context: string;
+  setContext: (value: string) => void;
+  stressors: StressorId[];
+  setStressors: React.Dispatch<React.SetStateAction<StressorId[]>>;
+}) {
+  function toggleStressor(id: StressorId) {
+    setStressors((items) => {
+      if (items.includes(id)) return items.filter((item) => item !== id);
+      return [...items, id].slice(-4);
+    });
+  }
+
   return (
     <div>
       <Eyebrow>Real context</Eyebrow>
       <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What would make Kai understand you faster?</h2>
       <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-[#5E5E64]">Messy is fine. This is the stuff a form usually misses.</p>
+      <div className="mt-5">
+        <p className="text-sm font-black">What's been loud lately?</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {stressorChoices.map((choice) => {
+            const active = stressors.includes(choice.id);
+            return (
+              <button key={choice.id} type="button" onClick={() => toggleStressor(choice.id)} className={`focus-ring rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wider ${active ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-white text-[#5E5E64]"}`}>
+                {choice.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <textarea className="field mt-6 min-h-40 text-base" value={context} onChange={(event) => setContext(event.target.value)} placeholder="Example: school pressure has been loud, sleep is bad, and I want to feel more confident..." />
     </div>
   );
@@ -476,7 +549,9 @@ function Reveal({
   mission,
   calibration,
   isMinor,
-  parentEmail
+  parentEmail,
+  personality,
+  stressors
 }: {
   kaiName: string;
   tone: (typeof toneChoices)[number];
@@ -484,8 +559,11 @@ function Reveal({
   calibration: number;
   isMinor: boolean;
   parentEmail: string;
+  personality: PersonalityId;
+  stressors: StressorId[];
 }) {
   const MissionIcon = mission.icon;
+  const personalityLabel = personalityChoices.find((choice) => choice.id === personality)?.label ?? "Learning";
   return (
     <div>
       <Eyebrow>Kai learned enough</Eyebrow>
@@ -499,9 +577,12 @@ function Reveal({
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <RevealStat label="Voice" value={tone.label} />
-          <RevealStat label="Read" value={`${calibration}%`} />
+          <RevealStat label="Style" value={personalityLabel} />
           <RevealStat label="Focus" value={mission.engine === "physical" ? "Body" : "Mind"} />
         </div>
+        <p className="mt-4 rounded-[18px] bg-[#F4F1EB] p-3 text-sm font-semibold leading-6 text-[#5E5E64]">
+          Kai has a {calibration}% starting read{stressors.length ? `, with ${stressors.map((item) => item.replace(/_/g, " ")).join(", ")} marked as loud` : ""}. It will adjust as you use it.
+        </p>
       </div>
       <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-[#111116] p-5 text-white">
         <div className="flex items-start gap-3">
@@ -562,31 +643,48 @@ function inferDemoMission(build: DemoBuildSlice | null): MissionId {
   return "mind";
 }
 
-function calibrationScore({ vibes, signals, context }: { vibes: VibeId[]; signals: Record<SignalId, number>; context: string }) {
+function calibrationScore({
+  vibes,
+  stressors,
+  signals,
+  context,
+  personality
+}: {
+  vibes: VibeId[];
+  stressors: StressorId[];
+  signals: Record<SignalId, number>;
+  context: string;
+  personality: PersonalityId;
+}) {
   const answeredSignals = Object.values(signals).filter((value) => value !== 1).length;
-  return Math.min(96, 58 + vibes.length * 8 + answeredSignals * 3 + (context.trim().length > 12 ? 8 : 0));
+  return Math.min(96, 56 + vibes.length * 6 + stressors.length * 4 + answeredSignals * 3 + (personality ? 5 : 0) + (context.trim().length > 12 ? 8 : 0));
 }
 
 function buildIntakeAnswers({
   vibes,
+  stressors,
   signals,
   mission,
   context,
-  kaiTone
+  kaiTone,
+  personality
 }: {
   vibes: VibeId[];
+  stressors: StressorId[];
   signals: Record<SignalId, number>;
   mission: MissionId;
   context: string;
   kaiTone: KaiTone;
+  personality: PersonalityId;
 }) {
   const signalLines = (Object.keys(signals) as SignalId[]).map((id) => `${signalCopy[id].label}: ${["low", "medium", "high"][signals[id]]}`);
   const missionChoice = missionChoices.find((item) => item.id === mission) ?? missionChoices[0];
+  const personalityChoice = personalityChoices.find((item) => item.id === personality);
   return {
-    q1: `Current vibe: ${vibes.map((vibe) => vibe.replace(/_/g, " ")).join(", ") || "not sure yet"}. Signals: ${signalLines.join("; ")}.`,
+    q1: `Current vibe: ${vibes.map((vibe) => vibe.replace(/_/g, " ")).join(", ") || "not sure yet"}. Personality read: ${personalityChoice?.label ?? personality}. Signals: ${signalLines.join("; ")}.`,
     q2: `Wants help first with ${missionChoice.label}: ${missionChoice.copy}`,
     q3: `They chose ${kaiTone} tone because that is the support style they want from Kai.`,
-    q4: context.trim() || "No extra context yet. Learn from early app reps.",
+    q4: `Loud stressors: ${stressors.map((stressor) => stressor.replace(/_/g, " ")).join(", ") || "not specified"}. Extra context: ${context.trim() || "No extra context yet. Learn from early app reps."}`,
     q5: `First suggested route is ${missionChoice.route}.`,
     q6: `Use a supportive, honest mentor style. Avoid shame, clinical diagnosis, toxic productivity, and body comparison.`
   };
@@ -595,17 +693,23 @@ function buildIntakeAnswers({
 function buildFirstKaiMessage({
   kaiName,
   vibes,
+  stressors,
+  personality,
   mission,
   context
 }: {
   kaiName: string;
   vibes: VibeId[];
+  stressors: StressorId[];
+  personality: PersonalityId;
   mission: (typeof missionChoices)[number];
   context: string;
 }) {
   const vibeText = vibes.length ? vibes.map((vibe) => vibe.replace(/_/g, " ")).join(", ") : "not totally sure yet";
+  const stressText = stressors.length ? ` Loud stuff: ${stressors.map((stressor) => stressor.replace(/_/g, " ")).join(", ")}.` : "";
+  const personalityText = personalityChoices.find((choice) => choice.id === personality)?.copy ?? "I will learn your style.";
   const contextLine = context.trim() ? "I’ll remember the extra context you gave me." : "We’ll learn the rest as we go.";
-  return `${kaiName} here. I’ve got your starting point: ${vibeText}. First focus is ${mission.label.toLowerCase()}. ${contextLine} Tell me what’s actually going on today, and I’ll open the right move.`;
+  return `${kaiName} here. I’ve got your starting point: ${vibeText}. ${personalityText}${stressText} First focus is ${mission.label.toLowerCase()}. ${contextLine} Tell me what’s actually going on today, and I’ll open the right move.`;
 }
 
 function actionForMission(mission: MissionId) {

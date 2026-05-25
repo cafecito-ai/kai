@@ -97,7 +97,7 @@ function tightenControlLayerReply(reply: string, nextAction: KaiNextAction) {
     /\bCan you tell me more about what'?s making you feel that way\?\s*/i,
     /\bIs it something specific that'?s making you feel/i
   ];
-  if (!genericPatterns.some((pattern) => pattern.test(trimmed)) && hasActionSignal(trimmed, nextAction.id) && hasActionMove(trimmed, nextAction)) return trimmed;
+  if (!genericPatterns.some((pattern) => pattern.test(trimmed)) && hasActionSignal(trimmed, nextAction.id) && hasActionMove(trimmed)) return trimmed;
 
   return controlLayerFallbacks[nextAction.id];
 }
@@ -107,10 +107,9 @@ function hasActionSignal(reply: string, actionId: Exclude<KaiActionId, "talk" | 
   return actionSignals[actionId].some((signal) => lower.includes(signal));
 }
 
-function hasActionMove(reply: string, nextAction: KaiNextAction) {
+function hasActionMove(reply: string) {
   const lower = reply.toLowerCase();
   if (lower.includes("open ")) return true;
-  if (lower.includes(nextAction.label.toLowerCase())) return true;
   return false;
 }
 

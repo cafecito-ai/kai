@@ -137,6 +137,30 @@ describe("chat routes", () => {
     expect(body.reply).not.toContain("What's your current fuel situation");
   });
 
+  it("does not treat naming the action as enough to route the teen", async () => {
+    const aiReplies = [
+      '{"category":"none","severity":"low","explanation":"no safety signal"}',
+      "Body scan makes sense here. This is about comfort and confidence, not body judgment."
+    ];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/kai/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-dev-user": "chat-tester" },
+        body: JSON.stringify({ message: "Can Kai check my posture and alignment?" })
+      }),
+      makeEnv({
+        firstRows: [{}, {}, {}],
+        aiRun: async () => ({ response: aiReplies.shift() ?? "" })
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
+    expect(body.nextAction).toMatchObject({ id: "scan", route: "/health?module=scan&action=scan" });
+    expect(body.reply).toContain("Private body scan is the move.");
+    expect(body.reply).toContain("Open Body scan");
+  });
+
   it("adds action-specific guide concepts to the model prompt", async () => {
     let capturedPrompt = "";
     const aiReplies = [

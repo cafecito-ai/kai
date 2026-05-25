@@ -72,6 +72,135 @@ select {
   padding-bottom: calc(env(safe-area-inset-bottom) + 5.75rem);
 }
 
+/* ─── v2 design-pass primitives ──────────────────────────────────
+ * Patterns from Claude Design's handoff. Used by the Sleep widget
+ * (dark "asleep" state), the Physical Tracker (huge Fraunces timer
+ * + italic cue line), and the Food camera CTA. Tokens-only — no
+ * inline hex sneaks in via these classes. */
+
+/* Sleep "asleep" state: cosmic night radial. Applied to the
+ * full-screen container so it bleeds edge to edge under the
+ * widget content. Keep `position: relative` on the parent. */
+.sleep-bg {
+  background:
+    radial-gradient(ellipse at 50% 30%, #1F1644 0%, #0B0820 50%, #050310 100%);
+  color: var(--color-paper, #FAFAF7);
+}
+
+/* Big round tap target used on the Sleep widget (220px circle).
+ * `.tap-sleep` (dark with subtle plum glow ring) for the "going to
+ * bed" tap; `.tap-wake` (warm sunrise gradient) for the "tap to
+ * wake" tap in the asleep state. */
+.tap-button {
+  width: 220px;
+  height: 220px;
+  border-radius: 9999px;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 900;
+  font-size: 24px;
+  letter-spacing: -0.005em;
+  line-height: 1;
+}
+.tap-sleep {
+  background: #0A0A0A;
+  color: #FAFAF7;
+  box-shadow: 0 30px 70px rgba(91, 71, 240, 0.18), 0 0 0 8px rgba(91, 71, 240, 0.06);
+}
+.tap-wake {
+  background: linear-gradient(180deg, #FFE7C7 0%, #FFB078 100%);
+  color: #1A0B00;
+  box-shadow: 0 30px 70px rgba(255, 138, 87, 0.35);
+}
+.tap-button .label-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 6px;
+}
+.tap-wake .label-mono { color: rgba(26, 11, 0, 0.55); }
+
+/* Huge Fraunces countdown for the Physical Tracker in-session
+ * screen. Mono numerals (tabular-nums) so digits don't jitter as
+ * the timer ticks. */
+.timer-display {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700;
+  font-size: 84px;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: #0A0A0A;
+}
+.timer-display.light { color: #FAFAF7; }
+
+/* Italic Fraunces cue line — Kai's current voice cue during a
+ * tracker session. Reads at arm's length. */
+.cue-line {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  color: #0A0A0A;
+  text-align: center;
+  padding: 0 12px;
+}
+
+/* Dark "Snap a meal" CTA used by the Food card. Inky background
+ * with a purple radial glow in the corner + a mini shutter circle
+ * inside. The `.glow` child gets blurred via CSS. */
+.camera-cta {
+  position: relative;
+  border-radius: 28px;
+  padding: 28px;
+  background: #0A0A0A;
+  color: #FAFAF7;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 160px;
+  cursor: pointer;
+  border: 0;
+  appearance: none;
+  font: inherit;
+  text-align: left;
+}
+.camera-cta .glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(143, 92, 255, 0.45), transparent 60%);
+  right: -60px;
+  top: -60px;
+  filter: blur(10px);
+  pointer-events: none;
+}
+.camera-cta .shutter-mini {
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  border: 2.5px solid #FAFAF7;
+  background: transparent;
+  display: grid;
+  place-items: center;
+}
+.camera-cta .shutter-mini > div {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: #FAFAF7;
+}
+
 /* Demo: HomeCard reveal */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }

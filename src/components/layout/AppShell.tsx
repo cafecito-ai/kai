@@ -82,8 +82,8 @@ function AppContextBar() {
           </span>
           <div className="min-w-0">
             <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">{sectionLabel(pathname)}</p>
-            <p className="truncate text-sm font-black text-[#1A1A1F] sm:hidden">One loop.</p>
-            <p className="hidden truncate text-sm font-black text-[#1A1A1F] sm:block">Mental, Goals, and Physical stay in one loop.</p>
+            <p className="truncate text-sm font-black text-[#1A1A1F] sm:hidden">Always here.</p>
+            <p className="hidden truncate text-sm font-black text-[#1A1A1F] sm:block">Kai routes mind, body, and goals from one place.</p>
           </div>
         </div>
         <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 overflow-hidden text-xs font-black sm:grid sm:grid-cols-[1fr_1fr_auto]">

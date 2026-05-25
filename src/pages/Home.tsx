@@ -58,27 +58,28 @@ export function Home() {
 
   return (
     <AppPage className="max-w-5xl">
-      <section className="relative min-h-[calc(100svh-8.5rem)] overflow-hidden rounded-[36px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(250,250,247,0.76))] px-5 py-5 shadow-calm backdrop-blur-xl sm:px-7 sm:py-7 lg:min-h-[42rem]">
-        <div className="pointer-events-none absolute inset-x-7 top-7 h-36 rounded-full bg-[#4FC3F7]/10 blur-3xl" />
-        <div className="relative flex items-center justify-between gap-3 text-xs font-black uppercase tracking-wider text-muted">
+      <section className="relative min-h-[calc(100svh-8.5rem)] w-full max-w-full overflow-hidden rounded-[36px] border border-white/10 bg-[#070912] px-4 py-5 text-paper shadow-[0_28px_80px_rgba(7,9,18,0.24)] backdrop-blur-xl sm:px-7 sm:py-7 lg:min-h-[42rem]">
+        <div className="pointer-events-none absolute inset-x-6 top-6 h-40 rounded-full bg-[linear-gradient(90deg,rgba(70,216,255,0.18),rgba(157,255,203,0.08),rgba(255,138,107,0.12))] blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(180deg,rgba(7,9,18,0),rgba(70,216,255,0.08))]" />
+        <div className="relative flex flex-wrap items-center justify-center gap-2 text-xs font-black uppercase tracking-wider text-paper/50 sm:justify-between">
           <span>{dayLabel()}</span>
-          <span className="rounded-full border border-line bg-white/75 px-3 py-2 text-ink">{streak > 0 ? `${streak} day streak` : "Kai is here"}</span>
+          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-paper">{streak > 0 ? `${streak} day streak` : "Kai is here"}</span>
         </div>
 
-        <div className="relative mx-auto flex max-w-2xl flex-col items-center pt-10 text-center sm:pt-14">
-          <KaiAvatar size={118} pulse className="drop-shadow-[0_24px_50px_rgba(79,195,247,0.25)]" />
-          <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-white/80 px-3 py-2 text-xs font-black uppercase tracking-wider text-muted">
+        <div className="relative mx-auto flex w-full max-w-2xl min-w-0 flex-col items-center pt-9 text-center sm:pt-14">
+          <KaiAvatar size={112} pulse className="drop-shadow-[0_24px_50px_rgba(79,195,247,0.25)]" />
+          <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-paper/60">
             <Sparkles size={14} aria-hidden="true" />
             Your coach is awake
           </p>
-          <h1 className="mt-4 max-w-[12ch] font-display text-5xl font-black leading-[0.92] tracking-normal text-ink sm:text-7xl">
+          <h1 className="mt-4 max-w-[9.5ch] break-words font-sans text-[2.95rem] font-black leading-[0.9] tracking-normal text-paper sm:max-w-[12ch] sm:text-7xl">
             What needs Kai today?
           </h1>
-          <p className="mt-4 max-w-md text-base font-semibold leading-7 text-muted">
+          <p className="mt-4 max-w-[20rem] text-base font-semibold leading-7 text-paper/60 sm:max-w-md">
             Say the loud thing. Kai will turn it into one calm next move for your mind, body, or goal.
           </p>
 
-          <form onSubmit={submitMessage} className="mt-7 w-full rounded-[30px] border border-white/70 bg-white/90 p-2 shadow-soft">
+          <form onSubmit={submitMessage} className="mt-7 w-full max-w-[21.5rem] rounded-[30px] border border-white/14 bg-white/10 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:max-w-none">
             <label htmlFor="kai-home-message" className="sr-only">
               Tell Kai what is going on
             </label>
@@ -89,12 +90,12 @@ export function Home() {
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Tell Kai what is going on..."
                 rows={1}
-                className="max-h-32 min-h-12 flex-1 resize-none border-0 bg-transparent px-3 py-3 text-base font-semibold leading-6 text-ink outline-none placeholder:text-muted/70"
+                className="max-h-32 min-h-12 min-w-0 flex-1 resize-none border-0 bg-transparent px-3 py-3 text-base font-semibold leading-6 text-paper outline-none placeholder:text-paper/40"
               />
               <button
                 type="submit"
                 disabled={!draft.trim() || sending}
-                className="focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-ink text-paper transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                className="focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-paper text-ink transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
                 aria-label="Send message to Kai"
               >
                 <Send size={18} aria-hidden="true" />
@@ -102,9 +103,9 @@ export function Home() {
             </div>
           </form>
 
-          <div className="mt-4 w-full rounded-[24px] border border-line/80 bg-paper/75 p-4 text-left">
-            <p className="text-xs font-black uppercase tracking-wider text-muted">Kai</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-ink">{lastKaiMessage}</p>
+          <div className="mt-4 w-full max-w-[21.5rem] rounded-[24px] border border-white/10 bg-white/10 p-4 text-left backdrop-blur-xl sm:max-w-none">
+            <p className="text-xs font-black uppercase tracking-wider text-paper/50">Kai</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-paper/80">{lastKaiMessage}</p>
           </div>
         </div>
       </section>

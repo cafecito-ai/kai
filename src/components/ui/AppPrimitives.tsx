@@ -1,4 +1,4 @@
-import type { ElementType, ReactNode } from "react";
+import { useId, type ElementType, type ReactNode } from "react";
 
 type Tone = "body" | "goals" | "reset" | "care" | "danger" | "neutral";
 
@@ -47,31 +47,85 @@ export function KaiMark({ size = "md", label = "Kai" }: { size?: "sm" | "md" | "
 }
 
 export function KaiAvatar({ size = 44, label = "Kai", pulse = false, className = "" }: { size?: number; label?: string; pulse?: boolean; className?: string }) {
+  const id = useId().replace(/:/g, "");
+  const nebulaId = `kai-nebula-${id}`;
+  const auroraId = `kai-aurora-${id}`;
+  const rimId = `kai-rim-${id}`;
+  const glowId = `kai-glow-${id}`;
+  const hazeId = `kai-haze-${id}`;
+
   return (
     <span className={`relative inline-grid shrink-0 place-items-center ${className}`} style={{ width: size, height: size }} aria-label={label} role="img">
-      {pulse && <span className="absolute inset-0 rounded-full bg-[#4FC3F7]/20 motion-safe:animate-pulse" />}
-      <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="relative drop-shadow-[0_10px_22px_rgba(15,23,42,0.18)]">
+      {pulse && <span className="absolute inset-0 rounded-full bg-[#42D8FF]/18 blur-sm motion-safe:animate-pulse" />}
+      <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="relative drop-shadow-[0_16px_34px_rgba(12,20,38,0.28)]">
         <defs>
-          <radialGradient id="kai-face-glow" cx="33%" cy="24%" r="74%">
-            <stop offset="0%" stopColor="#E9FBFF" />
-            <stop offset="42%" stopColor="#4FC3F7" />
-            <stop offset="100%" stopColor="#2563EB" />
+          <radialGradient id={nebulaId} cx="35%" cy="24%" r="72%">
+            <stop offset="0%" stopColor="#F8FDFF" />
+            <stop offset="19%" stopColor="#7DEBFF" />
+            <stop offset="46%" stopColor="#4357FF" />
+            <stop offset="72%" stopColor="#17133F" />
+            <stop offset="100%" stopColor="#050712" />
           </radialGradient>
-          <linearGradient id="kai-ear-gradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#A3FF12" />
-            <stop offset="100%" stopColor="#22D3EE" />
+          <linearGradient id={auroraId} x1="11" y1="12" x2="53" y2="52" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#9DFFCB" />
+            <stop offset="38%" stopColor="#46D8FF" />
+            <stop offset="68%" stopColor="#8F5CFF" />
+            <stop offset="100%" stopColor="#FF8A6B" />
           </linearGradient>
+          <linearGradient id={rimId} x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+            <stop offset="38%" stopColor="#76F4FF" stopOpacity="0.72" />
+            <stop offset="72%" stopColor="#9C7CFF" stopOpacity="0.82" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.56" />
+          </linearGradient>
+          <filter id={glowId} x="-35%" y="-35%" width="170%" height="170%">
+            <feGaussianBlur stdDeviation="1.9" result="blur" />
+            <feColorMatrix
+              in="blur"
+              type="matrix"
+              values="0 0 0 0 0.25 0 0 0 0 0.74 0 0 0 0 1 0 0 0 0.72 0"
+            />
+            <feBlend in="SourceGraphic" />
+          </filter>
+          <filter id={hazeId} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="0.55" />
+          </filter>
         </defs>
-        <circle cx="32" cy="32" r="29" fill="#EAF8FF" opacity="0.72" />
-        <circle cx="32" cy="32" r="25" fill="url(#kai-face-glow)" stroke="rgba(255,255,255,0.72)" strokeWidth="2.4" />
-        <circle cx="23" cy="29" r="3.2" fill="#07111E" />
-        <circle cx="41" cy="29" r="3.2" fill="#07111E" />
-        <circle cx="22" cy="28" r="1" fill="#FFFFFF" />
-        <circle cx="40" cy="28" r="1" fill="#FFFFFF" />
-        <path d="M24 40c4.8 4.2 11.2 4.2 16 0" fill="none" stroke="#07111E" strokeLinecap="round" strokeWidth="3.2" />
-        <path d="M12 35c-4.2 2.2-6.5 5.1-6.8 8.8" fill="none" stroke="url(#kai-ear-gradient)" strokeLinecap="round" strokeWidth="4.4" />
-        <path d="M52 35c4.2 2.2 6.5 5.1 6.8 8.8" fill="none" stroke="url(#kai-ear-gradient)" strokeLinecap="round" strokeWidth="4.4" />
-        <path d="M20 18l2.1 4.1 4.4 1.1-4.1 2.1-1.1 4.4-2.1-4.1-4.4-1.1 4.1-2.1L20 18z" fill="#FFFFFF" opacity="0.9" />
+        <circle cx="32" cy="32" r="30" fill="#DDF8FF" opacity="0.34" />
+        <circle cx="32" cy="32" r="27" fill={`url(#${nebulaId})`} stroke={`url(#${rimId})`} strokeWidth="2.2" />
+        <path
+          d="M13.5 36.5c8.2-13.7 28.7-19.4 38.1-8.8 5.2 5.9-1.2 15.5-12.4 18.4-10.9 2.8-24.7-.8-22.8-8.2 1.4-5.3 12.5-7.7 24.1-5.1"
+          fill="none"
+          stroke={`url(#${auroraId})`}
+          strokeLinecap="round"
+          strokeWidth="4.7"
+          opacity="0.72"
+          filter={`url(#${glowId})`}
+        />
+        <path
+          d="M18.7 42.2c7.8 5.9 22.8 5.2 29.3-1.1 4.4-4.2 2.1-9.5-4.4-11.8-7.6-2.7-19.9-.4-24 4.3"
+          fill="none"
+          stroke="#F7FEFF"
+          strokeLinecap="round"
+          strokeWidth="1.45"
+          opacity="0.82"
+        />
+        <path
+          d="M22 22.4c7.4-5.7 19.2-4.4 25.1 2.2"
+          fill="none"
+          stroke="#9DFFCB"
+          strokeLinecap="round"
+          strokeWidth="2.2"
+          opacity="0.46"
+          filter={`url(#${hazeId})`}
+        />
+        <circle cx="23.4" cy="21.2" r="1.5" fill="#FFFFFF" opacity="0.94" />
+        <circle cx="43.6" cy="23.8" r="1.15" fill="#DDF8FF" opacity="0.9" />
+        <circle cx="47.4" cy="38.6" r="1.4" fill="#A6FFCF" opacity="0.85" />
+        <circle cx="18.4" cy="34.4" r="0.95" fill="#FFFFFF" opacity="0.9" />
+        <circle cx="31.6" cy="15.4" r="0.8" fill="#FFFFFF" opacity="0.74" />
+        <circle cx="34.6" cy="49.6" r="0.85" fill="#FFFFFF" opacity="0.72" />
+        <path d="M30.5 25.2l1.5 3 3.2.8-3 1.5-.8 3.2-1.5-3-3.2-.8 3-1.5.8-3.2z" fill="#FFFFFF" opacity="0.88" />
       </svg>
     </span>
   );

@@ -86,18 +86,20 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
 
   return (
     <section className={shellClass}>
-      <div className="flex items-center justify-between border-b border-line bg-warmPaper/70">
-        <div className="p-5 pb-4">
-          <p className="eyebrow">{mode === "mental" ? "mind" : "kai"}</p>
-          <h2 className="mt-1 font-display text-2xl font-black leading-tight tracking-normal sm:text-3xl">{title}</h2>
-          <p className="mt-2 max-w-sm text-sm font-semibold leading-5 text-muted">{helper}</p>
+      {!embedded && (
+        <div className="flex items-center justify-between border-b border-line bg-warmPaper/70">
+          <div className="p-5 pb-4">
+            <p className="eyebrow">{mode === "mental" ? "mind" : "kai"}</p>
+            <h2 className="mt-1 font-display text-2xl font-black leading-tight tracking-normal sm:text-3xl">{title}</h2>
+            <p className="mt-2 max-w-sm text-sm font-semibold leading-5 text-muted">{helper}</p>
+          </div>
+          <div className="mr-5">
+            <KaiMark size="md" />
+          </div>
         </div>
-        <div className="mr-5">
-          <KaiMark size="md" />
-        </div>
-      </div>
+      )}
       <div
-        className="max-h-[42vh] space-y-3 overflow-y-auto px-4 py-4 sm:max-h-[26rem]"
+        className={`${embedded ? "max-h-[52svh]" : "max-h-[42vh] sm:max-h-[26rem]"} space-y-3 overflow-y-auto px-4 py-4`}
         aria-live="polite"
         aria-relevant="additions"
         aria-label="Chat with Kai"
@@ -158,7 +160,7 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
         )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="flex gap-2 overflow-x-auto border-t border-line px-3 py-3" role="group" aria-label="Things Kai can help with">
+      <div className={`${embedded ? "flex flex-wrap" : "flex overflow-x-auto"} gap-2 border-t border-line px-3 py-3`} role="group" aria-label="Things Kai can help with">
         {suggestions.map((item) => {
           const Icon = item.icon;
           return (

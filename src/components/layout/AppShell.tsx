@@ -187,7 +187,7 @@ function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: 
 function GlobalChatSheet({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-[#111116]/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
-      <div className="mx-auto max-h-[calc(100svh-1.5rem)] w-full max-w-md overflow-y-auto rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
+      <div className="mx-auto max-h-[calc(100svh-1.5rem)] w-full max-w-md overflow-hidden rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <KaiAvatar size={34} label="KAI" pulse />
@@ -218,12 +218,12 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    <div className="fixed inset-x-0 bottom-20 z-40 px-5" role="dialog" aria-label="Quick actions">
-      <div className="mx-auto max-h-[calc(100svh-7rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
-        <div className="mb-2 flex items-center justify-between px-2">
+    <div className="fixed inset-x-0 bottom-28 z-40 px-4" role="dialog" aria-label="Quick actions">
+      <div className="mx-auto max-h-[calc(100svh-9rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
+        <div className="mb-2 flex items-center justify-between px-1">
           <div>
             <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai can open</p>
-            <p className="mt-1 text-sm font-black text-[#111116]">Pick the move, not the menu.</p>
+            <p className="mt-1 text-sm font-black text-[#111116]">What do you need right now?</p>
           </div>
           <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close quick actions">
             <X size={15} aria-hidden="true" />
@@ -257,8 +257,8 @@ function ActionGroup({ title, actions, onClose }: { title: string; actions: KaiA
   if (actions.length === 0) return null;
   return (
     <section className="mt-3">
-      <p className="px-2 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">{title}</p>
-      <div className="grid gap-2">
+      <p className="px-1 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">{title}</p>
+      <div className="grid grid-cols-2 gap-2">
         {actions.map((action) => (
           <KaiActionLink key={action.id} action={action} onClose={onClose} />
         ))}
@@ -281,27 +281,24 @@ function KaiActionLink({
   const Icon = action.icon;
   if (variant === "primary") {
     return (
-      <Link to={action.route} onClick={onClose} className="focus-ring mt-2 flex min-h-20 items-start gap-3 rounded-[22px] bg-[#111116] px-3 py-3 text-left text-white shadow-sm transition hover:-translate-y-0.5">
-        <span className={`mt-0.5 grid size-11 shrink-0 place-items-center rounded-full ${action.tone}`}>
+      <Link to={action.route} onClick={onClose} className="focus-ring mt-2 flex min-h-[4.75rem] items-start gap-3 rounded-[22px] bg-[#111116] px-3 py-3 text-left text-white shadow-sm transition hover:-translate-y-0.5">
+        <span className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-full ${action.tone}`}>
           <Icon size={19} aria-hidden="true" />
         </span>
         <span className="min-w-0">
           {eyebrow && <span className="block text-[10px] font-black uppercase tracking-wider text-white/40">{eyebrow}</span>}
-          <span className="mt-1 block text-base font-black leading-tight text-white">{action.label}</span>
+          <span className="mt-1 block text-[15px] font-black leading-tight text-white">{action.label}</span>
           <span className="mt-1 block text-sm font-semibold leading-5 text-white/64">{action.reason}</span>
         </span>
       </Link>
     );
   }
   return (
-    <Link to={action.route} onClick={onClose} className="focus-ring flex min-h-14 items-start gap-3 rounded-[18px] bg-[#FAFAF7] px-3 py-2.5 text-left text-sm font-black text-[#1A1A1F]">
-      <span className={`mt-0.5 grid size-9 shrink-0 place-items-center rounded-full ${action.tone}`}>
-        <Icon size={17} aria-hidden="true" />
+    <Link to={action.route} onClick={onClose} title={action.reason} className="focus-ring grid min-h-[4.35rem] min-w-0 content-between rounded-[18px] bg-[#FAFAF7] px-3 py-2.5 text-left text-sm font-black text-[#1A1A1F]">
+      <span className={`grid size-8 place-items-center rounded-full ${action.tone}`}>
+        <Icon size={16} aria-hidden="true" />
       </span>
-      <span className="min-w-0">
-        <span className="block leading-tight">{action.label}</span>
-        <span className="mt-1 block text-xs font-semibold leading-4 text-[#8A8A8F]">{action.reason}</span>
-      </span>
+      <span className="mt-1.5 block min-w-0 break-words text-[13px] leading-tight">{action.label}</span>
     </Link>
   );
 }

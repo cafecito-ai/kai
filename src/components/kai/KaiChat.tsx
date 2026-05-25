@@ -1,9 +1,8 @@
-import { ArrowUp, Brain, Send, Smartphone, Sparkles, Trophy, UsersRound } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Send, Sparkles } from "lucide-react";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
-import { kaiPromptChips } from "../../lib/kai-actions";
+import { buildKaiPromptChips } from "../../lib/kai-actions";
 import { getKaiMemoryItems } from "../../lib/kai-memory";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
@@ -31,17 +30,8 @@ export function KaiChat({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const memoryItems = getKaiMemoryItems(messages);
-  const suggestions: Array<{ label: string; prompt: string; icon: LucideIcon }> =
-    mode === "mental"
-      ? [
-          { label: "Talk", prompt: "I’m overthinking and need to calm it down", icon: Brain },
-          { label: "Confidence", prompt: "Help me stop being so hard on myself", icon: Trophy },
-          { label: "Social", prompt: "The group chat made me feel left out", icon: UsersRound },
-          { label: "Screen", prompt: "I keep doomscrolling and comparing myself", icon: Smartphone },
-          { label: "Control", prompt: "Help me focus on what I can control", icon: ArrowUp },
-          { label: "Reset", prompt: "I am overwhelmed and need to reset", icon: Sparkles }
-        ]
-      : kaiPromptChips().map((action) => ({ label: action.chip, prompt: action.example, icon: action.icon }));
+  const suggestions = buildKaiPromptChips({ messages, nextAction, mentalOnly: mode === "mental" });
+  const activeRead = suggestions.find((item) => item.source === "read");
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
@@ -164,22 +154,32 @@ export function KaiChat({
         )}
         <div ref={messagesEndRef} />
       </div>
-      <div className={`${embedded ? "flex flex-wrap" : "flex overflow-x-auto"} gap-2 border-t border-line px-3 py-3`} role="group" aria-label="Things Kai can help with">
+      <div className="border-t border-line px-3 py-3">
+        {activeRead && (
+          <p className="mb-2 px-1 text-[10px] font-black uppercase tracking-wider text-muted">
+            Current read: {activeRead.label}
+          </p>
+        )}
+        <div className={`${embedded ? "flex flex-wrap" : "flex overflow-x-auto"} gap-2`} role="group" aria-label="Things Kai can help with">
         {suggestions.map((item) => {
           const Icon = item.icon;
           return (
           <button
-            key={item.label}
+            key={`${item.source}-${item.label}`}
             type="button"
             onClick={() => sendSuggestion(item.prompt)}
             aria-label={`Ask Kai: ${item.prompt}`}
-            className="focus-ring inline-flex shrink-0 items-center gap-2 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-muted hover:bg-white hover:text-ink"
+            data-kai-action={item.actionId}
+            className={`focus-ring inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-black hover:bg-white ${
+              item.source === "read" ? "border-ink bg-ink text-paper hover:text-ink" : "border-line bg-paper text-muted hover:text-ink"
+            }`}
           >
             <Icon size={14} aria-hidden="true" />
             {item.label}
           </button>
         );
         })}
+        </div>
       </div>
       <form onSubmit={onSubmit} className="flex items-end gap-2 border-t border-line bg-paper p-3">
         <label htmlFor="kai-chat-input" className="sr-only">

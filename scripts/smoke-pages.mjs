@@ -292,7 +292,7 @@ async function assertOnboardingHandoff(client) {
 async function assertKaiChatHandoff(client) {
   await clickSelector(client, "button[aria-label='Talk to Kai']");
   await waitForClientCondition(client, `Boolean(document.querySelector("[role='dialog'][aria-label='Chat with KAI']"))`, "Kai chat sheet did not open");
-  await clickSelector(client, "button[aria-label='Ask Kai: I have practice later and do not know what to eat']");
+  await clickSelector(client, "button[data-kai-action='food']");
   await waitForClientCondition(
     client,
     `(() => {

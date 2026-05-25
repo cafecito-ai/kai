@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inferKaiAction, topKaiActions } from "./kai-actions";
+import { buildKaiPromptChips, inferKaiAction, KAI_ACTIONS, topKaiActions } from "./kai-actions";
 
 describe("kai action routing", () => {
   it("routes body fuel language to food logging", () => {
@@ -64,5 +64,46 @@ describe("kai action routing", () => {
 
   it("keeps the curated actions compact", () => {
     expect(topKaiActions().map((action) => action.id)).toEqual(["talk", "food", "goal", "reset", "scan", "sleep", "stretch", "confidence", "social", "screen"]);
+  });
+
+  it("promotes Kai's current read ahead of default prompt chips", () => {
+    const chips = buildKaiPromptChips({
+      nextAction: KAI_ACTIONS.scan,
+      messages: [
+        { role: "assistant", content: "Say it messy." },
+        { role: "user", content: "I need to eat before practice" }
+      ]
+    });
+
+    expect(chips[0]).toMatchObject({
+      actionId: "scan",
+      source: "read",
+      prompt: "Use what I just said and open Body scan."
+    });
+    expect(chips.map((chip) => chip.actionId)).toContain("food");
+  });
+
+  it("uses recent user messages to make chips feel contextual", () => {
+    const chips = buildKaiPromptChips({
+      messages: [
+        { role: "assistant", content: "Say it messy." },
+        { role: "user", content: "The group chat made me feel left out" },
+        { role: "user", content: "I keep doomscrolling after that" }
+      ]
+    });
+
+    expect(chips.slice(0, 2).map((chip) => chip.actionId)).toEqual(["screen", "social"]);
+    expect(chips[0].source).toBe("recent");
+  });
+
+  it("keeps mental mode focused on mind and goal actions", () => {
+    const chips = buildKaiPromptChips({
+      mentalOnly: true,
+      nextAction: KAI_ACTIONS.food,
+      messages: [{ role: "user", content: "I need food but also feel insecure" }]
+    });
+
+    expect(chips.map((chip) => chip.actionId)).not.toContain("food");
+    expect(chips[0].actionId).toBe("confidence");
   });
 });

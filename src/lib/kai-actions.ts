@@ -25,6 +25,21 @@ export type KaiAction = {
   icon: LucideIcon;
 };
 
+type PromptSource = "read" | "recent" | "default";
+
+export type KaiPromptChip = {
+  label: string;
+  prompt: string;
+  icon: LucideIcon;
+  actionId: KaiActionId;
+  source: PromptSource;
+};
+
+type PromptMessage = {
+  role: "user" | "assistant" | string;
+  content: string;
+};
+
 export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
   talk: {
     id: "talk",
@@ -219,4 +234,64 @@ export function topKaiActions(): KaiAction[] {
 
 export function kaiPromptChips(): KaiAction[] {
   return [KAI_ACTIONS.talk, KAI_ACTIONS.confidence, KAI_ACTIONS.social, KAI_ACTIONS.screen, KAI_ACTIONS.food, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch, KAI_ACTIONS.goal];
+}
+
+export function buildKaiPromptChips({
+  messages,
+  nextAction,
+  mentalOnly = false,
+  limit = 6
+}: {
+  messages: PromptMessage[];
+  nextAction?: KaiAction | null;
+  mentalOnly?: boolean;
+  limit?: number;
+}): KaiPromptChip[] {
+  const ordered: KaiPromptChip[] = [];
+  const used = new Set<KaiActionId>();
+
+  const add = (action: KaiAction, source: PromptSource) => {
+    if (used.has(action.id)) return;
+    used.add(action.id);
+    ordered.push({
+      actionId: action.id,
+      label: action.chip,
+      prompt: promptForAction(action, source),
+      icon: action.icon,
+      source
+    });
+  };
+
+  if (nextAction && (!mentalOnly || isMentalAction(nextAction.id))) add(nextAction, "read");
+
+  for (const message of recentUserMessages(messages, 4)) {
+    const action = inferKaiAction(message.content);
+    if (mentalOnly && !isMentalAction(action.id)) continue;
+    add(action, "recent");
+    if (ordered.length >= limit) return ordered.slice(0, limit);
+  }
+
+  const defaults = mentalOnly
+    ? [KAI_ACTIONS.talk, KAI_ACTIONS.confidence, KAI_ACTIONS.social, KAI_ACTIONS.screen, KAI_ACTIONS.reset, KAI_ACTIONS.goal]
+    : kaiPromptChips();
+  for (const action of defaults) {
+    add(action, "default");
+    if (ordered.length >= limit) break;
+  }
+
+  return ordered.slice(0, limit);
+}
+
+function recentUserMessages(messages: PromptMessage[], limit: number) {
+  return [...messages].reverse().filter((message) => message.role === "user" && message.content.trim()).slice(0, limit);
+}
+
+function isMentalAction(actionId: KaiActionId) {
+  return actionId === "talk" || actionId === "confidence" || actionId === "social" || actionId === "screen" || actionId === "reset" || actionId === "goal";
+}
+
+function promptForAction(action: KaiAction, source: PromptSource) {
+  if (source === "read") return `Use what I just said and open ${action.label}.`;
+  if (source === "recent") return `Keep going from my last message and help me with ${action.label}.`;
+  return action.example;
 }

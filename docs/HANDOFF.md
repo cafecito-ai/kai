@@ -5,11 +5,11 @@ Last updated: 2026-05-25
 ## Review Links
 
 - Stable staging: `https://staging.kai-epk.pages.dev`
-- Latest verified staging deploy: `https://642cd3a3.kai-epk.pages.dev`
+- Latest verified staging deploy: `https://f134171c.kai-epk.pages.dev`
 - Pull request: `https://github.com/cafecito-ai/kai/pull/84`
 - Source branch: `kai-first-home-companion`
 - Base branch: `engine-scoped-chat-persistence`
-- Current PR head: `327fb02`
+- Current PR head: `dee1eaa`
 - Production remains gated: `https://kai.boostaisearch.ai`
 
 ## Product State
@@ -88,7 +88,7 @@ The current staging build is ready for Lev/client handoff review. It is not read
 
 ## Verified Gates
 
-Most recent verified PR head: `327fb02`
+Most recent verified PR head: `dee1eaa`
 
 - `npm run typecheck`
 - `npm run worker:typecheck`

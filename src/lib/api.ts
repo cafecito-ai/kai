@@ -182,7 +182,12 @@ export const api = {
       body: JSON.stringify({ conversationId, message })
     }),
   getCurrentConversation: (engine: EngineId | "kai" = "kai") =>
-    request<{ conversationId: string | null; messages: ChatMessage[] }>(`/api/conversations/current?engine=${engine}`),
+    request<{ conversationId: string | null; messages: ChatMessage[]; nextAction?: { id: KaiActionId; label: string; route: string; reason: string } }>(`/api/conversations/current?engine=${engine}`),
+  rememberToolCompletion: (body: { conversationId?: string | null; title: string; summary: string; nextActionId?: KaiActionId }) =>
+    request<{ conversationId: string; message: ChatMessage; nextAction?: { id: KaiActionId; label: string; route: string; reason: string } }>("/api/conversations/tool-completion", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
   updateUser: (body: { kaiName?: string; kaiTone?: KaiTone; primaryEngine?: EngineId; age?: number; parentEmail?: string; onboardingCompleted?: boolean; designPreference?: string }) =>
     request("/api/user/me", { method: "PATCH", body: JSON.stringify(body) }),
   submitIntake: (responses: Record<string, string>) =>

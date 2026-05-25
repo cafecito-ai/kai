@@ -37,7 +37,7 @@ export async function getConversationMessages(db: D1Database, input: { conversat
   if (!conversation) return null;
 
   const { results } = await db
-    .prepare("SELECT id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT ?")
+    .prepare("SELECT id, role, content, metadata, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT ?")
     .bind(input.conversationId, input.limit ?? 50)
     .all();
 
@@ -45,6 +45,7 @@ export async function getConversationMessages(db: D1Database, input: { conversat
     id: String(row.id),
     role: row.role,
     content: String(row.content),
+    metadata: parseMetadata(row.metadata),
     createdAt: row.created_at
   }));
 }
@@ -66,4 +67,13 @@ export async function createMessage(
     .bind(input.conversationId)
     .run();
   return { id };
+}
+
+function parseMetadata(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return {};
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return {};
+  }
 }

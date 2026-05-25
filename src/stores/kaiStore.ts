@@ -15,7 +15,7 @@ type EngineChatState = {
 
 interface KaiState {
   chats: Record<ChatEngine, EngineChatState>;
-  hydrate: (engine: ChatEngine, input: { conversationId: string | null; messages: ChatMessage[]; nextAction?: KaiAction | null }) => void;
+  hydrate: (engine: ChatEngine, input: { conversationId: string | null; messages: ChatMessage[]; nextAction?: KaiAction | { id: KaiActionId } | null }) => void;
   rememberToolCompletion: (input: { title: string; summary: string; nextActionId?: KaiActionId }) => void;
   send: (message: string, engine?: ChatEngine) => Promise<void>;
 }
@@ -65,28 +65,41 @@ export const useKaiStore = create<KaiState>((set) => ({
           conversationId,
           hydrated: true,
           messages: normalizeMessages(messages),
-          nextAction: nextAction ?? inferLastAction(messages)
+          nextAction: resolveKaiAction(nextAction) ?? inferLastAction(messages)
         }
       }
     })),
-  rememberToolCompletion: ({ title, summary, nextActionId }) =>
+  rememberToolCompletion: ({ title, summary, nextActionId }) => {
+    const content = `${title} saved. ${summary}`;
+    const localMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content
+    };
     set((state) => ({
       chats: {
         ...state.chats,
         kai: {
           ...state.chats.kai,
-          messages: [
-            ...state.chats.kai.messages,
-            {
-              id: crypto.randomUUID(),
-              role: "assistant",
-              content: `${title} saved. ${summary}`
-            }
-          ],
+          messages: [...state.chats.kai.messages, localMessage],
           nextAction: nextActionId ? KAI_ACTIONS[nextActionId] : state.chats.kai.nextAction
         }
       }
-    })),
+    }));
+    const conversationId = useKaiStore.getState().chats.kai.conversationId;
+    void api.rememberToolCompletion({ conversationId, title, summary, nextActionId }).then((result) => {
+      set((state) => ({
+        chats: {
+          ...state.chats,
+          kai: {
+            ...state.chats.kai,
+            conversationId: result.conversationId,
+            nextAction: result.nextAction?.id ? KAI_ACTIONS[result.nextAction.id] ?? state.chats.kai.nextAction : state.chats.kai.nextAction
+          }
+        }
+      }));
+    }).catch(() => undefined);
+  },
   send: async (message, engine = "kai") => {
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: "user", content: message };
     set((state) => ({
@@ -160,4 +173,9 @@ export const useKaiStore = create<KaiState>((set) => ({
 function inferLastAction(messages: ChatMessage[]) {
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content;
   return lastUserMessage ? inferKaiAction(lastUserMessage) : null;
+}
+
+function resolveKaiAction(action?: KaiAction | { id: KaiActionId } | null) {
+  if (!action) return null;
+  return KAI_ACTIONS[action.id] ?? null;
 }

@@ -3,7 +3,7 @@ import { callClaude } from "../lib/claude";
 import { buildKaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
-import { inferKaiNextAction } from "../lib/kai-actions";
+import { inferKaiNextAction, KAI_NEXT_ACTIONS, type KaiActionId, type KaiNextAction } from "../lib/kai-actions";
 import { renderEnginePrompt } from "../lib/prompts/engines";
 import { renderKaiSystemPrompt } from "../lib/prompts/kai";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
@@ -20,7 +20,25 @@ chatRoutes.get("/conversations/current", async (c) => {
   const conversation = await getLatestConversation(c.env.DB, { userId: c.get("userId"), engine });
   if (!conversation) return c.json({ conversationId: null, messages: [] });
   const messages = await getConversationMessages(c.env.DB, { conversationId: conversation.id, userId: c.get("userId") });
-  return c.json({ conversationId: conversation.id, messages: messages ?? [] });
+  return c.json({ conversationId: conversation.id, messages: messages ?? [], nextAction: inferLatestNextAction(messages ?? []) });
+});
+
+chatRoutes.post("/conversations/tool-completion", async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json<{ conversationId?: string | null; title?: string; summary?: string; nextActionId?: string }>();
+  const title = normalizeToolText(body.title, 70);
+  const summary = normalizeToolText(body.summary, 320);
+  if (!title || !summary) return c.json({ error: "Tool completion needs a title and summary" }, 400);
+  const nextAction = body.nextActionId && isKaiActionId(body.nextActionId) ? KAI_NEXT_ACTIONS[body.nextActionId] : inferKaiNextAction(`${title} ${summary}`);
+  const conversationId = await getOrCreateConversation(c.env.DB, { id: body.conversationId ?? undefined, userId, engine: "kai" });
+  const content = `${title} saved. ${summary}`;
+  const message = await createMessage(c.env.DB, {
+    conversationId,
+    role: "assistant",
+    content,
+    metadata: { source: "tool_completion", nextAction }
+  });
+  return c.json({ conversationId, message: { ...message, role: "assistant", content }, nextAction });
 });
 
 chatRoutes.post("/kai/chat", async (c) => {
@@ -59,4 +77,30 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const reply = await callClaude(env, system, [{ role: "user", content: message }]);
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { nextAction } });
   return Response.json({ conversationId: conversation, reply, nextAction });
+}
+
+function normalizeToolText(value: unknown, maxLength: number) {
+  if (typeof value !== "string") return "";
+  return value.trim().replace(/\s+/g, " ").slice(0, maxLength);
+}
+
+function isKaiActionId(value: string): value is KaiActionId {
+  return value in KAI_NEXT_ACTIONS;
+}
+
+function inferLatestNextAction(messages: Array<{ role: unknown; content: string; metadata?: unknown }>): KaiNextAction | null {
+  for (const message of [...messages].reverse()) {
+    const action = readMetadataNextAction(message.metadata);
+    if (action) return action;
+    if (message.role === "user") return inferKaiNextAction(message.content);
+  }
+  return null;
+}
+
+function readMetadataNextAction(metadata: unknown): KaiNextAction | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  const nextAction = (metadata as { nextAction?: unknown }).nextAction;
+  if (!nextAction || typeof nextAction !== "object" || Array.isArray(nextAction)) return null;
+  const id = (nextAction as { id?: unknown }).id;
+  return typeof id === "string" && isKaiActionId(id) ? KAI_NEXT_ACTIONS[id] : null;
 }

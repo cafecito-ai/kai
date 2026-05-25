@@ -757,6 +757,8 @@ function actionForMission(mission: MissionId) {
   if (mission === "food") return KAI_ACTIONS.food;
   if (mission === "sleep") return KAI_ACTIONS.sleep;
   if (mission === "goals" || mission === "discipline") return KAI_ACTIONS.goal;
-  if (mission === "mind" || mission === "confidence" || mission === "social") return KAI_ACTIONS.talk;
+  if (mission === "confidence") return KAI_ACTIONS.confidence;
+  if (mission === "social") return KAI_ACTIONS.social;
+  if (mission === "mind") return KAI_ACTIONS.talk;
   return KAI_ACTIONS.talk;
 }

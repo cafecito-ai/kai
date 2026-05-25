@@ -20,8 +20,8 @@ describe("inferKaiNextAction", () => {
 
   it("routes stuck productivity messages to reset before pressure", () => {
     expect(inferKaiNextAction("I am overwhelmed and stuck doomscrolling")).toMatchObject({
-      id: "reset",
-      route: "/loop?action=reset"
+      id: "screen",
+      route: "/mental?module=reset&action=screen"
     });
   });
 
@@ -36,6 +36,21 @@ describe("inferKaiNextAction", () => {
     expect(inferKaiNextAction("I keep procrastinating on school and need a habit")).toMatchObject({
       id: "goal",
       route: "/goal?action=goal"
+    });
+  });
+
+  it("routes confidence, social pressure, and screen time to focused mental actions", () => {
+    expect(inferKaiNextAction("I feel insecure and not good enough")).toMatchObject({
+      id: "confidence",
+      route: "/mental?module=purpose&action=confidence"
+    });
+    expect(inferKaiNextAction("The group chat made me feel left out")).toMatchObject({
+      id: "social",
+      route: "/mental?module=checkin&action=social"
+    });
+    expect(inferKaiNextAction("I keep scrolling on TikTok and comparing myself")).toMatchObject({
+      id: "screen",
+      route: "/mental?module=reset&action=screen"
     });
   });
 });

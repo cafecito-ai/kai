@@ -1,4 +1,4 @@
-import { ArrowUp, Brain, Lightbulb, Send, Sparkles } from "lucide-react";
+import { ArrowUp, Brain, Send, Smartphone, Sparkles, Trophy, UsersRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -26,10 +26,12 @@ export function KaiChat({ embedded = false, mode = "default" }: { embedded?: boo
   const suggestions: Array<{ label: string; prompt: string; icon: LucideIcon }> =
     mode === "mental"
       ? [
-          { label: "Overthinking", prompt: "I’m overthinking and need to calm it down", icon: Brain },
-          { label: "Confidence", prompt: "Help me stop being so hard on myself", icon: Sparkles },
+          { label: "Talk", prompt: "I’m overthinking and need to calm it down", icon: Brain },
+          { label: "Confidence", prompt: "Help me stop being so hard on myself", icon: Trophy },
+          { label: "Social", prompt: "The group chat made me feel left out", icon: UsersRound },
+          { label: "Screen", prompt: "I keep doomscrolling and comparing myself", icon: Smartphone },
           { label: "Control", prompt: "Help me focus on what I can control", icon: ArrowUp },
-          { label: "Tiny habit", prompt: "Help me make this a tiny habit", icon: Lightbulb }
+          { label: "Reset", prompt: "I am overwhelmed and need to reset", icon: Sparkles }
         ]
       : kaiPromptChips().map((action) => ({ label: action.chip, prompt: action.example, icon: action.icon }));
 

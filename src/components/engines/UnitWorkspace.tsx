@@ -166,8 +166,11 @@ function getKaiOpenedCopy(tone: "mental" | "physical", moduleId: string, action:
     if (moduleId === "history") return "This is the private body memory Kai uses: food, scan, movement, sleep, and recovery reps.";
   }
   if (tone === "mental") {
+    if (moduleId === "checkin" && action === "social") return "Say the messy social version first. Kai will help you separate the story, the signal, and one calm boundary.";
     if (moduleId === "checkin") return action === "talk" ? "Start with the real sentence. Kai will help turn it into one move." : "Name the pattern first. You do not have to solve the whole mood at once.";
+    if (moduleId === "reset" && action === "screen") return "This is an attention reset, not a punishment. Pick one tiny phone boundary and one replacement for the next hour.";
     if (moduleId === "reset") return "Settle your body first. Then decide what deserves your attention.";
+    if (moduleId === "purpose" && action === "confidence") return "Confidence is built from evidence. Save one small proof rep Kai can carry forward.";
     if (moduleId === "purpose") return "Make the goal visible and small enough to start today.";
     if (moduleId === "guides") return "Kai can pull these ideas into chat when a feeling, habit, confidence issue, or relationship pattern needs language.";
     if (moduleId === "history") return "This is the private mind memory Kai uses: check-ins, resets, reframes, letters, and goal reps.";

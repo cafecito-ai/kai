@@ -37,11 +37,32 @@ describe("kai action routing", () => {
     });
   });
 
+  it("routes insecurity and self-worth language to confidence", () => {
+    expect(inferKaiAction("I feel insecure and not good enough")).toMatchObject({
+      id: "confidence",
+      route: "/mental?module=purpose&action=confidence"
+    });
+  });
+
+  it("routes social pressure to the social check-in", () => {
+    expect(inferKaiAction("The group chat drama made me feel left out")).toMatchObject({
+      id: "social",
+      route: "/mental?module=checkin&action=social"
+    });
+  });
+
+  it("routes doomscrolling and comparison to screen reset", () => {
+    expect(inferKaiAction("I keep doomscrolling and comparing myself on my phone")).toMatchObject({
+      id: "screen",
+      route: "/mental?module=reset&action=screen"
+    });
+  });
+
   it("falls back to talking it out", () => {
     expect(inferKaiAction("I do not know what is going on").id).toBe("talk");
   });
 
   it("keeps the curated actions compact", () => {
-    expect(topKaiActions().map((action) => action.id)).toEqual(["talk", "food", "goal", "reset", "scan", "sleep", "stretch"]);
+    expect(topKaiActions().map((action) => action.id)).toEqual(["talk", "food", "goal", "reset", "scan", "sleep", "stretch", "confidence", "social", "screen"]);
   });
 });

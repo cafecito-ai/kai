@@ -73,6 +73,9 @@ const cases = [
     actionables: ["input", "textarea", "button"]
   }),
   route("/mental", ["Talk it through", "Feelings", "confidence", "never clinical"], { actionables: ["button[role='tab']"] }),
+  route("/mental?module=checkin&action=social", ["Talk it through", "Say the messy social version first", "Feeling patterns"], { actionables: ["button[role='tab']", "button"] }),
+  route("/mental?module=reset&action=screen", ["Talk it through", "attention reset", "Social boundaries"], { actionables: ["button[role='tab']", "button"] }),
+  route("/mental?module=purpose&action=confidence", ["Talk it through", "Confidence is built from evidence", "Make one next move visible"], { actionables: ["button[role='tab']", "button"] }),
   route("/mental?module=guides", ["Talk it through", "Daniel Siegel", "James Clear", ...guideNames], {
     actionables: ["textarea", "button"]
   }),

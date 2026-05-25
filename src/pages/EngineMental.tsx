@@ -309,7 +309,9 @@ function labelForEntry(entryType: string) {
 
 function mentalNextAction(eventType: string) {
   if (eventType.includes("goal") || eventType.includes("strengths") || eventType.includes("next_step")) return "goal" as const;
-  if (eventType.includes("breathing") || eventType.includes("meditation") || eventType.includes("social")) return "reset" as const;
+  if (eventType.includes("social")) return "screen" as const;
+  if (eventType.includes("letter")) return "confidence" as const;
+  if (eventType.includes("breathing") || eventType.includes("meditation")) return "reset" as const;
   return "talk" as const;
 }
 

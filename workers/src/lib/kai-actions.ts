@@ -5,7 +5,10 @@ export type KaiActionId =
   | "stretch"
   | "scan"
   | "goal"
-  | "reset";
+  | "reset"
+  | "confidence"
+  | "social"
+  | "screen";
 
 export type KaiNextAction = {
   id: KaiActionId;
@@ -56,6 +59,24 @@ export const KAI_NEXT_ACTIONS: Record<KaiActionId, KaiNextAction> = {
     label: "Reset today",
     route: "/loop?action=reset",
     reason: "Start smaller. Get steady, then choose."
+  },
+  confidence: {
+    id: "confidence",
+    label: "Build confidence",
+    route: "/mental?module=purpose&action=confidence",
+    reason: "Confidence needs proof you can repeat, not fake hype."
+  },
+  social: {
+    id: "social",
+    label: "Handle social pressure",
+    route: "/mental?module=checkin&action=social",
+    reason: "This needs context, a boundary, and one calm move."
+  },
+  screen: {
+    id: "screen",
+    label: "Reset screen time",
+    route: "/mental?module=reset&action=screen",
+    reason: "Protect attention for the next hour without guilt."
   }
 };
 
@@ -86,14 +107,29 @@ const keywordRules: Array<{ action: KaiActionId; words: string[]; weight?: numbe
     words: ["goal", "lock in", "discipline", "habit", "study", "school", "homework", "practice", "workout", "business", "create", "finish", "procrastinate", "procrastinating", "assignment", "test"]
   },
   {
+    action: "confidence",
+    weight: 5,
+    words: ["confidence", "confident", "insecure", "self worth", "self-worth", "self respect", "self-respect", "believe in myself", "hard on myself", "shrinking myself", "not good enough"]
+  },
+  {
+    action: "social",
+    weight: 5,
+    words: ["lonely", "loneliness", "friends", "friend", "social", "relationship", "left out", "rejected", "drama", "group chat", "people judging", "awkward", "fitting in"]
+  },
+  {
+    action: "screen",
+    weight: 5,
+    words: ["doomscroll", "doomscrolling", "scroll", "scrolling", "screen time", "phone", "tiktok", "instagram", "snapchat", "social media", "comparing myself", "comparison", "notifications"]
+  },
+  {
     action: "talk",
     weight: 3,
-    words: ["anxious", "anxiety", "stress", "stressed", "sad", "angry", "lonely", "friends", "friend", "confidence", "insecure", "overthinking", "overthink", "behind", "feel", "social", "relationship"]
+    words: ["anxious", "anxiety", "stress", "stressed", "sad", "angry", "overthinking", "overthink", "behind", "feel"]
   },
   {
     action: "reset",
     weight: 3,
-    words: ["reset", "spiral", "doomscroll", "scroll", "screen time", "phone", "overwhelmed", "can't", "cant", "stuck", "panic", "breathe"]
+    words: ["reset", "spiral", "overwhelmed", "can't", "cant", "stuck", "panic", "breathe"]
   }
 ];
 

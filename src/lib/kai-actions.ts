@@ -1,4 +1,4 @@
-import { Brain, Camera, HeartPulse, Moon, Sparkles, Target, Utensils, type LucideIcon } from "lucide-react";
+import { Brain, Camera, HeartPulse, Moon, Sparkles, Smartphone, Target, Trophy, UsersRound, Utensils, type LucideIcon } from "lucide-react";
 
 export type KaiActionId =
   | "talk"
@@ -7,7 +7,10 @@ export type KaiActionId =
   | "stretch"
   | "scan"
   | "goal"
-  | "reset";
+  | "reset"
+  | "confidence"
+  | "social"
+  | "screen";
 
 export type KaiAction = {
   id: KaiActionId;
@@ -106,6 +109,42 @@ export const KAI_ACTIONS: Record<KaiActionId, KaiAction> = {
     example: "I am overwhelmed and need to reset the day",
     tone: "bg-[#EEEAFF] text-[#7B6EF6]",
     icon: Sparkles
+  },
+  confidence: {
+    id: "confidence",
+    label: "Build confidence",
+    shortLabel: "Confidence",
+    route: "/mental?module=purpose&action=confidence",
+    reason: "Confidence needs proof you can repeat, not fake hype.",
+    prompt: "Help me feel more confident",
+    chip: "Confidence",
+    example: "I feel insecure and keep shrinking myself",
+    tone: "bg-[#FFF7D6] text-[#9A6A00]",
+    icon: Trophy
+  },
+  social: {
+    id: "social",
+    label: "Handle social pressure",
+    shortLabel: "Social",
+    route: "/mental?module=checkin&action=social",
+    reason: "This needs context, a boundary, and one calm move.",
+    prompt: "Help me handle social pressure",
+    chip: "Social",
+    example: "The group chat made me feel left out",
+    tone: "bg-[#E4F7F4] text-[#218A7D]",
+    icon: UsersRound
+  },
+  screen: {
+    id: "screen",
+    label: "Reset screen time",
+    shortLabel: "Screen",
+    route: "/mental?module=reset&action=screen",
+    reason: "Protect attention for the next hour without guilt.",
+    prompt: "Help me stop scrolling",
+    chip: "Screen",
+    example: "I keep doomscrolling and comparing myself",
+    tone: "bg-[#EEEAFF] text-[#7B6EF6]",
+    icon: Smartphone
   }
 };
 
@@ -136,14 +175,29 @@ const keywordRules: Array<{ action: KaiActionId; words: string[]; weight?: numbe
     words: ["goal", "lock in", "discipline", "habit", "study", "school", "homework", "practice", "workout", "business", "create", "finish", "procrastinate", "procrastinating", "assignment", "test"]
   },
   {
+    action: "confidence",
+    weight: 5,
+    words: ["confidence", "confident", "insecure", "self worth", "self-worth", "self respect", "self-respect", "believe in myself", "hard on myself", "shrinking myself", "not good enough"]
+  },
+  {
+    action: "social",
+    weight: 5,
+    words: ["lonely", "loneliness", "friends", "friend", "social", "relationship", "left out", "rejected", "drama", "group chat", "people judging", "awkward", "fitting in"]
+  },
+  {
+    action: "screen",
+    weight: 5,
+    words: ["doomscroll", "doomscrolling", "scroll", "scrolling", "screen time", "phone", "tiktok", "instagram", "snapchat", "social media", "comparing myself", "comparison", "notifications"]
+  },
+  {
     action: "talk",
     weight: 3,
-    words: ["anxious", "anxiety", "stress", "stressed", "sad", "angry", "lonely", "friends", "friend", "confidence", "insecure", "overthinking", "overthink", "behind", "feel", "social", "relationship"]
+    words: ["anxious", "anxiety", "stress", "stressed", "sad", "angry", "overthinking", "overthink", "behind", "feel"]
   },
   {
     action: "reset",
     weight: 3,
-    words: ["reset", "spiral", "doomscroll", "scroll", "screen time", "phone", "overwhelmed", "can't", "cant", "stuck", "panic", "breathe"]
+    words: ["reset", "spiral", "overwhelmed", "can't", "cant", "stuck", "panic", "breathe"]
   }
 ];
 
@@ -160,9 +214,9 @@ export function inferKaiAction(text: string): KaiAction {
 }
 
 export function topKaiActions(): KaiAction[] {
-  return [KAI_ACTIONS.talk, KAI_ACTIONS.food, KAI_ACTIONS.goal, KAI_ACTIONS.reset, KAI_ACTIONS.scan, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch];
+  return [KAI_ACTIONS.talk, KAI_ACTIONS.food, KAI_ACTIONS.goal, KAI_ACTIONS.reset, KAI_ACTIONS.scan, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch, KAI_ACTIONS.confidence, KAI_ACTIONS.social, KAI_ACTIONS.screen];
 }
 
 export function kaiPromptChips(): KaiAction[] {
-  return [KAI_ACTIONS.talk, KAI_ACTIONS.food, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch, KAI_ACTIONS.goal, KAI_ACTIONS.reset];
+  return [KAI_ACTIONS.talk, KAI_ACTIONS.confidence, KAI_ACTIONS.social, KAI_ACTIONS.screen, KAI_ACTIONS.food, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch, KAI_ACTIONS.goal];
 }

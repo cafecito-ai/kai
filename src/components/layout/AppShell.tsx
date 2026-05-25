@@ -210,7 +210,7 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
   const nextAction = useKaiStore((state) => state.chats.kai.nextAction);
   const recommended = nextAction ?? KAI_ACTIONS.talk;
   const bodyActions = [KAI_ACTIONS.food, KAI_ACTIONS.sleep, KAI_ACTIONS.stretch, KAI_ACTIONS.scan];
-  const mindActions = [KAI_ACTIONS.talk, KAI_ACTIONS.reset, KAI_ACTIONS.goal];
+  const mindActions = [KAI_ACTIONS.talk, KAI_ACTIONS.confidence, KAI_ACTIONS.social, KAI_ACTIONS.screen, KAI_ACTIONS.reset, KAI_ACTIONS.goal];
   const accountActions = [
     { id: "wins", route: "/progress", label: "Your wins", icon: Activity, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },
     { id: "you", route: "/profile", label: "You", icon: UserRound, tone: "bg-[#F4F1EB] text-[#1A1A1F]" },

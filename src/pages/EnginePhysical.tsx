@@ -1,6 +1,7 @@
-import { Camera, Dumbbell, Eye, Lock, Moon, PlayCircle, ScanLine, ShieldCheck, Utensils, Wind } from "lucide-react";
+import { Camera, Dumbbell, Eye, Lock, Moon, ScanLine, ShieldCheck, Utensils, Wind } from "lucide-react";
 import { useState } from "react";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
+import { PhysicalTrackerWidget, trackerEventValue } from "../components/physical/PhysicalTrackerWidget";
 import { SleepWidget, sleepEventValue } from "../components/physical/SleepWidget";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -276,7 +277,19 @@ export function EnginePhysical() {
       label: "Tracker",
       summary: "Phone down, work out",
       icon: Dumbbell,
-      content: <TrackerPlaceholder saving={saving} completeEntry={completeEntry} />
+      content: (
+        <PhysicalTrackerWidget
+          onComplete={(result) =>
+            void completeEntry({
+              entryType: "tracker_session",
+              title: result.title,
+              payload: result,
+              eventType: result.completed ? "workout" : "workout_partial",
+              eventValue: trackerEventValue(result.durationSeconds, result.elapsedSeconds)
+            })
+          }
+        />
+      )
     }
   ];
 
@@ -367,54 +380,6 @@ function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
         </p>
       </div>
       {item.nutrition && <p className="mt-1 text-xs font-semibold text-paper/65">{formatFoodNutrition(item.nutrition)}</p>}
-    </div>
-  );
-}
-
-/**
- * Placeholder for the Physical Tracker card. v2 PR #3 replaces this
- * with pre-recorded guided sessions (phone-down, Kai narrates, timer
- * counts down). Today: a single "log a session" button so the card
- * isn't blank during the build.
- */
-function TrackerPlaceholder({ saving, completeEntry }: { saving: string; completeEntry: (input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) => Promise<void> }) {
-  return (
-    <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-      <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm sm:p-6">
-        <div className="mb-4 grid size-12 place-items-center rounded-full bg-bodyWash text-body">
-          <PlayCircle />
-        </div>
-        <p className="eyebrow">physical tracker</p>
-        <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Phone down. Kai narrates the rep.</h2>
-        <p className="mt-3 text-sm font-semibold leading-6 text-muted">
-          Place your phone where it can see you. Kai talks you through stretches and form cues. Real guided sessions arrive in the next ship — for now the timer + event log is here.
-        </p>
-        <Button
-          className="mt-4"
-          variant="secondary"
-          disabled={saving === "tracker_session"}
-          onClick={() =>
-            void completeEntry({
-              entryType: "tracker_session",
-              title: "Tracker session",
-              payload: { mode: "placeholder", duration: 600 },
-              eventType: "workout",
-              eventValue: 30
-            })
-          }
-        >
-          {saving === "tracker_session" ? "Logging" : "Log a 10-minute session"}
-        </Button>
-      </section>
-      <section className="rounded-[24px] border border-line bg-warmPaper p-5 shadow-sm sm:p-6">
-        <p className="eyebrow">coming next</p>
-        <h3 className="mt-2 font-display text-2xl font-black tracking-normal">What this card becomes.</h3>
-        <ul className="mt-3 space-y-3 text-sm font-semibold leading-6 text-muted">
-          <li>Pre-recorded sessions — stretch, mobility, form drills.</li>
-          <li>Kai voice cues during the session, no live form correction in v1.</li>
-          <li>Phone-down timer with big visible countdown and a single end-tap.</li>
-        </ul>
-      </section>
     </div>
   );
 }

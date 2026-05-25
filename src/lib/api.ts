@@ -3,6 +3,7 @@ import type {
   DailyLoop,
   DemoFeedbackChoices,
   DemoFoodPhotoResult,
+  BodyScanResult,
   EngineEntry,
   EngineId,
   FoodPhotoResult,
@@ -221,6 +222,14 @@ export const api = {
     body.set("photo", file);
     if (note?.trim()) body.set("note", note.trim());
     return request<FoodPhotoResult>("/api/food-photo-upload", {
+      method: "POST",
+      body
+    });
+  },
+  uploadBodyScan: (file?: File | null) => {
+    const body = new FormData();
+    if (file) body.set("photo", file);
+    return request<BodyScanResult>("/api/body-scan-upload", {
       method: "POST",
       body
     });

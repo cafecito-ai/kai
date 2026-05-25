@@ -143,6 +143,21 @@ export interface FoodPhotoResult {
   notes: string;
 }
 
+export interface BodyScanResult {
+  entry: EngineEntry;
+  scan: {
+    id: string;
+    r2Key?: string;
+    analysis: {
+      status: "private_beta";
+      focus: string[];
+      guardrails: string[];
+      summary: string;
+      nextMoves: string[];
+    };
+  };
+}
+
 /**
  * Response shape for the anonymous /api/demo-food-photo endpoint.
  * Same as FoodPhotoResult but without `mealId` — the demo endpoint

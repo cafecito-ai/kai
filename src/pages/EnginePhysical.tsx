@@ -29,6 +29,7 @@ export function EnginePhysical() {
   const [mealContext, setMealContext] = useState<MealContextId>("school_lunch");
   const [bodyScanPhoto, setBodyScanPhoto] = useState<File | null>(null);
   const [bodyScanSaved, setBodyScanSaved] = useState(false);
+  const [bodyScanMessage, setBodyScanMessage] = useState("");
 
   useEffect(() => {
     void api.getEngineEntries("physical").then((result) => setEntries(result.entries)).catch(() => undefined);
@@ -162,20 +163,34 @@ export function EnginePhysical() {
 
   async function saveBodyScanPreview() {
     setBodyScanSaved(false);
-    await completeEntry({
-      entryType: "body_scan_preview",
-      title: "Private body scan preview",
-      payload: {
-        hasPhoto: Boolean(bodyScanPhoto),
-        mode: "private_preview",
-        focus: ["posture", "mobility", "readiness", "confidence"],
-        guardrails: ["no body score", "no comparison", "no attractiveness rating", "teen-safe framing"]
-      },
-      eventType: "body_scan_preview",
-      eventValue: 18
-    });
-    setBodyScanSaved(true);
-    setBodyScanPhoto(null);
+    setBodyScanMessage("");
+    setSaving("body_scan");
+    try {
+      const result = await api.uploadBodyScan(bodyScanPhoto);
+      setEntries((items) => [result.entry, ...items].slice(0, 8));
+      addEvent({ engine: "physical", eventType: "body_scan", eventValue: 22, payload: { scanId: result.scan.id, hasPhoto: Boolean(result.scan.r2Key) } });
+      setBodyScanMessage(result.scan.analysis.summary);
+      setBodyScanSaved(true);
+      setBodyScanPhoto(null);
+    } catch {
+      await completeEntry({
+        entryType: "body_scan_preview",
+        title: "Private body scan preview",
+        payload: {
+          hasPhoto: Boolean(bodyScanPhoto),
+          mode: "private_preview",
+          focus: ["posture", "mobility", "readiness", "confidence"],
+          guardrails: ["no body score", "no comparison", "no attractiveness rating", "teen-safe framing"]
+        },
+        eventType: "body_scan_preview",
+        eventValue: 18
+      });
+      setBodyScanMessage("Connection dropped. Kai saved a local scan preview and can sync the private scan later.");
+      setBodyScanSaved(true);
+      setBodyScanPhoto(null);
+    } finally {
+      setSaving("");
+    }
   }
 
   const modules: UnitModule[] = [
@@ -274,8 +289,10 @@ export function EnginePhysical() {
               <BodyScanPrinciple icon={<Eye />} title="Pattern view" copy="Progress means posture, comfort, recovery, and confidence over time." />
               <BodyScanPrinciple icon={<Wind />} title="Next move" copy="Suggestions stay practical: stretch, breathe, recover, hydrate, adjust form." />
             </div>
-            {bodyScanSaved && <p className="mt-4 rounded-kai border border-sage/25 bg-bodyWash p-3 text-sm font-black text-body">Scan preview saved as a private Body rep.</p>}
-            <Button className="mt-4" variant="secondary" onClick={() => void saveBodyScanPreview()}>Save private scan preview</Button>
+            {bodyScanSaved && <p className="mt-4 rounded-kai border border-sage/25 bg-bodyWash p-3 text-sm font-black text-body">{bodyScanMessage || "Private body scan saved."}</p>}
+            <Button className="mt-4" variant="secondary" disabled={saving === "body_scan"} onClick={() => void saveBodyScanPreview()}>
+              {saving === "body_scan" ? "Saving scan" : "Save private body scan"}
+            </Button>
           </section>
           <section className="rounded-[24px] border border-line bg-warmPaper p-5 shadow-sm sm:p-6">
             <p className="eyebrow">what Kai can say</p>

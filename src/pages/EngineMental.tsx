@@ -285,8 +285,8 @@ export function EngineMental() {
 
   return (
     <UnitWorkspace
-      title="Mental agent"
-      label="Mind unit"
+      title="Mental"
+      label="Mind"
       tone="mental"
       intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical."
       modules={modules}

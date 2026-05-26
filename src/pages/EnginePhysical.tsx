@@ -382,8 +382,8 @@ export function EnginePhysical() {
 
   return (
     <UnitWorkspace
-      title="Physical agent"
-      label="Health unit"
+      title="Physical"
+      label="Body"
       tone="physical"
       intro="Four cards: food camera, body scan, sleep, and guided movement. Useful, pattern-aware, never obsessive."
       modules={modules}

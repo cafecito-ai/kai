@@ -219,22 +219,35 @@ export function EngineMental() {
                 ))}
               </div>
             </section>
-            <div className="grid gap-4">
-              <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-                <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset"><Target /></div>
-                <p className="eyebrow">next step planner</p>
-                <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Shrink it until it can start.</h2>
-                <textarea className="field mt-4 min-h-24" value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
-                <Button className="mt-4" variant="secondary" onClick={() => void completeReset({ eventType: "next_step_planned", title: "Next step", payload: { nextStep }, eventValue: 22 })}>Save next step</Button>
-              </section>
-              <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-                <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset"><RefreshCw /></div>
-                <p className="eyebrow">reframe</p>
-                <h2 className="mt-2 font-display text-2xl font-black tracking-normal">A goal can change without becoming a failure.</h2>
-                <textarea className="field mt-4 min-h-24" value={reframe} onChange={(event) => setReframe(event.target.value)} />
-                <Button className="mt-4" variant="secondary" onClick={() => void completeReset({ eventType: "goal_reframed", title: "Goal reframe", payload: { reframe }, eventValue: 24 })}>Save reframe</Button>
-              </section>
-            </div>
+            <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
+              <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset"><Target /></div>
+              <p className="eyebrow">next step + reframe</p>
+              <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Shrink it. Or reframe it.</h2>
+              <p className="mt-3 text-sm font-semibold leading-6 text-muted">A small next step makes work startable. A reframe makes a stuck goal honest again. Either is enough.</p>
+              <label className="mt-4 block">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Next step</span>
+                <textarea className="field mt-2 min-h-24" value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
+              </label>
+              <label className="mt-4 block">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted inline-flex items-center gap-1">Reframe <RefreshCw size={12} aria-hidden="true" /></span>
+                <textarea className="field mt-2 min-h-24" value={reframe} onChange={(event) => setReframe(event.target.value)} />
+              </label>
+              <Button
+                className="mt-4"
+                variant="secondary"
+                disabled={!nextStep.trim() && !reframe.trim()}
+                onClick={() => {
+                  if (nextStep.trim()) {
+                    void completeReset({ eventType: "next_step_planned", title: "Next step", payload: { nextStep }, eventValue: 22 });
+                  }
+                  if (reframe.trim()) {
+                    void completeReset({ eventType: "goal_reframed", title: "Goal reframe", payload: { reframe }, eventValue: 24 });
+                  }
+                }}
+              >
+                Save
+              </Button>
+            </section>
           </div>
           <StrengthsDiscoveryCard onComplete={(summary) => void completeReset({ eventType: "strengths_discovery", title: "Strengths summary", payload: { summary, source: "mental_agent" }, eventValue: 60 })} />
         </div>

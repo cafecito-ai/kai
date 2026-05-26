@@ -140,9 +140,11 @@ export function parsePostureResponse(raw: string): PostureResult | null {
     if (!isSafePostureCue(cue)) continue;
     cues.push(cue);
   }
-  // Cap at 3 — anything beyond reads as a checklist, which the teen
-  // shouldn't experience after a body scan.
-  if (cues.length > 3) cues.length = 3;
+  // Cap at 2 — Claude Design v2 spec: "Result always recommends 1-2
+  // mobility cues, never more. Each cue is doable in under 90 seconds."
+  // Anything beyond reads as a checklist, which the teen shouldn't
+  // experience after a body scan.
+  if (cues.length > 2) cues.length = 2;
 
   return { cues, confidence: confidence as PostureConfidence, notes };
 }

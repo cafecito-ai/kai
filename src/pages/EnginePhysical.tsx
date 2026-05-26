@@ -351,7 +351,7 @@ export function EnginePhysical() {
               disabled={!bodyScanPhoto || saving === "body_scan"}
               onClick={() => void runBodyScan()}
             >
-              {saving === "body_scan" ? "Analyzing" : "Analyze posture"}
+              {saving === "body_scan" ? "Reading posture" : bodyScanPhoto ? "I'm set · Capture" : "Pick a photo first"}
             </Button>
           </section>
 
@@ -489,31 +489,46 @@ function BodyScanResultCard({ result }: { result: BodyScanResult }) {
   const confidenceLabel =
     result.confidence === "high" ? "clear read" : result.confidence === "medium" ? "partial read" : "low confidence";
   return (
-    <div className="rounded-calm border border-line bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="eyebrow text-muted">posture read</p>
-          <h3 className="mt-1 font-display text-2xl font-black tracking-normal text-ink">
-            {result.cues.length > 0 ? "A few things Kai noticed." : "Saved. Try again with full body visible."}
-          </h3>
+    <div className="grid gap-3">
+      {/* Mock spec: reassurance Note PERSISTS on the result state too,
+        * not only above the setup. Different copy here to acknowledge
+        * the analysis just ran without scoring anything. Without this
+        * the user is left with a result card that could feel
+        * judgmental despite the prompt + filter guardrails. */}
+      <Note tone="sage" icon={<ShieldCheck size={15} aria-hidden="true" />}>
+        Posture only. We didn't measure anything else.
+      </Note>
+
+      <div className="rounded-calm border border-line bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="eyebrow text-muted">Kai noticed</p>
+            <h3 className="mt-1 font-display text-2xl font-black tracking-normal text-ink">
+              {result.cues.length > 0
+                ? result.cues.map((cue) => cue.focus).join(". ") + "."
+                : "Saved. Try again with full body visible."}
+            </h3>
+          </div>
+          <span className="rounded-full border border-line bg-warmPaper px-3 py-1 text-xs font-black uppercase tracking-wider text-inkSoft">
+            {confidenceLabel}
+          </span>
         </div>
-        <span className="rounded-full border border-line bg-warmPaper px-3 py-1 text-xs font-black uppercase tracking-wider text-inkSoft">
-          {confidenceLabel}
-        </span>
+        {result.notes && (
+          <p className="mt-3 text-sm font-semibold leading-6 text-muted">{result.notes}</p>
+        )}
+        {result.cues.length > 0 && (
+          <>
+            <p className="eyebrow mt-4 text-muted">Try today</p>
+            <ol className="mt-2 grid gap-2">
+              {result.cues.map((cue, idx) => (
+                <li key={`${cue.focus}-${idx}`} className="rounded-kai border border-line bg-warmPaper p-3">
+                  <p className="text-sm font-semibold leading-snug text-ink">{cue.suggestion}</p>
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
       </div>
-      {result.notes && (
-        <p className="mt-3 text-sm font-semibold leading-6 text-muted">{result.notes}</p>
-      )}
-      {result.cues.length > 0 && (
-        <ol className="mt-4 grid gap-2">
-          {result.cues.map((cue, idx) => (
-            <li key={`${cue.focus}-${idx}`} className="rounded-kai border border-line bg-warmPaper p-3">
-              <p className="text-xs font-black uppercase tracking-wider text-inkSoft">{cue.focus}</p>
-              <p className="mt-1 text-sm font-semibold leading-snug text-ink">{cue.suggestion}</p>
-            </li>
-          ))}
-        </ol>
-      )}
     </div>
   );
 }

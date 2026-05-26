@@ -15,7 +15,59 @@ interface CallOptions {
 // callers can override per request (Haiku for fast routing, Opus for the
 // Mental engine).
 const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
+// Cheap, fast model for one-shot tasks: safety classifier, intake summary,
+// engine routing, strengths summary, post-action cues.
+export const HAIKU_MODEL = "claude-haiku-4-5";
+// Highest-care model — reserved for Mental engine conversation turns (spec §6).
+export const OPUS_MODEL = "claude-opus-4-7";
 const FALLBACK_LINE = "I'm here. What's the smallest next step?";
+
+/**
+ * One-shot Anthropic call. Returns the trimmed text on success, or `null`
+ * if the key isn't configured or the API call fails. Callers use the
+ * `null` return to fall back to Cloudflare Workers AI (Llama) so a single
+ * Anthropic outage doesn't take chat or onboarding offline.
+ *
+ * This is the path every non-conversational AI helper (safety classifier,
+ * intake summary, engine routing, strengths summary, event cues) routes
+ * through so the ANTHROPIC_API_KEY secret is honored everywhere, not just
+ * on the main chat turn.
+ */
+export async function callAnthropic(
+  env: Env,
+  system: string,
+  userPrompt: string,
+  options: CallOptions = {}
+): Promise<string | null> {
+  if (!env.ANTHROPIC_API_KEY) return null;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        model: options.model || env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL,
+        system,
+        messages: [{ role: "user", content: userPrompt }],
+        max_tokens: options.maxTokens ?? 400,
+        temperature: options.temperature ?? 0.5
+      })
+    });
+    if (!res.ok) {
+      console.warn("anthropic non-2xx", res.status);
+      return null;
+    }
+    const data = (await res.json()) as { content?: { type: string; text?: string }[] };
+    const text = data.content?.find((block) => block.type === "text")?.text?.trim();
+    return text && text.length > 0 ? text : null;
+  } catch (err) {
+    console.warn("anthropic call failed", err);
+    return null;
+  }
+}
 
 export async function callClaude(
   env: Env,

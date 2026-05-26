@@ -1,4 +1,5 @@
 import type { Env, SafetyClassification } from "../types";
+import { HAIKU_MODEL, callAnthropic } from "./claude";
 import { ensureUser } from "./db";
 import { sendParentSafetyAlert } from "./email";
 import { extractJsonObject } from "./json-utils";
@@ -125,6 +126,20 @@ const SAFETY_CLASSIFIER_PROMPT = [
  * fast path first and only invoke this on misses.
  */
 export async function classifySafetyLLM(env: Env, text: string): Promise<SafetyClassification | null> {
+  // Spec §6/§7: Anthropic Haiku is the canonical safety classifier.
+  // When ANTHROPIC_API_KEY is set we prefer it; if Anthropic fails or the
+  // key isn't configured we fall back to Workers AI (Llama) so the
+  // pre-screen still runs.
+  const anthropic = await callAnthropic(env, SAFETY_CLASSIFIER_PROMPT, `Message: ${text}\n\nJSON:`, {
+    model: HAIKU_MODEL,
+    maxTokens: 200,
+    temperature: 0.1
+  });
+  if (anthropic) {
+    const parsed = parseSafetyResponse(anthropic);
+    if (parsed) return parsed;
+  }
+
   if (!env.AI) return null;
   const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
   try {

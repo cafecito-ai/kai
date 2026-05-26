@@ -47,7 +47,38 @@ wrangler secret put CLERK_SECRET_KEY --config wrangler.worker.toml
 wrangler secret put CLERK_JWT_KEY --config wrangler.worker.toml   # the JWKS public key, optional but recommended for offline verify
 wrangler secret put SAFETY_ALERT_EMAIL --config wrangler.worker.toml   # ops recipient for critical safety alerts
 wrangler secret put USDA_API_KEY --config wrangler.worker.toml   # Phase 2 dependency — skip if not used yet
+wrangler secret put ANTHROPIC_API_KEY --config wrangler.worker.toml   # Claude API key — see "Anthropic key" below
 ```
+
+### Anthropic key
+
+`ANTHROPIC_API_KEY` is the single most load-bearing AI secret. When it's
+set, every text-generation path on the Worker — `/api/kai/chat`,
+`/api/engines/:engineId/chat`, `/api/demo-kai`, the safety classifier,
+the onboarding intake summary, the engine routing decision, the strengths
+summary, and the per-event cue line — calls Anthropic Claude per spec §6
+(Haiku for fast/cheap paths, Sonnet for Physical chat, Opus for Mental
+chat). When it's unset, every one of those paths silently degrades to
+Cloudflare Workers AI (Llama) at lower quality.
+
+Set it on production and staging:
+
+```bash
+wrangler secret put ANTHROPIC_API_KEY --config wrangler.worker.toml
+wrangler secret put ANTHROPIC_API_KEY --config wrangler.worker.toml --env staging
+```
+
+Verify the key is bound by tailing logs on the next chat turn — successful
+Anthropic calls log nothing; failures log `anthropic non-2xx` or
+`anthropic call failed`.
+
+```bash
+wrangler tail --config wrangler.worker.toml
+```
+
+Override the default model with the non-secret `ANTHROPIC_MODEL` var in
+`wrangler.worker.toml` `[vars]` if you need to pin a specific snapshot —
+otherwise leave it unset to use the spec defaults.
 
 Note: `EMAIL_FROM` is in `[vars]` (non-secret) so it ships in the config. The `EMAIL` send binding does not need a secret — it uses the Cloudflare Email Service routing rules set up on the domain.
 
@@ -155,7 +186,7 @@ The decision of whether staging gets its own custom hostname (`staging.kai.boost
 These must be completed by Evan/Boost AI before the first production deploy:
 
 - [ ] Cloudflare Email Service verified for `boostaisearch.ai` (prereq 5)
-- [ ] Production secrets set: `CLERK_SECRET_KEY`, `CLERK_JWT_KEY`, `SAFETY_ALERT_EMAIL` (prereq 3)
+- [ ] Production secrets set: `CLERK_SECRET_KEY`, `CLERK_JWT_KEY`, `SAFETY_ALERT_EMAIL`, `ANTHROPIC_API_KEY` (prereq 3)
 - [ ] Verify `kai.boostaisearch.ai` CNAME is in place (prereq 4)
 - [ ] Decide on `SAFETY_ALERT_EMAIL` recipient — flagged as D7 in the plan
 

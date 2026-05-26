@@ -68,7 +68,7 @@ describe("parsePostureResponse", () => {
     expect(result?.cues[0].focus).toBe("shoulders");
   });
 
-  it("caps cues at 3", () => {
+  it("caps cues at 2 per Claude Design v2 spec (1-2 max)", () => {
     const raw = JSON.stringify({
       cues: [
         { focus: "a", suggestion: "a1" },
@@ -81,7 +81,7 @@ describe("parsePostureResponse", () => {
       notes: ""
     });
     const result = parsePostureResponse(raw);
-    expect(result?.cues.length).toBe(3);
+    expect(result?.cues.length).toBe(2);
   });
 
   it("returns null for an invalid confidence", () => {

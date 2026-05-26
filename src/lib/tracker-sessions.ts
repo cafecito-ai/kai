@@ -70,6 +70,37 @@ export const TRACKER_SESSIONS: TrackerSession[] = [
       { atSeconds: 390, text: "Knees to chest. Hug. One slow breath." },
       { atSeconds: 405, text: "Done. Stand up slowly when you're ready." }
     ]
+  },
+  {
+    id: "neck-unlock",
+    title: "Quick neck unlock",
+    summary: "3 minutes. Phone, desk, head-forward fix.",
+    durationSeconds: 3 * 60,
+    cues: [
+      { atSeconds: 0, text: "Sit or stand tall. Roll the shoulders back once. Big breath." },
+      { atSeconds: 20, text: "Ear toward right shoulder — slow. Hold." },
+      { atSeconds: 50, text: "Center. Other side. Ear to left shoulder. Hold." },
+      { atSeconds: 80, text: "Look up at the ceiling. Open the throat. Hold." },
+      { atSeconds: 110, text: "Chin tuck — pull head straight back, double-chin style. Five slow ones." },
+      { atSeconds: 150, text: "Slow shoulder rolls — three back, three forward." },
+      { atSeconds: 175, text: "Done. Notice if the neck feels lighter." }
+    ]
+  },
+  {
+    id: "pre-sleep-wind-down",
+    title: "Pre-sleep wind down",
+    summary: "10 min. Settle the system before bed.",
+    durationSeconds: 10 * 60,
+    cues: [
+      { atSeconds: 0, text: "Lights low. Sit or lie down. Phone face-down once this starts." },
+      { atSeconds: 20, text: "Long exhale through the mouth. Then nose breath in. Slower than usual." },
+      { atSeconds: 60, text: "Box breath — in 4, hold 4, out 4, hold 4. Five rounds." },
+      { atSeconds: 180, text: "Shake out the hands and arms. Loose. Drop the jaw." },
+      { atSeconds: 240, text: "Child's pose or knees-to-chest. Hold here a minute." },
+      { atSeconds: 360, text: "Legs up the wall or flat on the bed. Two more minutes of slow breath." },
+      { atSeconds: 510, text: "Notice where the body feels heavier. That's the system letting go." },
+      { atSeconds: 570, text: "Done. Stay here as long as you want. Sleep when you're ready." }
+    ]
   }
 ];
 

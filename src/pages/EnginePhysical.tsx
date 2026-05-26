@@ -361,8 +361,8 @@ export function EnginePhysical() {
     },
     {
       id: "tracker",
-      label: "Tracker",
-      summary: "Phone down, work out",
+      label: "Move",
+      summary: "Phone down, follow Kai",
       icon: Dumbbell,
       content: (
         <PhysicalTrackerWidget
@@ -385,7 +385,7 @@ export function EnginePhysical() {
       title="Physical agent"
       label="Health unit"
       tone="physical"
-      intro="Four cards: food camera, body scan, sleep, and a guided physical tracker. Useful, pattern-aware, never obsessive."
+      intro="Four cards: food camera, body scan, sleep, and guided movement. Useful, pattern-aware, never obsessive."
       modules={modules}
       banners={<DisclosureBanner />}
       liveNote={kaiCue ? <KaiCueNote cue={kaiCue} onDismiss={() => setKaiCue(null)} /> : null}

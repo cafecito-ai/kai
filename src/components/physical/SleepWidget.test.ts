@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { formatDuration, sleepEventValue } from "./SleepWidget";
 
 describe("formatDuration", () => {
-  it("returns 'just now' for 0 minutes", () => {
-    expect(formatDuration(0)).toBe("just now");
+  it("returns '0m' for 0 minutes — used as the initial 'asleep for' value", () => {
+    expect(formatDuration(0)).toBe("0m");
   });
 
   it("uses bare minutes under 60", () => {

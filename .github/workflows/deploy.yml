@@ -1,5 +1,11 @@
 name: Deploy
 
+# Last force-redeploy: 2026-05-26 to ship the v2 design unification
+# (PRs #112–#124) to kai.boostaisearch.ai for the 11am product walkthrough.
+# The auto-deploy on each merge should have covered this, but the prod
+# CDN was caching the pre-#112 SPA shell — this comment-bump forces a
+# fresh wrangler pages deploy with a new commit-hash.
+
 on:
   push:
     branches: [main]

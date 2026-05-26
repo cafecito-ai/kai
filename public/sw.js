@@ -15,7 +15,7 @@
 //   - everything else  → network-first with cache fallback. This includes
 //                        / so product/home changes are visible immediately.
 
-const KAI_SW_VERSION = "v2";
+const KAI_SW_VERSION = "v3";
 const STATIC_CACHE = `kai-static-${KAI_SW_VERSION}`;
 const RUNTIME_CACHE = `kai-runtime-${KAI_SW_VERSION}`;
 

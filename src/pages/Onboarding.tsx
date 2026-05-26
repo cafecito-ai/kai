@@ -2,19 +2,27 @@ import {
   Activity,
   ArrowRight,
   Brain,
+  Camera,
   Check,
   ChevronLeft,
+  Compass,
   Dumbbell,
+  Feather,
   Flame,
   HeartPulse,
+  Leaf,
   Loader2,
   Mail,
+  MessageCircleHeart,
   Moon,
+  PenLine,
+  Repeat,
   ShieldCheck,
   Sparkles,
   Target,
   UsersRound,
   Utensils,
+  Wind,
   Zap
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -96,7 +104,7 @@ const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: 
   { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "mental", route: "/mental?module=purpose" }
 ];
 
-const steps = ["Gate", "Kai", "Vibe", "Signals", "Focus", "Context", "Reveal"];
+const steps = ["Gate", "Kai", "Tour", "Vibe", "Signals", "Focus", "Context", "Reveal"];
 
 const CONSENT_POLL_MS = 5000;
 
@@ -272,9 +280,9 @@ export function Onboarding() {
                 <ShieldCheck size={14} aria-hidden="true" />
                 Private by default
               </div>
-              <h1 className="mt-8 max-w-sm font-display text-5xl font-semibold leading-[0.94] tracking-normal">Build the Kai that actually fits you.</h1>
+              <h1 className="mt-8 max-w-sm font-display text-5xl font-semibold leading-[0.94] tracking-normal">A friend in your corner. Built around you.</h1>
               <p className="mt-4 max-w-sm text-sm font-semibold leading-6 text-white/62">
-                Fast setup. No diagnosis. No fake motivation. Kai learns your first pattern and gives you one useful rep.
+                No diagnosis. No fake hype. Just someone in your corner who actually pays attention — and a stack of stuff you can do whenever you want.
               </p>
             </div>
             <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur">
@@ -307,11 +315,12 @@ export function Onboarding() {
               )}
               {step === 0 && !awaitingConsent && <AgeGate age={age} setAge={setAge} isMinor={isMinor} parentEmail={parentEmail} setParentEmail={setParentEmail} fromDemo={Boolean(demoBuild)} consentStatus={storedConsentStatus} />}
               {step === 1 && <KaiBuilder kaiName={kaiName} setKaiName={setKaiName} kaiTone={kaiTone} setKaiTone={setKaiTone} selectedTone={selectedTone} />}
-              {step === 2 && <VibeScan selected={vibes} onToggle={toggleVibe} />}
-              {step === 3 && <SignalScan signals={signals} setSignals={setSignals} />}
-              {step === 4 && <MissionPick mission={mission} setMission={setMission} />}
-              {step === 5 && <ContextDrop context={context} setContext={setContext} />}
-              {step === 6 && <Reveal kaiName={kaiName || "Kai"} tone={selectedTone} mission={selectedMission} calibration={calibration} isMinor={isMinor} parentEmail={parentEmail} />}
+              {step === 2 && <PossibilitiesTour kaiName={kaiName || "Kai"} />}
+              {step === 3 && <VibeScan selected={vibes} onToggle={toggleVibe} />}
+              {step === 4 && <SignalScan signals={signals} setSignals={setSignals} />}
+              {step === 5 && <MissionPick mission={mission} setMission={setMission} />}
+              {step === 6 && <ContextDrop context={context} setContext={setContext} />}
+              {step === 7 && <Reveal kaiName={kaiName || "Kai"} tone={selectedTone} mission={selectedMission} calibration={calibration} vibes={vibes} isMinor={isMinor} parentEmail={parentEmail} />}
             </div>
             <footer className="grid gap-2 sm:grid-cols-[auto_1fr]">
               {step > 0 && (
@@ -327,7 +336,7 @@ export function Onboarding() {
                   disabled={consentSending || awaitingConsent}
                   className="min-h-12 w-full"
                 >
-                  {consentSending ? "Sending" : step === 0 && isMinor && storedConsentStatus !== "complete" ? "Send parent consent" : awaitingConsent ? "Waiting for parent" : step === 5 ? "Reveal Kai" : "Next"}
+                  {consentSending ? "Sending" : step === 0 && isMinor && storedConsentStatus !== "complete" ? "Send parent consent" : awaitingConsent ? "Waiting for parent" : step === 6 ? "Reveal Kai" : "Next"}
                   {!awaitingConsent && <ArrowRight size={18} aria-hidden="true" />}
                 </Button>
               ) : (
@@ -485,12 +494,12 @@ function KaiBuilder({
 }) {
   return (
     <div>
-      <Eyebrow>Build Kai</Eyebrow>
+      <Eyebrow>Meet your person</Eyebrow>
       <div className="mt-3 flex items-center gap-4">
         <KaiAvatar size={72} label={kaiName || "Kai"} pulse />
         <div>
-          <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">Choose the voice.</h2>
-          <p className="mt-2 text-sm font-semibold text-inkSoft">Not a therapist. Not a corporate assistant. A useful mentor.</p>
+          <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">Name them. Pick how they sound.</h2>
+          <p className="mt-2 text-sm font-semibold text-inkSoft">Not a therapist. Not a chatbot. Think: a friend who actually shows up.</p>
         </div>
       </div>
       <label className="mt-6 block text-sm font-black">
@@ -506,6 +515,67 @@ function KaiBuilder({
         ))}
       </div>
       <p className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-inkSoft">"{selectedTone.preview}"</p>
+    </div>
+  );
+}
+
+const possibilityCards: Array<{ title: string; copy: string; icon: typeof Brain }> = [
+  { title: "Snap a meal", copy: "Photo in, breakdown out. No calorie shame, no good/bad food.", icon: Camera },
+  { title: "Talk through a feeling", copy: "Body + mind scan when something's loud and you can't name it.", icon: MessageCircleHeart },
+  { title: "Reframe a stuck thought", copy: "Catch the loop. Shift the angle. Move on with your day.", icon: Repeat },
+  { title: "Set a goal that's actually yours", copy: "School, sport, music, hustle, anything. Yours, not anyone else's.", icon: Target },
+  { title: "Reset with breath", copy: "Two minutes. Box breath, 4-7-8, calm, energize. Real biology, not vibes.", icon: Wind },
+  { title: "Move and stretch", copy: "5 to 25 minute flows. Soft on your body, no punishment cardio.", icon: Leaf },
+  { title: "Write to your future self", copy: "Quiet, kind of weirdly powerful. Try it on a hard day.", icon: PenLine },
+  { title: "Track the stuff that matters to you", copy: "Streaks, belts, an avatar that grows. Optional. Never public unless you say so.", icon: Sparkles }
+];
+
+function PossibilitiesTour({ kaiName }: { kaiName: string }) {
+  return (
+    <div>
+      <Eyebrow>Quick tour</Eyebrow>
+      <div className="mt-3 flex items-start gap-4">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-warmPaper text-inkDeep">
+          <Compass size={22} aria-hidden="true" />
+        </span>
+        <div>
+          <h2 className="font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">
+            Here&rsquo;s what we can actually do together.
+          </h2>
+          <p className="mt-3 max-w-lg text-sm font-semibold leading-6 text-inkSoft">
+            {kaiName} is your menu. None of this is a homework list — it&rsquo;s what&rsquo;s on the table whenever you want it.
+          </p>
+        </div>
+      </div>
+      <ul className="mt-6 grid gap-2 sm:grid-cols-2">
+        {possibilityCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <li
+              key={card.title}
+              className="flex min-h-24 items-start gap-3 rounded-[24px] border border-[#0A0A0A0F] bg-white p-4"
+            >
+              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-warmPaper text-inkDeep">
+                <Icon size={20} aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-base font-black text-inkDeep">{card.title}</p>
+                <p className="mt-1 text-sm font-semibold leading-5 text-inkMute">{card.copy}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-inkDeep p-5 text-white">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/12">
+            <Flame size={18} aria-hidden="true" />
+          </span>
+          <p className="text-sm font-semibold leading-6 text-white/80">
+            <span className="font-black text-white">You can do whatever you want with this.</span> Skip around. Stack the small stuff. Bring real goals. {kaiName} will keep up.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -605,6 +675,7 @@ function Reveal({
   tone,
   mission,
   calibration,
+  vibes,
   isMinor,
   parentEmail
 }: {
@@ -612,10 +683,12 @@ function Reveal({
   tone: (typeof toneChoices)[number];
   mission: (typeof missionChoices)[number];
   calibration: number;
+  vibes: VibeId[];
   isMinor: boolean;
   parentEmail: string;
 }) {
   const MissionIcon = mission.icon;
+  const pepTalk = buildPepTalk({ kaiName, vibes, mission });
   return (
     <div>
       <Eyebrow>Kai is calibrated</Eyebrow>
@@ -624,7 +697,7 @@ function Reveal({
           <KaiAvatar size={76} label={kaiName} pulse />
           <div>
             <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">{kaiName} is ready.</h2>
-            <p className="mt-2 text-sm font-semibold text-inkSoft">Start with one useful rep. The rest can wait.</p>
+            <p className="mt-2 text-sm font-semibold text-inkSoft">One useful rep. The rest is whenever you want.</p>
           </div>
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -633,6 +706,19 @@ function Reveal({
           <RevealStat label="Unit" value={mission.engine === "physical" ? "Body" : "Mind"} />
         </div>
       </div>
+
+      <div className="mt-4 rounded-[28px] border border-[#0A0A0A0F] bg-warmPaper p-5">
+        <div className="flex items-start gap-3">
+          <KaiAvatar size={44} label={kaiName} />
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-inkMute">{kaiName} &middot; first read</p>
+            <p className="mt-2 text-base font-semibold leading-7 text-inkDeep">{pepTalk.opener}</p>
+            <p className="mt-3 text-sm font-semibold leading-6 text-inkSoft">{pepTalk.middle}</p>
+            <p className="mt-3 text-sm font-black leading-6 text-inkDeep">{pepTalk.closer}</p>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-inkDeep p-5 text-white">
         <div className="flex items-start gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white/12">
@@ -645,6 +731,21 @@ function Reveal({
           </div>
         </div>
       </div>
+
+      <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-white p-5">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-warmPaper text-inkDeep">
+            <Feather size={18} aria-hidden="true" />
+          </span>
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-inkMute">Also on the menu</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-inkSoft">
+              Meal photo. Breath reset. Feelings check-in. Goals you actually care about. Future-self letters. Sleep + movement. All of it is one tap away whenever you want it.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {isMinor && parentEmail.trim() && (
         <p className="mt-4 rounded-[18px] border border-[#D7F0EA] bg-[#F4FFFC] p-3 text-sm font-semibold leading-6 text-inkSoft">
           Parent consent email will be sent to {parentEmail.trim()}. Private answers stay private.
@@ -652,6 +753,37 @@ function Reveal({
       )}
     </div>
   );
+}
+
+// Build a friend-style read for the Reveal: a calm acknowledgement of the
+// vibes the teen brought in, a real-talk middle, and a closer that names
+// possibility without overselling. No corporate hype, no "should", no
+// promised outcomes — per CLAUDE.md §1.
+function buildPepTalk({
+  kaiName,
+  vibes,
+  mission
+}: {
+  kaiName: string;
+  vibes: VibeId[];
+  mission: (typeof missionChoices)[number];
+}): { opener: string; middle: string; closer: string } {
+  const vibeLabels = vibes.map((id) => vibeChoices.find((choice) => choice.id === id)?.label.toLowerCase()).filter(Boolean) as string[];
+  const vibePhrase = formatVibeList(vibeLabels);
+  const opener = vibePhrase
+    ? `Hey — ${kaiName} here. You came in carrying ${vibePhrase}, and you said you want help with ${mission.label.toLowerCase()}. That tracks. Naming it is the hard part, and you already did.`
+    : `Hey — ${kaiName} here. You said you want help with ${mission.label.toLowerCase()}. That's a real place to start.`;
+  const middle =
+    "Nothing here is locked. We start with one small rep, see how it lands, and you decide what's next. School, sport, music, a business idea, a feeling you can't shake — any of it is fair game.";
+  const closer = "You can do anything you want with this. Let's go.";
+  return { opener, middle, closer };
+}
+
+function formatVibeList(items: string[]): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }) {

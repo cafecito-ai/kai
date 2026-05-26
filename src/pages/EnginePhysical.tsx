@@ -1,5 +1,5 @@
 import { Camera, Check, Dumbbell, Moon, ScanLine, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
 import { PhysicalTrackerWidget, trackerEventValue } from "../components/physical/PhysicalTrackerWidget";
 import { SleepWidget, sleepEventValue } from "../components/physical/SleepWidget";
@@ -18,11 +18,15 @@ import {
 import { KaiCueNote } from "../components/kai/KaiCueNote";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { localSafetyCheck } from "../lib/safety";
-import type { BodyScanResult, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
+import type { BodyScanResult, FoodPhotoItem, FoodPhotoResult, ProgressEvent } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
+
+const FOOD_EVENT_TYPES = new Set(["food_photo", "food_photo_stub", "meal_logged"]);
 
 export function EnginePhysical() {
   const addEvent = useProgressStore((state) => state.addEvent);
+  const events = useProgressStore((state) => state.events);
+  const todaysFoodLogs = useMemo(() => filterTodaysFoodLogs(events), [events]);
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
   const [saving, setSaving] = useState("");
   const [foodPhoto, setFoodPhoto] = useState<File | null>(null);
@@ -257,6 +261,12 @@ export function EnginePhysical() {
             </p>
           )}
           {foodPhotoResult && <FoodPhotoResultCard result={foodPhotoResult} mealContext={mealContext} />}
+
+          {/* Today list per Claude Design v2 Food spec. Empty state is a
+            * dashed card; with entries renders a small list row each.
+            * Pulls from progressStore (single source of truth) — same
+            * data the home dashboard reflects. */}
+          <TodayFoodList logs={todaysFoodLogs} />
         </div>
       )
     },
@@ -485,6 +495,78 @@ function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
  * we deliberately don't re-state it here so the result feels useful
  * rather than defensive.
  */
+/**
+ * Today list for the Food card. Empty state per Claude Design v2 mock:
+ * a dashed-border card with calm copy ("Nothing logged today. That's
+ * fine. Snap when you eat."). With logs: small list rows showing the
+ * time + item names.
+ *
+ * Pulls from progressStore.events (the canonical source). The payload
+ * shape on a food event comes from completeEntry() in this file:
+ *   payload.items: FoodPhotoItem[]  (vision/manual items, with .name)
+ *   payload.meal: string             (fuel-note text, fallback)
+ */
+function TodayFoodList({ logs }: { logs: ProgressEvent[] }) {
+  if (logs.length === 0) {
+    return (
+      <section className="grid gap-2">
+        <p className="eyebrow text-muted">Today</p>
+        <div className="rounded-kai border border-dashed border-line bg-white p-5 text-center">
+          <p className="text-sm font-black text-ink">Nothing logged today.</p>
+          <p className="mt-1 text-sm font-semibold text-inkSoft">That's fine. Snap when you eat.</p>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="grid gap-2">
+      <p className="eyebrow text-muted">Today · {logs.length} {logs.length === 1 ? "log" : "logs"}</p>
+      <div className="grid gap-2">
+        {logs.map((log) => (
+          <TodayFoodRow key={log.id} log={log} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TodayFoodRow({ log }: { log: ProgressEvent }) {
+  const time = formatLogTime(log.occurredAt);
+  const summary = summarizeFoodLog(log);
+  return (
+    <div className="flex items-center gap-3 rounded-kai border border-line bg-white p-3">
+      <span className="font-mono text-[11px] font-black uppercase tracking-[0.14em] text-inkSoft">{time}</span>
+      <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{summary}</p>
+    </div>
+  );
+}
+
+function filterTodaysFoodLogs(events: ProgressEvent[]): ProgressEvent[] {
+  const today = new Date().toISOString().slice(0, 10);
+  return events
+    .filter((event) => event.engine === "physical" && FOOD_EVENT_TYPES.has(event.eventType))
+    .filter((event) => event.occurredAt.slice(0, 10) === today)
+    .reverse(); // newest first
+}
+
+function summarizeFoodLog(log: ProgressEvent): string {
+  const payload = log.payload as { items?: Array<{ name?: string }>; meal?: string } | undefined;
+  const items = Array.isArray(payload?.items) ? payload!.items : [];
+  if (items.length > 0) {
+    const names = items
+      .map((item) => (typeof item?.name === "string" ? item.name.trim() : ""))
+      .filter(Boolean);
+    if (names.length > 0) return names.join(", ");
+  }
+  if (typeof payload?.meal === "string" && payload.meal.trim()) return payload.meal.trim();
+  return "Meal logged";
+}
+
+function formatLogTime(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
 function BodyScanResultCard({ result }: { result: BodyScanResult }) {
   const confidenceLabel =
     result.confidence === "high" ? "clear read" : result.confidence === "medium" ? "partial read" : "low confidence";

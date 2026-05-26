@@ -40,7 +40,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers
     }
   });
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  if (!res.ok) {
+    // Surface the status + path on the thrown error AND in console so
+    // teen-facing fallbacks ("could not reach Kai right now") are
+    // actually diagnosable from a browser DevTools session. The error
+    // shape is preserved for existing callers that only read .message.
+    const err = new Error(`Request failed: ${res.status} ${path}`) as Error & { status?: number; path?: string };
+    err.status = res.status;
+    err.path = path;
+    console.error("api.request failed", { status: res.status, path });
+    throw err;
+  }
   return res.json() as Promise<T>;
 }
 

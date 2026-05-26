@@ -67,12 +67,24 @@ export const useKaiStore = create<KaiState>((set) => ({
           }
         ]
       }));
-    } catch {
+    } catch (err) {
+      // Log the underlying status code so we can diagnose "could not
+      // reach Kai" failures from DevTools without instrumenting more.
+      // The thrown Error from api.ts carries `.status` and `.path` —
+      // see src/lib/api.ts:request().
+      console.error("kai chat send failed", err);
+      const status = (err as { status?: number } | null)?.status;
+      const content =
+        status === 401
+          ? "You got signed out somewhere. Refresh the page so I can hear you."
+          : status === 429
+          ? "Too many in a row. Wait a sec and try the same message again."
+          : "I could not reach Kai right now. Pick body, goals, or reset and do one small rep.";
       set((state) => ({
         sending: false,
         messages: [
           ...state.messages,
-          { id: crypto.randomUUID(), role: "assistant", content: "I could not reach Kai right now. Pick body, goals, or reset and do one small rep." }
+          { id: crypto.randomUUID(), role: "assistant", content }
         ]
       }));
     }

@@ -1,8 +1,8 @@
-import { useUser } from "@clerk/clerk-react";
 import { ArrowRight, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { useProgressStore } from "../stores/progressStore";
+import { useUserStore } from "../stores/userStore";
 
 /**
  * Home — two-choice picker.
@@ -12,11 +12,19 @@ import { useProgressStore } from "../stores/progressStore";
  * (score card, metric grid, recent activity, hydration ticker) moved
  * out. The dock and floating Kai composer in AppShell still carry
  * the rest of the navigation; the page itself stays calm.
+ *
+ * Greeting personalization: read kaiName from our own store (always
+ * hydrated by AppDataHydrator) instead of pulling firstName from
+ * Clerk's `useUser` hook. That hook throws "ClerkInstanceContext not
+ * found" the moment Home renders if ClerkProvider isn't mounted —
+ * which happens whenever VITE_AUTH_REQUIRED isn't "1" or the
+ * publishable key isn't a real pk_… key. Production hit this on
+ * 2026-05-26 after the v2 cutover (#103). Hotfix: stop depending on
+ * Clerk's hook in render and use the data we already hydrate.
  */
 export function Home() {
-  const { user } = useUser();
   const events = useProgressStore((state) => state.events);
-  const firstName = user?.firstName?.trim() || "";
+  const kaiName = useUserStore((state) => state.kaiName);
   const today = formatToday();
   const lastUsed = formatLastUsed(events);
   const isNew = events.length === 0;
@@ -43,9 +51,9 @@ export function Home() {
           </>
         ) : (
           <h1 className="mt-2 max-w-[11ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
-            {firstName ? `Hey ${firstName}.` : "Today."}
+            Today.
             <br />
-            <span className="font-display font-normal italic text-plum">What's up?</span>
+            <span className="font-display font-normal italic text-plum">{kaiName}'s here.</span>
           </h1>
         )}
       </section>

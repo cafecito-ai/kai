@@ -365,17 +365,17 @@ function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult;
   const itemsWithNutrition = result.items.filter((item) => item.nutrition);
   const followups = getFoodPhotoFollowups(result, mealContext);
   return (
-    <div className="mt-4 rounded-kai border border-white/15 bg-white/10 p-4 text-paper">
+    <div className="rounded-calm border border-line bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="eyebrow text-soft">camera read</p>
-          <h3 className="mt-1 font-display text-2xl font-black tracking-normal">Review what Kai saw.</h3>
+          <p className="eyebrow text-muted">camera read</p>
+          <h3 className="mt-1 font-display text-2xl font-black tracking-normal text-ink">Review what Kai saw.</h3>
         </div>
-        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-paper/75">
+        <span className="rounded-full border border-line bg-warmPaper px-3 py-1 text-xs font-black uppercase tracking-wider text-inkSoft">
           {getFoodPhotoConfidenceLabel(result.confidence)}
         </span>
       </div>
-      <p className="mt-3 text-sm font-semibold leading-6 text-paper/75">{describeFoodPhotoResult(result)}</p>
+      <p className="mt-3 text-sm font-semibold leading-6 text-muted">{describeFoodPhotoResult(result)}</p>
       {result.items.length > 0 && (
         <div className="mt-3 grid gap-2">
           {result.items.map((item, idx) => (
@@ -384,23 +384,23 @@ function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult;
         </div>
       )}
       {itemsWithNutrition.length > 0 && (
-        <details className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3">
-          <summary className="focus-ring cursor-pointer list-none text-sm font-black text-paper">
+        <details className="mt-3 rounded-kai border border-line bg-warmPaper p-3">
+          <summary className="focus-ring cursor-pointer list-none text-sm font-black text-ink">
             Show nutrition estimate
           </summary>
-          <p className="mt-2 text-xs font-semibold leading-5 text-paper/65">{getNutritionEstimateCaption()}</p>
+          <p className="mt-2 text-xs font-semibold leading-5 text-inkSoft">{getNutritionEstimateCaption()}</p>
           {result.totals && (
-            <p className="mt-2 rounded-kai border border-white/15 bg-ink/30 p-3 text-sm font-black text-paper">
+            <p className="mt-2 rounded-kai border border-line bg-white p-3 text-sm font-black text-ink">
               {formatFoodNutrition(result.totals)}
             </p>
           )}
         </details>
       )}
-      <div className="mt-3 rounded-kai border border-white/15 bg-ink/25 p-3">
-        <p className="text-xs font-black uppercase tracking-wider text-paper/60">next time Kai can ask</p>
+      <div className="mt-3 rounded-kai border border-line bg-warmPaper p-3">
+        <p className="text-xs font-black uppercase tracking-wider text-inkSoft">Next time Kai can ask</p>
         <div className="mt-2 grid gap-2">
           {followups.map((prompt) => (
-            <p key={prompt} className="rounded-kai border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-paper/75">
+            <p key={prompt} className="rounded-kai border border-line bg-white px-3 py-2 text-sm font-semibold text-muted">
               {prompt}
             </p>
           ))}
@@ -412,14 +412,14 @@ function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult;
 
 function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
   return (
-    <div className="rounded-kai border border-white/15 bg-ink/25 p-3">
+    <div className="rounded-kai border border-line bg-warmPaper p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-black capitalize">{item.name}</p>
-        <p className="text-xs font-bold uppercase tracking-wider text-paper/60">
+        <p className="text-sm font-black capitalize text-ink">{item.name}</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-inkSoft">
           {item.estimatedGrams ? `about ${item.estimatedGrams}g` : "portion unknown"}
         </p>
       </div>
-      {item.nutrition && <p className="mt-1 text-xs font-semibold text-paper/65">{formatFoodNutrition(item.nutrition)}</p>}
+      {item.nutrition && <p className="mt-1 text-xs font-semibold text-muted">{formatFoodNutrition(item.nutrition)}</p>}
     </div>
   );
 }

@@ -16,6 +16,8 @@ export interface Env {
   SAFETY_ALERT_EMAIL?: string;
   AI_TEXT_MODEL?: string;
   AI_VISION_MODEL?: string;
+  ANTHROPIC_API_KEY?: string;
+  ANTHROPIC_MODEL?: string;
   APP_ENV?: "staging" | "production" | "development";
 }
 

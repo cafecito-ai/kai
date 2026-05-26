@@ -24,7 +24,8 @@ describe("renderKaiSystemPrompt", () => {
     expect(result).toContain("The teen is 16 years old");
     expect(result).toContain('You are "Buddy"');
     expect(result).toContain("Tone preset: balanced");
-    expect(result).toContain("Active engine: physical");
+    expect(result).toContain("Internal route: physical");
+    expect(result).toContain("TOOL CARDS");
     expect(result).toContain("4 days");
   });
 

@@ -87,10 +87,10 @@ function IdleView({ onStart }: { onStart: (session: TrackerSession) => void }) {
         <div className="mb-4 grid size-12 place-items-center rounded-full bg-bodyWash text-body">
           <PlayCircle />
         </div>
-        <p className="eyebrow">physical tracker</p>
-        <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Phone down. Kai narrates the rep.</h2>
+        <p className="eyebrow">move</p>
+        <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Lean your phone where it sees you.</h2>
         <p className="mt-3 text-sm font-semibold leading-6 text-muted">
-          Pick a session, place your phone where you can see the big timer, follow the cues. Each line of guidance shows for as long as it takes — no rush. Real video drops in later.
+          Kai talks you through it. Big timer, italic cue line, one-tap end. Pick a session.
         </p>
       </section>
 
@@ -181,7 +181,7 @@ function CompleteView({ phase, onBack }: { phase: Extract<Phase, { kind: "comple
       </h2>
       <p className="mt-3 text-sm font-semibold leading-6 text-muted">
         {fullyCompleted
-          ? `You moved for ${formatMinutes(elapsedSeconds)}. Saved as a tracker rep.`
+          ? `You moved for ${formatMinutes(elapsedSeconds)}. Saved as a Move rep.`
           : `Logged ${formatMinutes(elapsedSeconds)} of ${session.title}. Partial reps still count.`}
       </p>
       <Button variant="secondary" className="mt-4" onClick={onBack}>

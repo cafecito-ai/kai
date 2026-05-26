@@ -17,6 +17,51 @@ interface CallOptions {
 const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
 const FALLBACK_LINE = "I'm here. What's the smallest next step?";
 
+/**
+ * Lower-level Anthropic call used by background helpers (event cues,
+ * intake summary, strengths) that already have a single prompt string
+ * and want to keep their existing Workers AI fallback intact.
+ *
+ * Returns the assistant text on success, or null on:
+ *   - ANTHROPIC_API_KEY not set
+ *   - network error
+ *   - non-2xx from the API
+ *   - empty / unexpected response shape
+ *
+ * Callers should treat null as "Anthropic unavailable — use your
+ * existing fallback path." This keeps Workers AI working in
+ * dev/staging without polluting the higher-level callClaude with
+ * prompt-style call shapes.
+ */
+export async function callAnthropicCompletion(
+  env: Env,
+  prompt: string,
+  options: CallOptions = {}
+): Promise<string | null> {
+  if (!env.ANTHROPIC_API_KEY) return null;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        model: options.model || env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: options.maxTokens ?? 200,
+        temperature: options.temperature ?? 0.5
+      })
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { content?: { type: string; text?: string }[] };
+    return data.content?.find((block) => block.type === "text")?.text?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function callClaude(
   env: Env,
   system: string,

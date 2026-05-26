@@ -1,4 +1,5 @@
 import type { EngineId, Env } from "../types";
+import { callAnthropicCompletion } from "./claude";
 import { extractJsonObject } from "./json-utils";
 import { ENGINE_ROUTING_PROMPT, INTAKE_SUMMARY_PROMPT } from "./prompts/intake";
 
@@ -61,10 +62,17 @@ function formatResponses(responses: Record<string, string>): string {
  * caller can fall back to a deterministic summary.
  */
 export async function summarizeIntake(env: Env, responses: Record<string, string>): Promise<string | null> {
+  const prompt = `${INTAKE_SUMMARY_PROMPT}\n\nIntake answers:\n${formatResponses(responses)}\n\nSummary:`;
+
+  // Prefer Anthropic so the summary that becomes every future Kai turn's
+  // grounding context is rich and on-voice. Falls back to Workers AI when
+  // no key is configured.
+  const anthropicReply = await callAnthropicCompletion(env, prompt, { maxTokens: 200, temperature: 0.4 });
+  if (anthropicReply) return anthropicReply.slice(0, 800);
+
   if (!env.AI) return null;
   const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
   try {
-    const prompt = `${INTAKE_SUMMARY_PROMPT}\n\nIntake answers:\n${formatResponses(responses)}\n\nSummary:`;
     const result = (await env.AI.run(model, {
       prompt,
       max_tokens: 200,
@@ -72,7 +80,6 @@ export async function summarizeIntake(env: Env, responses: Record<string, string
     })) as { response?: string; text?: string };
     const raw = (result.response || result.text || "").trim();
     if (!raw) return null;
-    // Cap to a reasonable length — guards against the model rambling past 3 sentences.
     return raw.slice(0, 800);
   } catch (err) {
     console.warn("intake summary LLM failed; will fall back to deterministic summary", err);
@@ -85,10 +92,17 @@ export async function summarizeIntake(env: Env, responses: Record<string, string
  * null on LLM failure so the caller can fall back to keyword routing.
  */
 export async function routeEngineFromSummary(env: Env, summary: string): Promise<EngineRouting | null> {
+  const prompt = `${ENGINE_ROUTING_PROMPT}\n\nIntake summary: ${summary}\n\nJSON:`;
+
+  const anthropicReply = await callAnthropicCompletion(env, prompt, { maxTokens: 150, temperature: 0.2 });
+  if (anthropicReply) {
+    const routed = parseEngineRouting(anthropicReply);
+    if (routed) return routed;
+  }
+
   if (!env.AI) return null;
   const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
   try {
-    const prompt = `${ENGINE_ROUTING_PROMPT}\n\nIntake summary: ${summary}\n\nJSON:`;
     const result = (await env.AI.run(model, {
       prompt,
       max_tokens: 150,

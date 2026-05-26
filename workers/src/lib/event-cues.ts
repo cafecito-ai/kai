@@ -18,6 +18,7 @@
  */
 
 import type { Env } from "../types";
+import { callAnthropicCompletion } from "./claude";
 
 export type CueRequest = {
   eventType: string;
@@ -131,20 +132,42 @@ function buildPrompt(req: CueRequest): string {
 
 const CUE_TIMEOUT_MS = 6_000;
 
+function cleanModelOutput(raw: string): string {
+  return raw.replace(/^["“'`]+|["”'`]+$/g, "").trim();
+}
+
 export async function generateEventCue(env: Env, req: CueRequest): Promise<CueResponse> {
   const fallback = (): CueResponse => ({ cue: getFallbackCue(req.eventType), source: "fallback" });
-  if (!env.AI) return fallback();
+  const prompt = buildPrompt(req);
 
+  // Prefer Anthropic when ANTHROPIC_API_KEY is set so cues feel personal
+  // and on-voice (Sonnet 4.6 default). Falls through to Workers AI on
+  // null (no key, network error, or empty response).
   try {
-    const prompt = buildPrompt(req);
+    const anthropicReply = await withTimeout(
+      callAnthropicCompletion(env, prompt, { maxTokens: 60, temperature: 0.55 }),
+      CUE_TIMEOUT_MS
+    );
+    if (anthropicReply) {
+      const cleaned = cleanModelOutput(anthropicReply);
+      if (cleaned && isSafeCue(cleaned)) {
+        return { cue: cleaned, source: "model" };
+      }
+    }
+  } catch {
+    // Anthropic timed out or threw — try Workers AI as a second model
+    // chance before degrading to the static fallback.
+  }
+
+  if (!env.AI) return fallback();
+  try {
     const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
     const result = (await withTimeout(
       env.AI.run(model, { prompt, max_tokens: 60, temperature: 0.55 }),
       CUE_TIMEOUT_MS
     )) as { response?: string; text?: string };
     const raw = (result.response || result.text || "").trim();
-    // Strip surrounding quotes the model sometimes emits.
-    const cleaned = raw.replace(/^["“'`]+|["”'`]+$/g, "").trim();
+    const cleaned = cleanModelOutput(raw);
     if (!cleaned || !isSafeCue(cleaned)) return fallback();
     return { cue: cleaned, source: "model" };
   } catch {

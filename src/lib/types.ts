@@ -30,6 +30,12 @@ export interface Mission {
   archivedAt?: string | null;
 }
 
+export interface MissionDraft {
+  pillar: Mission["pillar"];
+  statement: string;
+  why: string;
+}
+
 export interface UserProfile {
   kaiName: string;
   kaiTone: KaiTone;

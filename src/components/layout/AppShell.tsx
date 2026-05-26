@@ -1,4 +1,4 @@
-import { Activity, Brain, Camera, HeartPulse, Home, Plus, Settings, ShieldAlert, Sparkles, UsersRound, UserRound, X } from "lucide-react";
+import { Activity, Brain, Camera, HeartPulse, Home, Plus, ShieldAlert, Sparkles, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { KaiChat } from "../kai/KaiChat";
@@ -132,17 +132,19 @@ function AppComposer() {
 }
 
 function AppDock({ quickOpen, onToggleQuick }: { quickOpen: boolean; onToggleQuick: () => void }) {
+  // v2 simplification: dock cut from 5 nav items to 3 (Home, Progress,
+  // Profile). Groups + Settings moved behind Profile to keep the bottom
+  // chrome calm. They're still reachable from Profile's hero action row
+  // and via direct URL.
   const links = [
     { to: "/home", label: "Home", icon: Home },
     { to: "/progress", label: "Progress", icon: HeartPulse },
-    { to: "/groups", label: "Groups", icon: UsersRound },
-    { to: "/profile", label: "Profile", icon: UserRound },
-    { to: "/settings", label: "Settings", icon: Settings }
+    { to: "/profile", label: "Profile", icon: UserRound }
   ];
 
   return (
     <nav
-      className="fixed inset-x-3 bottom-3 z-40 mx-auto grid max-w-md grid-cols-[repeat(2,minmax(0,1fr))_3.25rem_repeat(3,minmax(0,1fr))] gap-1 rounded-[24px] border border-[#0A0A0A0F] bg-white/95 p-1 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl"
+      className="fixed inset-x-3 bottom-3 z-40 mx-auto grid max-w-md grid-cols-[repeat(2,minmax(0,1fr))_3.25rem_minmax(0,1fr)] gap-1 rounded-[24px] border border-[#0A0A0A0F] bg-white/95 p-1 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl"
       style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
       aria-label="Primary app navigation"
     >

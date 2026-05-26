@@ -24,6 +24,7 @@ import { Scope } from "./pages/Scope";
 import { Settings } from "./pages/Settings";
 import { Groups } from "./pages/Groups";
 import { Profile } from "./pages/Profile";
+import { ProfileDetails } from "./pages/ProfileDetails";
 
 export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
   const protectedAuth = (children: React.ReactNode) => (authEnabled ? <RequireAuth>{children}</RequireAuth> : children);
@@ -75,6 +76,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
           <Route path="/groups" element={protectedOnboarding(<Groups />)} />
           <Route path="/profile" element={protectedOnboarding(<Profile />)} />
+          <Route path="/profile/details" element={protectedOnboarding(<ProfileDetails />)} />
           <Route path="/missions" element={protectedOnboarding(<Missions />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />

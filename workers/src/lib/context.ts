@@ -1,4 +1,5 @@
 import type { EngineId, Env } from "../types";
+import { getKaiMemory } from "./memory";
 
 export type KaiTone = "warm" | "balanced" | "direct";
 
@@ -10,6 +11,7 @@ export type KaiContext = {
   kaiTone: KaiTone;
   primaryEngine: EngineId;
   intakeSummary: string | null;
+  memorySummary: string | null;
   streakOverall: number;
 };
 
@@ -20,6 +22,7 @@ const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {
   kaiTone: "balanced",
   primaryEngine: "physical",
   intakeSummary: null,
+  memorySummary: null,
   streakOverall: 0
 };
 
@@ -80,6 +83,8 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     }
   }
 
+  const memorySummary = (await getKaiMemory(env, userId).catch(() => null)) ?? intakeSummary;
+
   return {
     userId,
     displayName: user?.display_name?.trim() || FALLBACK_CONTEXT.displayName,
@@ -88,6 +93,7 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     kaiTone: normaliseTone(user?.kai_tone),
     primaryEngine: normaliseEngine(user?.primary_engine),
     intakeSummary,
+    memorySummary,
     streakOverall
   };
 }

@@ -96,14 +96,26 @@ export async function callClaude(
           temperature: options.temperature ?? 0.5
         })
       });
-      if (!res.ok) throw new Error(`anthropic ${res.status}`);
+      if (!res.ok) {
+        // DEPLOY.md tells ops to grep for `anthropic non-2xx` to verify
+        // the key is bound; that log only fired in callAnthropic before
+        // (Codex review of #130, P2). Log status only — no request body,
+        // no system prompt, no user content.
+        console.warn("anthropic non-2xx", res.status);
+        throw new Error(`anthropic ${res.status}`);
+      }
       const data = (await res.json()) as { content?: { type: string; text?: string }[] };
       const text = data.content?.find((block) => block.type === "text")?.text?.trim();
       if (text) return text;
       // Empty/unexpected response shape — fall through to Workers AI rather
       // than returning the empty string.
-    } catch {
-      // Any network or non-2xx error: degrade silently to Workers AI.
+      console.warn("anthropic empty response");
+    } catch (err) {
+      // Network error or the re-thrown non-2xx above. Surface the error
+      // name+message so prod tails are actually useful; the throw is
+      // intentional (the !res.ok branch already logged) — this catch
+      // covers fetch failures, JSON parse failures, and the re-throw.
+      console.warn("anthropic call failed", err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     }
   }
 

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { HAIKU_MODEL, OPUS_MODEL, callClaude } from "../lib/claude";
 import { buildKaiContext } from "../lib/context";
-import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
+import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation, getRecentConversationMessages } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
 import { renderEnginePrompt } from "../lib/prompts/engines";
 import { renderKaiSystemPrompt } from "../lib/prompts/kai";
@@ -82,10 +82,11 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
 
     // Load recent turns BEFORE the new user message is persisted so we
     // don't double-include the current message in the Claude prompt.
-    // getConversationMessages returns oldest-first; we want the most
-    // recent N, so load up to 50 then slice the tail.
-    const allPrior = (await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 50 })) ?? [];
-    const prior = allPrior.slice(-HISTORY_TURN_LIMIT);
+    // Use getRecentConversationMessages so a long-running conversation
+    // sees its newest N turns, not the oldest N (Codex review of #130,
+    // P1 — getConversationMessages does ORDER BY ASC LIMIT, which
+    // returned the conversation's opening window forever).
+    const prior = (await getRecentConversationMessages(env.DB, { conversationId: conversation, userId, limit: HISTORY_TURN_LIMIT })) ?? [];
 
     const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
     const safety = await classifySafetyFull(env, message);

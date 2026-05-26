@@ -1,5 +1,5 @@
 import { Send, Sparkles } from "lucide-react";
-import { FormEvent, Fragment, useState } from "react";
+import { FormEvent, Fragment, useId, useState } from "react";
 import { useKaiStore } from "../../stores/kaiStore";
 import { useUserStore } from "../../stores/userStore";
 import { CrisisResourceCard } from "../safety/CrisisResourceCard";
@@ -12,6 +12,7 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
   const { messages, send, sending } = useKaiStore();
   const kaiName = useUserStore((state) => state.kaiName);
   const [draft, setDraft] = useState("");
+  const inputId = useId();
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -72,11 +73,11 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
         ))}
       </div>
       <form onSubmit={onSubmit} className="flex gap-2 border-t border-line bg-paper p-3">
-        <label htmlFor="kai-chat-input" className="sr-only">
+        <label htmlFor={inputId} className="sr-only">
           Message to {kaiName}
         </label>
         <input
-          id="kai-chat-input"
+          id={inputId}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           className="field min-w-0 flex-1"

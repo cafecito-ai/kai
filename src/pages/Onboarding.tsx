@@ -288,7 +288,7 @@ export function Onboarding() {
               <div className="mt-5 grid grid-cols-3 gap-2">
                 <CalibrationPill label="Vibes" value={String(vibes.length)} />
                 <CalibrationPill label="Read" value={`${calibration}%`} />
-                <CalibrationPill label="Unit" value={selectedMission.engine === "physical" ? "Body" : "Mind"} />
+                <CalibrationPill label="Start" value={selectedMission.label} />
               </div>
             </div>
           </aside>
@@ -624,13 +624,13 @@ function Reveal({
           <KaiAvatar size={76} label={kaiName} pulse />
           <div>
             <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">{kaiName} is ready.</h2>
-            <p className="mt-2 text-sm font-semibold text-inkSoft">Start with one useful rep. The rest can wait.</p>
+            <p className="mt-2 text-sm font-semibold text-inkSoft">Kai is tuned in for what you are carrying. One useful rep, then we build from there.</p>
           </div>
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <RevealStat label="Voice" value={tone.label} />
           <RevealStat label="Read" value={`${calibration}%`} />
-          <RevealStat label="Unit" value={mission.engine === "physical" ? "Body" : "Mind"} />
+          <RevealStat label="Start" value={mission.label} />
         </div>
       </div>
       <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-inkDeep p-5 text-white">

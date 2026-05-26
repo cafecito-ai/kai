@@ -3,7 +3,7 @@ import { HAIKU_MODEL, callAnthropic } from "./claude";
 import { extractJsonObject } from "./json-utils";
 import { ENGINE_ROUTING_PROMPT, INTAKE_SUMMARY_PROMPT } from "./prompts/intake";
 
-const VALID_ENGINES = new Set<EngineId>(["physical", "mental"]);
+const VALID_ENGINES = new Set<EngineId>(["physical", "mental", "superpower"]);
 
 export type EngineRouting = { engine: EngineId; reasoning: string };
 
@@ -38,7 +38,7 @@ export function parseEngineRouting(raw: string): EngineRouting | null {
 export function keywordRouteEngine(responses: Record<string, string>): EngineRouting {
   const text = Object.values(responses).join(" ").toLowerCase();
   if (/goal|school|sport|business|future|music|instrument|practice|build|learn|charity|confidence|discipline|purpose|habit/.test(text)) {
-    return { engine: "mental", reasoning: "There's a goal or skill in here you're working toward — let's build the system around it." };
+    return { engine: "superpower", reasoning: "There's a goal or skill in here you're working toward — let's build the system around it." };
   }
   if (/stress|sad|anxious|friend|social|identity|emotion|pressure|overwhelm|lonely|tired of/.test(text)) {
     return { engine: "mental", reasoning: "There's a lot going on emotionally — let's start with how you're feeling, then build out." };

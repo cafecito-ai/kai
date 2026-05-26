@@ -1,4 +1,4 @@
-export type EngineId = "physical" | "potential" | "mental";
+export type EngineId = "physical" | "superpower" | "mental";
 export type KaiTone = "warm" | "balanced" | "direct";
 
 export interface ProgressEvent {

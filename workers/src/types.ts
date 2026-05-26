@@ -21,7 +21,7 @@ export interface Env {
   APP_ENV?: "staging" | "production" | "development";
 }
 
-export type EngineId = "physical" | "potential" | "mental";
+export type EngineId = "physical" | "superpower" | "mental";
 export type AppVariables = { userId: string; isOps: boolean };
 
 export interface SafetyClassification {

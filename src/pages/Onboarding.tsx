@@ -85,15 +85,15 @@ const signalCopy: Record<SignalId, { label: string; low: string; mid: string; hi
   social: { label: "Social", low: "Heavy", mid: "Normal", high: "Connected", icon: UsersRound }
 };
 
-const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: "mental" | "physical"; route: string }> = [
+const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: EngineId; route: string }> = [
   { id: "mind", label: "Mind", copy: "Feel less overloaded.", icon: Brain, engine: "mental", route: "/mental?module=checkin" },
   { id: "body", label: "Body", copy: "Move, recover, feel better.", icon: HeartPulse, engine: "physical", route: "/health?module=movement" },
-  { id: "confidence", label: "Confidence", copy: "Stop shrinking yourself.", icon: Sparkles, engine: "mental", route: "/mental?module=purpose" },
-  { id: "discipline", label: "Discipline", copy: "Build systems, not hype.", icon: Target, engine: "mental", route: "/mental?module=purpose" },
+  { id: "confidence", label: "Confidence", copy: "Stop shrinking yourself.", icon: Sparkles, engine: "superpower", route: "/mental?module=purpose" },
+  { id: "discipline", label: "Discipline", copy: "Build systems, not hype.", icon: Target, engine: "superpower", route: "/mental?module=purpose" },
   { id: "food", label: "Food", copy: "Log without shame.", icon: Utensils, engine: "physical", route: "/health?module=food" },
   { id: "sleep", label: "Sleep", copy: "Reset the foundation.", icon: Moon, engine: "physical", route: "/health?module=movement" },
   { id: "social", label: "Social", copy: "Handle pressure and loneliness.", icon: UsersRound, engine: "mental", route: "/mental?module=checkin" },
-  { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "mental", route: "/mental?module=purpose" }
+  { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "superpower", route: "/mental?module=purpose" }
 ];
 
 const steps = ["Gate", "Kai", "Vibe", "Signals", "Focus", "Context", "Reveal"];
@@ -239,7 +239,7 @@ export function Onboarding() {
 
     try {
       const intake = await api.submitIntake(buildIntakeAnswers({ vibes, signals, mission, context, kaiTone }));
-      const routedEngine = intake.suggestedEngine === "potential" ? "mental" : intake.suggestedEngine;
+      const routedEngine = intake.suggestedEngine;
       const engine = selectedMission.engine || routedEngine || primaryEngine;
       await api.updateUser({
         kaiName: kaiName || "Kai",

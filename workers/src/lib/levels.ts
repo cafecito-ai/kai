@@ -74,9 +74,9 @@ export function computeStreak(events: DayEvent[], opts: { engine?: EngineId; now
 export type ProgressSummary = {
   level: number;
   totalScore: number;
-  streaks: { overall: number; physical: number; potential: number; mental: number };
-  belts: { physical: Belt; potential: Belt; mental: Belt };
-  eventCountsByEngine: { physical: number; potential: number; mental: number; kai: number };
+  streaks: { overall: number; physical: number; superpower: number; mental: number };
+  belts: { physical: Belt; superpower: Belt; mental: Belt };
+  eventCountsByEngine: { physical: number; superpower: number; mental: number; kai: number };
 };
 
 type ProgressRow = {
@@ -91,7 +91,7 @@ type ProgressRow = {
  */
 export function summariseProgress(rows: ProgressRow[], opts: { now?: Date } = {}): ProgressSummary {
   let totalScore = 0;
-  const engineCounts = { physical: 0, potential: 0, mental: 0, kai: 0 };
+  const engineCounts = { physical: 0, superpower: 0, mental: 0, kai: 0 };
   const dayEvents: DayEvent[] = [];
 
   for (const row of rows) {
@@ -113,12 +113,12 @@ export function summariseProgress(rows: ProgressRow[], opts: { now?: Date } = {}
     streaks: {
       overall: computeStreak(dayEvents, { now: opts.now }),
       physical: computeStreak(dayEvents, { engine: "physical", now: opts.now }),
-      potential: computeStreak(dayEvents, { engine: "potential", now: opts.now }),
+      superpower: computeStreak(dayEvents, { engine: "superpower", now: opts.now }),
       mental: computeStreak(dayEvents, { engine: "mental", now: opts.now })
     },
     belts: {
       physical: computeBelt(engineCounts.physical),
-      potential: computeBelt(engineCounts.potential),
+      superpower: computeBelt(engineCounts.superpower),
       mental: computeBelt(engineCounts.mental)
     },
     eventCountsByEngine: engineCounts

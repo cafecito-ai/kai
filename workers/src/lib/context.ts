@@ -29,7 +29,7 @@ function normaliseTone(value: unknown): KaiTone {
 }
 
 function normaliseEngine(value: unknown): EngineId {
-  if (value === "physical" || value === "potential" || value === "mental") return value;
+  if (value === "physical" || value === "superpower" || value === "mental") return value;
   return "physical";
 }
 

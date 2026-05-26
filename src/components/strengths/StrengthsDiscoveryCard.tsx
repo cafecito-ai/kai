@@ -5,7 +5,7 @@ import { STRENGTHS_DISCOVERY_QUESTIONS } from "../../lib/strengths-questions";
 import { Button } from "../ui/Button";
 
 /**
- * Strengths-discovery flow. Originally lived inside the Potential
+ * Strengths-discovery flow. Originally lived inside the purpose
  * engine page; now surfaced from the Mental engine's Purpose tab
  * after the two engines were merged.
  */

@@ -1,4 +1,4 @@
-import { Camera, Dumbbell, Moon, ScanLine, ShieldCheck } from "lucide-react";
+import { Camera, Check, Dumbbell, Moon, ScanLine, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
 import { PhysicalTrackerWidget, trackerEventValue } from "../components/physical/PhysicalTrackerWidget";
@@ -396,12 +396,27 @@ export function EnginePhysical() {
 function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult; mealContext: MealContextId }) {
   const itemsWithNutrition = result.items.filter((item) => item.nutrition);
   const followups = getFoodPhotoFollowups(result, mealContext);
+  // Mock spec (Claude Design v2 Food handoff): the result title is the
+  // literal item list joined with commas + a period. "Turkey sandwich,
+  // apple, water." not "Review what Kai saw." Reads like Kai actually
+  // noticed something specific rather than a generic recap header.
+  const literalTitle =
+    result.items.length > 0
+      ? result.items
+          .map((item, idx) => {
+            const name = item.name.trim();
+            // Lowercase all items after the first for grammar.
+            const cased = idx === 0 ? name.charAt(0).toUpperCase() + name.slice(1) : name.toLowerCase();
+            return cased;
+          })
+          .join(", ") + "."
+      : "Couldn't read the photo cleanly.";
   return (
     <div className="rounded-calm border border-line bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="eyebrow text-muted">camera read</p>
-          <h3 className="mt-1 font-display text-2xl font-black tracking-normal text-ink">Review what Kai saw.</h3>
+          <p className="eyebrow text-muted">Kai noticed</p>
+          <h3 className="mt-1 font-display text-2xl font-black tracking-normal text-ink">{literalTitle}</h3>
         </div>
         <span className="rounded-full border border-line bg-warmPaper px-3 py-1 text-xs font-black uppercase tracking-wider text-inkSoft">
           {getFoodPhotoConfidenceLabel(result.confidence)}
@@ -418,7 +433,7 @@ function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult;
       {itemsWithNutrition.length > 0 && (
         <details className="mt-3 rounded-kai border border-line bg-warmPaper p-3">
           <summary className="focus-ring cursor-pointer list-none text-sm font-black text-ink">
-            Show nutrition estimate
+            Show nutrition
           </summary>
           <p className="mt-2 text-xs font-semibold leading-5 text-inkSoft">{getNutritionEstimateCaption()}</p>
           {result.totals && (
@@ -443,15 +458,18 @@ function FoodPhotoResultCard({ result, mealContext }: { result: FoodPhotoResult;
 }
 
 function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
+  // Mock spec (Claude Design v2): item rows show NAMES ONLY — no portion
+  // grams. Showing grams to a teen reads in the same family as showing
+  // calories — it nudges toward counting and measurement framing that
+  // the engine deliberately avoids. Vision's estimated_grams is still
+  // captured in the worker payload (drives the nutrition disclosure
+  // math), it's just not surfaced visually.
   return (
-    <div className="rounded-kai border border-line bg-warmPaper p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-black capitalize text-ink">{item.name}</p>
-        <p className="text-xs font-bold uppercase tracking-wider text-inkSoft">
-          {item.estimatedGrams ? `about ${item.estimatedGrams}g` : "portion unknown"}
-        </p>
-      </div>
-      {item.nutrition && <p className="mt-1 text-xs font-semibold text-muted">{formatFoodNutrition(item.nutrition)}</p>}
+    <div className="flex items-center gap-3 rounded-kai border border-line bg-warmPaper p-3">
+      <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-bodyWash text-body">
+        <Check size={14} aria-hidden="true" />
+      </span>
+      <p className="text-sm font-black capitalize text-ink">{item.name}</p>
     </div>
   );
 }

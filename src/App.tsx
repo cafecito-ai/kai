@@ -18,7 +18,6 @@ import { Ops } from "./pages/Ops";
 import { OpsDemoSession } from "./pages/OpsDemoSession";
 import { OpsDemoSessions } from "./pages/OpsDemoSessions";
 import { PolicyPage } from "./pages/PolicyPage";
-import { Progress } from "./pages/Progress";
 import { Scope } from "./pages/Scope";
 import { Settings } from "./pages/Settings";
 import { Groups } from "./pages/Groups";
@@ -71,7 +70,12 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
-          <Route path="/progress" element={protectedOnboarding(<Progress />)} />
+          {/* /progress and /profile both render the canonical Profile
+           * page after the v2 dock refactor (PR #127). The dock only
+           * surfaces Profile, but external links to /progress still
+           * exist (EnginePanel, UnitWorkspace, Groups), so /progress
+           * keeps working instead of dead-ending on a stale shell. */}
+          <Route path="/progress" element={protectedOnboarding(<Profile />)} />
           <Route path="/groups" element={protectedOnboarding(<Groups />)} />
           <Route path="/profile" element={protectedOnboarding(<Profile />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />

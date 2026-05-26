@@ -112,6 +112,26 @@ export interface DemoFoodPhotoResult {
   notes: string;
 }
 
+export interface PostureCue {
+  focus: string;
+  suggestion: string;
+}
+
+/**
+ * Response shape for /api/body-scan-upload. The teen sees `cues`
+ * surfaced as supportive posture/alignment notes — never body
+ * composition. Filter enforced server-side; UI doesn't need to
+ * re-filter, but should still render the persistent "no body score"
+ * Note for reassurance.
+ */
+export interface BodyScanResult {
+  scanId: string;
+  r2Key?: string;
+  cues: PostureCue[];
+  confidence: "high" | "medium" | "low";
+  notes: string;
+}
+
 export interface DemoFeedbackChoices {
   ui: "Calm Coach" | "Quest Mode" | "Lifestyle Feed";
   habit: "Food Camera" | "Emotional Check-in" | "Streaks + Belts" | "Home-screen Character";

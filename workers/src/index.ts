@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { bodyScanRoutes } from "./routes/body-scan";
 import { chatRoutes } from "./routes/chat";
 import { demoRoutes } from "./routes/demo";
 import { foodRoutes } from "./routes/food";
@@ -30,6 +31,7 @@ app.route("/api", goalsRoutes);
 app.route("/api", opsRoutes);
 app.route("/api", entriesRoutes);
 app.route("/api", foodRoutes);
+app.route("/api", bodyScanRoutes);
 app.route("/api", friendsRoutes);
 app.route("/api", strengthsRoutes);
 app.post("/api/safety/log", async (c) => c.json({ event: await c.req.json() }));

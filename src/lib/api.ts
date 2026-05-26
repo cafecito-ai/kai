@@ -1,4 +1,4 @@
-import type { ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { BodyScanResult, ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
@@ -100,6 +100,14 @@ export const api = {
     body.set("photo", file);
     if (note?.trim()) body.set("note", note.trim());
     return request<FoodPhotoResult>("/api/food-photo-upload", {
+      method: "POST",
+      body
+    });
+  },
+  uploadBodyScan: (file: File) => {
+    const body = new FormData();
+    body.set("photo", file);
+    return request<BodyScanResult>("/api/body-scan-upload", {
       method: "POST",
       body
     });

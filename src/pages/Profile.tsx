@@ -1,4 +1,4 @@
-import { Brain, HeartPulse, Settings as SettingsIcon, UsersRound, UserRound } from "lucide-react";
+import { Activity, Brain, HeartPulse, Settings as SettingsIcon, UsersRound, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EvolvingCharacter } from "../components/tracker/EvolvingCharacter";
 import { ProgressSummary } from "../components/tracker/ProgressSummary";
@@ -24,6 +24,10 @@ export function Profile() {
         }
         action={
           <div className="flex flex-wrap items-center gap-2">
+            <Link to="/progress" className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-black text-ink">
+              <Activity size={16} aria-hidden="true" />
+              Progress
+            </Link>
             <Link to="/groups" className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-black text-ink">
               <UsersRound size={16} aria-hidden="true" />
               Groups

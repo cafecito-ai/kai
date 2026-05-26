@@ -1,6 +1,5 @@
 import { ArrowRight, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
-import { KaiAvatar } from "../components/ui/AppPrimitives";
 import { useProgressStore } from "../stores/progressStore";
 import { useUserStore } from "../stores/userStore";
 
@@ -36,7 +35,6 @@ export function Home() {
         <span className="rounded-full border border-line bg-paper/60 px-3 py-1.5 font-mono text-[11px] font-black uppercase tracking-[0.14em] text-muted">
           {today}
         </span>
-        <KaiAvatar size={32} pulse />
       </header>
 
       <section className="mt-6 mb-6">

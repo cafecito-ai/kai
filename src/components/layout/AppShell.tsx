@@ -1,4 +1,4 @@
-import { Activity, Brain, Camera, HeartPulse, Home, Plus, ShieldAlert, Sparkles, UserRound, X } from "lucide-react";
+import { Activity, Brain, Camera, Home, Plus, ShieldAlert, Sparkles, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { KaiChat } from "../kai/KaiChat";
@@ -132,25 +132,24 @@ function AppComposer() {
 }
 
 function AppDock({ quickOpen, onToggleQuick }: { quickOpen: boolean; onToggleQuick: () => void }) {
-  // v2 simplification: dock cut from 5 nav items to 3 (Home, Progress,
-  // Profile). Groups + Settings moved behind Profile to keep the bottom
-  // chrome calm. They're still reachable from Profile's hero action row
-  // and via direct URL.
+  // v2 simplification (cont.): dock cut again from 3 nav items to 2 so the
+  // center "+" button is visually dead-center. Progress + Groups + Settings
+  // now all live behind Profile's hero action row. Daily loop is
+  // Home -> engine -> Profile (which shows progress + manages config);
+  // the "+" surfaces Quick actions (Food / Reset / Scan) to jump to
+  // engines without going Home first.
   const links = [
     { to: "/home", label: "Home", icon: Home },
-    { to: "/progress", label: "Progress", icon: HeartPulse },
     { to: "/profile", label: "Profile", icon: UserRound }
   ];
 
   return (
     <nav
-      className="fixed inset-x-3 bottom-3 z-40 mx-auto grid max-w-md grid-cols-[repeat(2,minmax(0,1fr))_3.25rem_minmax(0,1fr)] gap-1 rounded-[24px] border border-[#0A0A0A0F] bg-white/95 p-1 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl"
+      className="fixed inset-x-3 bottom-3 z-40 mx-auto grid max-w-md grid-cols-[minmax(0,1fr)_3.25rem_minmax(0,1fr)] gap-1 rounded-[24px] border border-[#0A0A0A0F] bg-white/95 p-1 shadow-[0_12px_40px_rgba(10,10,10,0.14)] backdrop-blur-xl"
       style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
       aria-label="Primary app navigation"
     >
-      {links.slice(0, 2).map(({ to, label, icon: Icon }) => (
-        <DockLink key={to} to={to} label={label} icon={Icon} />
-      ))}
+      <DockLink {...links[0]} icon={links[0].icon} />
       <button
         type="button"
         onClick={onToggleQuick}
@@ -160,9 +159,7 @@ function AppDock({ quickOpen, onToggleQuick }: { quickOpen: boolean; onToggleQui
       >
         <Plus size={24} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />
       </button>
-      {links.slice(2).map(({ to, label, icon: Icon }) => (
-        <DockLink key={to} to={to} label={label} icon={Icon} />
-      ))}
+      <DockLink {...links[1]} icon={links[1].icon} />
     </nav>
   );
 }

@@ -21,7 +21,17 @@ interface UserState {
    * greeting.
    */
   firstName: string | null;
+  /**
+   * True once AppDataHydrator has completed its first GET /api/user/me
+   * (success OR failure). Lets RequireOnboarding wait for the single
+   * source-of-truth fetch instead of firing its own and racing with
+   * the hydrator. Bug being fixed: prior to this flag, both
+   * components called api.getUser() on mount and the last response
+   * to land won — sometimes flickering between states.
+   */
+  hydrated: boolean;
   hydrate: (profile: UserProfile) => void;
+  markHydrated: () => void;
   setKai: (kaiName: string, kaiTone: KaiTone) => void;
   setPrimaryEngine: (engine: EngineId) => void;
   setConsentPending: (parentEmail: string) => void;
@@ -38,6 +48,7 @@ export const useUserStore = create<UserState>((set) => ({
   consentStatus: "not_required",
   parentConsentAt: null,
   firstName: null,
+  hydrated: false,
   hydrate: (profile) =>
     set({
       kaiName: profile.kaiName || "Kai",
@@ -47,11 +58,13 @@ export const useUserStore = create<UserState>((set) => ({
       parentEmail: profile.parentEmail ?? null,
       onboardingCompletedAt: profile.onboardingCompletedAt ?? null,
       consentStatus: profile.consentStatus ?? "not_required",
-      parentConsentAt: profile.parentConsentAt ?? null
+      parentConsentAt: profile.parentConsentAt ?? null,
+      hydrated: true
       // firstName intentionally not hydrated from `profile` — it's
       // pushed by ApiAuthBridge from Clerk's session, not stored
       // server-side. The api.getUser() shape doesn't include it.
     }),
+  markHydrated: () => set({ hydrated: true }),
   setKai: (kaiName, kaiTone) => set({ kaiName, kaiTone }),
   setPrimaryEngine: (primaryEngine) => set({ primaryEngine }),
   setConsentPending: (parentEmail) => set({ parentEmail, consentStatus: "pending", parentConsentAt: null }),

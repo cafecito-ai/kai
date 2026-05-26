@@ -14,6 +14,11 @@ describe("parseEngineRouting", () => {
     expect(result).toEqual({ engine: "mental", reasoning: "You mentioned a lot of social pressure." });
   });
 
+  it("accepts the superpower route", () => {
+    const result = parseEngineRouting('{"engine":"superpower","reasoning":"You mentioned wanting to build a real skill."}');
+    expect(result).toEqual({ engine: "superpower", reasoning: "You mentioned wanting to build a real skill." });
+  });
+
   it("strips chatty preamble and markdown fences", () => {
     const raw = 'Here is my pick:\n```json\n{"engine":"physical","reasoning":"sleep is off"}\n```';
     expect(parseEngineRouting(raw)).toEqual({ engine: "physical", reasoning: "sleep is off" });
@@ -36,9 +41,9 @@ describe("parseEngineRouting", () => {
 });
 
 describe("keywordRouteEngine", () => {
-  it("routes goal-language to mental because goals now live inside the Mental agent", () => {
+  it("routes goal-language to superpower", () => {
     const result = keywordRouteEngine({ q1: "I want to make varsity soccer", q2: "", q3: "", q4: "", q5: "practice more", q6: "7" });
-    expect(result.engine).toBe("mental");
+    expect(result.engine).toBe("superpower");
     expect(result.reasoning).toMatch(/goal|skill/i);
   });
 
@@ -78,7 +83,7 @@ function makeFakeEnv(opts: {
     AI: {
       async run(_model: string, input: Record<string, unknown>) {
         const prompt = String(input.prompt ?? "");
-        const isRouting = prompt.includes("Agents:");
+        const isRouting = prompt.includes("Internal routes:");
         if (isRouting) {
           if (opts.failRouting) throw new Error("routing model down");
           return { response: opts.routingResponse ?? '{"engine":"physical","reasoning":"default"}' };

@@ -265,7 +265,7 @@ export function EngineMental() {
             <IdentityPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "identity_primer_read", eventValue: 6, payload: { articleId } })} />
             <RelationshipsPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "relationships_primer_read", eventValue: 6, payload: { articleId } })} />
             <EngineGuidesIndex engine="mental" title="Mind + growth guides" intro="Emotion, identity, stress, confidence, relationships, purpose, and habits. Each is short. Kai links here in chat when topics come up." />
-            <EngineGuidesIndex engine="potential" eyebrow="legacy goals guides" title="Purpose + doing guides" intro="The old Goals lane is now part of Mental: focus, motivation, money, decisions, and skill-building." />
+            <EngineGuidesIndex engine="superpower" eyebrow="purpose guides" title="Purpose + doing guides" intro="Focus, motivation, money, decisions, and skill-building." />
           </div>
         </Suspense>
       )

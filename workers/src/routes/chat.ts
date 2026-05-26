@@ -10,7 +10,7 @@ import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
 
 // Spec §6 model selection. Kai (general operator) is fast/cheap, Mental
-// gets the highest-quality model, Physical and the legacy Potential
+// gets the highest-quality model, Physical and Superpower
 // surface stay on Sonnet (callClaude's default).
 function modelForEngine(engine: EngineId | "kai"): string | undefined {
   if (engine === "kai") return HAIKU_MODEL;
@@ -29,7 +29,7 @@ export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>()
 
 chatRoutes.get("/conversations/current", async (c) => {
   const engine = (c.req.query("engine") ?? "kai") as EngineId | "kai";
-  if (!["kai", "physical", "potential", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
+  if (!["kai", "physical", "superpower", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
   const conversation = await getLatestConversation(c.env.DB, { userId: c.get("userId"), engine });
   if (!conversation) return c.json({ conversationId: null, messages: [] });
   const messages = await getConversationMessages(c.env.DB, { conversationId: conversation.id, userId: c.get("userId") });
@@ -47,7 +47,7 @@ chatRoutes.post("/kai/chat", async (c) => {
 
 chatRoutes.post("/engines/:engineId/chat", async (c) => {
   const engineId = c.req.param("engineId") as EngineId;
-  if (!["physical", "potential", "mental"].includes(engineId)) return c.json({ error: "Unknown engine" }, 404);
+  if (!["physical", "superpower", "mental"].includes(engineId)) return c.json({ error: "Unknown engine" }, 404);
   const userId = c.get("userId");
   const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
   if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);

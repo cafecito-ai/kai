@@ -8,7 +8,7 @@ import { findGuide, type GuideEngine } from "../lib/guides-registry";
 
 const ENGINE_LABELS: Record<GuideEngine, string> = {
   physical: "Physical",
-  potential: "Mental",
+  superpower: "Purpose",
   mental: "Mental"
 };
 

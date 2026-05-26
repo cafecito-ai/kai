@@ -102,7 +102,7 @@ describe("renderEnginePrompt", () => {
 
   it("includes hard guardrails specific to each engine", () => {
     expect(renderEnginePrompt("physical", baseContext())).toContain("no pain no gain");
-    expect(renderEnginePrompt("potential", baseContext({ primaryEngine: "potential" }))).toContain("pleasing parents");
+    expect(renderEnginePrompt("superpower", baseContext({ primaryEngine: "superpower" }))).toContain("pleasing parents");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("Replace therapy");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("identity-based habits");
   });

@@ -184,7 +184,7 @@ export const api = {
       }>;
     }>("/api/ops/safety-events"),
   submitStrengthsDiscovery: (responses: Record<string, string>) =>
-    request<{ summary: string; answered: number; total: number }>("/api/engines/potential/strengths", {
+    request<{ summary: string; answered: number; total: number }>("/api/engines/superpower/strengths", {
       method: "POST",
       body: JSON.stringify({ responses })
     }),

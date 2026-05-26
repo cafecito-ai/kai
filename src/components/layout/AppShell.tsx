@@ -263,13 +263,13 @@ function isUnifiedAppRoute(pathname: string) {
 }
 
 function sectionLabel(pathname: string) {
-  if (pathname === "/health" || pathname.startsWith("/engine/physical")) return "Health unit";
-  if (pathname === "/mental" || pathname.startsWith("/engine/mental")) return "Mental unit";
+  if (pathname === "/health" || pathname.startsWith("/engine/physical")) return "Physical";
+  if (pathname === "/mental" || pathname.startsWith("/engine/mental")) return "Mental";
   if (pathname === "/progress") return "Progress";
   if (pathname === "/groups") return "Circle";
   if (pathname === "/profile") return "Profile";
   if (pathname === "/settings") return "Settings";
-  return "Kai app";
+  return "Kai";
 }
 
 function engineFromPath(pathname: string): "physical" | "mental" | null {

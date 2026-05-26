@@ -1,4 +1,4 @@
-import { Activity, Brain, Camera, Home, Plus, ShieldAlert, Sparkles, UserRound, X } from "lucide-react";
+import { Camera, Home, MessageCircle, Moon, Plus, ShieldAlert, Sparkles, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { KaiChat } from "../kai/KaiChat";
@@ -9,6 +9,8 @@ import { Footer } from "./Footer";
 
 export function AppShell() {
   const { pathname } = useLocation();
+  const [chatOpen, setChatOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const immersiveRoute = pathname === "/demo" || pathname === "/scope";
   const unifiedAppRoute = isUnifiedAppRoute(pathname);
 
@@ -38,11 +40,18 @@ export function AppShell() {
         >
           Skip to content
         </a>
-        <AppContextBar />
+        <AppContextBar onTalk={() => setChatOpen(true)} />
         <main id="main" className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8">
           <Outlet />
         </main>
-        <AppComposer />
+        <AppComposer
+          chatOpen={chatOpen}
+          quickOpen={quickOpen}
+          onOpenChat={() => setChatOpen(true)}
+          onCloseChat={() => setChatOpen(false)}
+          onToggleQuick={() => setQuickOpen((open) => !open)}
+          onCloseQuick={() => setQuickOpen(false)}
+        />
       </div>
     );
   }
@@ -63,15 +72,11 @@ export function AppShell() {
   );
 }
 
-function AppContextBar() {
-  const { pathname } = useLocation();
-  const { primaryEngine, kaiName } = useUserStore();
+function AppContextBar({ onTalk }: { onTalk: () => void }) {
+  const { kaiName } = useUserStore();
   const events = useProgressStore((state) => state.events);
   const streak = useProgressStore((state) => state.streak());
   const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
-  const activeEngine = engineFromPath(pathname) ?? primaryEngine;
-  const lane = laneMeta(activeEngine);
-  const ActiveIcon = lane.icon;
 
   return (
     <aside className="sticky top-0 z-30 border-b border-[#0A0A0A0F] bg-paper/88 backdrop-blur-xl">
@@ -80,12 +85,9 @@ function AppContextBar() {
           <Link to="/home" className="focus-ring grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.08)]" aria-label={`${kaiName} home`}>
             <KaiAvatar size={34} label={kaiName} pulse />
           </Link>
-          <span className={`grid size-8 shrink-0 place-items-center rounded-full ${lane.tone}`}>
-            <ActiveIcon size={16} aria-hidden="true" />
-          </span>
           <div className="min-w-0">
-            <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-inkMute">{sectionLabel(pathname)}</p>
-            <p className="truncate text-sm font-black text-inkDark">Two lanes. One Kai.</p>
+            <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-inkMute">Kai</p>
+            <p className="truncate text-sm font-black text-inkDark">{kaiName} is here.</p>
           </div>
         </div>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 text-xs font-black sm:grid-cols-[1fr_1fr_auto_auto]">
@@ -100,44 +102,54 @@ function AppContextBar() {
             <ShieldAlert size={14} aria-hidden="true" />
             <span className="hidden sm:inline">Crisis</span>
           </Link>
-          <Link to="/home" className="focus-ring hidden rounded-full bg-inkDark px-4 py-2 text-white sm:inline-flex">
-            Today
-          </Link>
+          <button type="button" onClick={onTalk} className="focus-ring hidden items-center gap-2 rounded-full bg-inkDark px-4 py-2 text-white sm:inline-flex">
+            <KaiAvatar size={22} label={kaiName} />
+            Talk to {kaiName}
+          </button>
         </div>
       </div>
     </aside>
   );
 }
 
-function AppComposer() {
-  const [chatOpen, setChatOpen] = useState(false);
-  const [quickOpen, setQuickOpen] = useState(false);
+function AppComposer({
+  chatOpen,
+  quickOpen,
+  onOpenChat,
+  onCloseChat,
+  onToggleQuick,
+  onCloseQuick
+}: {
+  chatOpen: boolean;
+  quickOpen: boolean;
+  onOpenChat: () => void;
+  onCloseChat: () => void;
+  onToggleQuick: () => void;
+  onCloseQuick: () => void;
+}) {
   const kaiName = useUserStore((state) => state.kaiName);
 
   return (
     <>
-      {chatOpen && <GlobalChatSheet onClose={() => setChatOpen(false)} />}
-      {quickOpen && <GlobalQuickSheet onClose={() => setQuickOpen(false)} />}
+      {chatOpen && <GlobalChatSheet onClose={onCloseChat} />}
+      {quickOpen && <GlobalQuickSheet onClose={onCloseQuick} onTalk={onOpenChat} />}
       <button
         type="button"
-        onClick={() => setChatOpen(true)}
+        onClick={onOpenChat}
         className="focus-ring fixed bottom-5 left-5 z-40 grid size-10 place-items-center rounded-full bg-white shadow-[0_12px_40px_rgba(10,10,10,0.14)] sm:bottom-6 sm:left-[calc(50%-18rem)]"
         aria-label={`Talk to ${kaiName}`}
       >
         <KaiAvatar size={34} label={`${kaiName} companion`} pulse />
       </button>
-      <AppDock quickOpen={quickOpen} onToggleQuick={() => setQuickOpen((open) => !open)} />
+      <AppDock quickOpen={quickOpen} onToggleQuick={onToggleQuick} />
     </>
   );
 }
 
 function AppDock({ quickOpen, onToggleQuick }: { quickOpen: boolean; onToggleQuick: () => void }) {
-  // v2 simplification (cont.): dock cut again from 3 nav items to 2 so the
-  // center "+" button is visually dead-center. Progress + Groups + Settings
-  // now all live behind Profile's hero action row. Daily loop is
-  // Home -> engine -> Profile (which shows progress + manages config);
-  // the "+" surfaces Quick actions (Food / Reset / Scan) to jump to
-  // engines without going Home first.
+  // Kai-only shell: dock stays Home + Profile with the center "+"
+  // surfacing Kai-launchable tools. Engine pages remain reachable by
+  // URL and by tool suggestions, but they are not named in navigation.
   const links = [
     { to: "/home", label: "Home", icon: Home },
     { to: "/profile", label: "Profile", icon: UserRound }
@@ -199,25 +211,17 @@ function GlobalChatSheet({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <KaiChat embedded />
-        <div className="grid grid-cols-2 gap-2 p-2 pt-3">
-          <Link to="/mental?module=checkin" onClick={onClose} className="focus-ring rounded-full bg-[#E4F7F4] px-4 py-3 text-center text-sm font-black text-[#218A7D]">
-            Mental unit
-          </Link>
-          <Link to="/health?module=food" onClick={onClose} className="focus-ring rounded-full bg-[#FFF0EC] px-4 py-3 text-center text-sm font-black text-[#C86B31]">
-            Health unit
-          </Link>
-        </div>
       </div>
     </div>
   );
 }
 
-function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
+function GlobalQuickSheet({ onClose, onTalk }: { onClose: () => void; onTalk: () => void }) {
+  const kaiName = useUserStore((state) => state.kaiName);
   const actions = [
-    { to: "/health?module=food", label: "Food photo", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
-    { to: "/mental?module=checkin", label: "Mental check-in", icon: Brain, tone: "bg-[#E4F7F4] text-[#218A7D]" },
-    { to: "/mental?module=reset", label: "Breath reset", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
-    { to: "/health?module=scan", label: "Body scan", icon: Activity, tone: "bg-warmPaper text-inkDark" }
+    { to: "/health?module=food", label: "Log a meal", icon: Camera, tone: "bg-[#FFF0EC] text-[#C86B31]" },
+    { to: "/mental?module=reset", label: "Take a breath", icon: Sparkles, tone: "bg-[#EEEAFF] text-[#7B6EF6]" },
+    { to: "/health?module=sleep", label: "Log sleep", icon: Moon, tone: "bg-warmPaper text-inkDark" }
   ];
 
   return (
@@ -230,6 +234,19 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="grid gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onTalk();
+            }}
+            className="focus-ring flex min-h-14 items-center gap-3 rounded-[18px] bg-paper px-3 text-left text-sm font-black text-inkDark"
+          >
+            <span className="grid size-9 place-items-center rounded-full bg-white text-inkDark">
+              <MessageCircle size={17} aria-hidden="true" />
+            </span>
+            Talk to {kaiName}
+          </button>
           {actions.map((action) => {
             const Icon = action.icon;
             return (
@@ -259,29 +276,4 @@ function isUnifiedAppRoute(pathname: string) {
     pathname === "/profile" ||
     pathname === "/settings"
   );
-}
-
-function sectionLabel(pathname: string) {
-  if (pathname === "/health" || pathname.startsWith("/engine/physical")) return "Physical";
-  if (pathname === "/mental" || pathname.startsWith("/engine/mental")) return "Mental";
-  if (pathname === "/progress") return "Progress";
-  if (pathname === "/groups") return "Circle";
-  if (pathname === "/profile") return "Profile";
-  if (pathname === "/settings") return "Settings";
-  return "Kai";
-}
-
-function engineFromPath(pathname: string): "physical" | "mental" | null {
-  if (pathname === "/health") return "physical";
-  if (pathname === "/mental") return "mental";
-  if (pathname.startsWith("/engine/mental")) return "mental";
-  if (pathname.startsWith("/engine/physical")) return "physical";
-  return null;
-}
-
-// Legacy "potential" still surfaces from hydrated profiles; map it to
-// Mind. Loose string type absorbs that without re-narrowing the store.
-function laneMeta(engine: string) {
-  if (engine === "physical") return { label: "Body", icon: Activity, tone: "bg-bodyWash text-body" };
-  return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
 }

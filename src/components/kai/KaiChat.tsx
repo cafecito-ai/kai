@@ -6,7 +6,9 @@ import { CrisisResourceCard } from "../safety/CrisisResourceCard";
 import { DisclosureBanner } from "../safety/DisclosureBanner";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
+import { parseToolCards } from "../../lib/kai-tools";
 import { KaiTypingIndicator } from "./KaiTypingIndicator";
+import { ToolCard } from "./ToolCard";
 
 export function KaiChat({ embedded = false }: { embedded?: boolean }) {
   const { messages, send, sending } = useKaiStore();
@@ -44,19 +46,29 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
         aria-relevant="additions"
         aria-label={`Chat with ${kaiName}`}
       >
-        {messages.map((message) => (
-          <Fragment key={message.id}>
-            <div
-              className={`max-w-[88%] rounded-[22px] px-4 py-3 text-sm font-medium leading-6 ${
-                message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
-              }`}
-            >
-              <span className="sr-only">{message.role === "assistant" ? `${kaiName} said: ` : "You said: "}</span>
-              {message.content}
-            </div>
-            {message.safetyEvent && <CrisisResourceCard />}
-          </Fragment>
-        ))}
+        {messages.map((message) => {
+          const parsed = message.role === "assistant" ? parseToolCards(message.content) : { text: message.content, tools: [] };
+          return (
+            <Fragment key={message.id}>
+              <div
+                className={`max-w-[88%] rounded-[22px] px-4 py-3 text-sm font-medium leading-6 ${
+                  message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
+                }`}
+              >
+                <span className="sr-only">{message.role === "assistant" ? `${kaiName} said: ` : "You said: "}</span>
+                {parsed.text || (parsed.tools.length > 0 ? "I found a tool that fits." : message.content)}
+              </div>
+              {parsed.tools.length > 0 && (
+                <div className="flex max-w-[88%] flex-wrap gap-2" aria-label="Kai suggested tools">
+                  {parsed.tools.map((tool) => (
+                    <ToolCard key={`${message.id}-${tool.id}`} tool={tool} />
+                  ))}
+                </div>
+              )}
+              {message.safetyEvent && <CrisisResourceCard />}
+            </Fragment>
+          );
+        })}
         {sending && <KaiTypingIndicator />}
       </div>
       <div className="mx-4 mb-3 flex flex-wrap gap-2" role="group" aria-label="Topic suggestions">

@@ -1,4 +1,4 @@
-import { Brain, HeartPulse, Settings as SettingsIcon, UserRound } from "lucide-react";
+import { Brain, HeartPulse, Settings as SettingsIcon, UsersRound, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EvolvingCharacter } from "../components/tracker/EvolvingCharacter";
 import { ProgressSummary } from "../components/tracker/ProgressSummary";
@@ -23,10 +23,16 @@ export function Profile() {
           </>
         }
         action={
-          <Link to="/settings" className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-black text-paper">
-            <SettingsIcon size={16} aria-hidden="true" />
-            Settings
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/groups" className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-black text-ink">
+              <UsersRound size={16} aria-hidden="true" />
+              Groups
+            </Link>
+            <Link to="/settings" className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-black text-paper">
+              <SettingsIcon size={16} aria-hidden="true" />
+              Settings
+            </Link>
+          </div>
         }
       >
         Profile keeps Kai's voice, primary unit, consent state, and progress identity together.

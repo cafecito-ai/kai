@@ -1,33 +1,34 @@
-import { ArrowRight, ShieldAlert } from "lucide-react";
+import { ChevronDown, ShieldAlert, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { KaiChat } from "../components/kai/KaiChat";
+import { KaiMark } from "../components/ui/AppPrimitives";
 import { useProgressStore } from "../stores/progressStore";
 import { useUserStore } from "../stores/userStore";
 
 /**
- * Home — two-choice picker.
+ * Home — Cal AI-style single widget.
  *
- * Per Claude Design's v2 handoff, Home strips down to the simplest
- * possible navigation: pick Physical or Mental. Everything else
- * (score card, metric grid, recent activity, hydration ticker) moved
- * out. The dock and floating Kai composer in AppShell still carry
- * the rest of the navigation; the page itself stays calm.
+ * v3 redesign (Lev feedback, 2026-05-26): Home strips down to one
+ * personalized chat widget. Resting state shows a Kai-flavored card
+ * with a faux composer; tapping it expands KaiChat inline on the
+ * same page. Lane entries (Physical / Mental) moved to the dock and
+ * the global Quick (+) menu in AppShell so Home can be chat-first
+ * and feel like Cal AI's single-action home.
  *
- * Greeting personalization: read kaiName from our own store (always
- * hydrated by AppDataHydrator) instead of pulling firstName from
- * Clerk's `useUser` hook. That hook throws "ClerkInstanceContext not
- * found" the moment Home renders if ClerkProvider isn't mounted —
- * which happens whenever VITE_AUTH_REQUIRED isn't "1" or the
- * publishable key isn't a real pk_… key. Production hit this on
- * 2026-05-26 after the v2 cutover (#103). Hotfix: stop depending on
- * Clerk's hook in render and use the data we already hydrate.
+ * Greeting personalization stays on our own userStore (kaiName +
+ * firstName) so this page renders without depending on Clerk's
+ * useUser hook (which crashes when ClerkProvider isn't mounted —
+ * see v2 hotfix #103).
  */
 export function Home() {
   const events = useProgressStore((state) => state.events);
+  const streak = useProgressStore((state) => state.streak());
   const kaiName = useUserStore((state) => state.kaiName);
   const firstName = useUserStore((state) => state.firstName);
   const today = formatToday();
-  const lastUsed = formatLastUsed(events);
   const isNew = events.length === 0;
+  const [chatExpanded, setChatExpanded] = useState(false);
 
   return (
     <div className="mx-auto flex min-h-[calc(100svh-12rem)] w-full max-w-md flex-col pb-4 lg:max-w-2xl">
@@ -35,19 +36,19 @@ export function Home() {
         <span className="rounded-full border border-line bg-paper/60 px-3 py-1.5 font-mono text-[11px] font-black uppercase tracking-[0.14em] text-muted">
           {today}
         </span>
+        {streak > 0 && (
+          <span className="rounded-full border border-line bg-white px-3 py-1.5 font-mono text-[11px] font-black uppercase tracking-[0.14em] text-ink">
+            {streak}-day streak
+          </span>
+        )}
       </header>
 
-      <section className="mt-6 mb-6">
+      <section className={chatExpanded ? "mt-5 mb-4" : "mt-6 mb-6"}>
         <p className="eyebrow">{isNew ? "Welcome" : "Today"}</p>
         {isNew ? (
-          <>
-            <h1 className="mt-2 max-w-[12ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
-              Pick a <span className="font-display font-normal italic text-plum">lane.</span>
-            </h1>
-            <p className="mt-3 max-w-[26ch] text-sm font-semibold leading-snug text-muted">
-              You can switch any time. Nothing's locked.
-            </p>
-          </>
+          <h1 className="mt-2 max-w-[14ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
+            Say hi to <span className="font-display font-normal italic text-plum">{kaiName}.</span>
+          </h1>
         ) : firstName ? (
           <h1 className="mt-2 max-w-[12ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
             Hey {firstName}.
@@ -63,32 +64,57 @@ export function Home() {
         )}
       </section>
 
-      <div className="flex flex-col gap-3">
-        <ChoiceCard
-          to="/health"
-          eyebrow="Body"
-          title="Physical"
-          copy="Food. Scan. Sleep. Move."
-          tone="body"
-        />
-        <ChoiceCard
-          to="/mental?module=checkin"
-          eyebrow="Mind"
-          title="Mental"
-          copy="Talk to Kai about what's loud."
-          tone="reset"
-        />
-      </div>
+      {chatExpanded ? (
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => setChatExpanded(false)}
+            className="focus-ring inline-flex w-fit items-center gap-1.5 self-end rounded-full border border-line bg-white px-3 py-1.5 text-xs font-black text-muted hover:text-ink"
+            aria-label="Collapse chat"
+          >
+            <ChevronDown size={14} aria-hidden="true" />
+            Collapse
+          </button>
+          <KaiChat embedded />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setChatExpanded(true)}
+          className="focus-ring group relative flex flex-col gap-4 overflow-hidden rounded-calm border border-line bg-white p-5 text-left shadow-[0_18px_50px_rgba(10,10,10,0.06)]"
+          aria-label={`Talk to ${kaiName}`}
+        >
+          <div className="flex items-center gap-3">
+            <KaiMark size="md" />
+            <div>
+              <p className="eyebrow">{kaiName.toLowerCase()}</p>
+              <p className="font-display text-[22px] font-black leading-tight text-ink">
+                {greetingLine(isNew, firstName, kaiName)}
+              </p>
+            </div>
+          </div>
+
+          <p className="max-w-[28ch] text-[15px] font-semibold leading-snug text-muted">
+            {isNew
+              ? "Tell me what's loud right now. Doesn't have to be tidy."
+              : "Pick up where we left off, or start something new. I'm here."}
+          </p>
+
+          <div className="mt-1 flex items-center justify-between rounded-full border border-line bg-paper px-4 py-3">
+            <span className="text-sm font-semibold text-soft">say it messy</span>
+            <span
+              className="grid size-9 place-items-center rounded-full bg-ink text-paper transition group-hover:bg-plum"
+              aria-hidden="true"
+            >
+              <Sparkles size={16} />
+            </span>
+          </div>
+        </button>
+      )}
 
       <div className="flex-1" />
 
       <footer className="mt-6 flex flex-col gap-3">
-        {lastUsed && (
-          <div className="flex items-center justify-between px-1">
-            <span className="text-sm font-semibold text-muted">Last with Kai</span>
-            <span className="text-sm font-black text-ink">{lastUsed}</span>
-          </div>
-        )}
         <Link
           to="/crisis"
           className="focus-ring inline-flex w-fit items-center gap-2 rounded-full border border-line bg-white px-3.5 py-2.5 text-[13px] font-black text-danger"
@@ -101,53 +127,10 @@ export function Home() {
   );
 }
 
-function ChoiceCard({
-  to,
-  eyebrow,
-  title,
-  copy,
-  tone
-}: {
-  to: string;
-  eyebrow: string;
-  title: string;
-  copy: string;
-  tone: "body" | "reset";
-}) {
-  // tone === "body" → sage/Physical lane; tone === "reset" → coral/Mental lane.
-  // Tailwind needs both class names to appear literally for the compiler to
-  // include them in the build, so we list them out instead of templating.
-  const tones = {
-    body: {
-      shell: "border-body/20 bg-bodyWash",
-      title: "text-body",
-      arrow: "bg-body text-paper"
-    },
-    reset: {
-      shell: "border-reset/25 bg-resetWash",
-      title: "text-reset",
-      arrow: "bg-reset text-paper"
-    }
-  }[tone];
-
-  return (
-    <Link
-      to={to}
-      className={`focus-ring relative flex min-h-[200px] flex-col gap-3.5 overflow-hidden rounded-calm border p-5 text-left ${tones.shell}`}
-    >
-      <span className="eyebrow">{eyebrow}</span>
-      <div>
-        <p className={`font-display text-[36px] font-black leading-[0.92] tracking-tight ${tones.title}`}>{title}</p>
-        <p className="mt-2 max-w-[22ch] text-sm font-semibold leading-snug text-inkSoft">{copy}</p>
-      </div>
-      <span
-        className={`absolute bottom-4 right-4 grid size-10 place-items-center rounded-full ${tones.arrow}`}
-        aria-hidden="true"
-      >
-        <ArrowRight size={18} />
-      </span>
-    </Link>
-  );
+function greetingLine(isNew: boolean, firstName: string | null, kaiName: string) {
+  if (isNew) return `I'm ${kaiName}. What's going on?`;
+  if (firstName) return `What's on your mind?`;
+  return `Pick this up with ${kaiName}.`;
 }
 
 function formatToday(date = new Date()) {
@@ -155,16 +138,4 @@ function formatToday(date = new Date()) {
   const month = date.toLocaleDateString("en-US", { month: "short" });
   const day = date.getDate();
   return `${weekday} · ${month} ${day}`;
-}
-
-function formatLastUsed(events: { occurredAt: string; engine: string }[]) {
-  if (events.length === 0) return null;
-  const last = events[0];
-  const when = new Date(last.occurredAt);
-  const today = new Date();
-  const sameDay = when.toDateString() === today.toDateString();
-  const label = sameDay
-    ? when.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-    : when.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  return label;
 }

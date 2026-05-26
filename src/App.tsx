@@ -14,6 +14,7 @@ import { ForParents } from "./pages/ForParents";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Onboarding } from "./pages/Onboarding";
+import { Missions } from "./pages/Missions";
 import { Ops } from "./pages/Ops";
 import { OpsDemoSession } from "./pages/OpsDemoSession";
 import { OpsDemoSessions } from "./pages/OpsDemoSessions";
@@ -74,6 +75,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
           <Route path="/groups" element={protectedOnboarding(<Groups />)} />
           <Route path="/profile" element={protectedOnboarding(<Profile />)} />
+          <Route path="/missions" element={protectedOnboarding(<Missions />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/demo" element={<Demo />} />

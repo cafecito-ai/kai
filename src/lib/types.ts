@@ -17,6 +17,17 @@ export interface Goal {
   description?: string;
   targetDate?: string;
   status: "active" | "achieved" | "paused" | "released";
+  missionId?: string | null;
+}
+
+export interface Mission {
+  id: string;
+  pillar: "body" | "mind" | "purpose" | "people";
+  statement: string;
+  why?: string | null;
+  status: "active" | "paused" | "achieved" | "released" | "archived";
+  createdAt?: string;
+  archivedAt?: string | null;
 }
 
 export interface UserProfile {

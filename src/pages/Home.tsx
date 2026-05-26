@@ -25,6 +25,7 @@ import { useUserStore } from "../stores/userStore";
 export function Home() {
   const events = useProgressStore((state) => state.events);
   const kaiName = useUserStore((state) => state.kaiName);
+  const firstName = useUserStore((state) => state.firstName);
   const today = formatToday();
   const lastUsed = formatLastUsed(events);
   const isNew = events.length === 0;
@@ -49,6 +50,12 @@ export function Home() {
               You can switch any time. Nothing's locked.
             </p>
           </>
+        ) : firstName ? (
+          <h1 className="mt-2 max-w-[12ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
+            Hey {firstName}.
+            <br />
+            <span className="font-display font-normal italic text-plum">What's up?</span>
+          </h1>
         ) : (
           <h1 className="mt-2 max-w-[11ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
             Today.

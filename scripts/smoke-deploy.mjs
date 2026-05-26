@@ -109,12 +109,49 @@ for (const test of cases) {
   console.log(`✓ ${test.name}`);
 }
 
+// Bundle integrity check — after the per-route status checks pass,
+// pull the / HTML, extract the script tag's src, and assert the
+// bundle URL itself 200s. Catches the class of bug where a Pages
+// deploy serves the HTML shell but the JS bundle isn't actually
+// present (cache miss / aborted deploy / stale dist). The SPA
+// would white-screen for users while every route check above
+// reported "200 text/html".
+await assertBundleReachable(baseUrl).catch((err) => {
+  console.error(`✗ bundle integrity check failed: ${err.message}`);
+  failed++;
+});
+
 if (failed > 0) {
   console.error(`\n${failed} smoke check${failed === 1 ? "" : "s"} failed against ${baseUrl}`);
   process.exit(1);
 }
 
 console.log(`\nAll smoke checks passed against ${baseUrl}`);
+
+async function assertBundleReachable(origin) {
+  const homeRes = await fetchWithRetry(`${origin}/`);
+  if (homeRes.status !== 200) {
+    throw new Error(`/ returned ${homeRes.status}, can't check bundle`);
+  }
+  const html = await homeRes.text();
+  // Vite emits one entry script tag of the form:
+  //   <script type="module" crossorigin src="/assets/index-<hash>.js"></script>
+  // We grab any `src="/assets/...js"` and verify each 200s.
+  const sources = Array.from(html.matchAll(/<script[^>]+src="(\/assets\/[^"]+\.js)"/g)).map(
+    (match) => match[1]
+  );
+  if (sources.length === 0) {
+    throw new Error("no /assets/*.js script tags found in /; SPA bundle wiring is broken");
+  }
+  for (const src of sources) {
+    const url = `${origin}${src}`;
+    const res = await fetchWithRetry(url);
+    if (res.status !== 200) {
+      throw new Error(`${src} returned ${res.status} (expected 200 from the Pages bundle)`);
+    }
+  }
+  console.log(`✓ bundle integrity (${sources.length} script tag${sources.length === 1 ? "" : "s"} verified)`);
+}
 
 async function fetchWithRetry(url, test = {}) {
   let lastError;
@@ -161,7 +198,8 @@ async function fetchWithCurl(url, originalError, test = {}) {
     return {
       status,
       headers: { get: (key) => (key.toLowerCase() === "content-type" ? contentType : null) },
-      json: async () => JSON.parse(body)
+      json: async () => JSON.parse(body),
+      text: async () => body
     };
   } catch {
     throw originalError;

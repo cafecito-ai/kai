@@ -1,4 +1,4 @@
-import type { BodyScanResult, ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, Mission, ProgressEvent, UserProfile } from "./types";
+import type { BodyScanResult, ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, Mission, MissionDraft, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
@@ -100,6 +100,8 @@ export const api = {
   getMissions: () => request<{ missions: Mission[] }>("/api/missions"),
   createMission: (body: Pick<Mission, "pillar" | "statement"> & { why?: string }) =>
     request<{ mission: Mission }>("/api/missions", { method: "POST", body: JSON.stringify(body) }),
+  reviewMissions: (answers: Partial<Record<Mission["pillar"], string>>) =>
+    request<{ drafts: MissionDraft[] }>("/api/missions/coaching", { method: "POST", body: JSON.stringify({ answers }) }),
   updateMission: (missionId: string, body: Partial<Pick<Mission, "statement" | "why" | "status">>) =>
     request<{ mission: Mission }>(`/api/missions/${missionId}`, { method: "PATCH", body: JSON.stringify(body) }),
   deleteMission: (missionId: string) =>

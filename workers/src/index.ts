@@ -14,6 +14,7 @@ import { strengthsRoutes } from "./routes/strengths";
 import { userRoutes } from "./routes/user";
 import { requireAuth } from "./lib/auth";
 import { consumeConsentToken } from "./lib/consent";
+import { refreshMemoriesForActiveUsers } from "./lib/memory";
 import { recomputeAllProgressSummaries } from "./lib/progress";
 import type { AppVariables, Env } from "./types";
 
@@ -109,6 +110,12 @@ export default {
           console.log("nightly progress recompute", report);
         } catch (err) {
           console.error("nightly progress recompute fatal", err);
+        }
+        try {
+          const memory = await refreshMemoriesForActiveUsers(env);
+          console.log("kai memory refresh", memory);
+        } catch (err) {
+          console.error("kai memory refresh fatal", err);
         }
         try {
           const cleanup = await cleanupDemoFoodPhotos(env);

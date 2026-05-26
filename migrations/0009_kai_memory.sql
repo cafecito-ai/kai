@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS kai_memory (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  summary TEXT NOT NULL,
+  message_count_at_refresh INTEGER NOT NULL DEFAULT 0,
+  refreshed_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

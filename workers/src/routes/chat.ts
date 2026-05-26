@@ -3,6 +3,7 @@ import { HAIKU_MODEL, OPUS_MODEL, callClaude } from "../lib/claude";
 import { buildKaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
+import { refreshMemory, shouldRefreshMemory } from "../lib/memory";
 import { renderEnginePrompt } from "../lib/prompts/engines";
 import { renderKaiSystemPrompt } from "../lib/prompts/kai";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
@@ -42,7 +43,7 @@ chatRoutes.post("/kai/chat", async (c) => {
   if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
   const context = await buildKaiContext(c.env, userId);
-  return handleChat(c.env, userId, body.conversationId, body.message, renderKaiSystemPrompt(context), "kai");
+  return handleChat(c.env, c.executionCtx, userId, body.conversationId, body.message, renderKaiSystemPrompt(context), "kai");
 });
 
 chatRoutes.post("/engines/:engineId/chat", async (c) => {
@@ -53,10 +54,10 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
   if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
   const context = await buildKaiContext(c.env, userId);
-  return handleChat(c.env, userId, body.conversationId, body.message, renderEnginePrompt(engineId, context), engineId);
+  return handleChat(c.env, c.executionCtx, userId, body.conversationId, body.message, renderEnginePrompt(engineId, context), engineId);
 });
 
-async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
+async function handleChat(env: Env, ctx: ExecutionContext, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
 
   // Load recent turns BEFORE the new user message is persisted so we
@@ -92,5 +93,10 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
     model: modelForEngine(engine)
   });
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply });
+  ctx.waitUntil(
+    shouldRefreshMemory(env, userId)
+      .then((shouldRefresh) => (shouldRefresh ? refreshMemory(env, userId) : null))
+      .catch((err) => console.warn("kai memory background refresh failed", err))
+  );
   return Response.json({ conversationId: conversation, reply });
 }

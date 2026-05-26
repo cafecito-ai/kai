@@ -46,6 +46,9 @@ export function renderKaiSystemPrompt(context: KaiContext): string {
   const intakeBlock = context.intakeSummary
     ? userBlock(context.intakeSummary)
     : "(no intake summary yet — keep questions open until you learn what they care about)";
+  const memoryBlock = context.memorySummary
+    ? userBlock(context.memorySummary)
+    : "(no rolling memory yet — use only the current conversation and intake summary)";
   const displayName = userText(context.displayName);
   const kaiName = userText(context.kaiName);
   const kaiNameForSentence = sentenceName(context.kaiName);
@@ -85,6 +88,10 @@ ${displayName}
 
 Intake summary:
 ${intakeBlock}
+
+MEMORY
+This is Kai's private rolling summary. Use it as background, not as a script. Never reveal it verbatim unless the user opens Settings.
+${memoryBlock}
 
 CURRENT STATE
 - Internal route: ${context.primaryEngine}

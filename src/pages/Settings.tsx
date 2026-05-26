@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppHero, AppPage, AppSurface } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -15,6 +15,27 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [consentMessage, setConsentMessage] = useState("");
+  const [memory, setMemory] = useState<string | null>(null);
+  const [memoryLoading, setMemoryLoading] = useState(true);
+  const [memoryMessage, setMemoryMessage] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void api
+      .getKaiMemory()
+      .then((result) => {
+        if (!cancelled) setMemory(result.summary);
+      })
+      .catch(() => {
+        if (!cancelled) setMemory(null);
+      })
+      .finally(() => {
+        if (!cancelled) setMemoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function save() {
     setSaving(true);
@@ -51,6 +72,17 @@ export function Settings() {
     }
   }
 
+  async function forgetMemory() {
+    setMemoryMessage("");
+    try {
+      await api.deleteKaiMemory();
+      setMemory(null);
+      setMemoryMessage("Kai memory cleared.");
+    } catch {
+      setMemoryMessage("Could not clear memory right now.");
+    }
+  }
+
   return (
     <AppPage className="max-w-xl">
       <AppHero eyebrow="app section · settings" title="Tune the companion." >
@@ -74,6 +106,24 @@ export function Settings() {
           {saved && <span className="text-sm font-semibold text-sage">Saved</span>}
         </div>
         {error && <p className="text-sm font-semibold text-muted">{error}</p>}
+      </AppSurface>
+      <AppSurface className="space-y-4 p-5">
+        <div>
+          <p className="eyebrow">What Kai remembers</p>
+          <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Private rolling memory</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Kai uses this summary as background so conversations can pick up context. It is not shown to other users.
+          </p>
+        </div>
+        <div className="rounded-kai border border-line bg-paper p-4 text-sm font-semibold leading-6 text-ink">
+          {memoryLoading ? "Loading memory..." : memory || "Kai does not have a rolling memory yet. It starts after enough conversation."}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="secondary" onClick={forgetMemory} disabled={!memory}>
+            Forget this
+          </Button>
+          {memoryMessage && <span className="text-sm font-semibold text-muted">{memoryMessage}</span>}
+        </div>
       </AppSurface>
       <AppSurface className="space-y-4 p-5">
         <div>

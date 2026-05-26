@@ -3,6 +3,7 @@ import { createConsentRequest } from "../lib/consent";
 import { ensureUser } from "../lib/db";
 import { logAppEvent } from "../lib/events";
 import { deterministicSummary, keywordRouteEngine, routeEngineFromSummary, summarizeIntake } from "../lib/intake";
+import { deleteKaiMemory, getKaiMemory } from "../lib/memory";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import type { AppVariables, Env } from "../types";
 
@@ -71,6 +72,16 @@ userRoutes.patch("/user/me", async (c) => {
       .bind(body.designPreference.trim().slice(0, 16), userId)
       .run();
   }
+  return c.json({ ok: true });
+});
+
+userRoutes.get("/user/memory", async (c) => {
+  const summary = await getKaiMemory(c.env, c.get("userId"));
+  return c.json({ summary });
+});
+
+userRoutes.delete("/user/memory", async (c) => {
+  await deleteKaiMemory(c.env, c.get("userId"));
   return c.json({ ok: true });
 });
 

@@ -9,6 +9,7 @@ import { FutureSelfLetter } from "../components/mental/FutureSelfLetter";
 import { MeditationPlayer } from "../components/mental/MeditationPlayer";
 import { SocialMediaReset } from "../components/mental/SocialMediaReset";
 import { ThoughtReframe } from "../components/mental/ThoughtReframe";
+import { KaiCueNote } from "../components/kai/KaiCueNote";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { StrengthsDiscoveryCard } from "../components/strengths/StrengthsDiscoveryCard";
 import { Button } from "../components/ui/Button";
@@ -33,6 +34,7 @@ export function EngineMental() {
   const [goalTitle, setGoalTitle] = useState("");
   const [nextStep, setNextStep] = useState("Spend 10 minutes on the smallest useful version.");
   const [reframe, setReframe] = useState("This still matters. I can make the next move smaller without quitting.");
+  const [kaiCue, setKaiCue] = useState<string | null>(null);
   // All four flows (feelings, thought, social, letter) are now structured
   // components below. No remaining inline-action items.
 
@@ -63,6 +65,16 @@ export function EngineMental() {
     } catch {
       // Keep the optimistic entry in demo mode.
     }
+    // Same Kai-cue wiring as Physical: non-blocking fire-and-forget,
+    // worker handles fallback if model unavailable.
+    void api
+      .generateKaiCue({
+        eventType: input.eventType,
+        eventValue: input.eventValue,
+        payload: (input.payload as Record<string, unknown> | undefined) ?? undefined
+      })
+      .then(({ cue }) => setKaiCue(cue))
+      .catch(() => undefined);
   }
 
   async function createGoal() {
@@ -284,6 +296,7 @@ export function EngineMental() {
           <DisclosureBanner />
         </>
       }
+      liveNote={kaiCue ? <KaiCueNote cue={kaiCue} onDismiss={() => setKaiCue(null)} /> : null}
     />
   );
 }

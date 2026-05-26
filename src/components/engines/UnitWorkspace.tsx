@@ -18,7 +18,8 @@ export function UnitWorkspace({
   intro,
   tone,
   modules,
-  banners
+  banners,
+  liveNote
 }: {
   title: string;
   label: string;
@@ -27,6 +28,9 @@ export function UnitWorkspace({
   modules: UnitModule[];
   /** Safety / disclosure banners that must be visible on every tab (spec §1, §7). */
   banners?: ReactNode;
+  /** Ephemeral Kai-cue note shown between banners and tabs. Engines
+   * use this for the "after each action" cue from /api/kai/cue. */
+  liveNote?: ReactNode;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get("module");
@@ -76,6 +80,7 @@ export function UnitWorkspace({
       </section>
 
       {banners && <div className="grid gap-3">{banners}</div>}
+      {liveNote && <div>{liveNote}</div>}
 
       <section className="rounded-[30px] border border-[#0A0A0A0F] bg-white/80 p-3 shadow-sm backdrop-blur-xl">
         <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${title} modules`}>

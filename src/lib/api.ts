@@ -59,7 +59,11 @@ function getDevUser() {
 
 export const api = {
   getUser: () =>
-    request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
+    // Worker returns extra opaque fields (`user`, `intake`, `designPreference`)
+    // that no client code consumes today. Narrowing the response type to
+    // `UserProfile` makes the contract honest and lets `hydrate(profile)`
+    // type-check directly. Add them back here if a caller ever needs them.
+    request<UserProfile>("/api/user/me"),
   generateKaiCue: (body: { eventType: string; eventValue?: number; payload?: Record<string, unknown>; kaiName?: string }) =>
     request<{ cue: string; source: "model" | "fallback" }>("/api/kai/cue", {
       method: "POST",
@@ -85,7 +89,7 @@ export const api = {
     }),
   logProgress: (body: Omit<ProgressEvent, "id" | "occurredAt">) =>
     request<{ event: ProgressEvent }>("/api/progress/event", { method: "POST", body: JSON.stringify(body) }),
-  getProgress: () => request<{ eventsByDay: ProgressEvent[]; level: number; streaks: unknown; belts: unknown }>("/api/progress"),
+  getProgress: () => request<{ events: ProgressEvent[]; level: number; streaks: unknown; belts: unknown }>("/api/progress"),
   getGoals: () => request<{ goals: Goal[] }>("/api/goals"),
   createGoal: (goal: Omit<Goal, "id" | "status">) =>
     request<{ goal: Goal }>("/api/goals", { method: "POST", body: JSON.stringify(goal) }),

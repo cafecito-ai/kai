@@ -41,7 +41,7 @@ export function AppDataHydrator() {
         // wait-for-hydrate doesn't stick on a loading shell forever.
         markHydrated();
       }
-      if (progressResult.status === "fulfilled") setEvents(progressResult.value.eventsByDay);
+      if (progressResult.status === "fulfilled") setEvents(progressResult.value.events);
       if (conversationResult.status === "fulfilled") hydrateKai(conversationResult.value);
     }
 

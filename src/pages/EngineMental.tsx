@@ -1,5 +1,5 @@
 import { BookOpen, Brain, CheckCircle2, History, RefreshCw, Target, Wind } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
 import { BreathingPlayer } from "../components/mental/BreathingPlayer";
@@ -137,7 +137,7 @@ export function EngineMental() {
       summary: "Breathe + settle",
       icon: Wind,
       content: (
-        <div className="grid gap-4">
+        <ResetSwiper labels={["Breathing", "Meditation", "Social reset", "Letter"]}>
           <BreathingPlayer
             onSessionComplete={({ patternId, seconds }) =>
               void completeReset({
@@ -178,7 +178,7 @@ export function EngineMental() {
               })
             }
           />
-        </div>
+        </ResetSwiper>
       )
     },
     {
@@ -316,4 +316,75 @@ export function EngineMental() {
 
 function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");
+}
+
+/**
+ * Horizontal swipe pager for the Reset module — replaces the previous
+ * vertical stack of four cards (Breathing / Meditation / Social reset /
+ * Letter) so they read as one tool at a time on mobile.
+ *
+ * Uses CSS scroll-snap (no dependency) and a scrollLeft -> activeIndex
+ * mapping on scroll to drive the dot row + label below.
+ */
+function ResetSwiper({ children, labels }: { children: ReactNode[]; labels: string[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let raf = 0;
+    const handler = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        if (!el.clientWidth) return;
+        setActiveIndex(Math.round(el.scrollLeft / el.clientWidth));
+      });
+    };
+    el.addEventListener("scroll", handler, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", handler);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  function jumpTo(index: number) {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        ref={ref}
+        className="flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-2 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-roledescription="carousel"
+      >
+        {children.map((child, i) => (
+          <div key={i} className="w-full shrink-0 snap-center" aria-roledescription="slide" aria-label={`${i + 1} of ${children.length}: ${labels[i] ?? ""}`}>
+            {child}
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex justify-center gap-2" role="tablist" aria-label="Reset tools">
+          {children.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={i === activeIndex}
+              aria-label={`Go to ${labels[i] ?? `slide ${i + 1}`}`}
+              onClick={() => jumpTo(i)}
+              className={`focus-ring h-2 rounded-full transition-all ${i === activeIndex ? "w-8 bg-ink" : "w-2 bg-line"}`}
+            />
+          ))}
+        </div>
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted" aria-live="polite">
+          {labels[activeIndex] ?? ""}
+        </p>
+      </div>
+    </div>
+  );
 }

@@ -15,6 +15,7 @@ import {
   MEAL_CONTEXTS,
   type MealContextId
 } from "../lib/food-photo";
+import { KaiCueNote } from "../components/kai/KaiCueNote";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { localSafetyCheck } from "../lib/safety";
 import type { BodyScanResult, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
@@ -32,6 +33,7 @@ export function EnginePhysical() {
   const [bodyScanPhoto, setBodyScanPhoto] = useState<File | null>(null);
   const [bodyScanResult, setBodyScanResult] = useState<BodyScanResult | null>(null);
   const [bodyScanMessage, setBodyScanMessage] = useState("");
+  const [kaiCue, setKaiCue] = useState<string | null>(null);
 
   async function completeEntry(input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) {
     setFoodSafetyMessage("");
@@ -49,6 +51,17 @@ export function EnginePhysical() {
     } finally {
       setSaving("");
     }
+    // Fire the Kai cue request non-blocking after the entry write.
+    // Worker falls back to a static cue on any failure, so we don't
+    // need to handle errors in the UI.
+    void api
+      .generateKaiCue({
+        eventType: input.eventType,
+        eventValue: input.eventValue,
+        payload: (input.payload as Record<string, unknown> | undefined) ?? undefined
+      })
+      .then(({ cue }) => setKaiCue(cue))
+      .catch(() => undefined);
   }
 
   async function logMeal(mode: "meal_log" | "food_photo_stub") {
@@ -375,6 +388,7 @@ export function EnginePhysical() {
       intro="Four cards: food camera, body scan, sleep, and a guided physical tracker. Useful, pattern-aware, never obsessive."
       modules={modules}
       banners={<DisclosureBanner />}
+      liveNote={kaiCue ? <KaiCueNote cue={kaiCue} onDismiss={() => setKaiCue(null)} /> : null}
     />
   );
 }

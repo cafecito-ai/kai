@@ -60,6 +60,11 @@ function getDevUser() {
 export const api = {
   getUser: () =>
     request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
+  generateKaiCue: (body: { eventType: string; eventValue?: number; payload?: Record<string, unknown>; kaiName?: string }) =>
+    request<{ cue: string; source: "model" | "fallback" }>("/api/kai/cue", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
   chat: (engine: EngineId | "kai", message: string, conversationId?: string | null) =>
     request<{
       conversationId: string;

@@ -274,6 +274,7 @@ function isUnifiedAppRoute(pathname: string) {
     pathname === "/progress" ||
     pathname === "/groups" ||
     pathname === "/profile" ||
+    pathname === "/missions" ||
     pathname === "/settings"
   );
 }

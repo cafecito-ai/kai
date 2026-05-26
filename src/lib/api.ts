@@ -1,4 +1,4 @@
-import type { BodyScanResult, ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { BodyScanResult, ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, Mission, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
@@ -97,6 +97,13 @@ export const api = {
     request<{ goal: Goal }>("/api/goals", { method: "POST", body: JSON.stringify(goal) }),
   updateGoal: (goalId: string, body: Partial<Goal>) =>
     request<{ goal: Goal }>(`/api/goals/${goalId}`, { method: "PATCH", body: JSON.stringify(body) }),
+  getMissions: () => request<{ missions: Mission[] }>("/api/missions"),
+  createMission: (body: Pick<Mission, "pillar" | "statement"> & { why?: string }) =>
+    request<{ mission: Mission }>("/api/missions", { method: "POST", body: JSON.stringify(body) }),
+  updateMission: (missionId: string, body: Partial<Pick<Mission, "statement" | "why" | "status">>) =>
+    request<{ mission: Mission }>(`/api/missions/${missionId}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteMission: (missionId: string) =>
+    request<{ ok: boolean }>(`/api/missions/${missionId}`, { method: "DELETE" }),
   getEngineEntries: (engine: EngineId) =>
     request<{ entries: EngineEntry[] }>(`/api/engines/${engine}/entries`),
   createEngineEntry: (engine: EngineId, body: { entryType: string; title?: string; payload?: unknown; completed?: boolean }) =>

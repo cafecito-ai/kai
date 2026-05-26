@@ -17,7 +17,7 @@ import {
 } from "../lib/food-photo";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
 import { localSafetyCheck } from "../lib/safety";
-import type { FoodPhotoItem, FoodPhotoResult } from "../lib/types";
+import type { BodyScanResult, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 
 export function EnginePhysical() {
@@ -30,7 +30,8 @@ export function EnginePhysical() {
   const [foodPhotoResult, setFoodPhotoResult] = useState<FoodPhotoResult | null>(null);
   const [mealContext, setMealContext] = useState<MealContextId>("school_lunch");
   const [bodyScanPhoto, setBodyScanPhoto] = useState<File | null>(null);
-  const [bodyScanSaved, setBodyScanSaved] = useState(false);
+  const [bodyScanResult, setBodyScanResult] = useState<BodyScanResult | null>(null);
+  const [bodyScanMessage, setBodyScanMessage] = useState("");
 
   async function completeEntry(input: { entryType: string; title: string; payload?: unknown; eventType: string; eventValue: number }) {
     setFoodSafetyMessage("");
@@ -130,22 +131,33 @@ export function EnginePhysical() {
     }
   }
 
-  async function saveBodyScanPreview() {
-    setBodyScanSaved(false);
-    await completeEntry({
-      entryType: "body_scan_preview",
-      title: "Private body scan preview",
-      payload: {
-        hasPhoto: Boolean(bodyScanPhoto),
-        mode: "private_preview",
-        focus: ["posture", "mobility", "readiness", "confidence"],
-        guardrails: ["no body score", "no comparison", "no attractiveness rating", "teen-safe framing"]
-      },
-      eventType: "body_scan_preview",
-      eventValue: 18
-    });
-    setBodyScanSaved(true);
-    setBodyScanPhoto(null);
+  async function runBodyScan() {
+    setBodyScanResult(null);
+    setBodyScanMessage("");
+    if (!bodyScanPhoto) {
+      setBodyScanMessage("Choose a scan photo first.");
+      return;
+    }
+    setSaving("body_scan");
+    try {
+      const result = await api.uploadBodyScan(bodyScanPhoto);
+      setBodyScanResult(result);
+      // Mirror the food-photo pattern: register the scan as a Physical
+      // progress event so the dashboard reflects it. Payload deliberately
+      // does NOT include the cue text — see worker comment in
+      // routes/body-scan.ts for the rationale.
+      addEvent({
+        engine: "physical",
+        eventType: "body_scan",
+        eventValue: 18,
+        payload: { scanId: result.scanId, confidence: result.confidence, cueCount: result.cues.length }
+      });
+      setBodyScanPhoto(null);
+    } catch {
+      setBodyScanMessage("Could not analyze that scan. The photo still saves to your private history — try again with full body visible.");
+    } finally {
+      setSaving("");
+    }
   }
 
   const modules: UnitModule[] = [
@@ -309,22 +321,28 @@ export function EnginePhysical() {
                 accept="image/*"
                 capture="environment"
                 onChange={(event) => {
-                  setBodyScanSaved(false);
+                  setBodyScanResult(null);
+                  setBodyScanMessage("");
                   setBodyScanPhoto(event.target.files?.[0] ?? null);
                 }}
               />
             </label>
 
-            {bodyScanSaved && (
-              <Note tone="sage" className="mt-4">
-                Scan preview saved as a private Body rep.
-              </Note>
+            {bodyScanMessage && (
+              <Note tone="warm" className="mt-4">{bodyScanMessage}</Note>
             )}
 
-            <Button className="mt-4" variant="secondary" onClick={() => void saveBodyScanPreview()}>
-              Save private scan preview
+            <Button
+              className="mt-4"
+              variant="secondary"
+              disabled={!bodyScanPhoto || saving === "body_scan"}
+              onClick={() => void runBodyScan()}
+            >
+              {saving === "body_scan" ? "Analyzing" : "Analyze posture"}
             </Button>
           </section>
+
+          {bodyScanResult && <BodyScanResultCard result={bodyScanResult} />}
         </div>
       )
     },
@@ -420,6 +438,50 @@ function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
         </p>
       </div>
       {item.nutrition && <p className="mt-1 text-xs font-semibold text-muted">{formatFoodNutrition(item.nutrition)}</p>}
+    </div>
+  );
+}
+
+/**
+ * Posture cues from the body-scan vision pass. Same light-surface
+ * palette as FoodPhotoResultCard so the two analyzed-photo views
+ * read consistently across the Physical engine.
+ *
+ * Each cue is a short focus + a one-sentence next move. We render
+ * them as a small numbered list — never as a "score." The persistent
+ * sage Note above the scan setup carries the reassurance copy;
+ * we deliberately don't re-state it here so the result feels useful
+ * rather than defensive.
+ */
+function BodyScanResultCard({ result }: { result: BodyScanResult }) {
+  const confidenceLabel =
+    result.confidence === "high" ? "clear read" : result.confidence === "medium" ? "partial read" : "low confidence";
+  return (
+    <div className="rounded-calm border border-line bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="eyebrow text-muted">posture read</p>
+          <h3 className="mt-1 font-display text-2xl font-black tracking-normal text-ink">
+            {result.cues.length > 0 ? "A few things Kai noticed." : "Saved. Try again with full body visible."}
+          </h3>
+        </div>
+        <span className="rounded-full border border-line bg-warmPaper px-3 py-1 text-xs font-black uppercase tracking-wider text-inkSoft">
+          {confidenceLabel}
+        </span>
+      </div>
+      {result.notes && (
+        <p className="mt-3 text-sm font-semibold leading-6 text-muted">{result.notes}</p>
+      )}
+      {result.cues.length > 0 && (
+        <ol className="mt-4 grid gap-2">
+          {result.cues.map((cue, idx) => (
+            <li key={`${cue.focus}-${idx}`} className="rounded-kai border border-line bg-warmPaper p-3">
+              <p className="text-xs font-black uppercase tracking-wider text-inkSoft">{cue.focus}</p>
+              <p className="mt-1 text-sm font-semibold leading-snug text-ink">{cue.suggestion}</p>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }

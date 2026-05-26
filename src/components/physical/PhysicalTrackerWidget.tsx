@@ -7,6 +7,7 @@ import {
   TRACKER_SESSIONS,
   type TrackerSession
 } from "../../lib/tracker-sessions";
+import { KaiAvatar } from "../ui/AppPrimitives";
 import { Button } from "../ui/Button";
 
 type Phase =
@@ -122,22 +123,48 @@ function RunningView({ phase, onEndEarly }: { phase: Extract<Phase, { kind: "run
   const { session, elapsedSeconds } = phase;
   const remaining = Math.max(0, session.durationSeconds - elapsedSeconds);
   const cue = currentCue(session, elapsedSeconds);
+  // Progress as a 0-100 width percentage of the elapsed bar. Capped
+  // and floored so a session that overruns by a tick still reads cleanly.
+  const progressPercent = Math.min(100, Math.max(0, Math.round((elapsedSeconds / session.durationSeconds) * 100)));
   return (
-    <section className="rounded-[24px] border border-line bg-ink p-6 text-paper shadow-calm sm:p-8">
-      <p className="eyebrow text-soft">{session.title}</p>
-      <p className="mt-6 font-mono text-[5rem] font-black leading-none tracking-tight text-paper sm:text-[7rem]" aria-live="polite">
-        {formatClock(remaining)}
-      </p>
-      <p className="mt-2 text-xs font-black uppercase tracking-wider text-paper/60">remaining</p>
-      <div className="mt-8 min-h-24 rounded-kai border border-white/15 bg-white/5 p-4">
-        <p className="eyebrow text-paper/50">kai</p>
-        <p className="mt-2 font-display text-xl font-semibold leading-snug text-paper sm:text-2xl" aria-live="polite">
+    <section className="relative flex min-h-[640px] flex-col gap-6 overflow-hidden rounded-calm border border-line bg-warmPaper p-6 shadow-sm sm:p-8">
+      {/* Top row — session title pill on left, no controls on right yet (end button at bottom). */}
+      <div className="flex items-center justify-between gap-3">
+        <span className="rounded-full border border-line bg-white/80 px-3 py-1.5 font-mono text-[11px] font-black uppercase tracking-[0.14em] text-muted">
+          {session.title}
+        </span>
+      </div>
+
+      <div className="flex-1" />
+
+      {/* Centerpiece: eyebrow + Fraunces timer + thin progress bar */}
+      <div className="flex flex-col items-center gap-5">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted">Remaining</p>
+        <p className="timer-display tabular-nums" aria-live="polite">
+          {formatClock(remaining)}
+        </p>
+        <div className="h-1.5 w-[220px] overflow-hidden rounded-full bg-line" aria-hidden="true">
+          <div
+            className="h-full rounded-full bg-ink transition-[width] duration-1000 ease-linear"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+        <span className="sr-only">{progressPercent}% complete</span>
+      </div>
+
+      <div className="flex-1" />
+
+      {/* Kai cue — pulsing avatar above the italic Fraunces caption */}
+      <div className="flex flex-col items-center gap-3">
+        <KaiAvatar size={44} pulse />
+        <p className="cue-line" aria-live="polite">
           {cue?.text ?? "Take a breath. We're starting."}
         </p>
       </div>
-      <Button variant="secondary" className="mt-6 border-white/20 bg-white/10 text-paper hover:border-white/50" onClick={onEndEarly}>
-        <Square size={16} aria-hidden="true" />
-        End early
+
+      <Button variant="secondary" className="w-full" onClick={onEndEarly}>
+        <Square size={14} aria-hidden="true" />
+        End session
       </Button>
     </section>
   );

@@ -1,8 +1,9 @@
-import { Camera, Dumbbell, Eye, Lock, Moon, ScanLine, ShieldCheck, Utensils, Wind } from "lucide-react";
+import { Camera, Dumbbell, Moon, ScanLine, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
 import { PhysicalTrackerWidget, trackerEventValue } from "../components/physical/PhysicalTrackerWidget";
 import { SleepWidget, sleepEventValue } from "../components/physical/SleepWidget";
+import { Note } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import {
@@ -154,55 +155,83 @@ export function EnginePhysical() {
       summary: "Photo + fuel",
       icon: Camera,
       content: (
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="rounded-[24px] border border-line bg-ink p-5 text-paper shadow-calm sm:p-6">
-            <p className="eyebrow text-soft">start here</p>
-            <h2 className="mt-3 max-w-xl font-display text-4xl font-black leading-none tracking-normal">Fuel notes, not calorie math.</h2>
-            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-paper/70">Capture what happened, how it felt, and what helped. No good/bad meal labels, body scoring, or weight-loss loops.</p>
-            <textarea className="field mt-5 min-h-28 border-white/10 bg-white/10 text-paper placeholder:text-paper/50" value={meal} onChange={(event) => setMeal(event.target.value)} />
+        <div className="grid gap-4">
+          <p className="max-w-[26ch] text-sm font-semibold leading-snug text-muted">
+            Snap whenever you eat. Kai notes what's on the plate.
+          </p>
+
+          {/* Hero — dark camera CTA. The `<label>` wraps a hidden file input so the
+              whole card is the tap-target on phone (matches Claude Design mock). */}
+          <label className="camera-cta focus-ring">
+            <div className="glow" aria-hidden="true" />
+            <div className="relative flex items-center gap-4">
+              <div className="shutter-mini" aria-hidden="true"><div /></div>
+              <div>
+                <div className="font-display text-[22px] font-black leading-[1.05] tracking-tight">Snap a meal</div>
+                <div className="mt-1 text-sm font-semibold leading-snug text-paper/70">One photo. That's it.</div>
+              </div>
+            </div>
+            <input
+              className="sr-only"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(event) => setFoodPhoto(event.target.files?.[0] ?? null)}
+            />
+          </label>
+
+          {foodPhoto && (
+            <section className="rounded-calm border border-line bg-white p-4 shadow-sm">
+              <p className="eyebrow">selected</p>
+              <p className="mt-1 truncate text-sm font-black text-ink">{foodPhoto.name}</p>
+              <Button
+                className="mt-3"
+                disabled={saving === "food_photo_upload"}
+                onClick={() => void uploadFoodPhoto()}
+              >
+                {saving === "food_photo_upload" ? "Uploading" : "Analyze photo"}
+              </Button>
+            </section>
+          )}
+
+          {/* Or write it out — preserved as a collapsed disclosure so the
+              fuel-note flow stays accessible without crowding the hero. */}
+          <details className="rounded-calm border border-line bg-white p-4 shadow-sm">
+            <summary className="focus-ring cursor-pointer list-none text-sm font-black text-ink">
+              Or write a fuel note
+            </summary>
+            <textarea
+              className="field mt-3 min-h-24"
+              value={meal}
+              onChange={(event) => setMeal(event.target.value)}
+              placeholder="What did you eat? A messy sentence is enough."
+            />
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Meal context">
               {MEAL_CONTEXTS.map((context) => (
-                <button key={context.id} type="button" onClick={() => setMealContext(context.id)} className={`focus-ring shrink-0 rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wider ${mealContext === context.id ? "border-white bg-white text-ink" : "border-white/15 bg-white/10 text-paper/70"}`}>
+                <button
+                  key={context.id}
+                  type="button"
+                  onClick={() => setMealContext(context.id)}
+                  className={`focus-ring shrink-0 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-wider ${mealContext === context.id ? "border-ink bg-ink text-paper" : "border-line bg-white text-muted"}`}
+                >
                   {context.label}
                 </button>
               ))}
             </div>
-            {foodSafetyMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodSafetyMessage}</p>}
-            <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-black text-paper hover:border-white/40">
-              <Camera size={18} aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">{foodPhoto ? foodPhoto.name : "Take or choose a food photo"}</span>
-              <input className="sr-only" type="file" accept="image/*" capture="environment" onChange={(event) => setFoodPhoto(event.target.files?.[0] ?? null)} />
-            </label>
-            {foodPhotoMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper">{foodPhotoMessage}</p>}
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {foodExamples.map((example) => (
-                <button key={example.title} type="button" onClick={() => setMeal(example.note)} className="focus-ring overflow-hidden rounded-kai border border-white/15 bg-white/10 text-left">
-                  <img src="/images/food-photo-examples.png" alt={example.title} className={`h-24 w-full object-cover ${example.position}`} />
-                  <span className="block px-2 py-1.5 text-[11px] font-black text-paper/80">{example.title}</span>
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button disabled={saving === "meal_log"} onClick={() => void logMeal("meal_log")}>{saving === "meal_log" ? "Logging" : "Log fuel note"}</Button>
-              <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={!foodPhoto || saving === "food_photo_upload"} onClick={() => void uploadFoodPhoto()}>
-                {saving === "food_photo_upload" ? "Uploading" : "Analyze selected photo"}
-              </Button>
-              <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={saving === "food_photo_stub"} onClick={() => void logMeal("food_photo_stub")}>
-                Use photo example
-              </Button>
-            </div>
-            {foodPhotoResult && <FoodPhotoResultCard result={foodPhotoResult} mealContext={mealContext} />}
-          </section>
-          <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-            <p className="eyebrow">how body works</p>
-            <h2 className="mt-2 font-display text-2xl font-black leading-none tracking-normal">Descriptive, not judgmental.</h2>
-            <p className="mt-2 text-sm font-semibold leading-6 text-muted">Kai keeps context, patterns, and guardrails behind the first rep.</p>
-            <div className="mt-4 grid gap-3">
-              <PhysicalModule icon={<Utensils />} title="Meal pattern" copy="What was eaten, when it happened, hunger/fullness, energy after, and useful context." />
-              <PhysicalModule icon={<Camera />} title="Camera tracker" copy="R2 upload, Workers AI vision, USDA estimate, and a review step before memory." />
-              <PhysicalModule icon={<Wind />} title="Guardrail" copy="Risk language redirects to support. No restriction rewards or body comparison." />
-            </div>
-          </section>
+            <Button className="mt-3" disabled={saving === "meal_log"} onClick={() => void logMeal("meal_log")}>
+              {saving === "meal_log" ? "Logging" : "Log fuel note"}
+            </Button>
+          </details>
+
+          {foodSafetyMessage && (
+            <Note tone="warm">{foodSafetyMessage}</Note>
+          )}
+          {foodPhotoMessage && (
+            <p className="rounded-kai border border-line bg-warmPaper p-3 text-sm font-semibold leading-snug text-ink">
+              {foodPhotoMessage}
+            </p>
+          )}
+          {foodPhotoResult && <FoodPhotoResultCard result={foodPhotoResult} mealContext={mealContext} />}
         </div>
       )
     },
@@ -240,34 +269,61 @@ export function EnginePhysical() {
       summary: "Private beta",
       icon: ScanLine,
       content: (
-        <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm sm:p-6">
-            <div className="mb-5 grid size-12 place-items-center rounded-full bg-bodyWash text-body"><ScanLine /></div>
-            <p className="eyebrow">body scan</p>
-            <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-normal">Posture and readiness, not appearance.</h2>
-            <p className="mt-3 text-sm font-semibold leading-6 text-muted">Kai frames scans around alignment, tightness, recovery, and useful mobility suggestions.</p>
-            <label className="focus-ring mt-4 flex cursor-pointer items-center gap-3 rounded-kai border border-line bg-paper p-3 text-sm font-black text-ink hover:border-ink/35">
-              <Camera size={18} aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">{bodyScanPhoto ? bodyScanPhoto.name : "Take or choose a private scan photo"}</span>
-              <input className="sr-only" type="file" accept="image/*" capture="environment" onChange={(event) => { setBodyScanSaved(false); setBodyScanPhoto(event.target.files?.[0] ?? null); }} />
-            </label>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <BodyScanPrinciple icon={<Lock />} title="Private by default" copy="The teen controls whether a scan is saved. No social sharing." />
-              <BodyScanPrinciple icon={<ShieldCheck />} title="No body score" copy="Kai never rates attractiveness, size, leanness, or compares bodies." />
-              <BodyScanPrinciple icon={<Eye />} title="Pattern view" copy="Progress means posture, comfort, recovery, and confidence over time." />
-              <BodyScanPrinciple icon={<Wind />} title="Next move" copy="Suggestions stay practical: stretch, breathe, recover, hydrate, adjust form." />
-            </div>
-            {bodyScanSaved && <p className="mt-4 rounded-kai border border-sage/25 bg-bodyWash p-3 text-sm font-black text-body">Scan preview saved as a private Body rep.</p>}
-            <Button className="mt-4" variant="secondary" onClick={() => void saveBodyScanPreview()}>Save private scan preview</Button>
-          </section>
-          <section className="rounded-[24px] border border-line bg-warmPaper p-5 shadow-sm sm:p-6">
-            <p className="eyebrow">what Kai can say</p>
-            <h3 className="mt-2 font-display text-2xl font-black tracking-normal">Supportive read, not a diagnosis.</h3>
-            <div className="mt-4 space-y-3">
-              {["Your shoulders look a little rounded today. Try two minutes of chest opener and see if breathing feels easier.", "This looks like a recovery day, not a push day. Mobility and sleep beat forcing intensity.", "Progress timeline is private. We are watching confidence and function, not chasing a perfect body."].map((copy) => (
-                <p key={copy} className="rounded-kai border border-line bg-white p-3 text-sm font-semibold leading-6 text-muted">{copy}</p>
+        <div className="grid gap-4">
+          {/* Persistent reassurance — sage Note. Stays visible across every
+              scan interaction so the teen never sees the scan without the
+              "no body score" message in view. */}
+          <Note tone="sage" icon={<ShieldCheck size={15} aria-hidden="true" />}>
+            No body score here. Posture and alignment only. Photos stay on your device.
+          </Note>
+
+          <section className="rounded-calm border border-line bg-white p-5 shadow-sm sm:p-6">
+            <p className="eyebrow">setup</p>
+            <h2 className="mt-2 font-display text-3xl font-black leading-none tracking-tight">Posture and readiness, not appearance.</h2>
+            <p className="mt-3 max-w-[28ch] text-sm font-semibold leading-snug text-muted">
+              Lean your phone where it can see all of you. Stand still for four seconds.
+            </p>
+
+            {/* Numbered setup tips — small ordered list, deliberately not a card */}
+            <ol className="mt-5 grid gap-2">
+              {[
+                "Lean phone on a shelf or book.",
+                "Step back so your full body fits.",
+                "Stand neutral. Look forward."
+              ].map((tip, idx) => (
+                <li key={tip} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-ink font-mono text-[11px] font-black text-paper">
+                    {idx + 1}
+                  </span>
+                  <span className="text-sm font-semibold leading-snug text-ink">{tip}</span>
+                </li>
               ))}
-            </div>
+            </ol>
+
+            <label className="focus-ring mt-5 flex cursor-pointer items-center gap-3 rounded-kai border border-line bg-paper p-3 text-sm font-black text-ink hover:border-ink/35">
+              <Camera size={18} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{bodyScanPhoto ? bodyScanPhoto.name : "Take or choose a scan photo"}</span>
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(event) => {
+                  setBodyScanSaved(false);
+                  setBodyScanPhoto(event.target.files?.[0] ?? null);
+                }}
+              />
+            </label>
+
+            {bodyScanSaved && (
+              <Note tone="sage" className="mt-4">
+                Scan preview saved as a private Body rep.
+              </Note>
+            )}
+
+            <Button className="mt-4" variant="secondary" onClick={() => void saveBodyScanPreview()}>
+              Save private scan preview
+            </Button>
           </section>
         </div>
       )
@@ -302,22 +358,6 @@ export function EnginePhysical() {
       modules={modules}
       banners={<DisclosureBanner />}
     />
-  );
-}
-
-const foodExamples = [
-  { title: "sandwich + apple", note: "Turkey sandwich, apple, water", position: "object-left" },
-  { title: "yogurt bowl", note: "Yogurt, berries, granola", position: "object-center" },
-  { title: "rice bowl", note: "Rice bowl with chicken, greens, avocado", position: "object-right" }
-];
-
-function PhysicalModule({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {
-  return (
-    <div className="rounded-kai border border-line bg-white p-4 shadow-sm">
-      <div className="mb-3 text-sage">{icon}</div>
-      <h3 className="font-display text-xl font-black tracking-normal">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
-    </div>
   );
 }
 
@@ -380,16 +420,6 @@ function FoodPhotoItemRow({ item }: { item: FoodPhotoItem }) {
         </p>
       </div>
       {item.nutrition && <p className="mt-1 text-xs font-semibold text-paper/65">{formatFoodNutrition(item.nutrition)}</p>}
-    </div>
-  );
-}
-
-function BodyScanPrinciple({ icon, title, copy }: { icon: React.ReactNode; title: string; copy: string }) {
-  return (
-    <div className="rounded-kai border border-line bg-white p-3">
-      <div className="mb-2 text-body">{icon}</div>
-      <h3 className="text-sm font-black">{title}</h3>
-      <p className="mt-1 text-xs font-semibold leading-5 text-muted">{copy}</p>
     </div>
   );
 }

@@ -5,7 +5,14 @@ describe("worker auth routing", () => {
   it("keeps API health public for the production route binding", async () => {
     const res = await app.fetch(new Request("https://worker.test/api/health"), { APP_ENV: "production" } as never);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, service: "kai-api" });
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.ok).toBe(true);
+    expect(body.service).toBe("kai-api");
+    // The health endpoint surfaces whether the Anthropic + Workers AI
+    // bindings are present so ops can verify the secret is wired without
+    // tailing logs. Just confirm the keys exist; values depend on env.
+    expect(body).toHaveProperty("anthropic");
+    expect(body).toHaveProperty("workersAi");
   });
 
   it("keeps parent consent links public", async () => {

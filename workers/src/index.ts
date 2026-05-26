@@ -23,7 +23,17 @@ app.use("*", cors());
 app.use("/api/*", requireAuth);
 
 app.get("/health", (c) => c.json({ ok: true, service: "kai" }));
-app.get("/api/health", (c) => c.json({ ok: true, service: "kai-api" }));
+app.get("/api/health", (c) =>
+  // Surface whether the Anthropic secret is bound so we can verify the
+  // chat path is using Claude without leaking the key. Boolean only —
+  // never the value, never a prefix.
+  c.json({
+    ok: true,
+    service: "kai-api",
+    anthropic: Boolean(c.env.ANTHROPIC_API_KEY),
+    workersAi: Boolean(c.env.AI)
+  })
+);
 app.route("/api", chatRoutes);
 app.route("/api", cueRoutes);
 app.route("/api", demoRoutes);

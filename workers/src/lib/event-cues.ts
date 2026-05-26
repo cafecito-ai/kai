@@ -18,6 +18,7 @@
  */
 
 import type { Env } from "../types";
+import { HAIKU_MODEL, callAnthropic } from "./claude";
 
 export type CueRequest = {
   eventType: string;
@@ -133,10 +134,30 @@ const CUE_TIMEOUT_MS = 6_000;
 
 export async function generateEventCue(env: Env, req: CueRequest): Promise<CueResponse> {
   const fallback = (): CueResponse => ({ cue: getFallbackCue(req.eventType), source: "fallback" });
+  const prompt = buildPrompt(req);
+
+  // Anthropic Haiku first — gives a much warmer one-liner than Llama
+  // when the secret is configured. Falls through to Workers AI if not.
+  if (env.ANTHROPIC_API_KEY) {
+    try {
+      const raw = await withTimeout(
+        callAnthropic(env, prompt, "Respond with only the one-sentence cue.", {
+          model: HAIKU_MODEL,
+          maxTokens: 60,
+          temperature: 0.55
+        }),
+        CUE_TIMEOUT_MS
+      );
+      const cleaned = (raw ?? "").replace(/^["“'`]+|["”'`]+$/g, "").trim();
+      if (cleaned && isSafeCue(cleaned)) return { cue: cleaned, source: "model" };
+    } catch {
+      // Fall through to Workers AI on timeout / network error.
+    }
+  }
+
   if (!env.AI) return fallback();
 
   try {
-    const prompt = buildPrompt(req);
     const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
     const result = (await withTimeout(
       env.AI.run(model, { prompt, max_tokens: 60, temperature: 0.55 }),

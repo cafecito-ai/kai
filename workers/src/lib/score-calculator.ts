@@ -105,20 +105,25 @@ function mentalSubscore(
   inputs: ScoreInput[],
   reasons: DailyScoreResult["reasons"],
 ): SubScore {
+  // Mental = check-ins (35%) + journals (25%) + goal progress (15%)
+  //        + workouts (15%) + energy check-in (10%)
+  // Mirrors src/lib/local-score.ts — keep these two in sync.
   const checkIns = inputs.filter((i) => i.source === "check_in");
   const journals = inputs.filter((i) => i.source === "journal");
   const goals = inputs.filter((i) => i.source === "goal_progress");
+  const workouts = inputs.filter((i) => i.source === "workout");
+  const energy = inputs.filter((i) => i.source === "energy_check_in");
 
-  if (checkIns.length + journals.length + goals.length === 0) {
-    reasons.mental = "No check-ins, journals, or goal progress logged today.";
+  if (
+    checkIns.length + journals.length + goals.length + workouts.length + energy.length ===
+    0
+  ) {
+    reasons.mental = "No check-ins, journals, goal progress, workouts, or energy logged today.";
     return null;
   }
 
-  // Sub-pieces. Each maps to 0–100; missing → null and re-weighted below.
   const ciScore = checkIns.length
-    ? avg(
-        checkIns.map((c) => moodToScore((c.value as CheckInValue).mood ?? 3)),
-      )
+    ? avg(checkIns.map((c) => moodToScore((c.value as CheckInValue).mood ?? 3)))
     : null;
 
   const jScore = journals.length
@@ -130,14 +135,28 @@ function mentalSubscore(
     : null;
 
   const gScore = goals.length
-    ? // Any progress today maps to 80. Multiple progress events shade up to 95.
-      clamp01_100(80 + Math.min(goals.length - 1, 3) * 5)
+    ? clamp01_100(80 + Math.min(goals.length - 1, 3) * 5)
+    : null;
+
+  // Workouts contribute ~85 mental, capped after 2/day.
+  const wScore = workouts.length
+    ? clamp01_100(80 + Math.min(workouts.length - 1, 1) * 5)
+    : null;
+
+  const eScore = energy.length
+    ? avg(
+        energy.map((e) =>
+          moodToScore((e.value as { energy?: number }).energy ?? 3),
+        ),
+      )
     : null;
 
   return weightedAvg([
-    { v: ciScore, w: 0.4 },
-    { v: jScore, w: 0.3 },
-    { v: gScore, w: 0.3 },
+    { v: ciScore, w: 0.35 },
+    { v: jScore, w: 0.25 },
+    { v: gScore, w: 0.15 },
+    { v: wScore, w: 0.15 },
+    { v: eScore, w: 0.1 },
   ]);
 }
 
@@ -145,37 +164,46 @@ function sleepSubscore(
   inputs: ScoreInput[],
   reasons: DailyScoreResult["reasons"],
 ): SubScore {
+  // Sleep = sleep_log (80%) + hydration_goal_hit (20%)
   const logs = inputs.filter((i) => i.source === "sleep_log");
-  if (logs.length === 0) {
-    reasons.sleep = "No sleep logged for last night.";
+  const hyd = inputs.filter((i) => i.source === "hydration_goal_hit");
+  if (logs.length === 0 && hyd.length === 0) {
+    reasons.sleep = "No sleep or hydration goal logged today.";
     return null;
   }
-  // Latest log wins (in case the user adjusted their entry).
-  const latest = logs[logs.length - 1].value as SleepValue;
-  const hoursScore = hoursToScore(latest.hours);
-  // If quality (1–5) is provided, blend it in 25%; primary driver is hours.
-  const qualityScore =
-    typeof latest.quality === "number" ? qualityToScore(latest.quality) : null;
-  if (qualityScore == null) return hoursScore;
-  return clamp01_100(Math.round(hoursScore * 0.75 + qualityScore * 0.25));
+  let logScore: SubScore = null;
+  if (logs.length > 0) {
+    const latest = logs[logs.length - 1].value as SleepValue;
+    const hoursScore = hoursToScore(latest.hours);
+    const qualityScore =
+      typeof latest.quality === "number" ? qualityToScore(latest.quality) : null;
+    logScore =
+      qualityScore == null
+        ? hoursScore
+        : clamp01_100(Math.round(hoursScore * 0.75 + qualityScore * 0.25));
+  }
+  const hydScore = hyd.length > 0 ? 75 : null;
+  return weightedAvg([
+    { v: logScore, w: 0.8 },
+    { v: hydScore, w: 0.2 },
+  ]);
 }
 
 function moodSubscore(
   inputs: ScoreInput[],
   reasons: DailyScoreResult["reasons"],
 ): SubScore {
+  // Mood = check-ins (40%) + journals (30%) + food (15%) + workouts (15%)
   const checkIns = inputs.filter((i) => i.source === "check_in");
   const journals = inputs.filter((i) => i.source === "journal");
-  if (checkIns.length === 0 && journals.length === 0) {
-    reasons.mood = "No check-in or journal yet today.";
+  const food = inputs.filter((i) => i.source === "food_log");
+  const workouts = inputs.filter((i) => i.source === "workout");
+  if (checkIns.length + journals.length + food.length + workouts.length === 0) {
+    reasons.mood = "No check-in, journal, food log, or workout yet today.";
     return null;
   }
   const ciScore = checkIns.length
-    ? avg(
-        checkIns.map((c) =>
-          moodToScore((c.value as CheckInValue).mood ?? 3),
-        ),
-      )
+    ? avg(checkIns.map((c) => moodToScore((c.value as CheckInValue).mood ?? 3)))
     : null;
   const jScore = journals.length
     ? avg(
@@ -184,9 +212,19 @@ function moodSubscore(
         ),
       )
     : null;
+  // Food logs contribute ~70 mood (self-care signal), modest stacking bonus.
+  const fScore = food.length
+    ? clamp01_100(70 + Math.min(food.length - 1, 2) * 4)
+    : null;
+  // Workouts contribute ~75 mood (exercise → mood lift is well-documented).
+  const wScore = workouts.length
+    ? clamp01_100(75 + Math.min(workouts.length - 1, 1) * 4)
+    : null;
   return weightedAvg([
-    { v: ciScore, w: 0.6 },
-    { v: jScore, w: 0.4 },
+    { v: ciScore, w: 0.4 },
+    { v: jScore, w: 0.3 },
+    { v: fScore, w: 0.15 },
+    { v: wScore, w: 0.15 },
   ]);
 }
 

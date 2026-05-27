@@ -100,14 +100,29 @@ const DEMO_ACTIVITY: ActivityItem[] = [
 // Page
 // ─────────────────────────────────────────────────────────────────────
 
+// Empty-state score: shown for new users / fresh sessions before they've
+// logged anything. Previously we used DEMO_SCORE as the initial state
+// which made new users think they had a 4-day streak / 82 score on
+// signup — confusing and dishonest. Now we start empty and let the
+// data flow in as they log things.
+const EMPTY_SCORE: DailyScoreView = {
+  score: 0,
+  bandLabel: "No data yet",
+  trend: 0,
+  streak: 0,
+  mind: { value: 0, outOf: 10 },
+  sleep: { value: 0, outOf: 8, unit: "hrs" },
+  mood: { value: 0, outOf: 100 },
+};
+
 export function Home() {
   const greeting = greetingForNow();
   const navigate = useNavigate();
-  // Live data from /api/score/today, with the static demo as a fallback
-  // when the API is unreachable (local dev without Worker running, or
-  // first-launch states before any inputs).
-  const [data, setData] = useState<DailyScoreView>(DEMO_SCORE);
-  const [activity, setActivity] = useState<ActivityItem[]>(DEMO_ACTIVITY);
+  // Live data from /api/score/today, then local input log, then a clean
+  // empty state for new users. The old DEMO_SCORE / DEMO_ACTIVITY are
+  // kept around for the marketing /demo route only.
+  const [data, setData] = useState<DailyScoreView>(EMPTY_SCORE);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   // Rawz/3 — level-up detection. Set once on mount if the user crossed
   // into a new level since they last opened /home. Soft KaiMessage,
   // dismissable, doesn't interrupt anything.
@@ -191,7 +206,7 @@ export function Home() {
       // score the user sees is real, just computed in the browser.
       if (cancelled) return;
       const inputs = readLocalInputs();
-      if (inputs.length === 0) return; // Tier 3 — demo data stays
+      if (inputs.length === 0) return; // Tier 3 — keep the EMPTY_SCORE (new-user clean slate)
       const local = computeLocalScore(inputs);
       const todayInputs = inputs.filter(
         (i) => i.date === new Date().toISOString().slice(0, 10),

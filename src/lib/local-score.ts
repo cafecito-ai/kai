@@ -140,10 +140,16 @@ export function computeLocalScoreFor(
 }
 
 function mentalSubscore(inputs: LocalInput[]): number | null {
+  // Mental = check-ins (35%) + journals (25%) + goal progress (15%)
+  //        + workouts (15%) + energy check-in (10%)
+  // Rationale: exercise → mental energy is well-documented; the
+  // self-reported energy check-in IS literally a mental-state signal.
   const ci = inputs.filter((i) => i.source === "check_in");
   const j = inputs.filter((i) => i.source === "journal");
   const g = inputs.filter((i) => i.source === "goal_progress");
-  if (ci.length + j.length + g.length === 0) return null;
+  const w = inputs.filter((i) => i.source === "workout");
+  const e = inputs.filter((i) => i.source === "energy_check_in");
+  if (ci.length + j.length + g.length + w.length + e.length === 0) return null;
   const ciScore = ci.length
     ? avg(
         ci.map((c) =>
@@ -161,31 +167,63 @@ function mentalSubscore(inputs: LocalInput[]): number | null {
       )
     : null;
   const gScore = g.length ? clamp(80 + Math.min(g.length - 1, 3) * 5) : null;
+  // Workouts each contribute ~85 mental, capped after 2/day to keep a
+  // single grinding day from spiking the bar artificially.
+  const wScore = w.length ? clamp(80 + Math.min(w.length - 1, 1) * 5) : null;
+  // Energy check-in maps 1-5 → 0-100 the same way mood does.
+  const eScore = e.length
+    ? avg(
+        e.map((x) =>
+          moodToScore((x.value as { energy?: number }).energy ?? 3),
+        ),
+      )
+    : null;
   return weighted([
-    { v: ciScore, w: 0.4 },
-    { v: jScore, w: 0.3 },
-    { v: gScore, w: 0.3 },
+    { v: ciScore, w: 0.35 },
+    { v: jScore, w: 0.25 },
+    { v: gScore, w: 0.15 },
+    { v: wScore, w: 0.15 },
+    { v: eScore, w: 0.1 },
   ]);
 }
 
 function sleepSubscore(inputs: LocalInput[]): number | null {
+  // Sleep = sleep_log (80%) + hydration_goal_hit (20%)
+  // Rationale: proper hydration noticeably affects sleep quality and
+  // recovery — not as much as the actual log entry, but it counts.
   const logs = inputs.filter((i) => i.source === "sleep_log");
-  if (logs.length === 0) return null;
-  const latest = logs[logs.length - 1].value as {
-    hours: number;
-    quality?: number;
-  };
-  const hScore = hoursToScore(latest.hours);
-  if (typeof latest.quality === "number") {
-    return clamp(Math.round(hScore * 0.75 + moodToScore(latest.quality) * 0.25));
+  const hyd = inputs.filter((i) => i.source === "hydration_goal_hit");
+  if (logs.length === 0 && hyd.length === 0) return null;
+  let logScore: number | null = null;
+  if (logs.length > 0) {
+    const latest = logs[logs.length - 1].value as {
+      hours: number;
+      quality?: number;
+    };
+    const hScore = hoursToScore(latest.hours);
+    logScore =
+      typeof latest.quality === "number"
+        ? clamp(Math.round(hScore * 0.75 + moodToScore(latest.quality) * 0.25))
+        : hScore;
   }
-  return hScore;
+  // Hitting the daily hydration goal contributes a steady 75 — it's not
+  // sleep itself, but it's a real recovery signal.
+  const hydScore = hyd.length > 0 ? 75 : null;
+  return weighted([
+    { v: logScore, w: 0.8 },
+    { v: hydScore, w: 0.2 },
+  ]);
 }
 
 function moodSubscore(inputs: LocalInput[]): number | null {
+  // Mood = check-ins (40%) + journals (30%) + food logs (15%) + workouts (15%)
+  // Rationale: regular eating + movement both lift mood meaningfully;
+  // these aren't huge bumps but they shouldn't be zero.
   const ci = inputs.filter((i) => i.source === "check_in");
   const j = inputs.filter((i) => i.source === "journal");
-  if (ci.length + j.length === 0) return null;
+  const f = inputs.filter((i) => i.source === "food_log");
+  const w = inputs.filter((i) => i.source === "workout");
+  if (ci.length + j.length + f.length + w.length === 0) return null;
   const ciScore = ci.length
     ? avg(
         ci.map((c) =>
@@ -202,9 +240,16 @@ function moodSubscore(inputs: LocalInput[]): number | null {
         ),
       )
     : null;
+  // Food log contribution: ~70 baseline (eating regularly = self-care);
+  // more logs in a day don't pile up beyond a small bonus.
+  const fScore = f.length ? clamp(70 + Math.min(f.length - 1, 2) * 4) : null;
+  // Workouts contribute ~75 to mood (exercise → mood is well-documented).
+  const wScore = w.length ? clamp(75 + Math.min(w.length - 1, 1) * 4) : null;
   return weighted([
-    { v: ciScore, w: 0.6 },
-    { v: jScore, w: 0.4 },
+    { v: ciScore, w: 0.4 },
+    { v: jScore, w: 0.3 },
+    { v: fScore, w: 0.15 },
+    { v: wScore, w: 0.15 },
   ]);
 }
 

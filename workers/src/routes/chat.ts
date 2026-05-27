@@ -63,10 +63,11 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
 
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
+  const normalized = normalizeUserMessage(message);
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
-  const nextAction = inferKaiNextAction(message);
+  const nextAction = inferKaiNextAction(normalized.text);
   const systemWithGuideContext = `${system}\n\n${renderGuideConceptsForAction(nextAction.id)}`;
-  const safety = await classifySafetyFull(env, message);
+  const safety = await classifySafetyFull(env, normalized.text);
   if (!safety.safe) {
     const event = await logSafetyEvent(env, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
     if (event && safety.category && safety.severity) {
@@ -78,11 +79,25 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = (recentMessages ?? [])
     .filter((item): item is typeof item & { role: "user" | "assistant" } => item.role === "user" || item.role === "assistant")
-    .map((item) => ({ role: item.role, content: item.content }));
-  const rawReply = await callClaude(env, systemWithGuideContext, modelMessages.length ? modelMessages : [{ role: "user", content: message }]);
+    .map((item) => ({ role: item.role, content: item.id === userMessage.id ? normalized.modelContent : item.content }));
+  const rawReply = await callClaude(env, systemWithGuideContext, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
   const reply = tightenControlLayerReply(rawReply, nextAction);
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { nextAction } });
   return Response.json({ conversationId: conversation, reply, nextAction });
+}
+
+function normalizeUserMessage(message: string) {
+  const corrected = message
+    .replace(/\bdelressed\b/gi, "depressed")
+    .replace(/\bdepreseed\b/gi, "depressed")
+    .replace(/\bdepresed\b/gi, "depressed")
+    .replace(/\banxeity\b/gi, "anxiety")
+    .replace(/\banxity\b/gi, "anxiety");
+  if (corrected === message) return { text: message, modelContent: message };
+  return {
+    text: corrected,
+    modelContent: `${corrected}\n\nKai note: The teen typed ${JSON.stringify(message)}. Treat it as a likely typo/autocorrect issue. Do not make a big deal of it; if needed, briefly say what you understood and keep helping.`
+  };
 }
 
 function tightenControlLayerReply(reply: string, nextAction: KaiNextAction) {

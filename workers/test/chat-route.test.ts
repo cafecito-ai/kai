@@ -190,6 +190,37 @@ describe("chat routes", () => {
     expect(capturedPrompt).toContain("Do not dump the list");
     expect(capturedPrompt).not.toContain("posture and alignment are private signals");
   });
+
+  it("understands common emotional typos before safety and routing", async () => {
+    let capturedChatPrompt = "";
+    const aiReplies = [
+      '{"category":"none","severity":"low","explanation":"no safety signal"}',
+      "I read that as depressed. That is heavy. What has been driving it most lately?"
+    ];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/kai/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-dev-user": "chat-tester" },
+        body: JSON.stringify({ message: "I’m delressed" })
+      }),
+      makeEnv({
+        firstRows: [{}, {}, {}],
+        aiRun: async (_model, input) => {
+          const prompt = typeof input === "object" && input && "prompt" in input ? String((input as { prompt?: unknown }).prompt ?? "") : "";
+          if (prompt.includes("Conversation:")) capturedChatPrompt = prompt;
+          return { response: aiReplies.shift() ?? "" };
+        }
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
+    expect(body.nextAction).toMatchObject({ id: "talk", route: "/task/talk" });
+    expect(body.reply).toContain("depressed");
+    expect(capturedChatPrompt).toContain("depressed");
+    expect(capturedChatPrompt).toContain("I’m delressed");
+    expect(capturedChatPrompt).toContain("Kai note");
+  });
 });
 
 function makeEnv(opts: {

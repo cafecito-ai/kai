@@ -94,11 +94,11 @@ export function Onboarding() {
   const [error, setError] = useState("");
 
   const normalizedAge = Number(age) || undefined;
-  const isMinor = Boolean(normalizedAge && normalizedAge < 18);
+  const needsParentConsent = Boolean(normalizedAge && normalizedAge < 13);
   const currentQuestion = step >= 0 ? questions[step] : null;
   const isLastQuestion = step === questions.length - 1;
   const progress = step < 0 ? 8 : Math.round(((step + 1) / questions.length) * 100);
-  const canContinue = step < 0 ? Boolean(name.trim()) && (!isMinor || Boolean(parentEmail.trim())) : Boolean(draft.trim() || answers[currentQuestion?.id ?? "goal"]);
+  const canContinue = step < 0 ? Boolean(name.trim()) && (!needsParentConsent || Boolean(parentEmail.trim())) : Boolean(draft.trim() || answers[currentQuestion?.id ?? "goal"]);
   const firstMove = useMemo(() => inferFirstMove(answers), [answers]);
   const kaiTone = inferTone(answers.motivation);
 
@@ -108,8 +108,8 @@ export function Onboarding() {
       setError("Tell KAI what to call you first.");
       return;
     }
-    if (isMinor && !parentEmail.trim()) {
-      setError("Parent email is required for teen beta access.");
+    if (needsParentConsent && !parentEmail.trim()) {
+      setError("Parent email is required for users under 13.");
       return;
     }
     setStep(0);
@@ -147,7 +147,7 @@ export function Onboarding() {
         parentEmail: parentEmail.trim() || undefined,
         onboardingCompleted: true
       });
-      if (isMinor && parentEmail.trim()) {
+      if (needsParentConsent && parentEmail.trim()) {
         await api.sendParentConsent({ parentEmail: parentEmail.trim(), teenName: name.trim() });
         setConsentPending(parentEmail.trim());
       }
@@ -221,12 +221,12 @@ export function Onboarding() {
                   <input className="field mt-2" inputMode="numeric" value={age} onChange={(event) => setAge(event.target.value)} />
                 </label>
                 <label className="block text-sm font-black">
-                  Parent email {isMinor ? "(required)" : "(optional)"}
+                  Parent email {needsParentConsent ? "(required)" : "(optional)"}
                   <input className="field mt-2" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} placeholder="parent@example.com" />
                 </label>
               </div>
               <p className="text-sm font-semibold leading-6 text-[#5E5E64]">
-                Under-18 accounts need parent consent for beta access. Private answers and chats stay private by default.
+                Parent email is only required for users under 13. Private answers and chats stay private by default.
               </p>
             </section>
           ) : (

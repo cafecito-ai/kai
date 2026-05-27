@@ -5,6 +5,7 @@ import {
   BODY_LANGUAGE_FALLBACK,
   passesBodyLanguageFilter,
 } from "../lib/body-language-filter";
+import { formatKaiReply } from "../lib/chat-format";
 import { callClaude } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
@@ -135,7 +136,8 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   }
   const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
-  const reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
+  const rawReply = await callClaude(env, withReadableReplyInstructions(system), modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
+  const reply = formatKaiReply(rawReply, engine === "physical" ? "body" : "general");
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply });
   return Response.json({ conversationId: conversation, reply });
 }
@@ -183,7 +185,7 @@ async function handleRoutedChat(
 
   // Route to Mind or Body. The pick is internal — user never sees it.
   const decision = await pickAgent(env, normalized.text);
-  const system = renderAgentPrompt(decision, context);
+  const system = withReadableReplyInstructions(renderAgentPrompt(decision, context));
   const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
 
@@ -194,21 +196,33 @@ async function handleRoutedChat(
     let attempt = 0;
     while (!passesBodyLanguageFilter(reply) && attempt < MAX_BODY_REGENERATIONS) {
       attempt += 1;
-      const stricter = `${renderBodyPrompt(context)}\n\nIMPORTANT: A previous response was rejected by the post-generation filter for using forbidden body-language. Try again, focusing only on posture, mobility, recovery, and performance. Do not describe size, shape, or appearance.`;
+      const stricter = withReadableReplyInstructions(`${renderBodyPrompt(context)}\n\nIMPORTANT: A previous response was rejected by the post-generation filter for using forbidden body-language. Try again, focusing only on posture, mobility, recovery, and performance. Do not describe size, shape, or appearance.`);
       reply = await callClaude(env, stricter, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
     }
     if (!passesBodyLanguageFilter(reply)) {
       reply = BODY_LANGUAGE_FALLBACK;
     }
   }
+  const formattedReply = formatKaiReply(reply, decision === "physical" ? "body" : "mind");
 
   await createMessage(env.DB, {
     conversationId: conversation,
     role: "assistant",
-    content: reply,
+    content: formattedReply,
     metadata: { routedTo: decision },
   });
-  return Response.json({ conversationId: conversation, reply, routedTo: decision });
+  return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision });
+}
+
+function withReadableReplyInstructions(system: string) {
+  return `${system}
+
+READABILITY OVERRIDE:
+- Do not send a wall of text.
+- Use 2-4 short paragraphs separated by blank lines.
+- Keep each paragraph to 1-2 short sentences.
+- No markdown headers.
+- End with one short invitation that keeps the conversation going. Offer either a practical next move or a philosophy/discipline lens related to what they shared.`;
 }
 
 function normalizeUserMessage(message: string) {

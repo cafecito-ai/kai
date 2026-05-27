@@ -51,7 +51,7 @@ export function KaiMessage({
               KAI · {timestamp}
             </p>
           ) : null}
-          <div className="font-display text-[17px] leading-snug text-text-primary">
+          <div className="whitespace-pre-line font-display text-[17px] leading-snug text-text-primary">
             {children}
           </div>
           {action ? (

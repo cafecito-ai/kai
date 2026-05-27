@@ -49,20 +49,26 @@ const STEM_X_START = 6;
 const STEM_X_END = VB_WIDTH - FLOWER_MARGIN_RIGHT;
 const STEM_LENGTH = STEM_X_END - STEM_X_START;
 
-// Each palette: bloom color (the petals, the bud, the leading dot),
-// stem color (slightly desaturated green tuned per category to harmonize
-// with the bloom), and a deeper "shade" color for petal base shading.
-const PALETTES: Record<FlowerCategory, { bloom: string; bloomShade: string; stem: string }> = {
-  morning: { bloom: "#F0A868", bloomShade: "#C97E3F", stem: "#6FA86F" },  // marigold
-  evening: { bloom: "#9B8AF0", bloomShade: "#6E5DC9", stem: "#6E8AA8" },  // violet
-  body:    { bloom: "#E07B7B", bloomShade: "#B25151", stem: "#6FA88A" },  // rose
-  mind:    { bloom: "#68C5B8", bloomShade: "#3F9890", stem: "#5AA0A8" },  // forget-me-not (teal)
-  anchor:  { bloom: "#7BC58A", bloomShade: "#4D9763", stem: "#3D8556" },  // clover
+// Single unified stem color across all categories — real stems are
+// always green regardless of the flower. Tying stem color to flower
+// type created blend problems (e.g. green stem + green clover bloom =
+// invisible bud). One green, every flower.
+const STEM_COLOR = "#5A8D5E";
+const STEM_SHADE = "#3D6A41"; // darker for leaf veins
+
+// Bloom palettes — each chosen to contrast cleanly with the green stem
+// and to match real-world flower colors for the category vibe.
+const PALETTES: Record<FlowerCategory, { bloom: string; bloomShade: string }> = {
+  morning: { bloom: "#F0A868", bloomShade: "#C97E3F" },  // marigold (orange)
+  evening: { bloom: "#9B8AF0", bloomShade: "#6E5DC9" },  // violet (purple)
+  body:    { bloom: "#E07B7B", bloomShade: "#B25151" },  // rose (red)
+  mind:    { bloom: "#7BA8E0", bloomShade: "#5683BC" },  // cornflower (blue)
+  anchor:  { bloom: "#F8F2DC", bloomShade: "#D9C99A" },  // daisy (cream-white)
 };
 
 // Pollen-yellow at the very center of the flower — same warm yellow for
 // every palette so the bloom always has a sunny middle.
-const CENTER_COLOR = "#FFE7A8";
+const CENTER_COLOR = "#FFD568";
 
 export function FlowerProgressBar({
   value,
@@ -85,9 +91,18 @@ export function FlowerProgressBar({
 
   // Where the stem's leading edge currently sits.
   const headX = STEM_X_START + STEM_LENGTH * fraction;
+  // Bud BASE sits exactly on the stem — the bud "attaches" there and
+  // extends upward (real flower buds rise off the stem, they don't
+  // hover above it).
+  const budBaseY = STEM_Y;
+  // Bloom center sits a bit above the stem so the bottom petals just
+  // brush the stem rather than dipping below it.
+  const bloomCenterY = STEM_Y - 7;
 
-  // Bud grows 2.6 → 4.6 across the run; bloom scales up to 1.0 at done.
-  const budRadius = 2.6 + 2.0 * fraction;
+  // Bud size — kept generous from the start so it reads at any fraction
+  // (a 1/25 challenge would otherwise be a 4% bar with an invisible bud).
+  // Grows subtly 4.0 → 5.0 across the run.
+  const budHeight = 4.0 + 1.0 * fraction;
   const bloomScale = isDone ? 1 : 0;
   // Petals fade in slightly before completion so the bloom doesn't pop.
   const petalOpacity = isDone ? 1 : Math.max(0, fraction - 0.85) * 6.667;
@@ -146,7 +161,7 @@ export function FlowerProgressBar({
         y1={STEM_Y}
         x2={STEM_X_END}
         y2={STEM_Y}
-        stroke={palette.stem}
+        stroke={STEM_COLOR}
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeDasharray={STEM_LENGTH}
@@ -162,8 +177,8 @@ export function FlowerProgressBar({
           x={STEM_X_START + STEM_LENGTH * 0.32}
           y={STEM_Y}
           flip={false}
-          color={palette.stem}
-          shade={palette.bloomShade}
+          color={STEM_COLOR}
+          shade={STEM_SHADE}
         />
       )}
       {fraction >= 0.66 && (
@@ -171,31 +186,54 @@ export function FlowerProgressBar({
           x={STEM_X_START + STEM_LENGTH * 0.62}
           y={STEM_Y}
           flip={true}
-          color={palette.stem}
-          shade={palette.bloomShade}
+          color={STEM_COLOR}
+          shade={STEM_SHADE}
         />
       )}
 
-      {/* The bud — same color as the bloom so what's growing matches
-          what blooms. Hidden at exactly 0 (clean empty state). */}
-      {fraction > 0 && (
-        <circle
-          cx={headX}
-          cy={STEM_Y}
-          r={budRadius}
-          fill={palette.bloom}
-          stroke={palette.bloomShade}
-          strokeWidth="0.4"
-          style={{ transition: "r 500ms ease-out, cx 500ms ease-out" }}
+      {/* The bud — a vertical teardrop sitting ABOVE the stem like a real
+          flower bud. Same color as the bloom so the user can see what's
+          coming. Includes a tiny green calyx (the leafy base that
+          attaches the bud to the stem) for realism. Hidden when fully
+          bloomed — at that point the open flower replaces it. */}
+      {fraction > 0 && !isDone && (
+        <g
+          transform={`translate(${headX}, ${budBaseY})`}
+          style={{ transition: "transform 500ms ease-out" }}
           aria-hidden="true"
-        />
+        >
+          {/* Bud body — pointed teardrop pointing UP. Drawn so its base
+              (y=0 in local coords) sits at the calyx point right where
+              the stem ends, and the tip points upward. */}
+          <path
+            d={`M 0 0
+                Q -${budHeight * 0.45} -${budHeight * 0.6}
+                  0 -${budHeight * 1.6}
+                Q ${budHeight * 0.45} -${budHeight * 0.6}
+                  0 0 Z`}
+            fill={palette.bloom}
+            stroke={palette.bloomShade}
+            strokeWidth="0.4"
+            style={{ transition: "d 500ms ease-out" }}
+          />
+          {/* Calyx — small green leaves cradling the base of the bud */}
+          <path
+            d={`M -${budHeight * 0.4} 0
+                Q -${budHeight * 0.2} -${budHeight * 0.35} 0 -${budHeight * 0.15}
+                Q ${budHeight * 0.2} -${budHeight * 0.35} ${budHeight * 0.4} 0 Z`}
+            fill={STEM_COLOR}
+            opacity="0.95"
+          />
+        </g>
       )}
 
       {/* Full bloom — 8 teardrop petals + center stamen + pollen dots.
-          Scales in from 0 → 1 with a slight delay (controlled by
-          petalOpacity) so the moment feels earned. */}
+          Center positioned just above the stem so the bottom petal
+          brushes the stem (looks like the flower SITS on the stem, not
+          floats). Scales in from 0 → 1 with a slight delay (controlled
+          by petalOpacity) so the moment feels earned. */}
       <g
-        transform={`translate(${headX}, ${STEM_Y}) scale(${Math.max(bloomScale, petalOpacity)})`}
+        transform={`translate(${headX}, ${bloomCenterY}) scale(${Math.max(bloomScale, petalOpacity)})`}
         style={{ transition: "transform 600ms ease-out, opacity 400ms ease-out" }}
         opacity={petalOpacity}
         filter={`url(#${shadowFilterId})`}

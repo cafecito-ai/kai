@@ -3,7 +3,7 @@ import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { buildKaiPromptChips } from "../../lib/kai-actions";
-import { getKaiMemoryItems } from "../../lib/kai-memory";
+import { getKaiMemoryItems, getKaiThreadCue } from "../../lib/kai-memory";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
@@ -30,8 +30,17 @@ export function KaiChat({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const memoryItems = getKaiMemoryItems(messages);
-  const suggestions = buildKaiPromptChips({ messages, nextAction, mentalOnly: mode === "mental" });
+  const threadCue = getKaiThreadCue(messages);
+  const lastUserMessage = [...messages].reverse().find((message) => message.role === "user");
+  const shouldShowKaiRead = Boolean(nextAction && lastUserMessage && nextAction.id !== "talk" && !sending);
+  const suggestions = buildKaiPromptChips({
+    messages,
+    nextAction: shouldShowKaiRead ? nextAction : null,
+    mentalOnly: mode === "mental"
+  });
   const activeRead = suggestions.find((item) => item.source === "read");
+  const showContextCards = !embedded;
+  const showSuggestions = !embedded;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
@@ -74,8 +83,8 @@ export function KaiChat({
   }
 
   const shellClass = embedded ? "overflow-hidden rounded-[24px] border border-line bg-white" : "overflow-hidden rounded-calm border border-line bg-white shadow-calm";
-  const title = mode === "mental" ? "Talk it out." : "What’s actually going on?";
-  const helper = mode === "mental" ? "No perfect words. Kai will help you steady it." : "Say it like you’d text it. Kai will pick the next move.";
+  const title = mode === "mental" ? "Talk it out." : "Talk to KAI.";
+  const helper = mode === "mental" ? "No perfect words. KAI will help you steady it." : "Say the real version. KAI will help you see the next move.";
 
   return (
     <section className={shellClass}>
@@ -97,7 +106,7 @@ export function KaiChat({
         aria-relevant="additions"
         aria-label="Chat with Kai"
       >
-        {memoryItems.length > 0 && (
+        {showContextCards && memoryItems.length > 0 && (
           <div className="rounded-[20px] border border-line bg-paper px-4 py-3 text-left shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-wider text-muted">Kai remembers</p>
             <div className="mt-3 space-y-2">
@@ -134,7 +143,7 @@ export function KaiChat({
             </span>
           </div>
         )}
-        {nextAction && !sending && (
+        {shouldShowKaiRead && nextAction && (
           <Link
             to={nextAction.route}
             onClick={onOpenAction}
@@ -154,6 +163,7 @@ export function KaiChat({
         )}
         <div ref={messagesEndRef} />
       </div>
+      {showSuggestions && (
       <div className="border-t border-line px-3 py-3">
         {activeRead && (
           <p className="mb-2 px-1 text-[10px] font-black uppercase tracking-wider text-muted">
@@ -181,6 +191,16 @@ export function KaiChat({
         })}
         </div>
       </div>
+      )}
+      {showContextCards && threadCue && (
+        <div className="border-t border-line bg-white px-3 py-2">
+          <div className="rounded-[20px] bg-paper px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted">{threadCue.label}</p>
+            <p className="mt-1 text-sm font-black leading-5 text-ink">{threadCue.title}</p>
+            <p className="mt-1 text-xs font-bold leading-5 text-muted">{threadCue.detail}</p>
+          </div>
+        </div>
+      )}
       <form onSubmit={onSubmit} className="flex items-end gap-2 border-t border-line bg-paper p-3">
         <label htmlFor="kai-chat-input" className="sr-only">
           Message to Kai

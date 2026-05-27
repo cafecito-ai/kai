@@ -1,11 +1,8 @@
-import { Activity, Brain, Home, Plus, Settings, ShieldAlert, Target, UserRound, X } from "lucide-react";
+import { Activity, MessageCircle, Plus, Settings, ShieldAlert, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { KaiChat } from "../kai/KaiChat";
 import { KAI_ACTIONS, type KaiAction } from "../../lib/kai-actions";
 import { useKaiStore } from "../../stores/kaiStore";
-import { useProgressStore } from "../../stores/progressStore";
-import { useUserStore } from "../../stores/userStore";
 import { KaiAvatar } from "../ui/AppPrimitives";
 
 export function AppShell() {
@@ -64,36 +61,18 @@ export function AppShell() {
 
 function AppContextBar() {
   const { pathname } = useLocation();
-  const { primaryEngine } = useUserStore();
-  const events = useProgressStore((state) => state.events);
-  const streak = useProgressStore((state) => state.streak());
-  const todayCount = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
-  const activeEngine = engineFromPath(pathname) ?? primaryEngine;
-  const lane = laneMeta(activeEngine);
-  const ActiveIcon = lane.icon;
 
   return (
     <aside className="sticky top-0 z-30 border-b border-[#0A0A0A0F] bg-[#FAFAF7]/88 backdrop-blur-xl">
-      <div className="mx-auto grid max-w-6xl gap-2 overflow-hidden px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 overflow-hidden px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
           <Link to="/home" className="focus-ring grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-[0_8px_28px_rgba(10,10,10,0.08)]" aria-label="Kai home">
             <KaiAvatar size={34} label="Kai" pulse />
           </Link>
-          <span className={`hidden size-8 shrink-0 place-items-center rounded-full sm:grid ${lane.tone}`}>
-            <ActiveIcon size={16} aria-hidden="true" />
-          </span>
           <div className="min-w-0">
             <p className="truncate font-mono text-[10px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">{sectionLabel(pathname)}</p>
-            <p className="truncate text-sm font-black text-[#1A1A1F] sm:hidden">Ask Kai.</p>
-            <p className="hidden truncate text-sm font-black text-[#1A1A1F] sm:block">Tell Kai what is going on. Kai opens the right tool.</p>
+            <p className="truncate text-sm font-black text-[#1A1A1F]">KAI</p>
           </div>
-        </div>
-        <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 overflow-hidden text-xs font-black sm:grid sm:grid-cols-[1fr_1fr_auto]">
-          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{todayCount} moves</span>
-          <span className="min-w-0 truncate rounded-full border border-[#0A0A0A0F] bg-white px-2 py-2 text-center text-[#8A8A8F] sm:px-3">{streak} days in</span>
-          <Link to="/home" className="focus-ring hidden rounded-full bg-[#1A1A1F] px-4 py-2 text-white sm:inline-flex">
-            Today
-          </Link>
         </div>
       </div>
     </aside>
@@ -101,17 +80,13 @@ function AppContextBar() {
 }
 
 function AppComposer() {
-  const [chatOpen, setChatOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
 
   return (
     <>
-      {chatOpen && <GlobalChatSheet onClose={() => setChatOpen(false)} />}
       {quickOpen && <GlobalQuickSheet onClose={() => setQuickOpen(false)} />}
       <AppDock
-        chatOpen={chatOpen}
         quickOpen={quickOpen}
-        onOpenChat={() => setChatOpen(true)}
         onToggleQuick={() => setQuickOpen((open) => !open)}
       />
     </>
@@ -119,14 +94,10 @@ function AppComposer() {
 }
 
 function AppDock({
-  chatOpen,
   quickOpen,
-  onOpenChat,
   onToggleQuick
 }: {
-  chatOpen: boolean;
   quickOpen: boolean;
-  onOpenChat: () => void;
   onToggleQuick: () => void;
 }) {
   return (
@@ -136,28 +107,19 @@ function AppDock({
         style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
         aria-label="Primary app navigation"
       >
-        <DockLink to="/home" label="Home" icon={Home} />
-        <button
-          type="button"
-          onClick={onOpenChat}
-          className={`focus-ring grid h-14 place-items-center rounded-[21px] bg-[#111116] text-white shadow-sm transition ${chatOpen ? "scale-[0.98]" : "hover:-translate-y-0.5"}`}
-          aria-label="Talk to Kai"
-          aria-expanded={chatOpen}
-        >
-          <KaiAvatar size={40} label="Kai companion" pulse />
-        </button>
+        <DockLink to="/home" label="Home" icon={MessageCircle} />
         <button
           type="button"
           onClick={onToggleQuick}
-          className={`focus-ring flex h-14 flex-col items-center justify-center rounded-[21px] text-[11px] font-black transition ${
-            quickOpen ? "bg-[#111116] text-white" : "text-[#5E5E64] hover:bg-[#F4F1EB] hover:text-[#1A1A1F]"
+          className={`focus-ring grid h-14 place-items-center rounded-[21px] text-white shadow-sm transition ${
+            quickOpen ? "scale-[0.98] bg-[#2B2B31]" : "bg-[#111116] hover:-translate-y-0.5"
           }`}
-          aria-label="Open Kai actions"
+          aria-label="Open KAI tasks"
           aria-expanded={quickOpen}
         >
-          <Plus size={19} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />
-          Tools
+          <Plus size={24} className={quickOpen ? "rotate-45 transition" : "transition"} aria-hidden="true" />
         </button>
+        <DockLink to="/profile" label="Profile" icon={UserRound} />
         <Link to="/crisis" className="focus-ring absolute -top-11 right-0 hidden min-h-9 items-center gap-2 rounded-full bg-white px-3 text-xs font-black text-danger shadow-sm sm:inline-flex">
           <ShieldAlert size={14} aria-hidden="true" />
           Crisis
@@ -167,7 +129,7 @@ function AppDock({
   );
 }
 
-function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof Home }) {
+function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof MessageCircle }) {
   return (
     <NavLink
       to={to}
@@ -178,31 +140,8 @@ function DockLink({ to, label, icon: Icon }: { to: string; label: string; icon: 
       }
     >
       <Icon size={17} aria-hidden="true" />
-      <span className="hidden sm:inline">{label}</span>
-      <span className="sm:hidden">{label === "Progress" ? "Track" : label}</span>
+      <span>{label}</span>
     </NavLink>
-  );
-}
-
-function GlobalChatSheet({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end bg-[#111116]/24 px-3 pb-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Chat with KAI">
-      <div className="mx-auto max-h-[calc(100svh-1.5rem)] w-full max-w-md overflow-hidden rounded-[28px] bg-white p-2 shadow-[0_28px_80px_rgba(10,10,10,0.28)]">
-        <div className="flex items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2">
-            <KaiAvatar size={34} label="KAI" pulse />
-            <div>
-              <p className="text-sm font-black text-[#111116]">Kai</p>
-              <p className="text-xs font-semibold text-[#8A8A8F]">Say it straight. We’ll sort it out.</p>
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="focus-ring grid size-10 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close chat">
-            <X size={18} aria-hidden="true" />
-          </button>
-        </div>
-        <KaiChat embedded onOpenAction={onClose} />
-      </div>
-    </div>
   );
 }
 
@@ -222,18 +161,18 @@ function GlobalQuickSheet({ onClose }: { onClose: () => void }) {
       <div className="mx-auto max-h-[calc(100svh-9rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-[#0A0A0A0F] bg-white/95 p-3 shadow-[0_18px_60px_rgba(10,10,10,0.18)] backdrop-blur-xl">
         <div className="mb-2 flex items-center justify-between px-1">
           <div>
-            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Kai can open</p>
-            <p className="mt-1 text-sm font-black text-[#111116]">What do you need right now?</p>
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[#8A8A8F]">Log a move</p>
+            <p className="mt-1 text-sm font-black text-[#111116]">Pick the task that helps today.</p>
           </div>
           <button type="button" onClick={onClose} className="focus-ring grid size-8 place-items-center rounded-full bg-[#F4F1EB] text-[#1A1A1F]" aria-label="Close quick actions">
             <X size={15} aria-hidden="true" />
           </button>
         </div>
-        <KaiActionLink action={recommended} onClose={onClose} variant="primary" eyebrow="Best next move" />
+        <KaiActionLink action={recommended} onClose={onClose} variant="primary" eyebrow="Recommended" />
         <ActionGroup title="Body" actions={bodyActions.filter((action) => action.id !== recommended.id)} onClose={onClose} />
         <ActionGroup title="Mind + goals" actions={mindActions.filter((action) => action.id !== recommended.id)} onClose={onClose} />
         <div className="mt-3 border-t border-[#0A0A0A0F] pt-3">
-          <p className="px-2 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">Keep track</p>
+          <p className="px-2 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-[#8A8A8F]">Progress</p>
           <div className="grid grid-cols-3 gap-2">
             {accountActions.map((action) => {
               const Icon = action.icon;
@@ -281,7 +220,7 @@ function KaiActionLink({
   const Icon = action.icon;
   if (variant === "primary") {
     return (
-      <Link to={action.route} onClick={onClose} className="focus-ring mt-2 flex min-h-[4.75rem] items-start gap-3 rounded-[22px] bg-[#111116] px-3 py-3 text-left text-white shadow-sm transition hover:-translate-y-0.5">
+      <Link to={action.route} onClick={onClose} data-kai-action={action.id} className="focus-ring mt-2 flex min-h-[4.75rem] items-start gap-3 rounded-[22px] bg-[#111116] px-3 py-3 text-left text-white shadow-sm transition hover:-translate-y-0.5">
         <span className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-full ${action.tone}`}>
           <Icon size={19} aria-hidden="true" />
         </span>
@@ -294,7 +233,7 @@ function KaiActionLink({
     );
   }
   return (
-    <Link to={action.route} onClick={onClose} title={action.reason} className="focus-ring grid min-h-[4.35rem] min-w-0 content-between rounded-[18px] bg-[#FAFAF7] px-3 py-2.5 text-left text-sm font-black text-[#1A1A1F]">
+    <Link to={action.route} onClick={onClose} data-kai-action={action.id} title={action.reason} className="focus-ring grid min-h-[4.35rem] min-w-0 content-between rounded-[18px] bg-[#FAFAF7] px-3 py-2.5 text-left text-sm font-black text-[#1A1A1F]">
       <span className={`grid size-8 place-items-center rounded-full ${action.tone}`}>
         <Icon size={16} aria-hidden="true" />
       </span>
@@ -315,6 +254,7 @@ function isUnifiedAppRoute(pathname: string) {
     pathname === "/goals" ||
     pathname.startsWith("/goals/") ||
     pathname === "/loop" ||
+    pathname === "/walkthrough" ||
     pathname === "/progress" ||
     pathname === "/groups" ||
     pathname === "/profile" ||
@@ -329,25 +269,10 @@ function sectionLabel(pathname: string) {
   if (pathname === "/goal") return "Goal";
   if (pathname === "/goals" || pathname.startsWith("/goals/")) return "Goals";
   if (pathname === "/loop") return "Loop";
+  if (pathname === "/walkthrough") return "Tour";
   if (pathname === "/progress") return "Progress";
   if (pathname === "/groups") return "Circle";
   if (pathname === "/profile") return "Profile";
   if (pathname === "/settings") return "Settings";
   return "Kai app";
-}
-
-function engineFromPath(pathname: string): "physical" | "potential" | "mental" | null {
-  if (pathname === "/health") return "physical";
-  if (pathname === "/mental") return "mental";
-  if (pathname === "/potential") return "potential";
-  if (pathname.startsWith("/engine/potential")) return "potential";
-  if (pathname.startsWith("/engine/mental")) return "mental";
-  if (pathname.startsWith("/engine/physical")) return "physical";
-  return null;
-}
-
-function laneMeta(engine: "physical" | "potential" | "mental") {
-  if (engine === "potential") return { label: "Goals", icon: Target, tone: "bg-goalsWash text-goals" };
-  if (engine === "mental") return { label: "Mind", icon: Brain, tone: "bg-resetWash text-reset" };
-  return { label: "Body", icon: Activity, tone: "bg-bodyWash text-body" };
 }

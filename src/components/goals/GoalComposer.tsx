@@ -81,15 +81,15 @@ export function GoalComposer({
   }
 
   return (
-    <section className="overflow-hidden rounded-[30px] border border-white/70 bg-white/88 p-4 shadow-calm backdrop-blur-xl sm:p-6">
-      <div className="mb-5 flex items-center gap-2" aria-label={`Goal step ${stepIndex(step) + 1} of 5`}>
+    <section className="overflow-hidden rounded-[26px] border border-white/70 bg-white/88 p-4 shadow-calm backdrop-blur-xl sm:rounded-[30px] sm:p-6">
+      <div className="mb-4 flex items-center gap-2 sm:mb-5" aria-label={`Goal step ${stepIndex(step) + 1} of 5`}>
         {(["seed", "category", "why", "action", "review"] as GoalComposerStep[]).map((id, index) => (
           <span key={id} className={`h-1.5 flex-1 rounded-full ${step === id ? "bg-ink" : index < stepIndex(step) ? "bg-sage" : "bg-line"}`} />
         ))}
       </div>
 
       {step === "seed" && (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           <div className="flex items-start gap-3">
             <KaiMark size="sm" />
             <div className="min-w-0 max-w-[15.75rem] rounded-[24px] rounded-tl-md bg-ink px-4 py-3 text-paper sm:max-w-none">
@@ -99,12 +99,18 @@ export function GoalComposer({
           <label className="block text-sm font-black text-ink">
             What do you want to get better at?
             <textarea
-              className="field mt-2 min-h-28 text-lg leading-7"
+              className="field mt-2 min-h-24 text-base leading-7 sm:min-h-28 sm:text-lg"
               value={seed}
               onChange={(event) => setSeed(event.target.value)}
               placeholder="Get stronger for basketball"
             />
           </label>
+          <div className="flex rounded-full border border-white/70 bg-white/92 p-2 shadow-soft backdrop-blur sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+            <Button type="button" className="flex-1 sm:flex-none" onClick={continueFlow} disabled={!seed.trim()}>
+              Keep going
+              <ArrowRight size={17} aria-hidden="true" />
+            </Button>
+          </div>
           <div className="flex max-w-full gap-2 overflow-x-auto pb-1 sm:flex-wrap">
             {SUGGESTIONS.map((suggestion) => (
               <button key={suggestion} type="button" onClick={() => setSeed(suggestion)} className="focus-ring shrink-0 rounded-full border border-line bg-paper px-3 py-2 text-xs font-black text-ink">
@@ -112,7 +118,7 @@ export function GoalComposer({
               </button>
             ))}
           </div>
-          <GoalDraftPreview title={draft.title} category={draft.category} nextAction={draft.nextAction} active={Boolean(seed.trim())} />
+          {Boolean(seed.trim()) && <GoalDraftPreview title={draft.title} category={draft.category} nextAction={draft.nextAction} />}
         </div>
       )}
 
@@ -172,12 +178,10 @@ export function GoalComposer({
 
       {errorMessage && <p className="mt-4 rounded-kai border border-danger/25 bg-dangerWash p-3 text-sm font-bold text-danger">{errorMessage}</p>}
 
-      <div className="sticky bottom-24 mt-5 flex gap-2 rounded-full border border-white/70 bg-white/92 p-2 shadow-soft backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
-        {step !== "seed" && (
-          <Button type="button" variant="secondary" onClick={() => setStep(previousStep(step))} disabled={saving}>
-            Back
-          </Button>
-        )}
+      {step !== "seed" && <div className="mt-5 flex gap-2 rounded-full border border-white/70 bg-white/92 p-2 shadow-soft backdrop-blur sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+        <Button type="button" variant="secondary" onClick={() => setStep(previousStep(step))} disabled={saving}>
+          Back
+        </Button>
         {step === "review" ? (
           <Button type="button" className="flex-1 sm:flex-none" onClick={() => void save()} disabled={saving || !draft.title.trim()}>
             {saving ? "Saving" : "Save this goal"}
@@ -188,23 +192,23 @@ export function GoalComposer({
             <ArrowRight size={17} aria-hidden="true" />
           </Button>
         )}
-      </div>
+      </div>}
     </section>
   );
 }
 
-function GoalDraftPreview({ title, category, nextAction, active }: { title: string; category: GoalCategory; nextAction: string; active: boolean }) {
+function GoalDraftPreview({ title, category, nextAction }: { title: string; category: GoalCategory; nextAction: string }) {
   return (
-    <div className={`rounded-[24px] border p-4 transition ${active ? "border-goals/20 bg-goalsWash/70" : "border-line bg-paper"}`}>
+    <div className="rounded-[24px] border border-goals/20 bg-goalsWash/70 p-4 transition">
       <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted">
         <Sparkles size={14} aria-hidden="true" />
         Kai will turn it into
       </div>
-      <p className="mt-2 break-words text-lg font-black leading-6 text-ink">{active ? title : "One clear goal"}</p>
+      <p className="mt-2 break-words text-lg font-black leading-6 text-ink">{title}</p>
       <p className="mt-2 text-sm font-semibold leading-6 text-muted">
-        {active ? nextAction : "A tiny first rep, a lane, and a target you can adjust later."}
+        {nextAction}
       </p>
-      {active && <p className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-wider text-muted">{category}</p>}
+      <p className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-wider text-muted">{category}</p>
     </div>
   );
 }

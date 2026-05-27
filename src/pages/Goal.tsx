@@ -35,18 +35,18 @@ export function Goal() {
         Home
       </Link>
 
-      <section className="w-full max-w-full overflow-hidden rounded-[30px] border border-white/10 bg-ink text-paper shadow-calm">
-        <div className="relative p-5 sm:p-7">
+      <section className="w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-ink text-paper shadow-calm sm:rounded-[30px]">
+        <div className="relative p-4 sm:p-7">
           <div className="pointer-events-none absolute -right-16 -top-20 size-52 rounded-full bg-[#8F5CFF]/30 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 left-8 size-44 rounded-full bg-[#44D7B6]/20 blur-3xl" />
           <div className="relative min-w-0">
             <div className="flex items-center gap-3">
-              <KaiMark size="md" />
+              <KaiMark size="sm" />
               <p className="text-xs font-black uppercase tracking-[0.18em] text-paper/55">Kai · goal move</p>
             </div>
             <div className="min-w-0">
-              <h1 className="mt-3 font-display text-[2.42rem] font-black leading-[0.93] tracking-normal sm:text-6xl">Pick one thing.</h1>
-              <p className="mt-3 max-w-[16.5rem] text-base font-semibold leading-7 text-paper/72 sm:max-w-2xl">
+              <h1 className="mt-3 font-display text-[2.1rem] font-black leading-[0.92] tracking-normal sm:text-6xl">Pick one thing.</h1>
+              <p className="mt-2 max-w-[17rem] text-sm font-semibold leading-6 text-paper/72 sm:mt-3 sm:max-w-2xl sm:text-base sm:leading-7">
                 Say the thing you keep circling. Kai will shrink it into one move you can actually do today.
               </p>
             </div>
@@ -54,7 +54,7 @@ export function Goal() {
               <Target aria-hidden="true" />
             </span>
           </div>
-          <div className="relative mt-5 flex items-center gap-2 rounded-[22px] border border-white/10 bg-white/8 p-3 text-sm font-bold text-paper/76">
+          <div className="relative mt-4 flex items-center gap-2 rounded-[20px] border border-white/10 bg-white/8 p-3 text-sm font-bold text-paper/76 sm:mt-5 sm:rounded-[22px]">
             <Sparkles size={17} className="shrink-0 text-[#CDBBFF]" aria-hidden="true" />
             No fake restart. One honest next rep.
           </div>

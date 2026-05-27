@@ -24,7 +24,7 @@ const ENGINES: ChatEngine[] = ["kai", "physical", "potential", "mental"];
 const welcomeMessage: ChatMessage = {
   id: "welcome",
   role: "assistant",
-  content: "Say it messy. We’ll make it simple."
+  content: "Tell me what is going on. No perfect words needed."
 };
 
 function emptyChat(): EngineChatState {

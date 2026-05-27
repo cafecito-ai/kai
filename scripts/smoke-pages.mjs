@@ -44,9 +44,10 @@ const connectionErrorCopy = [
 ];
 
 const cases = [
-  route("/", ["What's up?", "Kai on deck", "Try this next"], { actionables: ["textarea", "button", "a[href^='/']"] }),
-  route("/onboarding", ["Safety first", "Age", "Parent email"], { actionables: ["button", "input"], onboardingHandoff: true }),
-  route("/home", ["What's up?", "Kai on deck", "Try this next"], { actionables: ["textarea", "button", "a[href^='/']"], kaiChatHandoff: true }),
+  route("/", ["Home", "KAI", "Lock in"], { actionables: ["textarea", "button"] }),
+  route("/onboarding", ["Meet KAI", "First coach chat", "What should KAI call you?"], { actionables: ["button", "input"], onboardingHandoff: true }),
+  route("/walkthrough", ["Quick tour", "How KAI works", "Win the day."], { actionables: ["button", "a[href='/home']"], walkthrough: true }),
+  route("/home", ["Home", "KAI", "Lock in"], { actionables: ["textarea", "button"], kaiChatHandoff: true }),
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
   route("/loop", ["One clean loop.", "Body", "mind", "goal"], { actionables: ["button"] }),
@@ -83,7 +84,7 @@ const cases = [
   }),
   route("/progress", ["Private proof", "Kai can remember", "saved rep"], { actionables: ["a"] }),
   route("/groups", ["circle", "Support circle", "Locked until it is safe"], { actionables: ["a", "button"] }),
-  route("/profile", ["Profile", "Kai"], { actionables: ["a"] }),
+  route("/profile", ["Profile", "Kai", "daily score", "daily missions", "badges", "completion"], { actionables: ["a"] }),
   route("/settings", ["Settings", "Kai"], { actionables: ["button"] }),
   route("/crisis", ["Crisis", "988"], { actionables: ["a[href^='tel:']"] }),
   route("/for-parents", ["For parents", "wellness coaching"], { actionables: ["a"] }),
@@ -129,7 +130,8 @@ function route(pathname, expectedText, options = {}) {
     optional: Boolean(options.optional),
     foodPhotoUpload: Boolean(options.foodPhotoUpload),
     kaiChatHandoff: Boolean(options.kaiChatHandoff),
-    onboardingHandoff: Boolean(options.onboardingHandoff)
+    onboardingHandoff: Boolean(options.onboardingHandoff),
+    walkthrough: Boolean(options.walkthrough)
   };
 }
 
@@ -229,6 +231,9 @@ async function renderPage(target, testCase) {
     if (testCase.onboardingHandoff) {
       await assertOnboardingHandoff(client);
     }
+    if (testCase.walkthrough) {
+      await assertWalkthrough(client);
+    }
     return { ...result, consoleErrors: client.consoleErrors };
   } finally {
     await client.close().catch(() => undefined);
@@ -266,54 +271,186 @@ async function assertFoodPhotoUpload(client) {
 
 async function assertOnboardingHandoff(client) {
   await client.evaluate(`(() => {
-    const input = document.querySelector("input[inputmode='numeric']");
-    if (!input) return false;
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-    if (setter) setter.call(input, "18");
-    else input.value = "18";
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-    return true;
+    const inputs = Array.from(document.querySelectorAll("input"));
+    const name = inputs.find((input) => input.getAttribute("placeholder") === "First name");
+    const age = inputs.find((input) => input.getAttribute("inputmode") === "numeric");
+    const set = (input, value) => {
+      if (!input) return false;
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+      if (setter) setter.call(input, value);
+      else input.value = value;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      return true;
+    };
+    return set(name, "Demo") && set(age, "18");
   })()`);
-  for (let index = 0; index < 6; index++) {
-    await clickButtonByText(client, index === 5 ? "Show Kai's read" : "Keep going");
+  await clickButtonByText(client, "Start");
+  const answers = [
+    "more discipline",
+    "school heavy",
+    "tired",
+    "active",
+    "procrastination",
+    "after school",
+    "direct"
+  ];
+  for (const answer of answers) {
+    await client.evaluate(`(() => {
+      const value = ${JSON.stringify(answer)};
+      const textarea = document.querySelector("textarea");
+      if (!textarea) return false;
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+      if (setter) setter.call(textarea, value);
+      else textarea.value = value;
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      textarea.dispatchEvent(new Event("change", { bubbles: true }));
+      return true;
+    })()`);
+    await clickButtonByText(client, answer === answers[answers.length - 1] ? "Open Home with" : "Send");
     await new Promise((resolve) => setTimeout(resolve, 150));
   }
   await waitForClientCondition(
     client,
     `(() => {
       const text = document.body.innerText.toLowerCase();
-      return text.includes("kai's first message") && text.includes("open home with") && text.includes("kai will surface this move first on home");
+      return location.pathname === "/walkthrough" && text.includes("how kai works") && text.includes("win the day");
     })()`,
-    "Onboarding did not reach the personalized Kai handoff"
+    "Onboarding did not open the post-onboarding walkthrough"
+  );
+}
+
+async function assertWalkthrough(client) {
+  for (let index = 0; index < 4; index++) {
+    await clickButtonByText(client, "Next");
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+  await waitForClientCondition(
+    client,
+    `document.body.innerText.includes("Start KAI") && document.body.innerText.includes("Proof stacks up.")`,
+    "Walkthrough did not reach the final progress explanation"
+  );
+  await clickButtonByText(client, "Start KAI");
+  await waitForClientCondition(
+    client,
+    `location.pathname === "/home" && document.body.innerText.includes("KAI")`,
+    "Walkthrough did not open Home"
   );
 }
 
 async function assertKaiChatHandoff(client) {
-  await clickSelector(client, "button[aria-label='Talk to Kai']");
-  await waitForClientCondition(client, `Boolean(document.querySelector("[role='dialog'][aria-label='Chat with KAI']"))`, "Kai chat sheet did not open");
-  await clickSelector(client, "button[data-kai-action='food']");
+  await clickSelector(client, "button[aria-label='Open KAI tasks']");
+  await waitForClientCondition(client, `Boolean(document.querySelector("[role='dialog'][aria-label='Quick actions']"))`, "KAI task launcher did not open");
+  await assertQuickActionLinks(client);
   await waitForClientCondition(
     client,
     `(() => {
-      const dialog = document.querySelector("[role='dialog'][aria-label='Chat with KAI']");
+      const dialog = document.querySelector("[role='dialog'][aria-label='Quick actions']");
       return Boolean(dialog) &&
         Array.from(dialog.querySelectorAll("a")).some((link) => (link.getAttribute("href") || "").includes("/health") && (link.getAttribute("href") || "").includes("module=food") && (link.getAttribute("href") || "").includes("action=food")) &&
-        dialog.innerText.toLowerCase().includes("kai's read");
+        dialog.innerText.toLowerCase().includes("recommended");
     })()`,
-    "Kai chat chip did not produce a food action"
+    "KAI task chip did not produce a food action"
   );
   await clickFoodActionLink(client);
   await waitForClientCondition(
     client,
-    `location.pathname === "/health" && location.search.includes("module=food") && !document.querySelector("[role='dialog'][aria-label='Chat with KAI']") && document.body.innerText.includes("Log food")`,
-    "Kai action did not close chat and open Food"
+    `location.pathname === "/health" && location.search.includes("module=food") && !document.querySelector("[role='dialog'][aria-label='Quick actions']") && document.body.innerText.includes("Log food")`,
+    "KAI task action did not close launcher and open Food"
   );
+}
+
+async function assertQuickActionLinks(client) {
+  const expectedRoutes = [
+    "/mental?module=checkin&action=talk",
+    "/health?module=food&action=food",
+    "/health?module=sleep&action=sleep",
+    "/health?module=stretch&action=stretch",
+    "/health?module=scan&action=scan",
+    "/goal?action=goal",
+    "/loop?action=reset",
+    "/mental?module=purpose&action=confidence",
+    "/mental?module=checkin&action=social",
+    "/mental?module=reset&action=screen",
+    "/progress",
+    "/profile",
+    "/settings"
+  ];
+
+  const routes = await client.evaluate(`(() => {
+    const dialog = document.querySelector("[role='dialog'][aria-label='Quick actions']");
+    if (!dialog) return [];
+    return Array.from(dialog.querySelectorAll("a"))
+      .map((link) => {
+        const href = link.getAttribute("href") || "";
+        try {
+          const url = new URL(href, location.origin);
+          return url.pathname + url.search;
+        } catch {
+          return href;
+        }
+      });
+  })()`);
+
+  for (const route of expectedRoutes) {
+    if (!routes.includes(route)) {
+      throw new Error(`KAI task launcher missing service route ${route}; saw ${routes.join(", ")}`);
+    }
+  }
+
+  const expectations = {
+    "/mental?module=checkin&action=talk": ["Talk it through", "Feeling patterns"],
+    "/health?module=food&action=food": ["Take care of your body", "Log food"],
+    "/health?module=sleep&action=sleep": ["Log sleep"],
+    "/health?module=stretch&action=stretch": ["Stretch / move"],
+    "/health?module=scan&action=scan": ["Body scan"],
+    "/goal?action=goal": ["Pick one thing."],
+    "/loop?action=reset": ["One clean loop."],
+    "/mental?module=purpose&action=confidence": ["Talk it through", "Confidence is built from evidence"],
+    "/mental?module=checkin&action=social": ["Talk it through", "Say the messy social version first"],
+    "/mental?module=reset&action=screen": ["Talk it through", "attention reset"],
+    "/progress": ["Private proof", "Kai can remember"],
+    "/profile": ["Profile", "daily score"],
+    "/settings": ["Settings", "Kai"]
+  };
+
+  for (const route of expectedRoutes) {
+    await client.send("Page.navigate", { url: `${baseUrl}${route}` });
+    await waitForLoad(client);
+    await waitForRoot(client);
+    const page = await snapshotPage(client);
+    if (!page.rootText || page.rootText.trim().length < 20) {
+      throw new Error(`KAI task route ${route} rendered blank`);
+    }
+    if (page.title.toLowerCase().includes("404") || /not found/i.test(page.rootText)) {
+      throw new Error(`KAI task route ${route} appears to be not found`);
+    }
+    for (const errorCopy of connectionErrorCopy) {
+      if (page.text.includes(errorCopy)) {
+        throw new Error(`KAI task route ${route} showed connection error ${JSON.stringify(errorCopy)}`);
+      }
+    }
+    for (const expected of expectations[route]) {
+      if (!page.text.toLowerCase().includes(expected.toLowerCase())) {
+        throw new Error(`KAI task route ${route} missing ${JSON.stringify(expected)}; saw ${JSON.stringify(page.text.slice(0, 220))}`);
+      }
+    }
+    if (page.horizontalOverflow > 2) {
+      throw new Error(`KAI task route ${route} has horizontal overflow ${page.horizontalOverflow}px`);
+    }
+  }
+
+  await client.send("Page.navigate", { url: `${baseUrl}/home` });
+  await waitForLoad(client);
+  await waitForRoot(client);
+  await waitForExpectedSnapshot(client, { expectedText: ["Home", "KAI", "Lock in"], actionables: ["textarea", "button"] });
+  await clickSelector(client, "button[aria-label='Open KAI tasks']");
+  await waitForClientCondition(client, `Boolean(document.querySelector("[role='dialog'][aria-label='Quick actions']"))`, "KAI task launcher did not reopen after route checks");
 }
 
 async function clickFoodActionLink(client) {
   const clicked = await client.evaluate(`(() => {
-    const dialog = document.querySelector("[role='dialog'][aria-label='Chat with KAI']");
+    const dialog = document.querySelector("[role='dialog'][aria-label='Quick actions']");
     const element = Array.from((dialog || document).querySelectorAll("a")).find((link) => {
       const href = link.getAttribute("href") || "";
       return href.includes("/health") && href.includes("module=food") && href.includes("action=food");

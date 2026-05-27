@@ -27,7 +27,7 @@ describe("kaiStore", () => {
       messages: [{ id: "old", role: "assistant", content: "You are in the mental agent right now." }]
     });
 
-    expect(useKaiStore.getState().chats.kai.messages[0]?.content).toBe("Say it messy. We’ll make it simple.");
+    expect(useKaiStore.getState().chats.kai.messages[0]?.content).toBe("Tell me what is going on. No perfect words needed.");
   });
 
   it("infers a next action from hydrated user messages", () => {

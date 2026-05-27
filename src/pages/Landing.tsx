@@ -13,7 +13,11 @@ export function Landing() {
     return <Navigate to="/home" replace />;
   }
 
-  const startPath = "/onboarding";
+  // Flow: Landing → Welcome → Onboarding → Home. The Welcome page
+  // self-redirects to /onboarding for users who've seen it and to
+  // /home for fully-onboarded users, so this single entry point works
+  // for everyone.
+  const startPath = "/welcome";
 
   return (
     <AppPage className="max-w-5xl">

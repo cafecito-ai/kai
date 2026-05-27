@@ -214,11 +214,14 @@ function ActiveCard({
           )}
         </div>
         {/* The bar IS the flower — stem grows left-to-right, blooms into
-            a full open flower at the right end on completion. */}
+            a full open flower at the right end on completion. Each
+            challenge category gets its own flower palette so you can
+            tell at a glance which is which. */}
         <FlowerProgressBar
           value={progress.daysHit}
           target={progress.challenge.targetDays}
           completed={progress.completed}
+          category={progress.challenge.category}
           ariaLabel={`${progress.daysHit} of ${progress.challenge.targetDays} days logged`}
           className="text-text-secondary"
         />

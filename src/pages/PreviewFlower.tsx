@@ -12,7 +12,7 @@
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { FlowerProgressBar } from "../components/FlowerProgressBar";
+import { FlowerProgressBar, type FlowerCategory } from "../components/FlowerProgressBar";
 import { KaiOrb } from "../components/KaiOrb";
 
 const STATES = [
@@ -21,7 +21,15 @@ const STATES = [
   { value: 3, target: 7, label: "Day 3 of 7 — first leaf" },
   { value: 5, target: 7, label: "Day 5 of 7 — second leaf, getting there" },
   { value: 6, target: 7, label: "Day 6 of 7 — petals starting to open" },
-  { value: 7, target: 7, label: "Day 7 of 7 — full bloom 🌸" },
+  { value: 7, target: 7, label: "Day 7 of 7 — full bloom" },
+];
+
+const CATEGORIES: Array<{ id: FlowerCategory; label: string; vibe: string }> = [
+  { id: "morning", label: "Morning", vibe: "marigold orange" },
+  { id: "evening", label: "Evening", vibe: "violet purple" },
+  { id: "body", label: "Body", vibe: "rose red" },
+  { id: "mind", label: "Mind", vibe: "forget-me-not teal" },
+  { id: "anchor", label: "Anchor", vibe: "clover green" },
 ];
 
 export function PreviewFlower() {
@@ -50,6 +58,9 @@ export function PreviewFlower() {
         </p>
       </div>
 
+      <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+        growth stages · anchor (clover)
+      </p>
       <section className="space-y-3">
         {STATES.map((s) => (
           <article
@@ -62,7 +73,58 @@ export function PreviewFlower() {
             <FlowerProgressBar
               value={s.value}
               target={s.target}
+              category="anchor"
               ariaLabel={s.label}
+              className="text-text-secondary"
+            />
+          </article>
+        ))}
+      </section>
+
+      {/* All five challenge categories at full bloom — so you can see
+          which flower matches which kind of challenge. */}
+      <p className="mt-8 mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+        full bloom · per category
+      </p>
+      <section className="space-y-3">
+        {CATEGORIES.map((cat) => (
+          <article
+            key={cat.id}
+            className="rounded-lg border border-glass-border bg-surface p-4 shadow-card"
+          >
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+              {cat.label} · {cat.vibe}
+            </p>
+            <FlowerProgressBar
+              value={7}
+              target={7}
+              category={cat.id}
+              ariaLabel={`${cat.label} full bloom`}
+              className="text-text-secondary"
+            />
+          </article>
+        ))}
+      </section>
+
+      {/* Mid-growth comparison — see how the bud color matches the bloom
+          across all five flowers. */}
+      <p className="mt-8 mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+        mid-growth · 4 of 7
+      </p>
+      <section className="space-y-3">
+        {CATEGORIES.map((cat) => (
+          <article
+            key={cat.id}
+            className="rounded-lg border border-glass-border bg-surface p-4 shadow-card"
+          >
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+              {cat.label}
+            </p>
+            <FlowerProgressBar
+              value={4}
+              target={7}
+              category={cat.id}
+              ariaLabel={`${cat.label} 4 of 7`}
               className="text-text-secondary"
             />
           </article>

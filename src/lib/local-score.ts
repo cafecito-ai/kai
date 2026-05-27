@@ -106,9 +106,16 @@ export function computeLocalScoreFor(
   date: string,
 ): LocalScore {
   const dayInputs = inputs.filter((i) => i.date === date);
+  // Only TODAY gets live hydration partial credit (every glass nudges
+  // the sleep score). Historical days only get hydration credit if a
+  // hydration_goal_hit was actually logged that day. Without this
+  // guard, today's water progress bleeds backwards into every prior
+  // day on the Progress chart (was showing fake 90/100 sleep all week).
+  const today = new Date().toISOString().slice(0, 10);
+  const isToday = date === today;
 
   const mental = mentalSubscore(dayInputs);
-  const sleep = sleepSubscore(dayInputs);
+  const sleep = sleepSubscore(dayInputs, isToday);
   const mood = moodSubscore(dayInputs);
 
   const present = [
@@ -187,14 +194,17 @@ function mentalSubscore(inputs: LocalInput[]): number | null {
   ]);
 }
 
-function sleepSubscore(inputs: LocalInput[]): number | null {
+function sleepSubscore(inputs: LocalInput[], isToday: boolean): number | null {
   // Sleep = sleep_log (80%) + hydration progress (20%).
   // Hydration progress = today's glasses / today's target, clamped 0-1.
   // Every glass nudges the score up; hitting the goal pegs the
   // hydration component at 100. Previously only goal-hit counted, which
   // meant 7/8 glasses moved the score by zero — felt broken.
+  //
+  // CRUCIAL: only today gets the live partial-credit boost. Historical
+  // days don't get today's hydration bleeding backwards.
   const logs = inputs.filter((i) => i.source === "sleep_log");
-  const hydProgress = readTodayHydrationProgress();
+  const hydProgress = isToday ? readTodayHydrationProgress() : null;
   if (logs.length === 0 && hydProgress == null) return null;
   let logScore: number | null = null;
   if (logs.length > 0) {

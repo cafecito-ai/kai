@@ -68,7 +68,12 @@ export function Progress() {
     [inputs],
   );
 
-  const hasAnyActivity = inputs.length > 0;
+  // Show the empty state until the user has logged enough to make the
+  // chart meaningful. A single check-in shouldn't paint 7 days of bars.
+  // Threshold: at least 2 distinct days of activity. Once they have a
+  // second day, the chart starts making sense.
+  const distinctActiveDays = new Set(inputs.map((i) => i.date)).size;
+  const hasAnyActivity = distinctActiveDays >= 2;
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-2 pb-6 sm:max-w-lg">

@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
+import { useUserStore } from "../stores/userStore";
 
 const STORAGE_KEY = "kai_walkthrough_seen_v1";
 
@@ -34,15 +35,22 @@ type Slide = {
 
 export function Welcome() {
   const navigate = useNavigate();
+  const { onboardingCompletedAt } = useUserStore();
   const [idx, setIdx] = useState(0);
 
-  // If they've already seen it, skip to /home.
+  // Skip the walkthrough on returning visits. Two cases:
+  //   - Already onboarded → straight to /home (they don't need this intro)
+  //   - Already SAW the walkthrough but haven't onboarded → straight to
+  //     /onboarding so they don't sit through it twice
   useEffect(() => {
     if (typeof localStorage === "undefined") return;
-    if (localStorage.getItem(STORAGE_KEY) === "1") {
+    const seen = localStorage.getItem(STORAGE_KEY) === "1";
+    if (onboardingCompletedAt) {
       navigate("/home", { replace: true });
+    } else if (seen) {
+      navigate("/onboarding", { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, onboardingCompletedAt]);
 
   const slides: Slide[] = useMemo(() => buildSlides(), []);
 
@@ -52,7 +60,10 @@ export function Welcome() {
     } catch {
       /* no-op */
     }
-    navigate("/home", { replace: true });
+    // Flow per Lev's call: Welcome → Onboarding → Home.
+    // If they've already finished onboarding (somehow back on /welcome
+    // manually), skip them to /home instead.
+    navigate(onboardingCompletedAt ? "/home" : "/onboarding", { replace: true });
   }
 
   function next() {
@@ -141,7 +152,7 @@ export function Welcome() {
           shadow-card transition active:scale-[0.99] focus-ring
         "
       >
-        {isLast ? "Let's go" : "Next"}
+        {isLast ? "Get started" : "Next"}
         <ArrowRight size={14} aria-hidden="true" />
       </button>
     </div>
@@ -234,9 +245,9 @@ function buildSlides(): Slide[] {
     },
     {
       id: "go",
-      eyebrow: "You're set",
-      title: "Let's go",
-      body: "Tap below and KAI will meet you at home with whatever's most useful for today.",
+      eyebrow: "Ready",
+      title: "Tell KAI about you",
+      body: "A few quick questions so KAI can meet you where you are. About 90 seconds.",
       visual: (
         <div className="flex flex-col items-center gap-5">
           <KaiOrb size={120} />

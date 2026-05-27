@@ -65,8 +65,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
                   routing="path"
                   path="/sign-in"
                   signUpUrl="/sign-up"
-                  fallbackRedirectUrl="/onboarding"
-                  forceRedirectUrl="/onboarding"
+                  fallbackRedirectUrl="/welcome"
+                  forceRedirectUrl="/welcome"
                 />
               ) : (
                 <AuthUnavailable />
@@ -81,8 +81,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
                   routing="path"
                   path="/sign-up"
                   signInUrl="/sign-in"
-                  fallbackRedirectUrl="/onboarding"
-                  forceRedirectUrl="/onboarding"
+                  fallbackRedirectUrl="/welcome"
+                  forceRedirectUrl="/welcome"
                 />
               ) : (
                 <AuthUnavailable />

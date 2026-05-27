@@ -10,7 +10,7 @@ export function Home() {
             <KaiAvatar size={44} label="KAI logo" pulse />
             <div className="min-w-0">
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/38">KAI home</p>
-              <h1 className="truncate text-2xl font-black leading-none tracking-normal text-white">What’s loud today?</h1>
+              <h1 className="truncate text-2xl font-black leading-none tracking-normal text-white">Good to see you.</h1>
             </div>
           </div>
           <div className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-right">
@@ -19,7 +19,7 @@ export function Home() {
           </div>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          {["mind", "body", "goals"].map((item) => (
+          {["chat", "next move", "proof"].map((item) => (
             <div key={item} className="rounded-2xl border border-white/8 bg-white/[0.055] px-3 py-2 text-center text-xs font-black text-white/68">
               {item}
             </div>

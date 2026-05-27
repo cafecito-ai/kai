@@ -1,107 +1,45 @@
-import { Activity, ArrowRight, Brain, Camera, Dumbbell, Moon, ShieldAlert, Target, Utensils } from "lucide-react";
+import { ArrowRight, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ActionTile, AppPage, AppSurface, FlowList, KaiMark, SessionHero } from "../components/ui/AppPrimitives";
+import { AppPage, KaiMark } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { useUserStore } from "../stores/userStore";
 
-const lanes = [
-  { title: "Health", engine: "physical", path: "/health", icon: Activity, tone: "body" as const, copy: "Log food. Body scan. Stretch / move. Log sleep." },
-  { title: "Goals", engine: "potential", path: "/engine/potential", icon: Target, tone: "goals" as const, copy: "Turn what matters into something you can actually do." },
-  { title: "Mental", engine: "mental", path: "/mental", icon: Brain, tone: "reset" as const, copy: "Learn from Kai through Daniel Siegel, Andrew Huberman, Viktor Frankl, James Clear, Carl Jung, stoic philosophy, and modern teen psychology principles." }
-];
-
-const physicalActions = [
-  { icon: Utensils, title: "Log food", copy: "To fuel your workouts correctly." },
-  { icon: Camera, title: "Body scan", copy: "To keep your posture, alignment, and body composition in check — including body fat, muscle balance, recovery, and areas to improve. Kai analyzes your progress and helps guide you toward healthier, more effective ways to reach your goals safely." },
-  { icon: Dumbbell, title: "Stretch / move", copy: "To maintain mobility and prevent injury. Prop your phone up and let Kai guide you through stretches in real time — tracking your movement, correcting your form, improving posture, and coaching your breathing as you go." },
-  { icon: Moon, title: "Log sleep", copy: "To ensure your body is actually recovering from the work." }
-];
-
 export function Landing() {
-  const { kaiName, primaryEngine, onboardingCompletedAt } = useUserStore();
+  const { kaiName, onboardingCompletedAt } = useUserStore();
   const startPath = onboardingCompletedAt ? "/home" : "/welcome";
 
   return (
-    <AppPage className="max-w-5xl">
-      <SessionHero
-        eyebrow={onboardingCompletedAt ? `today with ${kaiName}` : "start here"}
-        title={
-          <>
-            Start with what is <span className="font-serif font-normal italic text-plum">loud.</span>
-          </>
-        }
-        action={
-          <>
-            <Link to={startPath}>
-              <Button className="w-full sm:w-auto">
-              {onboardingCompletedAt ? "Open Kai" : "Start with Kai"}
-                <ArrowRight size={18} />
-              </Button>
-            </Link>
-            <Link to="/crisis" className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-black text-danger hover:bg-dangerWash">
-              <ShieldAlert size={17} />
-              Crisis support
-            </Link>
-          </>
-        }
-        aside={
-          <div className="flex h-full flex-col justify-between gap-7">
-            <div>
-              <KaiMark size="lg" />
-            <p className="mt-5 font-display text-3xl font-black leading-none">One next move, not a life overhaul.</p>
-            </div>
-            <FlowList
-              items={[
-                { label: "Say the loud part", copy: "A messy sentence is enough." },
-                { label: "Get a real read", copy: "KAI listens; you do not have to perform." },
-                { label: "Do one small thing", copy: "Small enough to finish today." }
-              ]}
-            />
-          </div>
-        }
-      >
-        <p>
-            Tell KAI what is loud today. It helps you choose the right move and turn it into one small rep.
-        </p>
-      </SessionHero>
-
-      <section aria-label="Choose a path" className="grid gap-2 sm:grid-cols-3">
-        {lanes.map((lane) => (
-          <ActionTile key={lane.path} as={Link} to={lane.path} icon={lane.icon} title={lane.title} copy={lane.copy} tone={lane.tone} active={lane.engine === primaryEngine} />
-        ))}
-      </section>
-
-      <section aria-label="Physical loop" className="grid gap-2 sm:grid-cols-2">
-        {physicalActions.map((action) => {
-          const Icon = action.icon;
-          return (
-            <Link key={action.title} to={action.title === "Body scan" ? "/health?module=scan&action=scan" : action.title === "Stretch / move" ? "/health?module=stretch&action=stretch" : action.title === "Log sleep" ? "/health?module=sleep&action=sleep" : "/health?module=food&action=food"} className="focus-ring rounded-[24px] border border-line bg-white p-4 shadow-sm">
-              <div className="grid size-10 place-items-center rounded-full bg-bodyWash text-body">
-                <Icon size={18} aria-hidden="true" />
-              </div>
-              <h2 className="mt-3 font-display text-2xl font-black tracking-normal">{action.title}</h2>
-              <p className="mt-2 text-sm font-semibold leading-6 text-muted">{action.copy}</p>
-            </Link>
-          );
-        })}
-      </section>
-
-      <AppSurface className="p-4 sm:p-5">
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-          <div>
-            <p className="eyebrow">bounds</p>
-            <p className="mt-1 text-sm font-semibold leading-6 text-muted">Wellness coaching, not therapy. No diagnosis, no calorie targets, no crisis delay.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link to="/for-parents" className="focus-ring rounded-full border border-line bg-white px-4 py-2 text-sm font-black">
-              For parents
-            </Link>
-            <Link to="/privacy" className="focus-ring rounded-full border border-line bg-white px-4 py-2 text-sm font-black">
-              Privacy
-            </Link>
-          </div>
+    <AppPage className="flex min-h-[calc(100svh-4rem)] max-w-md flex-col justify-center px-5 pb-10 pt-6 text-center">
+      <section className="mx-auto w-full">
+        <div className="flex justify-center">
+          <KaiMark size="lg" label="KAI" />
         </div>
-      </AppSurface>
+        <p className="mt-8 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-muted">{onboardingCompletedAt ? `ready with ${kaiName}` : "start here"}</p>
+        <h1 className="mt-3 font-display text-5xl font-black leading-[0.9] tracking-normal text-ink">Meet KAI.</h1>
+        <p className="mx-auto mt-4 max-w-xs text-base font-semibold leading-7 text-muted">
+          A calm coach that helps you turn your day into one clear next move.
+        </p>
+        <div className="mt-8">
+          <Link to={startPath}>
+            <Button className="min-h-14 w-full rounded-full text-base">
+              {onboardingCompletedAt ? "Open KAI" : "Start with KAI"}
+              <ArrowRight size={19} aria-hidden="true" />
+            </Button>
+          </Link>
+        </div>
+        <div className="mt-6 flex items-center justify-center gap-4 text-xs font-black text-muted">
+          <Link to="/for-parents" className="hover:text-ink">
+            Parents
+          </Link>
+          <Link to="/privacy" className="hover:text-ink">
+            Privacy
+          </Link>
+          <Link to="/crisis" className="inline-flex items-center gap-1 text-danger hover:text-danger">
+            <ShieldAlert size={13} aria-hidden="true" />
+            Crisis
+          </Link>
+        </div>
+      </section>
     </AppPage>
   );
 }

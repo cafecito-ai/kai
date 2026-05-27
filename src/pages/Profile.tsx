@@ -11,17 +11,20 @@
 // is for things that don't fit "do a thing today": who KAI is for you,
 // who YOU are to KAI, and the boring account knobs.
 
-import { Award, ChevronRight, Settings as SettingsIcon, Sparkles, User } from "lucide-react";
+import { Award, ChevronRight, Flame, Settings as SettingsIcon, Sparkles, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { LevelCard } from "../components/LevelCard";
 import { badgeSummary } from "../lib/local-badges";
+import { challengeSummary } from "../lib/local-challenges";
 
 export function Profile() {
   const [badges, setBadges] = useState<{ earned: number; total: number } | null>(null);
+  const [challenges, setChallenges] = useState<{ active: number; completed: number } | null>(null);
   useEffect(() => {
     setBadges(badgeSummary());
+    setChallenges(challengeSummary());
   }, []);
 
   return (
@@ -44,6 +47,29 @@ export function Profile() {
       </div>
 
       <div className="mt-4 space-y-2">
+        {/* Rawz/6 — Challenges entry */}
+        <Link
+          to="/challenges"
+          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
+        >
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success-soft">
+              <Flame size={16} className="text-success" />
+            </span>
+            <span>
+              <span className="block text-sm font-medium text-text-primary">
+                Challenges
+              </span>
+              <span className="block text-xs text-text-secondary">
+                {challenges
+                  ? `${challenges.active} active · ${challenges.completed} done`
+                  : "Short opt-in stretches, no penalties"}
+              </span>
+            </span>
+          </span>
+          <ChevronRight size={18} className="text-text-muted" />
+        </Link>
+
         {/* Rawz/4 — Badges entry */}
         <Link
           to="/badges"

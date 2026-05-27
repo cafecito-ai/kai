@@ -45,6 +45,7 @@ const IMMERSIVE_PREFIXES = [
   "/food",
   "/strengths",
   "/badges",
+  "/challenges",
 ];
 
 // Routes that show the tabbar.

@@ -168,42 +168,40 @@ function sleepSubscore(
   inputs: ScoreInput[],
   reasons: DailyScoreResult["reasons"],
 ): SubScore {
-  // Sleep = sleep_log (80%) + hydration_goal_hit (20%)
+  // Sleep = sleep_log only. Sleep is literally about how much you slept.
+  // (Hydration moved to mood per teen-tester feedback — "drinking water
+  // doesn't feel like a sleep thing, it's a mood thing.")
   const logs = inputs.filter((i) => i.source === "sleep_log");
-  const hyd = inputs.filter((i) => i.source === "hydration_goal_hit");
-  if (logs.length === 0 && hyd.length === 0) {
-    reasons.sleep = "No sleep or hydration goal logged today.";
+  if (logs.length === 0) {
+    reasons.sleep = "No sleep logged today.";
     return null;
   }
-  let logScore: SubScore = null;
-  if (logs.length > 0) {
-    const latest = logs[logs.length - 1].value as SleepValue;
-    const hoursScore = hoursToScore(latest.hours);
-    const qualityScore =
-      typeof latest.quality === "number" ? qualityToScore(latest.quality) : null;
-    logScore =
-      qualityScore == null
-        ? hoursScore
-        : clamp01_100(Math.round(hoursScore * 0.75 + qualityScore * 0.25));
-  }
-  const hydScore = hyd.length > 0 ? 75 : null;
-  return weightedAvg([
-    { v: logScore, w: 0.8 },
-    { v: hydScore, w: 0.2 },
-  ]);
+  const latest = logs[logs.length - 1].value as SleepValue;
+  const hoursScore = hoursToScore(latest.hours);
+  const qualityScore =
+    typeof latest.quality === "number" ? qualityToScore(latest.quality) : null;
+  return qualityScore == null
+    ? hoursScore
+    : clamp01_100(Math.round(hoursScore * 0.75 + qualityScore * 0.25));
 }
 
 function moodSubscore(
   inputs: ScoreInput[],
   reasons: DailyScoreResult["reasons"],
 ): SubScore {
-  // Mood = check-ins (40%) + journals (30%) + food (15%) + workouts (15%)
+  // Mood = check-ins (35%) + journals (25%) + food (15%) + workouts (10%)
+  //      + hydration_goal_hit (15%)
+  // Hydration lifts mood (proper hydration → less brain fog/irritability).
   const checkIns = inputs.filter((i) => i.source === "check_in");
   const journals = inputs.filter((i) => i.source === "journal");
   const food = inputs.filter((i) => i.source === "food_log");
   const workouts = inputs.filter((i) => i.source === "workout");
-  if (checkIns.length + journals.length + food.length + workouts.length === 0) {
-    reasons.mood = "No check-in, journal, food log, or workout yet today.";
+  const hyd = inputs.filter((i) => i.source === "hydration_goal_hit");
+  if (
+    checkIns.length + journals.length + food.length + workouts.length + hyd.length ===
+    0
+  ) {
+    reasons.mood = "No check-in, journal, food log, workout, or hydration yet today.";
     return null;
   }
   const ciScore = checkIns.length
@@ -224,11 +222,14 @@ function moodSubscore(
   const wScore = workouts.length
     ? clamp01_100(75 + Math.min(workouts.length - 1, 1) * 4)
     : null;
+  // Hitting the daily hydration goal contributes a steady 80.
+  const hydScore = hyd.length > 0 ? 80 : null;
   return weightedAvg([
-    { v: ciScore, w: 0.4 },
-    { v: jScore, w: 0.3 },
+    { v: ciScore, w: 0.35 },
+    { v: jScore, w: 0.25 },
     { v: fScore, w: 0.15 },
-    { v: wScore, w: 0.15 },
+    { v: wScore, w: 0.1 },
+    { v: hydScore, w: 0.15 },
   ]);
 }
 

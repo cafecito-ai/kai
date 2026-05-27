@@ -116,7 +116,7 @@ export function computeLocalScoreFor(
 
   const mental = mentalSubscore(dayInputs);
   const sleep = sleepSubscore(dayInputs, isToday);
-  const mood = moodSubscore(dayInputs);
+  const mood = moodSubscore(dayInputs, isToday);
 
   const present = [
     { v: mental, w: 0.4 },
@@ -194,38 +194,20 @@ function mentalSubscore(inputs: LocalInput[]): number | null {
   ]);
 }
 
-function sleepSubscore(inputs: LocalInput[], isToday: boolean): number | null {
-  // Sleep = sleep_log (80%) + hydration progress (20%).
-  // Hydration progress = today's glasses / today's target, clamped 0-1.
-  // Every glass nudges the score up; hitting the goal pegs the
-  // hydration component at 100. Previously only goal-hit counted, which
-  // meant 7/8 glasses moved the score by zero — felt broken.
-  //
-  // CRUCIAL: only today gets the live partial-credit boost. Historical
-  // days don't get today's hydration bleeding backwards.
+function sleepSubscore(inputs: LocalInput[], _isToday: boolean): number | null {
+  // Sleep = sleep_log only. Sleep is literally about how much you slept.
+  // (Hydration moved to mood — see moodSubscore.)
   const logs = inputs.filter((i) => i.source === "sleep_log");
-  const hydProgress = isToday ? readTodayHydrationProgress() : null;
-  if (logs.length === 0 && hydProgress == null) return null;
-  let logScore: number | null = null;
-  if (logs.length > 0) {
-    const latest = logs[logs.length - 1].value as {
-      hours: number;
-      quality?: number;
-    };
-    const hScore = hoursToScore(latest.hours);
-    logScore =
-      typeof latest.quality === "number"
-        ? clamp(Math.round(hScore * 0.75 + moodToScore(latest.quality) * 0.25))
-        : hScore;
+  if (logs.length === 0) return null;
+  const latest = logs[logs.length - 1].value as {
+    hours: number;
+    quality?: number;
+  };
+  const hScore = hoursToScore(latest.hours);
+  if (typeof latest.quality === "number") {
+    return clamp(Math.round(hScore * 0.75 + moodToScore(latest.quality) * 0.25));
   }
-  // Hydration → score: 0% goal → 0, 100% goal → 90 (full bloom but
-  // never a perfect 100 since hydration alone isn't sleep). Linear.
-  const hydScore =
-    hydProgress == null ? null : clamp(Math.round(hydProgress * 90));
-  return weighted([
-    { v: logScore, w: 0.8 },
-    { v: hydScore, w: 0.2 },
-  ]);
+  return hScore;
 }
 
 /** Reads today's hydration progress fraction (0..1) from the hydration
@@ -251,15 +233,19 @@ function readTodayHydrationProgress(): number | null {
   }
 }
 
-function moodSubscore(inputs: LocalInput[]): number | null {
-  // Mood = check-ins (40%) + journals (30%) + food logs (15%) + workouts (15%)
-  // Rationale: regular eating + movement both lift mood meaningfully;
-  // these aren't huge bumps but they shouldn't be zero.
+function moodSubscore(inputs: LocalInput[], isToday: boolean): number | null {
+  // Mood = check-ins (35%) + journals (25%) + food (15%) + workouts (10%)
+  //      + hydration (15%)
+  // Rationale: regular eating, movement, AND hydration all lift mood —
+  // dehydration causes irritability/brain fog. Mood is the right home
+  // for hydration ("I drank water, I feel less crappy") — not sleep.
   const ci = inputs.filter((i) => i.source === "check_in");
   const j = inputs.filter((i) => i.source === "journal");
   const f = inputs.filter((i) => i.source === "food_log");
   const w = inputs.filter((i) => i.source === "workout");
-  if (ci.length + j.length + f.length + w.length === 0) return null;
+  const hydProgress = isToday ? readTodayHydrationProgress() : null;
+  if (ci.length + j.length + f.length + w.length === 0 && hydProgress == null)
+    return null;
   const ciScore = ci.length
     ? avg(
         ci.map((c) =>
@@ -281,11 +267,15 @@ function moodSubscore(inputs: LocalInput[]): number | null {
   const fScore = f.length ? clamp(70 + Math.min(f.length - 1, 2) * 4) : null;
   // Workouts contribute ~75 to mood (exercise → mood is well-documented).
   const wScore = w.length ? clamp(75 + Math.min(w.length - 1, 1) * 4) : null;
+  // Hydration → mood: 0% goal → 0, 100% goal → 90. Linear.
+  const hydScore =
+    hydProgress == null ? null : clamp(Math.round(hydProgress * 90));
   return weighted([
-    { v: ciScore, w: 0.4 },
-    { v: jScore, w: 0.3 },
+    { v: ciScore, w: 0.35 },
+    { v: jScore, w: 0.25 },
     { v: fScore, w: 0.15 },
-    { v: wScore, w: 0.15 },
+    { v: wScore, w: 0.1 },
+    { v: hydScore, w: 0.15 },
   ]);
 }
 

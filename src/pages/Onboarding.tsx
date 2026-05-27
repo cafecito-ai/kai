@@ -1,32 +1,25 @@
 // Onboarding — KAI v3 §4 step order.
 //
 //   1. Name input          (user's first name)
-//   2. Age + parent email  (parent email required when under 18)
-//   3. Focus areas         (multi-select chips, what they want to work on)
-//   4. Hardest lately      (free text, optional, skippable)
-//   5. Meet KAI            (intro both agents: Mind + Body)
-//   6. Tone picker         (warm / balanced / direct)
-//   7. Confirm + consent   (parental consent fires automatically for under-18)
+//   2. Focus areas         (multi-select chips, what they want to work on)
+//   3. Hardest lately      (free text, optional, skippable)
+//   4. Meet KAI            (intro both agents: Mind + Body)
+//   5. Tone picker         (warm / balanced / direct)
+//   6. Confirm             (start the app)
 //
-// Target: under 90 seconds, ≤7 steps. Existing API contracts preserved:
-// api.submitIntake, api.updateUser, api.sendParentConsent. The v0 three-engine
-// picker + 6-question intake battery are retired in favor of focus-area
-// multi-select + a single free-text question (covers v3 §4 step 4).
+// Target: under 90 seconds, ≤7 steps. The v0 three-engine picker +
+// 6-question intake battery are retired in favor of focus-area multi-select
+// + a single free-text question.
 //
-// requires_safety_review per AGENT_PLAN — touches the consent flow. Ratner
-// has authorized build-phase changes per DECISIONS.md D-007; production sign-
-// off still rests with Ratner per CLAUDE.md §9.
-
 import {
   ArrowLeft,
   ArrowRight,
   Brain,
   Dumbbell,
-  ShieldAlert,
   Sparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
@@ -180,21 +173,16 @@ function isKaiTone(v: unknown): v is KaiTone {
 // Page
 // ─────────────────────────────────────────────────────────────────────
 
-// Rawz/5 — 8 steps now (inserted adaptive follow-up between Hardest
-// and Meet KAI). Net flow stays under 90 seconds for most users since
-// the new step is at most 3 quick-tap questions, all skippable.
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 7;
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
+  const { setKai, setPrimaryEngine } = useUserStore();
 
   const [step, setStep] = useState(0);
   const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
 
   const [firstName, setFirstName] = useState(demoBuild?.firstName ?? "");
-  const [age, setAge] = useState("");
-  const [parentEmail, setParentEmail] = useState("");
   const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([]);
   const [hardestLately, setHardestLately] = useState("");
   // Rawz/5 — adaptive follow-up responses keyed by question id.
@@ -206,8 +194,6 @@ export function Onboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const ageNum = Number(age) || undefined;
-  const isMinor = Boolean(ageNum && ageNum < 18);
   const primaryEngine = useMemo(() => suggestEngine(focusAreas), [focusAreas]);
 
   const canAdvance = useMemo(() => {
@@ -215,22 +201,18 @@ export function Onboarding() {
       case 0:
         return firstName.trim().length > 0;
       case 1:
-        if (!ageNum || ageNum < 13 || ageNum > 99) return false;
-        if (isMinor) return parentEmail.includes("@");
-        return true;
-      case 2:
         return focusAreas.length > 0;
-      case 3: // hardest lately
-      case 4: // adaptive follow-ups (Rawz/5)
-      case 5: // meet KAI
-      case 6: // tone
+      case 2: // hardest lately
+      case 3: // adaptive follow-ups
+      case 4: // meet KAI
+      case 5: // tone
         return true;
-      case 7: // confirm + save
+      case 6: // confirm + save
         return !saving;
       default:
         return true;
     }
-  }, [step, firstName, ageNum, isMinor, parentEmail, focusAreas, saving]);
+  }, [step, firstName, focusAreas, saving]);
 
   function next() {
     if (!canAdvance) return;
@@ -267,17 +249,8 @@ export function Onboarding() {
         kaiName,
         kaiTone,
         primaryEngine,
-        age: ageNum,
-        parentEmail: isMinor ? parentEmail.trim() : undefined,
         onboardingCompleted: true,
       });
-      if (isMinor && parentEmail.trim()) {
-        await api.sendParentConsent({
-          parentEmail: parentEmail.trim(),
-          teenName: firstName.trim(),
-        });
-        setConsentPending(parentEmail.trim());
-      }
       setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
       // Flow: Welcome → Onboarding → Home. Welcome already happened
@@ -307,18 +280,9 @@ export function Onboarding() {
             <NameStep value={firstName} onChange={setFirstName} />
           )}
           {step === 1 && (
-            <AgeStep
-              age={age}
-              setAge={setAge}
-              parentEmail={parentEmail}
-              setParentEmail={setParentEmail}
-              isMinor={isMinor}
-            />
-          )}
-          {step === 2 && (
             <FocusStep value={focusAreas} onChange={setFocusAreas} />
           )}
-          {step === 3 && (
+          {step === 2 && (
             <HardestStep
               value={hardestLately}
               onChange={setHardestLately}
@@ -326,23 +290,21 @@ export function Onboarding() {
             />
           )}
           {/* Rawz/5 — adaptive follow-ups based on the focus areas they
-              picked in step 2. Up to 3 quick-tap questions, all skippable. */}
-          {step === 4 && (
+              picked in step 1. Up to 3 quick-tap questions, all skippable. */}
+          {step === 3 && (
             <FollowUpsStep
               focusAreas={focusAreas}
               responses={followUps}
               onChange={setFollowUps}
             />
           )}
-          {step === 5 && <MeetKaiStep firstName={firstName} />}
-          {step === 6 && (
+          {step === 4 && <MeetKaiStep firstName={firstName} />}
+          {step === 5 && (
             <ToneStep value={kaiTone} onChange={setKaiTone} />
           )}
-          {step === 7 && (
+          {step === 6 && (
             <ConfirmStep
               firstName={firstName}
-              isMinor={isMinor}
-              parentEmail={parentEmail}
               focusAreas={focusAreas}
               tone={kaiTone}
               error={error}
@@ -400,68 +362,6 @@ function NameStep({
   );
 }
 
-function AgeStep({
-  age,
-  setAge,
-  parentEmail,
-  setParentEmail,
-  isMinor,
-}: {
-  age: string;
-  setAge: (v: string) => void;
-  parentEmail: string;
-  setParentEmail: (v: string) => void;
-  isMinor: boolean;
-}) {
-  return (
-    <div className="space-y-6">
-      <Heading
-        eyebrow="step 2"
-        title="How old are you?"
-        blurb="KAI is built for ages 13–18."
-      />
-      <input
-        autoFocus
-        type="number"
-        inputMode="numeric"
-        value={age}
-        onChange={(e) => setAge(e.target.value)}
-        placeholder="Age"
-        className="
-          w-full rounded-lg border border-glass-border bg-surface
-          px-4 py-3.5 text-lg
-          text-text-primary placeholder:text-text-muted
-          shadow-card focus-ring
-        "
-      />
-      {isMinor && (
-        <div className="space-y-3 rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
-          <p className="text-sm font-medium text-text-primary">
-            We need a parent or guardian's email
-          </p>
-          <p className="text-xs leading-relaxed text-text-secondary">
-            KAI sends them a quick consent email so they know you're using
-            the app. They won't see your reflections, chats, or scans —
-            only consent confirmation.
-          </p>
-          <input
-            type="email"
-            value={parentEmail}
-            onChange={(e) => setParentEmail(e.target.value)}
-            placeholder="parent@example.com"
-            className="
-              w-full rounded-md border border-glass-border bg-surface
-              px-3 py-2.5 text-sm
-              text-text-primary placeholder:text-text-muted
-              focus-ring
-            "
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
 function FocusStep({
   value,
   onChange,
@@ -477,7 +377,7 @@ function FocusStep({
   return (
     <div className="space-y-8">
       <Heading
-        eyebrow="step 3"
+        eyebrow="step 2"
         title="What do you want to work on?"
         blurb="Pick a few. You can change this later."
       />
@@ -528,7 +428,7 @@ function HardestStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 4 — optional"
+        eyebrow="step 3 — optional"
         title="What's been hardest lately?"
         blurb="One sentence is enough. Or skip and tell KAI later."
       />
@@ -583,7 +483,7 @@ function FollowUpsStep({
     return (
       <div className="space-y-6">
         <Heading
-          eyebrow="step 5"
+          eyebrow="step 4"
           title="A few quick reads."
           blurb="Nothing to tune from what you picked — let's keep going."
         />
@@ -594,7 +494,7 @@ function FollowUpsStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 5"
+        eyebrow="step 4"
         title="A few quick reads."
         blurb={`${questions.length === 1 ? "One question" : `${questions.length} questions`} based on what you picked. Tap an option or skip — both fine.`}
       />
@@ -663,7 +563,7 @@ function MeetKaiStep({ firstName }: { firstName: string }) {
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 6"
+        eyebrow="step 5"
         title={`Hey ${firstName}, meet KAI.`}
         blurb="KAI has two sides — both look out for you."
       />
@@ -714,7 +614,7 @@ function ToneStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 7"
+        eyebrow="step 6"
         title="How should KAI talk?"
         blurb="You can change this any time in settings."
       />
@@ -753,16 +653,12 @@ function ToneStep({
 
 function ConfirmStep({
   firstName,
-  isMinor,
-  parentEmail,
   focusAreas,
   tone,
   error,
   saving,
 }: {
   firstName: string;
-  isMinor: boolean;
-  parentEmail: string;
   focusAreas: FocusAreaId[];
   tone: KaiTone;
   error: string;
@@ -775,13 +671,9 @@ function ConfirmStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 8"
+        eyebrow="step 7"
         title={`You're set, ${firstName}.`}
-        blurb={
-          isMinor
-            ? "KAI will send your parent a quick consent email and let you in."
-            : "Ready to meet your home screen?"
-        }
+        blurb="Ready to meet your home screen?"
       />
       <div className="rounded-lg border border-glass-border bg-surface p-5 shadow-card">
         <Row label="Focus">
@@ -790,36 +682,22 @@ function ConfirmStep({
         <Row label="Tone">
           {tone[0].toUpperCase() + tone.slice(1)}
         </Row>
-        {isMinor && (
-          <Row label="Parent email">
-            <span className="font-mono">{parentEmail}</span>
-          </Row>
-        )}
       </div>
-      {isMinor && (
-        <div className="rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
-          <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
-            <Sparkles size={14} className="text-accent-cool" />
-            Parental consent is required and not skippable
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
-            Your reflections, chats, and any scans stay private to you.
-            Crisis resources are always available.
-          </p>
-        </div>
-      )}
+      <div className="rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
+        <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
+          <Sparkles size={14} className="text-accent-cool" />
+          KAI is ready to personalize your day.
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
+          Your first dashboard starts from these answers and keeps adapting as
+          you log real life.
+        </p>
+      </div>
       {error && (
         <p className="rounded-lg border border-danger/30 bg-danger-soft p-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}
-      <Link
-        to="/crisis"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-danger underline-offset-4 hover:underline"
-      >
-        <ShieldAlert size={14} aria-hidden="true" />
-        Open crisis resources
-      </Link>
       {saving && (
         <p className="text-xs text-text-muted">Saving and signing you in…</p>
       )}

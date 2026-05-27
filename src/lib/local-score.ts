@@ -115,7 +115,7 @@ export function computeLocalScoreFor(
   const isToday = date === today;
 
   const mental = mentalSubscore(dayInputs);
-  const sleep = sleepSubscore(dayInputs, isToday);
+  const sleep = sleepSubscore(dayInputs);
   const mood = moodSubscore(dayInputs, isToday);
 
   const present = [
@@ -194,7 +194,7 @@ function mentalSubscore(inputs: LocalInput[]): number | null {
   ]);
 }
 
-function sleepSubscore(inputs: LocalInput[], _isToday: boolean): number | null {
+function sleepSubscore(inputs: LocalInput[]): number | null {
   // Sleep = sleep_log only. Sleep is literally about how much you slept.
   // (Hydration moved to mood — see moodSubscore.)
   const logs = inputs.filter((i) => i.source === "sleep_log");

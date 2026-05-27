@@ -122,8 +122,9 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
 
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
+  const normalized = normalizeUserMessage(message);
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
-  const safety = await classifySafetyFull(env, message);
+  const safety = await classifySafetyFull(env, normalized.text);
   if (!safety.safe) {
     const event = await logSafetyEvent(env, { userId, conversationId: conversation, messageId: userMessage.id, rawText: message, classification: safety });
     if (event && safety.category && safety.severity) {
@@ -132,7 +133,9 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
     await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: safety.response ?? "", metadata: { safetyEventId: event?.id } });
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
-  const reply = await callClaude(env, system, [{ role: "user", content: message }]);
+  const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
+  const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
+  const reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply });
   return Response.json({ conversationId: conversation, reply });
 }
@@ -153,10 +156,11 @@ async function handleRoutedChat(
   context: KaiContext,
 ) {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine: "kai" });
+  const normalized = normalizeUserMessage(message);
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
 
   // Safety wins. Always.
-  const safety = await classifySafetyFull(env, message);
+  const safety = await classifySafetyFull(env, normalized.text);
   if (!safety.safe) {
     const event = await logSafetyEvent(env, {
       userId,
@@ -178,10 +182,12 @@ async function handleRoutedChat(
   }
 
   // Route to Mind or Body. The pick is internal — user never sees it.
-  const decision = await pickAgent(env, message);
+  const decision = await pickAgent(env, normalized.text);
   const system = renderAgentPrompt(decision, context);
+  const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
+  const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
 
-  let reply = await callClaude(env, system, [{ role: "user", content: message }]);
+  let reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
 
   // Body responses get the post-generation forbidden-language guard.
   if (decision === "physical") {
@@ -189,7 +195,7 @@ async function handleRoutedChat(
     while (!passesBodyLanguageFilter(reply) && attempt < MAX_BODY_REGENERATIONS) {
       attempt += 1;
       const stricter = `${renderBodyPrompt(context)}\n\nIMPORTANT: A previous response was rejected by the post-generation filter for using forbidden body-language. Try again, focusing only on posture, mobility, recovery, and performance. Do not describe size, shape, or appearance.`;
-      reply = await callClaude(env, stricter, [{ role: "user", content: message }]);
+      reply = await callClaude(env, stricter, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
     }
     if (!passesBodyLanguageFilter(reply)) {
       reply = BODY_LANGUAGE_FALLBACK;
@@ -203,4 +209,31 @@ async function handleRoutedChat(
     metadata: { routedTo: decision },
   });
   return Response.json({ conversationId: conversation, reply, routedTo: decision });
+}
+
+function normalizeUserMessage(message: string) {
+  const corrected = message
+    .replace(/\bdelressed\b/gi, "depressed")
+    .replace(/\bdepreseed\b/gi, "depressed")
+    .replace(/\bdepresed\b/gi, "depressed")
+    .replace(/\banxeity\b/gi, "anxiety")
+    .replace(/\banxity\b/gi, "anxiety");
+  if (corrected === message) return { text: message, modelContent: message };
+  return {
+    text: corrected,
+    modelContent: `${corrected}\n\nKAI note: The teen typed ${JSON.stringify(message)}. Treat it as a likely typo/autocorrect issue. Do not make a big deal of it; if needed, briefly say what you understood and keep helping.`,
+  };
+}
+
+function buildModelMessages(
+  messages: Array<{ id?: string; role: unknown; content: string }>,
+  latestUserMessageId: string,
+  latestUserModelContent: string,
+) {
+  return messages
+    .filter((item): item is { id?: string; role: "user" | "assistant"; content: string } => item.role === "user" || item.role === "assistant")
+    .map((item) => ({
+      role: item.role,
+      content: item.id === latestUserMessageId ? latestUserModelContent : item.content,
+    }));
 }

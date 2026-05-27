@@ -19,7 +19,6 @@ import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import {
   getScoreInputs,
   recordScoreInput,
-  todayUtc,
 } from "../lib/score-store";
 import {
   generateSleepBodyComment,

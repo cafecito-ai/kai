@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 import { FOOD_COMMENT_FALLBACK, generateFoodComment } from "../src/lib/food-comment";
 import type { KaiContext } from "../src/lib/context";
 import type { MealAnalysis } from "../src/lib/food-analysis";
+import type { Nutrition } from "../src/lib/usda";
 import type { Env } from "../src/types";
 
 // ─────────────────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ function analysis(overrides: Partial<MealAnalysis> = {}): MealAnalysis {
       { name: "grilled chicken breast", source: "vision", estimatedGrams: 150 },
       { name: "white rice", source: "vision", estimatedGrams: 200 },
     ],
-    totals: { calories: 580, protein: 38, carbs: 70, fat: 8 } as any,
+    totals: { calories: 580, protein: 38, carbs: 70, fat: 8 } as Nutrition,
     confidence: "medium",
     notes: "",
     ...overrides,
@@ -49,7 +50,7 @@ function analysis(overrides: Partial<MealAnalysis> = {}): MealAnalysis {
  *  Mirrors the real Workers AI signature: run(modelName, { prompt, ... }). */
 function mockEnv(responses: string[]): { env: Env; runMock: ReturnType<typeof vi.fn> } {
   const queue = [...responses];
-  const runMock = vi.fn(async (_model: string, _opts: { prompt: string }) => ({
+  const runMock = vi.fn(async () => ({
     response: queue.shift() ?? "",
   }));
   const env = {

@@ -40,7 +40,6 @@ export type ScoreInput = {
 type CheckInValue = { mood?: number /* 1–5 */; note?: string };
 type JournalValue = { sentiment?: number /* -1..+1 */; chars?: number };
 type SleepValue = { hours: number; quality?: number /* 1–5 */ };
-type GoalProgressValue = { delta?: number /* +1 progress unit */ };
 
 export type SubScore = number | null;
 

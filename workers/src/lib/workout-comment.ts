@@ -13,7 +13,6 @@
 //   - Filtered via passesBodyLanguageFilter; 3 regens then fallback
 
 import {
-  BODY_LANGUAGE_FALLBACK,
   passesBodyLanguageFilter,
 } from "./body-language-filter";
 import { callClaude } from "./claude";

@@ -53,7 +53,7 @@ describe("getTodayMissions", () => {
   });
 
   it("regenerates on a new day", () => {
-    const first = getTodayMissions();
+    getTodayMissions();
     // Simulate yesterday's storage
     const raw = localStorage.getItem("kai_missions_v1");
     if (raw) {

@@ -72,7 +72,10 @@ export function Voice() {
   async function requestMic() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const AC = window.AudioContext || (window as any).webkitAudioContext;
+      const AC =
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) throw new Error("AudioContext unavailable");
       const ctx = new AC();
       const src = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();

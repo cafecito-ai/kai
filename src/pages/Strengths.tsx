@@ -271,7 +271,7 @@ function AnswerForm({
               <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
                 {SECTION_LABELS[section]}
               </p>
-              {qs.map((q, idx) => {
+              {qs.map((q) => {
                 const globalIdx =
                   STRENGTHS_DISCOVERY_QUESTIONS.findIndex((x) => x.id === q.id) + 1;
                 return (

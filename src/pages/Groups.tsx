@@ -7,7 +7,7 @@
 //
 // Empty state: clean CTA to create or join.
 
-import { ArrowLeft, ArrowRight, ChevronRight, Plus, UserPlus, Users } from "lucide-react";
+import { ArrowRight, ChevronRight, Plus, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 

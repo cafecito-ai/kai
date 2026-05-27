@@ -31,7 +31,7 @@ function ctx(overrides: Partial<KaiContext> = {}): KaiContext {
 
 function mockEnv(responses: string[]): { env: Env; runMock: ReturnType<typeof vi.fn> } {
   const queue = [...responses];
-  const runMock = vi.fn(async (_model: string, _opts: { prompt: string }) => ({
+  const runMock = vi.fn(async () => ({
     response: queue.shift() ?? "",
   }));
   const env = {

@@ -22,12 +22,6 @@ function TermsCopy() {
         </p>
       </section>
       <section className="space-y-2">
-        <h2 className="font-display text-2xl font-black tracking-normal">Teen accounts need parent consent.</h2>
-        <p className="leading-7 text-muted">
-          Under-18 use includes a parent consent path. Parent consent confirms access; it does not show private answers, goals, food logs, or chats.
-        </p>
-      </section>
-      <section className="space-y-2">
         <h2 className="font-display text-2xl font-black tracking-normal">Food tracking has guardrails.</h2>
         <p className="leading-7 text-muted">
           Kai does not score bodies, rank meals, reward restriction, or show calorie targets by default. Food photos and notes are used descriptively.
@@ -43,7 +37,7 @@ function PrivacyCopy() {
       <section className="space-y-2">
         <h2 className="font-display text-2xl font-black tracking-normal">What Kai stores.</h2>
         <p className="leading-7 text-muted">
-          Kai stores account settings, onboarding answers, parent consent status, goals, progress events, engine activity, food notes, chat messages, and safety events needed to operate the product.
+          Kai stores account settings, onboarding answers, goals, progress events, engine activity, food notes, chat messages, and safety events needed to operate the product.
         </p>
       </section>
       <section className="space-y-2">

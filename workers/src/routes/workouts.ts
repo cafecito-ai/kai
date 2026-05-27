@@ -61,7 +61,7 @@ workoutsRoutes.post("/workouts/log", async (c) => {
 
   // Run DB insert + comment generation in parallel.
   const context = await buildKaiContext(c.env, userId);
-  const [commentResult, _insert, scoreResult] = await Promise.all([
+  const [commentResult, , scoreResult] = await Promise.all([
     generateWorkoutComment(c.env, context, payload),
     c.env.DB
       .prepare(

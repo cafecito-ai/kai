@@ -181,12 +181,6 @@ function daysBetween(aIso: string, bIso: string): number {
   return Math.max(0, Math.floor((b - a) / (24 * 60 * 60 * 1000)));
 }
 
-function addDaysIso(iso: string, days: number): string {
-  const d = new Date(iso.slice(0, 10) + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString();
-}
-
 /** Get all active challenges with current progress. */
 export function getActiveChallenges(): ChallengeProgress[] {
   const stored = readStored();
@@ -196,7 +190,6 @@ export function getActiveChallenges(): ChallengeProgress[] {
   for (const join of stored.active) {
     const challenge = CHALLENGE_CATALOG.find((c) => c.id === join.challengeId);
     if (!challenge) continue;
-    const endIso = addDaysIso(join.joinedAt, challenge.durationDays);
     const daysHit = countDaysHit(inputs, challenge, join.joinedAt, today);
     const elapsed = Math.min(challenge.durationDays, daysBetween(join.joinedAt, today));
     const remaining = Math.max(0, challenge.durationDays - elapsed);

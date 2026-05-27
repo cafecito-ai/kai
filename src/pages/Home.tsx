@@ -72,30 +72,6 @@ const DEMO_SCORE: DailyScoreView = {
   mood: { value: 68, outOf: 100 },
 };
 
-const DEMO_ACTIVITY: ActivityItem[] = [
-  {
-    icon: ActivityIcon,
-    iconTint: "text-accent-warm",
-    title: "Easy run · 32 min",
-    meta: "Yesterday",
-    chip: { label: "+5", className: "bg-success-soft text-success" },
-  },
-  {
-    icon: Moon,
-    iconTint: "text-accent",
-    title: "Slept 6h 24m",
-    meta: "Last night",
-    chip: { label: "−2", className: "bg-warning-soft text-warning" },
-  },
-  {
-    icon: Brain,
-    iconTint: "text-accent-cool",
-    title: "Evening reflection",
-    meta: "Yesterday",
-    chip: { label: "+3", className: "bg-success-soft text-success" },
-  },
-];
-
 // ─────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────

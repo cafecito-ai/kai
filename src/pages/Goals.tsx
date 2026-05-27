@@ -99,12 +99,11 @@ function List({
   goals,
   onChange,
   onAddNew,
-  onClose: _onClose,
 }: {
   goals: LocalGoal[];
   onChange: () => void;
   onAddNew: () => void;
-  onClose: () => void;
+  onClose?: () => void;
 }) {
   const active = goals.filter((g) => g.status === "active");
   const other = goals.filter((g) => g.status !== "active");

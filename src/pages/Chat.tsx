@@ -166,7 +166,7 @@ export function Chat() {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Say it messy."
+            placeholder="Tell KAI what's going on."
             rows={1}
             className="
               max-h-32 flex-1 resize-none

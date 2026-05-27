@@ -323,7 +323,7 @@ export function getBadgeProgress(): BadgeProgress[] {
   const scanDone =
     typeof localStorage !== "undefined" &&
     !!localStorage.getItem("kai_scans_v1") &&
-    (safeJsonParse(localStorage.getItem("kai_scans_v1")) as unknown[] | null)?.length! > 0;
+    ((safeJsonParse(localStorage.getItem("kai_scans_v1")) as unknown[] | null)?.length ?? 0) > 0;
 
   const result: BadgeProgress[] = [];
   for (const b of BADGE_CATALOG) {

@@ -14,12 +14,10 @@ import {
   Check,
   Dumbbell,
   Flame,
-  Heart,
   Moon,
   NotebookPen,
   Sparkles,
   Sun,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

@@ -13,7 +13,6 @@
 // forbidden-language guard with up to 3 regens then a safe fallback.
 
 import {
-  BODY_LANGUAGE_FALLBACK,
   passesBodyLanguageFilter,
 } from "./body-language-filter";
 import { callClaude } from "./claude";

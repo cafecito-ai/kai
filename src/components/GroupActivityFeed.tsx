@@ -10,7 +10,7 @@
 // being quiet.
 
 import { Award, Flame, Sparkles, Target as TargetIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
 
 type ActivityKind = "badge" | "level_up" | "streak" | "goal_completed";

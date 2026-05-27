@@ -15,6 +15,14 @@ import {
   rankLeaderboard,
   type LeaderboardEntry,
 } from "../lib/groups";
+import {
+  ALLOWED_REACTIONS,
+  aggregateReactions,
+  fanOutActivity,
+  renderActivityLabel,
+  type ActivityKind,
+  type Reaction,
+} from "../lib/group-activity";
 import { sendSafetyAlert } from "../lib/email";
 import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env } from "../types";
@@ -437,13 +445,15 @@ groupsRoutes.get("/groups/inbox", async (c) => {
   const userId = c.get("userId");
   const result = await c.env.DB
     .prepare(
-      `SELECT m.id, m.group_id, m.from_user_id, m.text, m.created_at, m.acked,
+      // Inbox shows both encouragement messages (T-038) and system notes
+      // (e.g. Rawz/7 reaction tiles: "Lev reacted 🔥 to your Week Strong").
+      `SELECT m.id, m.group_id, m.from_user_id, m.text, m.created_at, m.acked, m.kind,
               u.display_name AS from_display_name,
               g.name AS group_name
          FROM group_messages m
          JOIN users u ON u.id = m.from_user_id
          JOIN groups g ON g.id = m.group_id
-        WHERE m.to_user_id = ? AND m.kind = 'encouragement'
+        WHERE m.to_user_id = ? AND m.kind IN ('encouragement','system')
         ORDER BY m.created_at DESC
         LIMIT 50`,
     )
@@ -455,6 +465,7 @@ groupsRoutes.get("/groups/inbox", async (c) => {
       text: string;
       created_at: string;
       acked: number;
+      kind: string;
       from_display_name: string | null;
       group_name: string;
     }>()
@@ -467,6 +478,7 @@ groupsRoutes.get("/groups/inbox", async (c) => {
       fromUserId: r.from_user_id,
       fromDisplayName: r.from_display_name ?? "friend",
       text: r.text,
+      kind: r.kind,
       acked: !!r.acked,
       createdAt: r.created_at,
     })),
@@ -483,6 +495,216 @@ groupsRoutes.post("/groups/messages/:id/ack", async (c) => {
     .bind(msgId, userId)
     .run();
   return c.json({ ok: true });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// Rawz/7 — Group activity feed + emoji reactions
+// ─────────────────────────────────────────────────────────────────────
+
+const ALLOWED_KINDS: ReadonlySet<ActivityKind> = new Set([
+  "badge",
+  "level_up",
+  "streak",
+  "goal_completed",
+]);
+
+/**
+ * Fan out an achievement to every group the caller belongs to. Frontend
+ * calls this after consuming a new badge / level-up / streak milestone.
+ * Idempotent via UNIQUE(group_id, actor_user_id, kind, ref_key).
+ */
+groupsRoutes.post("/groups/activity", async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req
+    .json<{ kind?: string; refKey?: string; hint?: string }>()
+    .catch((): { kind?: string; refKey?: string; hint?: string } => ({}));
+  const kind = body.kind as ActivityKind | undefined;
+  const refKey = (body.refKey ?? "").trim().slice(0, 64);
+  if (!kind || !ALLOWED_KINDS.has(kind)) {
+    return c.json({ error: "Invalid kind" }, 400);
+  }
+  if (!refKey) {
+    return c.json({ error: "refKey is required" }, 400);
+  }
+  const label = renderActivityLabel(kind, refKey, body.hint);
+  const written = await fanOutActivity(c.env.DB, {
+    userId,
+    kind,
+    refKey,
+    label,
+  });
+  return c.json({ ok: true, fannedOutTo: written });
+});
+
+/**
+ * Per-group activity feed. Most-recent first, capped at 50. Posts from
+ * blocked users are filtered out using the same bidirectional check as
+ * the member list.
+ */
+groupsRoutes.get("/groups/:id/activity", async (c) => {
+  const userId = c.get("userId");
+  const groupId = c.req.param("id");
+
+  const member = await c.env.DB
+    .prepare(
+      "SELECT 1 FROM group_memberships WHERE group_id = ? AND user_id = ?",
+    )
+    .bind(groupId, userId)
+    .first()
+    .catch(() => null);
+  if (!member) return c.json({ error: "Not a member" }, 403);
+
+  const blockedRes = await c.env.DB
+    .prepare(
+      "SELECT blocked_id FROM group_blocks WHERE blocker_id = ? UNION SELECT blocker_id FROM group_blocks WHERE blocked_id = ?",
+    )
+    .bind(userId, userId)
+    .all<{ blocked_id: string }>()
+    .catch(() => ({ results: [] as never[] }));
+  const blockedIds = new Set(
+    (blockedRes.results ?? []).map((r) => r.blocked_id),
+  );
+
+  const rowsRes = await c.env.DB
+    .prepare(
+      `SELECT a.id, a.actor_user_id, a.kind, a.label, a.ref_key, a.created_at,
+              u.display_name AS actor_display_name
+         FROM group_activity a
+         JOIN users u ON u.id = a.actor_user_id
+        WHERE a.group_id = ?
+        ORDER BY a.created_at DESC
+        LIMIT 50`,
+    )
+    .bind(groupId)
+    .all<{
+      id: string;
+      actor_user_id: string;
+      kind: ActivityKind;
+      label: string;
+      ref_key: string;
+      created_at: string;
+      actor_display_name: string | null;
+    }>()
+    .catch(() => ({ results: [] as never[] }));
+
+  const visible = (rowsRes.results ?? []).filter(
+    (r) => !blockedIds.has(r.actor_user_id),
+  );
+  const reactions = await aggregateReactions(
+    c.env.DB,
+    visible.map((r) => r.id),
+    userId,
+  );
+
+  return c.json({
+    activity: visible.map((r) => {
+      const summary = reactions.get(r.id) ?? { counts: {}, mine: [] };
+      return {
+        id: r.id,
+        actorUserId: r.actor_user_id,
+        actorDisplayName: r.actor_display_name ?? "friend",
+        isMe: r.actor_user_id === userId,
+        kind: r.kind,
+        label: r.label,
+        refKey: r.ref_key,
+        createdAt: r.created_at,
+        reactions: summary.counts,
+        myReactions: summary.mine,
+      };
+    }),
+    allowedReactions: ALLOWED_REACTIONS,
+  });
+});
+
+/**
+ * Toggle a reaction on an activity row. Send the same reaction twice to
+ * remove it. If a reaction is added on someone else's activity, also
+ * drop a tiny "X reacted 🔥 to your Week Strong" tile into their group
+ * inbox so they feel the love when they open the app.
+ */
+groupsRoutes.post("/groups/activity/:activityId/react", async (c) => {
+  const userId = c.get("userId");
+  const activityId = c.req.param("activityId");
+  const body = await c.req
+    .json<{ reaction?: string }>()
+    .catch((): { reaction?: string } => ({}));
+  const reaction = body.reaction as Reaction | undefined;
+  if (!reaction || !(ALLOWED_REACTIONS as readonly string[]).includes(reaction)) {
+    return c.json({ error: "Reaction must be one of " + ALLOWED_REACTIONS.join(" ") }, 400);
+  }
+
+  // Caller must be a member of the activity's group.
+  const activity = await c.env.DB
+    .prepare(
+      `SELECT a.id, a.group_id, a.actor_user_id, a.label
+         FROM group_activity a
+        WHERE a.id = ?`,
+    )
+    .bind(activityId)
+    .first<{ id: string; group_id: string; actor_user_id: string; label: string }>()
+    .catch(() => null);
+  if (!activity) return c.json({ error: "Activity not found" }, 404);
+
+  const member = await c.env.DB
+    .prepare(
+      "SELECT 1 FROM group_memberships WHERE group_id = ? AND user_id = ?",
+    )
+    .bind(activity.group_id, userId)
+    .first()
+    .catch(() => null);
+  if (!member) return c.json({ error: "Not a member" }, 403);
+
+  // Toggle — if it already exists, remove it; otherwise insert.
+  const existing = await c.env.DB
+    .prepare(
+      "SELECT 1 FROM group_activity_reactions WHERE activity_id = ? AND user_id = ? AND reaction = ?",
+    )
+    .bind(activityId, userId, reaction)
+    .first()
+    .catch(() => null);
+
+  if (existing) {
+    await c.env.DB
+      .prepare(
+        "DELETE FROM group_activity_reactions WHERE activity_id = ? AND user_id = ? AND reaction = ?",
+      )
+      .bind(activityId, userId, reaction)
+      .run();
+    return c.json({ ok: true, added: false });
+  }
+
+  await c.env.DB
+    .prepare(
+      "INSERT INTO group_activity_reactions (activity_id, user_id, reaction) VALUES (?, ?, ?)",
+    )
+    .bind(activityId, userId, reaction)
+    .run();
+
+  // Notify the actor — but never notify yourself for your own reaction.
+  if (activity.actor_user_id !== userId) {
+    const reactor = await c.env.DB
+      .prepare("SELECT display_name FROM users WHERE id = ?")
+      .bind(userId)
+      .first<{ display_name: string | null }>()
+      .catch(() => null);
+    const reactorName = reactor?.display_name?.trim() || "Someone";
+    const msgId = `msg_${crypto.randomUUID()}`;
+    await c.env.DB
+      .prepare(
+        `INSERT INTO group_messages (id, group_id, from_user_id, to_user_id, kind, template_id, text)
+         VALUES (?, ?, ?, ?, 'system', NULL, ?)`,
+      )
+      .bind(
+        msgId,
+        activity.group_id,
+        userId,
+        activity.actor_user_id,
+        `${reactorName} reacted ${reaction} to your "${activity.label}"`,
+      )
+      .run();
+  }
+
+  return c.json({ ok: true, added: true });
 });
 
 // ─────────────────────────────────────────────────────────────────────

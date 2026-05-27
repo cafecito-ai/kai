@@ -24,6 +24,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+import { GroupActivityFeed } from "../components/GroupActivityFeed";
 import { api } from "../lib/api";
 
 type Bucket = "high" | "mid" | "low" | "hidden" | "none";
@@ -131,6 +132,9 @@ export function GroupDetail() {
           reload();
         }}
       />
+
+      {/* Rawz/7 — group activity feed (achievements + reactions) */}
+      <GroupActivityFeed groupId={state.group.id} />
 
       {/* Members */}
       <section className="mt-5">

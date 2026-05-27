@@ -114,13 +114,39 @@ export function Home() {
   const [levelUp, setLevelUp] = useState<{ newLevel: number; message: string } | null>(null);
 
   useEffect(() => {
-    import("../lib/local-xp").then(({ checkAndConsumeLevelUp, levelUpMessage }) => {
+    // Rawz/3 — level-up moment + Rawz/7 — fan out to groups.
+    import("../lib/local-xp").then(({ checkAndConsumeLevelUp, levelUpMessage, labelForLevel }) => {
       const r = checkAndConsumeLevelUp();
       if (r.leveledUp) {
         setLevelUp({
           newLevel: r.newLevel,
           message: levelUpMessage(r.newLevel),
         });
+        // Fire-and-forget — if the user isn't in any groups it's a no-op
+        // server-side. Failures don't matter; the row dedupes on retry.
+        api
+          .postGroupActivity({
+            kind: "level_up",
+            refKey: String(r.newLevel),
+            hint: labelForLevel(r.newLevel),
+          })
+          .catch(() => {});
+      }
+    });
+    // Rawz/4 + Rawz/7 — also fan out any newly-earned badges. We call
+    // checkAndConsumeNewBadges() here (not where badges are rendered) so
+    // the fan-out fires exactly once per badge, on the first Home visit
+    // after earning. The badges page reads progress, never consumes.
+    import("../lib/local-badges").then(({ checkAndConsumeNewBadges }) => {
+      const earned = checkAndConsumeNewBadges();
+      for (const b of earned) {
+        api
+          .postGroupActivity({
+            kind: "badge",
+            refKey: b.badge.id,
+            hint: b.badge.title,
+          })
+          .catch(() => {});
       }
     });
   }, []);

@@ -280,6 +280,9 @@ export const api = {
         fromUserId: string;
         fromDisplayName: string;
         text: string;
+        // 'encouragement' = teen-to-teen sent message; 'system' = auto-generated
+        // (currently: Rawz/7 reaction notifications like "Lev reacted 🔥 to ...")
+        kind: "encouragement" | "system";
         acked: boolean;
         createdAt: string;
       }>;
@@ -289,6 +292,43 @@ export const api = {
       method: "POST",
       body: "{}",
     }),
+  // Rawz/7 — group activity feed + emoji reactions.
+  // Fan-out is fire-and-forget: frontend calls this whenever it detects a
+  // badge/level-up/streak crossing; server writes one row per group the
+  // caller belongs to. UNIQUE constraint dedupes safely.
+  postGroupActivity: (body: {
+    kind: "badge" | "level_up" | "streak" | "goal_completed";
+    refKey: string;
+    hint?: string;
+  }) =>
+    request<{ ok: true; fannedOutTo: number }>(`/api/groups/activity`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getGroupActivity: (groupId: string) =>
+    request<{
+      activity: Array<{
+        id: string;
+        actorUserId: string;
+        actorDisplayName: string;
+        isMe: boolean;
+        kind: "badge" | "level_up" | "streak" | "goal_completed";
+        label: string;
+        refKey: string;
+        createdAt: string;
+        reactions: Partial<Record<"🔥" | "💪" | "👏" | "🎯", number>>;
+        myReactions: Array<"🔥" | "💪" | "👏" | "🎯">;
+      }>;
+      allowedReactions: ReadonlyArray<"🔥" | "💪" | "👏" | "🎯">;
+    }>(`/api/groups/${groupId}/activity`),
+  toggleGroupActivityReaction: (
+    activityId: string,
+    reaction: "🔥" | "💪" | "👏" | "🎯",
+  ) =>
+    request<{ ok: true; added: boolean }>(
+      `/api/groups/activity/${activityId}/react`,
+      { method: "POST", body: JSON.stringify({ reaction }) },
+    ),
   getGroupLeaderboard: (id: string) =>
     request<{
       entries: Array<{

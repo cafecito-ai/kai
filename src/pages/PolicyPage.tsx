@@ -24,7 +24,7 @@ function TermsCopy() {
       <section className="space-y-2">
         <h2 className="font-display text-2xl font-black tracking-normal">Teen accounts need parent consent.</h2>
         <p className="leading-7 text-muted">
-          Under-18 use includes a parent consent path. Parent consent confirms access; it does not show private answers, goals, food logs, or chats.
+          Under-13 use includes a parent consent path. Parent consent confirms access; it does not show private answers, goals, food logs, or chats.
         </p>
       </section>
       <section className="space-y-2">

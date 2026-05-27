@@ -44,8 +44,8 @@ const connectionErrorCopy = [
 ];
 
 const cases = [
-  route("/", ["Home", "KAI", "Lock in"], { actionables: ["textarea", "button"] }),
-  route("/onboarding", ["KAI setup", "Build your system", "Let’s build your personalized system.", "Takes under 2 minutes."], { actionables: ["button", "input"], onboardingHandoff: true }),
+  route("/", ["Start with what is", "One next move", "Crisis support"], { actionables: ["a[href='/crisis']"] }),
+  route("/welcome", ["What should KAI call you?", "wellness companion"], { actionables: ["button", "input"], onboardingHandoff: true }),
   route("/walkthrough", ["Quick tour", "How KAI works", "Win the day."], { actionables: ["button", "a[href='/home']"], walkthrough: true }),
   route("/home", ["Home", "KAI", "Lock in"], { actionables: ["textarea", "button"], kaiChatHandoff: true }),
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
@@ -314,7 +314,6 @@ async function assertOnboardingHandoff(client) {
   await client.evaluate(`(() => {
     const inputs = Array.from(document.querySelectorAll("input"));
     const name = inputs.find((input) => input.getAttribute("placeholder") === "First name");
-    const age = inputs.find((input) => input.getAttribute("inputmode") === "numeric");
     const set = (input, value) => {
       if (!input) return false;
       const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
@@ -324,28 +323,43 @@ async function assertOnboardingHandoff(client) {
       input.dispatchEvent(new Event("change", { bubbles: true }));
       return true;
     };
-    return set(name, "Demo") && set(age, "18");
+    return set(name, "Demo");
   })()`);
-  await clickButtonByText(client, "Start");
-  await clickButtonByText(client, "More disciplined");
-  await clickButtonByText(client, "More focused");
-  await clickReadyButton(client, "Next");
-  await clickButtonByText(client, "Overthinking");
-  await clickReadyButton(client, "Next");
-  await clickButtonByText(client, "Energy");
-  await clickReadyButton(client, "Next");
-  await clickButtonByText(client, "Trying to improve");
-  await clickReadyButton(client, "Next");
-  await clickButtonByText(client, "Progress");
-  await clickReadyButton(client, "Next");
-  await clickButtonByText(client, "TikTok/social media");
-  await clickReadyButton(client, "Next");
-  await clickButtonByText(client, "Gym");
-  await clickButtonByText(client, "Journaling");
-  await clickReadyButton(client, "Next");
-  await clickReadyButton(client, "Next");
-  await clickButtonByText(client, "Ready for change");
-  await clickReadyButton(client, "Build my system");
+  await clickReadyButton(client, "Continue");
+  await client.evaluate(`(() => {
+    const age = Array.from(document.querySelectorAll("input")).find((input) => input.getAttribute("inputmode") === "numeric");
+    if (!age) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+    if (setter) setter.call(age, "18");
+    else age.value = "18";
+    age.dispatchEvent(new Event("input", { bubbles: true }));
+    age.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  })()`);
+  await clickReadyButton(client, "Continue");
+  await clickButtonByText(client, "Mental clarity");
+  await clickButtonByText(client, "Focus");
+  await clickButtonByText(client, "Better sleep");
+  await clickReadyButton(client, "Continue");
+  await client.evaluate(`(() => {
+    const textarea = document.querySelector("textarea");
+    if (!textarea) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+    if (setter) setter.call(textarea, "I keep overthinking and losing focus at night.");
+    else textarea.value = "I keep overthinking and losing focus at night.";
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    textarea.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  })()`);
+  await clickReadyButton(client, "Continue");
+  await clickButtonByText(client, "6-7");
+  await clickButtonByText(client, "Stress");
+  await clickButtonByText(client, "Homework");
+  await clickReadyButton(client, "Continue");
+  await clickReadyButton(client, "Continue");
+  await clickButtonByText(client, "Balanced");
+  await clickReadyButton(client, "Continue");
+  await clickReadyButton(client, "Start");
   await waitForClientCondition(
     client,
     `(() => {

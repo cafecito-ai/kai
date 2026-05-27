@@ -19,7 +19,7 @@ const physicalActions = [
 
 export function Landing() {
   const { kaiName, primaryEngine, onboardingCompletedAt } = useUserStore();
-  const startPath = onboardingCompletedAt ? "/home" : "/onboarding";
+  const startPath = onboardingCompletedAt ? "/home" : "/welcome";
 
   return (
     <AppPage className="max-w-5xl">
@@ -48,20 +48,20 @@ export function Landing() {
           <div className="flex h-full flex-col justify-between gap-7">
             <div>
               <KaiMark size="lg" />
-              <p className="mt-5 font-display text-3xl font-black leading-none">Your pocket coach for real life.</p>
+            <p className="mt-5 font-display text-3xl font-black leading-none">One next move, not a life overhaul.</p>
             </div>
             <FlowList
               items={[
                 { label: "Say the loud part", copy: "A messy sentence is enough." },
-                { label: "Let Kai choose", copy: "Mind, body, goals, or reset." },
-                { label: "Do one rep", copy: "Small enough to finish today." }
+                { label: "Get a real read", copy: "KAI listens; you do not have to perform." },
+                { label: "Do one small thing", copy: "Small enough to finish today." }
               ]}
             />
           </div>
         }
       >
         <p>
-            Tell Kai what is loud today. Kai opens the right move and keeps it small enough to finish.
+            Tell KAI what is loud today. It helps you choose the right move and turn it into one small rep.
         </p>
       </SessionHero>
 

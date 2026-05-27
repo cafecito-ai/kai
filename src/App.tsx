@@ -17,6 +17,7 @@ import { GoalDetail } from "./pages/GoalDetail";
 import { Goals } from "./pages/Goals";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
+import { Landing } from "./pages/Landing";
 import { Loop } from "./pages/Loop";
 import { Onboarding } from "./pages/Onboarding";
 import { Ops } from "./pages/Ops";
@@ -38,7 +39,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
   const routes = (
       <Routes>
         <Route element={<AppShell />}>
-          <Route path="/" element={protectedOnboarding(<Home />)} />
+          <Route path="/" element={<Landing />} />
           <Route
             path="/sign-in/*"
             element={
@@ -71,7 +72,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
               )
             }
           />
-          <Route path="/onboarding" element={protectedAuth(<Onboarding />)} />
+          <Route path="/welcome" element={protectedAuth(<Onboarding />)} />
+          <Route path="/onboarding" element={<Navigate to="/welcome" replace />} />
           <Route path="/walkthrough" element={protectedOnboarding(<Walkthrough />)} />
           <Route path="/home" element={protectedOnboarding(<Home />)} />
           <Route path="/health" element={protectedOnboarding(<EnginePhysical />)} />

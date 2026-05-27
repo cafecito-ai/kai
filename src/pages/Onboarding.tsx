@@ -258,7 +258,12 @@ export function Onboarding() {
       const questions = pickFollowUps(focusAreas);
       Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
       await api.submitIntake(keyedResponses);
+      // displayName = the teen's name (what KAI calls them). kaiName = what
+      // they call KAI. Previously firstName only landed in user_intake.summary
+      // and never users.display_name, so the chat agent kept falling back to
+      // "friend" even after onboarding. Fix: write it through here.
       await api.updateUser({
+        displayName: firstName.trim() || undefined,
         kaiName,
         kaiTone,
         primaryEngine,

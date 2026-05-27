@@ -17,6 +17,7 @@ import {
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { api } from "../lib/api";
 import {
   createLocalGoal,
   goalStreak,
@@ -201,6 +202,17 @@ function GoalCard({
   function complete() {
     if (confirm("Mark this goal complete?")) {
       updateGoalStatus(goal.id, "completed");
+      // Rawz/7 — fan out to the user's groups so friends see the win in
+      // their activity feed. Fire-and-forget; no groups → no-op server
+      // side. UNIQUE(group_id, actor, kind, ref_key) protects against
+      // duplicate posts if they complete-then-uncomplete-then-complete.
+      api
+        .postGroupActivity({
+          kind: "goal_completed",
+          refKey: goal.id,
+          hint: goal.title,
+        })
+        .catch(() => {});
       onChange();
     }
   }

@@ -149,6 +149,23 @@ export function Home() {
           .catch(() => {});
       }
     });
+    // Rawz/7 — streak milestone fan-out. Detects 7 / 30 / 100-day
+    // crossings using local input history; fires once per milestone per
+    // streak run. Reset to 0 clears the announced set so the user gets
+    // the moment again if they come back after a break (D-021).
+    import("../lib/local-streak-milestones").then(
+      ({ checkAndConsumeStreakMilestones }) => {
+        const crossings = checkAndConsumeStreakMilestones();
+        for (const days of crossings) {
+          api
+            .postGroupActivity({
+              kind: "streak",
+              refKey: String(days),
+            })
+            .catch(() => {});
+        }
+      },
+    );
   }, []);
 
   useEffect(() => {

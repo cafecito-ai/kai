@@ -50,6 +50,16 @@ export function readLocalInputs(): LocalInput[] {
   }
 }
 
+/** Test helper — wipe all logged inputs. Also useful from dev tools. */
+export function clearLocalInputs(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function appendLocalInput(input: Omit<LocalInput, "id" | "createdAt">): LocalInput {
   const all = readLocalInputs();
   const next: LocalInput = {

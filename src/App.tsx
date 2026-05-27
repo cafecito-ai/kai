@@ -28,6 +28,7 @@ import { Scope } from "./pages/Scope";
 import { Settings } from "./pages/Settings";
 import { Groups } from "./pages/Groups";
 import { Profile } from "./pages/Profile";
+import { TaskPage } from "./pages/TaskPage";
 import { Walkthrough } from "./pages/Walkthrough";
 
 export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
@@ -80,6 +81,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/goals" element={protectedOnboarding(<Goals />)} />
           <Route path="/goals/:goalId" element={protectedOnboarding(<GoalDetail />)} />
           <Route path="/loop" element={protectedOnboarding(<Loop />)} />
+          <Route path="/task/:taskId" element={protectedOnboarding(<TaskPage />)} />
           <Route path="/engine/physical" element={protectedOnboarding(<EnginePhysical />)} />
           <Route path="/engine/potential" element={protectedOnboarding(<EnginePotential />)} />
           <Route path="/engine/mental" element={protectedOnboarding(<EngineMental />)} />

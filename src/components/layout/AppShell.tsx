@@ -254,6 +254,7 @@ function isUnifiedAppRoute(pathname: string) {
     pathname === "/goals" ||
     pathname.startsWith("/goals/") ||
     pathname === "/loop" ||
+    pathname.startsWith("/task/") ||
     pathname === "/walkthrough" ||
     pathname === "/progress" ||
     pathname === "/groups" ||
@@ -269,6 +270,7 @@ function sectionLabel(pathname: string) {
   if (pathname === "/goal") return "Goal";
   if (pathname === "/goals" || pathname.startsWith("/goals/")) return "Goals";
   if (pathname === "/loop") return "Loop";
+  if (pathname.startsWith("/task/")) return "Task";
   if (pathname === "/walkthrough") return "Tour";
   if (pathname === "/progress") return "Progress";
   if (pathname === "/groups") return "Circle";

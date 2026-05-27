@@ -69,6 +69,23 @@ const cases = [
   route("/health?module=sleep&action=sleep", ["Log sleep", exactPhysicalCopy[7]], {
     actionables: ["button"]
   }),
+  route("/task/talk", ["Check-in", "Feeling patterns"], { actionables: ["button"] }),
+  route("/task/food", ["Log food", "Add a food photo"], {
+    actionables: ["textarea", "input[type='file'][accept='image/*']", "button"],
+    forbiddenSelectors: ["input[type='file'][capture]"],
+    foodPhotoUpload: true
+  }),
+  route("/task/sleep", ["Log sleep", exactPhysicalCopy[7]], { actionables: ["button"] }),
+  route("/task/stretch", ["Stretch / move", exactPhysicalCopy[5]], { actionables: ["button"] }),
+  route("/task/scan", ["Body scan", "Private by default"], {
+    actionables: ["input[type='file'][accept='image/*']", "button"],
+    forbiddenSelectors: ["input[type='file'][capture]"]
+  }),
+  route("/task/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
+  route("/task/reset", ["Settle your body first", "Social boundaries"], { actionables: ["button"] }),
+  route("/task/confidence", ["Confidence is built from evidence", "Make one next move visible"], { actionables: ["button"] }),
+  route("/task/social", ["Start with the honest social version", "Feeling patterns"], { actionables: ["button"] }),
+  route("/task/screen", ["attention reset", "Social boundaries"], { actionables: ["button"] }),
   route("/engine/potential", ["Potential and goals", "Make the next move visible", "strengths discovery", "Doing-things guides"], {
     actionables: ["input", "textarea", "button"]
   }),
@@ -76,7 +93,7 @@ const cases = [
     actionables: ["input", "textarea", "button"]
   }),
   route("/mental", ["Talk it through", "Feelings", "confidence", "never clinical"], { actionables: ["[role='tab']"] }),
-  route("/mental?module=checkin&action=social", ["Talk it through", "Say the messy social version first", "Feeling patterns"], { actionables: ["[role='tab']", "button"] }),
+  route("/mental?module=checkin&action=social", ["Talk it through", "Start with the honest social version", "Feeling patterns"], { actionables: ["[role='tab']", "button"] }),
   route("/mental?module=reset&action=screen", ["Talk it through", "attention reset", "Social boundaries"], { actionables: ["[role='tab']", "button"] }),
   route("/mental?module=purpose&action=confidence", ["Talk it through", "Confidence is built from evidence", "Make one next move visible"], { actionables: ["[role='tab']", "button"] }),
   route("/mental?module=guides", ["Talk it through", "Daniel Siegel", "James Clear", ...guideNames], {
@@ -84,7 +101,7 @@ const cases = [
   }),
   route("/progress", ["Private proof", "Kai can remember", "saved rep"], { actionables: ["a"] }),
   route("/groups", ["circle", "Support circle", "Locked until it is safe"], { actionables: ["a", "button"] }),
-  route("/profile", ["Profile", "Kai", "daily score", "daily missions", "badges", "completion"], { actionables: ["a"] }),
+  route("/profile", ["Profile", "Kai", "daily score", "current path", "today's path", "next unlocks"], { actionables: ["a"] }),
   route("/settings", ["Settings", "Kai"], { actionables: ["button"] }),
   route("/crisis", ["Crisis", "988"], { actionables: ["a[href^='tel:']"] }),
   route("/for-parents", ["For parents", "wellness coaching"], { actionables: ["a"] }),
@@ -347,7 +364,7 @@ async function assertKaiChatHandoff(client) {
     `(() => {
       const dialog = document.querySelector("[role='dialog'][aria-label='Quick actions']");
       return Boolean(dialog) &&
-        Array.from(dialog.querySelectorAll("a")).some((link) => (link.getAttribute("href") || "").includes("/health") && (link.getAttribute("href") || "").includes("module=food") && (link.getAttribute("href") || "").includes("action=food")) &&
+        Array.from(dialog.querySelectorAll("a")).some((link) => (link.getAttribute("href") || "").includes("/task/food")) &&
         dialog.innerText.toLowerCase().includes("recommended");
     })()`,
     "KAI task chip did not produce a food action"
@@ -355,23 +372,23 @@ async function assertKaiChatHandoff(client) {
   await clickFoodActionLink(client);
   await waitForClientCondition(
     client,
-    `location.pathname === "/health" && location.search.includes("module=food") && !document.querySelector("[role='dialog'][aria-label='Quick actions']") && document.body.innerText.includes("Log food")`,
+    `location.pathname === "/task/food" && !document.querySelector("[role='dialog'][aria-label='Quick actions']") && document.body.innerText.includes("Log food")`,
     "KAI task action did not close launcher and open Food"
   );
 }
 
 async function assertQuickActionLinks(client) {
   const expectedRoutes = [
-    "/mental?module=checkin&action=talk",
-    "/health?module=food&action=food",
-    "/health?module=sleep&action=sleep",
-    "/health?module=stretch&action=stretch",
-    "/health?module=scan&action=scan",
-    "/goal?action=goal",
-    "/loop?action=reset",
-    "/mental?module=purpose&action=confidence",
-    "/mental?module=checkin&action=social",
-    "/mental?module=reset&action=screen",
+    "/task/talk",
+    "/task/food",
+    "/task/sleep",
+    "/task/stretch",
+    "/task/scan",
+    "/task/goal",
+    "/task/reset",
+    "/task/confidence",
+    "/task/social",
+    "/task/screen",
     "/progress",
     "/profile",
     "/settings"
@@ -399,16 +416,16 @@ async function assertQuickActionLinks(client) {
   }
 
   const expectations = {
-    "/mental?module=checkin&action=talk": ["Talk it through", "Feeling patterns"],
-    "/health?module=food&action=food": ["Take care of your body", "Log food"],
-    "/health?module=sleep&action=sleep": ["Log sleep"],
-    "/health?module=stretch&action=stretch": ["Stretch / move"],
-    "/health?module=scan&action=scan": ["Body scan"],
-    "/goal?action=goal": ["Pick one thing."],
-    "/loop?action=reset": ["One clean loop."],
-    "/mental?module=purpose&action=confidence": ["Talk it through", "Confidence is built from evidence"],
-    "/mental?module=checkin&action=social": ["Talk it through", "Say the messy social version first"],
-    "/mental?module=reset&action=screen": ["Talk it through", "attention reset"],
+    "/task/talk": ["Check-in", "Feeling patterns"],
+    "/task/food": ["Log food", "Add a food photo"],
+    "/task/sleep": ["Log sleep"],
+    "/task/stretch": ["Stretch / move"],
+    "/task/scan": ["Body scan"],
+    "/task/goal": ["Pick one thing."],
+    "/task/reset": ["Settle your body first"],
+    "/task/confidence": ["Confidence is built from evidence"],
+    "/task/social": ["Start with the honest social version"],
+    "/task/screen": ["attention reset"],
     "/progress": ["Private proof", "Kai can remember"],
     "/profile": ["Profile", "daily score"],
     "/settings": ["Settings", "Kai"]
@@ -453,7 +470,7 @@ async function clickFoodActionLink(client) {
     const dialog = document.querySelector("[role='dialog'][aria-label='Quick actions']");
     const element = Array.from((dialog || document).querySelectorAll("a")).find((link) => {
       const href = link.getAttribute("href") || "";
-      return href.includes("/health") && href.includes("module=food") && href.includes("action=food");
+      return href.includes("/task/food");
     });
     if (!element) return false;
     element.scrollIntoView({ block: "center", inline: "center" });

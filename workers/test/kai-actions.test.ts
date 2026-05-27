@@ -6,7 +6,7 @@ describe("inferKaiNextAction", () => {
     expect(inferKaiNextAction("I forgot to eat and need protein after practice")).toMatchObject({
       id: "food",
       label: "Log food",
-      route: "/health?module=food&action=food"
+      route: "/task/food"
     });
   });
 
@@ -14,43 +14,43 @@ describe("inferKaiNextAction", () => {
     expect(inferKaiNextAction("I am wired and exhausted and need sleep")).toMatchObject({
       id: "sleep",
       label: "Protect sleep",
-      route: "/health?module=sleep&action=sleep"
+      route: "/task/sleep"
     });
   });
 
   it("routes stuck productivity messages to reset before pressure", () => {
     expect(inferKaiNextAction("I am overwhelmed and stuck doomscrolling")).toMatchObject({
       id: "screen",
-      route: "/mental?module=reset&action=screen"
+      route: "/task/screen"
     });
   });
 
   it("routes posture checks to body scan instead of stretch", () => {
     expect(inferKaiNextAction("Can Kai check my posture and alignment?")).toMatchObject({
       id: "scan",
-      route: "/health?module=scan&action=scan"
+      route: "/task/scan"
     });
   });
 
   it("routes school procrastination to goal creation", () => {
     expect(inferKaiNextAction("I keep procrastinating on school and need a habit")).toMatchObject({
       id: "goal",
-      route: "/goal?action=goal"
+      route: "/task/goal"
     });
   });
 
   it("routes confidence, social pressure, and screen time to focused mental actions", () => {
     expect(inferKaiNextAction("I feel insecure and not good enough")).toMatchObject({
       id: "confidence",
-      route: "/mental?module=purpose&action=confidence"
+      route: "/task/confidence"
     });
     expect(inferKaiNextAction("The group chat made me feel left out")).toMatchObject({
       id: "social",
-      route: "/mental?module=checkin&action=social"
+      route: "/task/social"
     });
     expect(inferKaiNextAction("I keep scrolling on TikTok and comparing myself")).toMatchObject({
       id: "screen",
-      route: "/mental?module=reset&action=screen"
+      route: "/task/screen"
     });
   });
 });

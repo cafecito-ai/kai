@@ -82,7 +82,9 @@ export function KaiChat({
     void sendDraft(prompt);
   }
 
-  const shellClass = embedded ? "overflow-hidden rounded-[24px] border border-line bg-white" : "overflow-hidden rounded-calm border border-line bg-white shadow-calm";
+  const shellClass = embedded
+    ? "flex flex-1 flex-col overflow-hidden rounded-[24px] border border-line bg-white"
+    : "overflow-hidden rounded-calm border border-line bg-white shadow-calm";
   const title = mode === "mental" ? "Talk it out." : "Talk to KAI.";
   const helper = mode === "mental" ? "No perfect words. KAI will help you steady it." : "Say the real version. KAI will help you see the next move.";
 
@@ -101,7 +103,7 @@ export function KaiChat({
         </div>
       )}
       <div
-        className={`${embedded ? "max-h-[52svh]" : "max-h-[42vh] sm:max-h-[26rem]"} space-y-3 overflow-y-auto px-4 py-4`}
+        className={`${embedded ? "min-h-0 flex-1" : "max-h-[42vh] sm:max-h-[26rem]"} space-y-3 overflow-y-auto px-4 py-4`}
         aria-live="polite"
         aria-relevant="additions"
         aria-label="Chat with Kai"
@@ -213,7 +215,7 @@ export function KaiChat({
           onKeyDown={onInputKeyDown}
           rows={1}
           className="field max-h-32 min-h-12 min-w-0 flex-1 resize-none py-3"
-          placeholder={sending ? "kai is thinking" : "say it messy"}
+          placeholder={sending ? "kai is thinking" : "what can we build today?"}
           disabled={sending}
         />
         <Button aria-label="Send message" disabled={sending || !draft.trim()} className="size-12 shrink-0 rounded-full p-0">

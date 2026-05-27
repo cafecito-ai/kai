@@ -21,7 +21,15 @@ import type { EngineEntry, FoodPhotoItem, FoodPhotoResult } from "../lib/types";
 import { useKaiStore } from "../stores/kaiStore";
 import { useProgressStore } from "../stores/progressStore";
 
-export function EnginePhysical() {
+export function EnginePhysical({
+  initialModule,
+  initialAction,
+  standalone = false
+}: {
+  initialModule?: string;
+  initialAction?: string;
+  standalone?: boolean;
+}) {
   const addEvent = useProgressStore((state) => state.addEvent);
   const rememberToolCompletion = useKaiStore((state) => state.rememberToolCompletion);
   const [meal, setMeal] = useState("Turkey sandwich, apple, water");
@@ -565,7 +573,18 @@ export function EnginePhysical() {
     }
   ];
 
-  return <UnitWorkspace title="Take care of your body" label="Body moves" tone="physical" intro="Food. Scan. Move. Sleep. Private, useful." modules={modules} />;
+  return (
+    <UnitWorkspace
+      title="Take care of your body"
+      label="Body moves"
+      tone="physical"
+      intro="Food. Scan. Move. Sleep. Private, useful."
+      modules={modules}
+      initialModule={initialModule}
+      initialAction={initialAction}
+      standalone={standalone}
+    />
+  );
 }
 
 const foodExamples = [

@@ -25,7 +25,7 @@ describe("chat routes", () => {
     const body = (await res.json()) as { conversationId: string; message: { content: string }; nextAction: { id: string; route: string } };
     expect(body.conversationId).toBe("kai-conv");
     expect(body.message.content).toBe("Log sleep saved. Recovery is logged. Protect tonight before adding more effort.");
-    expect(body.nextAction).toMatchObject({ id: "sleep", route: "/health?module=sleep&action=sleep" });
+    expect(body.nextAction).toMatchObject({ id: "sleep", route: "/task/sleep" });
 
     const messageInsert = statements.find((statement) => statement.sql.includes("INSERT INTO messages"));
     expect(messageInsert?.values[2]).toBe("assistant");
@@ -60,7 +60,7 @@ describe("chat routes", () => {
     const body = (await res.json()) as { conversationId: string; messages: Array<{ content: string }>; nextAction: { id: string; route: string } };
     expect(body.conversationId).toBe("kai-conv");
     expect(body.messages[0]?.content).toBe("Body scan saved. No body score, no comparison.");
-    expect(body.nextAction).toMatchObject({ id: "scan", route: "/health?module=scan&action=scan" });
+    expect(body.nextAction).toMatchObject({ id: "scan", route: "/task/scan" });
   });
 
   it("tightens generic model fallback when the user clearly needs an action", async () => {
@@ -82,7 +82,7 @@ describe("chat routes", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
-    expect(body.nextAction).toMatchObject({ id: "social", route: "/mental?module=checkin&action=social" });
+    expect(body.nextAction).toMatchObject({ id: "social", route: "/task/social" });
     expect(body.reply).toContain("A calm social boundary is the move.");
     expect(body.reply).not.toContain("Want to talk it out or pick a reset?");
     expect(body.reply).toContain("Open Social");
@@ -107,7 +107,7 @@ describe("chat routes", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
-    expect(body.nextAction).toMatchObject({ id: "screen", route: "/mental?module=reset&action=screen" });
+    expect(body.nextAction).toMatchObject({ id: "screen", route: "/task/screen" });
     expect(body.reply).toContain("Screen reset is the move.");
     expect(body.reply).toContain("Open Screen reset.");
   });
@@ -131,7 +131,7 @@ describe("chat routes", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
-    expect(body.nextAction).toMatchObject({ id: "food", route: "/health?module=food&action=food" });
+    expect(body.nextAction).toMatchObject({ id: "food", route: "/task/food" });
     expect(body.reply).toContain("Fuel check is the move.");
     expect(body.reply).toContain("Open Food");
     expect(body.reply).not.toContain("What's your current fuel situation");
@@ -156,7 +156,7 @@ describe("chat routes", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as { reply: string; nextAction: { id: string; route: string } };
-    expect(body.nextAction).toMatchObject({ id: "scan", route: "/health?module=scan&action=scan" });
+    expect(body.nextAction).toMatchObject({ id: "scan", route: "/task/scan" });
     expect(body.reply).toContain("Private body scan is the move.");
     expect(body.reply).toContain("Open Body scan");
   });

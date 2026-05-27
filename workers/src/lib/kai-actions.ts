@@ -21,61 +21,61 @@ export const KAI_NEXT_ACTIONS: Record<KaiActionId, KaiNextAction> = {
   talk: {
     id: "talk",
     label: "Talk it out",
-    route: "/mental?module=checkin&action=talk",
+    route: "/task/talk",
     reason: "This sounds like something to get out of your head first."
   },
   food: {
     id: "food",
     label: "Log food",
-    route: "/health?module=food&action=food",
+    route: "/task/food",
     reason: "Fuel might be the easiest body win right now."
   },
   sleep: {
     id: "sleep",
     label: "Protect sleep",
-    route: "/health?module=sleep&action=sleep",
+    route: "/task/sleep",
     reason: "Recovery is probably the move before more effort."
   },
   stretch: {
     id: "stretch",
     label: "Stretch it out",
-    route: "/health?module=stretch&action=stretch",
+    route: "/task/stretch",
     reason: "A quick body reset can change the whole mood."
   },
   scan: {
     id: "scan",
     label: "Body scan",
-    route: "/health?module=scan&action=scan",
+    route: "/task/scan",
     reason: "Check posture and recovery without judging your body."
   },
   goal: {
     id: "goal",
     label: "Move a goal",
-    route: "/goal?action=goal",
+    route: "/task/goal",
     reason: "This needs one clear next step, not more pressure."
   },
   reset: {
     id: "reset",
     label: "Reset today",
-    route: "/loop?action=reset",
+    route: "/task/reset",
     reason: "Start smaller. Get steady, then choose."
   },
   confidence: {
     id: "confidence",
     label: "Build confidence",
-    route: "/mental?module=purpose&action=confidence",
+    route: "/task/confidence",
     reason: "Confidence needs proof you can repeat, not fake hype."
   },
   social: {
     id: "social",
     label: "Handle social pressure",
-    route: "/mental?module=checkin&action=social",
+    route: "/task/social",
     reason: "This needs context, a boundary, and one calm move."
   },
   screen: {
     id: "screen",
     label: "Reset screen time",
-    route: "/mental?module=reset&action=screen",
+    route: "/task/screen",
     reason: "Protect attention for the next hour without guilt."
   }
 };

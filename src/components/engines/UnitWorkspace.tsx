@@ -19,17 +19,23 @@ export function UnitWorkspace({
   label,
   intro,
   tone,
-  modules
+  modules,
+  initialModule,
+  initialAction,
+  standalone = false
 }: {
   title: string;
   label: string;
   intro: string;
   tone: "mental" | "physical";
   modules: UnitModule[];
+  initialModule?: string;
+  initialAction?: string;
+  standalone?: boolean;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const requested = searchParams.get("module");
-  const action = searchParams.get("action");
+  const requested = standalone ? initialModule ?? null : searchParams.get("module");
+  const action = standalone ? initialAction ?? null : searchParams.get("action");
   const active =
     modules.find((module) => module.id === requested) ??
     modules.find((module) => {
@@ -53,6 +59,29 @@ export function UnitWorkspace({
 
   function selectModule(id: string) {
     setSearchParams(moduleSearch(id), { replace: false });
+  }
+
+  if (standalone) {
+    return (
+      <AppPage className="engine-page-shell gap-3 pb-28 sm:gap-5 sm:pb-12">
+        <section className="flex items-center justify-between gap-3 rounded-[24px] border border-[#0A0A0A0F] bg-white/88 p-3 shadow-sm backdrop-blur-xl sm:p-4">
+          <Link to="/home" className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full bg-[#FAFAF7] px-3 text-sm font-black text-[#1A1A1F]">
+            <ArrowLeft size={16} aria-hidden="true" />
+            Home
+          </Link>
+          <div className="min-w-0 text-center">
+            <p className="font-mono text-[9px] font-medium uppercase tracking-[0.22em] text-[#8A8A8F]">{label}</p>
+            <h1 className="mt-0.5 truncate text-base font-black text-[#111116]">{active.label}</h1>
+          </div>
+          <KaiAvatar size={40} label="KAI" pulse />
+        </section>
+
+        <section className="min-w-0">
+          <KaiOpenedBanner tone={tone} moduleId={active.id} action={action} />
+          {active.content}
+        </section>
+      </AppPage>
+    );
   }
 
   return (
@@ -171,7 +200,7 @@ function getKaiOpenedCopy(tone: "mental" | "physical", moduleId: string, action:
     if (moduleId === "history") return "This is the private body memory Kai uses: food, scan, movement, sleep, and recovery reps.";
   }
   if (tone === "mental") {
-    if (moduleId === "checkin" && action === "social") return "Say the messy social version first. Kai will help you separate the story, the signal, and one calm boundary.";
+    if (moduleId === "checkin" && action === "social") return "Start with the honest social version. Kai will help you separate the story, the signal, and one calm boundary.";
     if (moduleId === "checkin") return action === "talk" ? "Start with the real sentence. Kai will help turn it into one move." : "Name the pattern first. You do not have to solve the whole mood at once.";
     if (moduleId === "reset" && action === "screen") return "This is an attention reset, not a punishment. Pick one tiny phone boundary and one replacement for the next hour.";
     if (moduleId === "reset") return "Settle your body first. Then decide what deserves your attention.";

@@ -3,7 +3,7 @@ import { AppPage, KaiAvatar } from "../components/ui/AppPrimitives";
 
 export function Home() {
   return (
-    <AppPage className="max-w-2xl pb-28">
+    <AppPage className="flex min-h-[calc(100svh-5rem)] max-w-2xl flex-col pb-28">
       <section className="overflow-hidden rounded-[32px] bg-[#090A0F] px-5 py-6 text-white shadow-[0_24px_70px_rgba(9,10,15,0.22)] sm:px-7 sm:py-8">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

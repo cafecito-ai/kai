@@ -13,7 +13,7 @@ describe("onboarding handoff", () => {
         label: "Confidence",
         copy: "Stop shrinking yourself.",
         engine: "mental",
-        route: "/mental?module=purpose&action=confidence"
+        route: "/task/confidence"
       },
       context: "School pressure has been loud."
     });
@@ -26,11 +26,11 @@ describe("onboarding handoff", () => {
   });
 
   it("maps first missions to the same action routes Kai chat uses", () => {
-    expect(actionForMission("food").route).toBe("/health?module=food&action=food");
-    expect(actionForMission("body").route).toBe("/health?module=scan&action=scan");
-    expect(actionForMission("confidence").route).toBe("/mental?module=purpose&action=confidence");
-    expect(actionForMission("social").route).toBe("/mental?module=checkin&action=social");
-    expect(actionForMission("discipline").route).toBe("/goal?action=goal");
-    expect(actionForMission("goals").route).toBe("/goal?action=goal");
+    expect(actionForMission("food").route).toBe("/task/food");
+    expect(actionForMission("body").route).toBe("/task/scan");
+    expect(actionForMission("confidence").route).toBe("/task/confidence");
+    expect(actionForMission("social").route).toBe("/task/social");
+    expect(actionForMission("discipline").route).toBe("/task/goal");
+    expect(actionForMission("goals").route).toBe("/task/goal");
   });
 });

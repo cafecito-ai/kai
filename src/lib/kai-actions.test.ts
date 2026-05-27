@@ -5,56 +5,56 @@ describe("kai action routing", () => {
   it("routes body fuel language to food logging", () => {
     expect(inferKaiAction("I forgot to eat and need protein")).toMatchObject({
       id: "food",
-      route: "/health?module=food&action=food"
+      route: "/task/food"
     });
   });
 
   it("routes tired recovery language to sleep", () => {
     expect(inferKaiAction("I feel wired and exhausted and need better sleep")).toMatchObject({
       id: "sleep",
-      route: "/health?module=sleep&action=sleep"
+      route: "/task/sleep"
     });
   });
 
   it("routes procrastination and discipline language to goals", () => {
     expect(inferKaiAction("I keep procrastinating and need to lock in for school")).toMatchObject({
       id: "goal",
-      route: "/goal?action=goal"
+      route: "/task/goal"
     });
   });
 
   it("routes posture checks to body scan instead of generic stretching", () => {
     expect(inferKaiAction("Can Kai check my posture and alignment?")).toMatchObject({
       id: "scan",
-      route: "/health?module=scan&action=scan"
+      route: "/task/scan"
     });
   });
 
   it("keeps soreness and tightness on stretch", () => {
     expect(inferKaiAction("My hips are tight and my back hurts")).toMatchObject({
       id: "stretch",
-      route: "/health?module=stretch&action=stretch"
+      route: "/task/stretch"
     });
   });
 
   it("routes insecurity and self-worth language to confidence", () => {
     expect(inferKaiAction("I feel insecure and not good enough")).toMatchObject({
       id: "confidence",
-      route: "/mental?module=purpose&action=confidence"
+      route: "/task/confidence"
     });
   });
 
   it("routes social pressure to the social check-in", () => {
     expect(inferKaiAction("The group chat drama made me feel left out")).toMatchObject({
       id: "social",
-      route: "/mental?module=checkin&action=social"
+      route: "/task/social"
     });
   });
 
   it("routes doomscrolling and comparison to screen reset", () => {
     expect(inferKaiAction("I keep doomscrolling and comparing myself on my phone")).toMatchObject({
       id: "screen",
-      route: "/mental?module=reset&action=screen"
+      route: "/task/screen"
     });
   });
 

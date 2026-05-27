@@ -29,7 +29,15 @@ const RelationshipsPrimer = lazy(() =>
   import("../components/physical/RelationshipsPrimer").then((module) => ({ default: module.RelationshipsPrimer }))
 );
 
-export function EngineMental() {
+export function EngineMental({
+  initialModule,
+  initialAction,
+  standalone = false
+}: {
+  initialModule?: string;
+  initialAction?: string;
+  standalone?: boolean;
+}) {
   const addEvent = useProgressStore((state) => state.addEvent);
   const rememberToolCompletion = useKaiStore((state) => state.rememberToolCompletion);
   const [entries, setEntries] = useState<EngineEntry[]>([]);
@@ -300,7 +308,18 @@ export function EngineMental() {
     }
   ];
 
-  return <UnitWorkspace title="Talk it through" label="Mind moves" tone="mental" intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical." modules={modules} />;
+  return (
+    <UnitWorkspace
+      title="Talk it through"
+      label="Mind moves"
+      tone="mental"
+      intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical."
+      modules={modules}
+      initialModule={initialModule}
+      initialAction={initialAction}
+      standalone={standalone}
+    />
+  );
 }
 
 function labelForEntry(entryType: string) {

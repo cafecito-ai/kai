@@ -21,6 +21,7 @@ export function Profile() {
   const completions = completionBreakdown(events);
   const badges = achievementBadges({ events, level, streak, score });
   const missions = dailyMissions(events);
+  const path = growthPath({ level, streak, score });
 
   return (
     <AppPage className="utility-page-shell pb-28 sm:pb-12">
@@ -35,10 +36,10 @@ export function Profile() {
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-paper/55 sm:text-xs">KAI · profile</p>
               </div>
               <h1 className="mt-3 max-w-[15rem] break-words font-display text-[2.15rem] font-black leading-[0.9] tracking-normal sm:max-w-3xl sm:text-6xl">
-                Growth system.
+                Your path.
               </h1>
               <p className="mt-2 max-w-[18rem] text-sm font-semibold leading-5 text-paper/70 sm:max-w-2xl sm:text-base sm:leading-7">
-                Score, streaks, goals, and settings.
+                Daily proof, streaks, XP, and the next move.
               </p>
             </div>
             <Link to="/settings" className="focus-ring grid size-11 shrink-0 place-items-center rounded-full bg-white text-ink sm:inline-flex sm:w-auto sm:px-4">
@@ -66,27 +67,16 @@ export function Profile() {
           </div>
         </AppSurface>
 
-        <AppSurface className="p-4 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <GrowthIcon level={level} score={score} size="sm" />
-              <p className="eyebrow">return loop</p>
-            </div>
-            <span className="rounded-full bg-[#F4F1EB] px-3 py-1 text-xs font-black text-muted">{streak} day streak</span>
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <ProfileStat icon={Flame} label="Streak" value={String(streak)} tone="bg-[#FFF7D6] text-[#9A6A00]" />
-            <ProfileStat icon={Trophy} label="Level" value={String(level)} tone="bg-[#111116] text-white" />
-            <ProfileStat icon={BadgeCheck} label="XP" value={String(xp)} tone="bg-[#E4F7F4] text-[#218A7D]" />
-          </div>
-          <StreakStrip streak={streak} />
-        </AppSurface>
+        <PathCard path={path} level={level} streak={streak} xp={xp} score={score} />
       </section>
 
       <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
         <div className="grid gap-4">
           <AppSurface className="p-4 sm:p-5">
-            <p className="eyebrow">daily missions</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="eyebrow">today's path</p>
+              <span className="rounded-full bg-[#F4F1EB] px-3 py-1 text-xs font-black text-muted">{score}% complete</span>
+            </div>
             <div className="mt-3 grid gap-2 sm:mt-4">
               {missions.map((mission) => (
                 <MissionRow key={mission.label} {...mission} />
@@ -104,7 +94,7 @@ export function Profile() {
           </AppSurface>
 
           <AppSurface className="p-4 sm:p-5">
-            <p className="eyebrow">badges</p>
+            <p className="eyebrow">next unlocks</p>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4">
               {badges.map((badge) => (
                 <BadgeTile key={badge.label} {...badge} />
@@ -208,6 +198,54 @@ function ScoreRing({ score }: { score: number }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function PathCard({
+  path,
+  level,
+  streak,
+  xp,
+  score
+}: {
+  path: ReturnType<typeof growthPath>;
+  level: number;
+  streak: number;
+  xp: number;
+  score: number;
+}) {
+  return (
+    <AppSurface className="p-4 sm:p-6">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <GrowthIcon level={level} score={score} size="sm" />
+          <div className="min-w-0">
+            <p className="eyebrow">current path</p>
+            <h2 className="mt-1 truncate text-xl font-black leading-none text-ink sm:text-2xl">{path.current.name}</h2>
+          </div>
+        </div>
+        <span className="rounded-full bg-[#F4F1EB] px-3 py-1 text-xs font-black text-muted">{path.current.label}</span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <ProfileStat icon={Flame} label="Streak" value={String(streak)} tone="bg-[#FFF7D6] text-[#9A6A00]" />
+        <ProfileStat icon={Trophy} label="Level" value={String(level)} tone="bg-[#111116] text-white" />
+        <ProfileStat icon={BadgeCheck} label="XP" value={String(xp)} tone="bg-[#E4F7F4] text-[#218A7D]" />
+      </div>
+
+      <div className="mt-4 rounded-[22px] border border-line bg-paper p-3 sm:mt-5">
+        <div className="grid grid-cols-4 gap-1.5">
+          {path.stages.map((stage, index) => (
+            <div key={stage.name} className="grid gap-2">
+              <div className={`h-2 rounded-full transition-all duration-700 ${index <= path.currentIndex ? "bg-[#111116]" : "bg-[#DCD6CA]"}`} />
+              <p className={`truncate text-[10px] font-black uppercase tracking-wider ${index === path.currentIndex ? "text-ink" : "text-muted"}`}>{stage.name}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-sm font-semibold leading-5 text-muted">{path.current.copy}</p>
+      </div>
+      <StreakStrip streak={streak} />
+    </AppSurface>
   );
 }
 
@@ -336,6 +374,20 @@ function achievementBadges({ events, level, streak, score }: { events: ProgressE
     { icon: HeartPulse, label: "Wellness rep", unlocked: hasEvent(events, [/mental/, /reset/, /mood/, /breath/]) },
     { icon: Utensils, label: "Fuel logged", unlocked: hasEvent(events, [/food/, /meal/, /nutrition/]) }
   ];
+}
+
+function growthPath({ level, streak, score }: { level: number; streak: number; score: number }) {
+  const stages = [
+    { name: "Start", label: "Foundation", copy: "Show up once today. One honest rep starts the system." },
+    { name: "Build", label: "Consistency", copy: "Repeat the basics: sleep, fuel, movement, mood, and one goal." },
+    { name: "Prove", label: "Evidence", copy: "Stack enough proof that discipline feels normal, not dramatic." },
+    { name: "Lead", label: "Identity", copy: "Your routines become part of who you are becoming." }
+  ];
+  let currentIndex = 0;
+  if (level >= 2 || streak >= 2 || score >= 35) currentIndex = 1;
+  if (level >= 4 || streak >= 5 || score >= 70) currentIndex = 2;
+  if (level >= 7 || streak >= 14 || score >= 95) currentIndex = 3;
+  return { stages, currentIndex, current: stages[currentIndex] };
 }
 
 function ProfileStat({

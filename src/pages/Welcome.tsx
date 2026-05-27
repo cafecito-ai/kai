@@ -38,17 +38,18 @@ export function Welcome() {
   const { onboardingCompletedAt } = useUserStore();
   const [idx, setIdx] = useState(0);
 
-  // Skip the walkthrough on returning visits. Two cases:
-  //   - Already onboarded → straight to /home (they don't need this intro)
-  //   - Already SAW the walkthrough but haven't onboarded → straight to
-  //     /onboarding so they don't sit through it twice
+  // Only auto-skip Welcome for users who are FULLY onboarded — they
+  // don't need the intro again. Anyone else (new, mid-onboarding,
+  // explicitly clicked "Start with Kai") sees the walkthrough. They
+  // can hit "Skip" at the top right if they want to bail.
+  //
+  // (Previously we also auto-skipped users who had seen the slides
+  // once before — that ended up redirecting people away from the
+  // welcome they just clicked into. Cleaner to just always show it
+  // and let Skip be the escape hatch.)
   useEffect(() => {
-    if (typeof localStorage === "undefined") return;
-    const seen = localStorage.getItem(STORAGE_KEY) === "1";
     if (onboardingCompletedAt) {
       navigate("/home", { replace: true });
-    } else if (seen) {
-      navigate("/onboarding", { replace: true });
     }
   }, [navigate, onboardingCompletedAt]);
 

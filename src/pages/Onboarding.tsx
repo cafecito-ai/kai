@@ -30,6 +30,11 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import {
+  formatFollowUpsForIntake,
+  pickFollowUps,
+  type FollowUpResponse,
+} from "../lib/onboarding-followups";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -175,7 +180,10 @@ function isKaiTone(v: unknown): v is KaiTone {
 // Page
 // ─────────────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 7;
+// Rawz/5 — 8 steps now (inserted adaptive follow-up between Hardest
+// and Meet KAI). Net flow stays under 90 seconds for most users since
+// the new step is at most 3 quick-tap questions, all skippable.
+const TOTAL_STEPS = 8;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -189,6 +197,8 @@ export function Onboarding() {
   const [parentEmail, setParentEmail] = useState("");
   const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([]);
   const [hardestLately, setHardestLately] = useState("");
+  // Rawz/5 — adaptive follow-up responses keyed by question id.
+  const [followUps, setFollowUps] = useState<FollowUpResponse>({});
   const [kaiName] = useState(demoBuild?.kaiName?.trim() || "KAI");
   const [kaiTone, setKaiTone] = useState<KaiTone>(
     isKaiTone(demoBuild?.kaiTone) ? demoBuild.kaiTone : "balanced",
@@ -210,11 +220,12 @@ export function Onboarding() {
         return true;
       case 2:
         return focusAreas.length > 0;
-      case 3:
-      case 4:
-      case 5:
+      case 3: // hardest lately
+      case 4: // adaptive follow-ups (Rawz/5)
+      case 5: // meet KAI
+      case 6: // tone
         return true;
-      case 6:
+      case 7: // confirm + save
         return !saving;
       default:
         return true;
@@ -242,6 +253,10 @@ export function Onboarding() {
       if (hardestLately.trim()) {
         keyedResponses.hardest_lately = hardestLately.trim();
       }
+      // Rawz/5 — pack adaptive follow-up answers into the intake payload
+      // so the Mind + Body agents have richer day-one context.
+      const questions = pickFollowUps(focusAreas);
+      Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
       await api.submitIntake(keyedResponses);
       await api.updateUser({
         kaiName,
@@ -307,11 +322,20 @@ export function Onboarding() {
               onSkip={next}
             />
           )}
-          {step === 4 && <MeetKaiStep firstName={firstName} />}
-          {step === 5 && (
+          {/* Rawz/5 — adaptive follow-ups based on the focus areas they
+              picked in step 2. Up to 3 quick-tap questions, all skippable. */}
+          {step === 4 && (
+            <FollowUpsStep
+              focusAreas={focusAreas}
+              responses={followUps}
+              onChange={setFollowUps}
+            />
+          )}
+          {step === 5 && <MeetKaiStep firstName={firstName} />}
+          {step === 6 && (
             <ToneStep value={kaiTone} onChange={setKaiTone} />
           )}
-          {step === 6 && (
+          {step === 7 && (
             <ConfirmStep
               firstName={firstName}
               isMinor={isMinor}
@@ -530,11 +554,113 @@ function HardestStep({
   );
 }
 
-function MeetKaiStep({ firstName }: { firstName: string }) {
+// ─────────────────────────────────────────────────────────────────────
+// Rawz/5 — adaptive follow-up step
+// ─────────────────────────────────────────────────────────────────────
+
+function FollowUpsStep({
+  focusAreas,
+  responses,
+  onChange,
+}: {
+  focusAreas: FocusAreaId[];
+  responses: FollowUpResponse;
+  onChange: (next: FollowUpResponse) => void;
+}) {
+  const questions = useMemo(() => pickFollowUps(focusAreas), [focusAreas]);
+
+  function setAnswer(qid: string, value: string) {
+    onChange({ ...responses, [qid]: value });
+  }
+
+  // If for some reason no questions matched (e.g. user picked focus
+  // areas with no follow-ups defined), gracefully degrade to a simple
+  // pass-through.
+  if (questions.length === 0) {
+    return (
+      <div className="space-y-6">
+        <Heading
+          eyebrow="step 5"
+          title="A few quick reads."
+          blurb="Nothing to tune from what you picked — let's keep going."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Heading
         eyebrow="step 5"
+        title="A few quick reads."
+        blurb={`${questions.length === 1 ? "One question" : `${questions.length} questions`} based on what you picked. Tap an option or skip — both fine.`}
+      />
+
+      <div className="space-y-5">
+        {questions.map((q, idx) => {
+          const value = responses[q.id] ?? "";
+          return (
+            <section key={q.id}>
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+                {idx + 1} of {questions.length}
+              </p>
+              <p className="mt-1 text-base font-medium text-text-primary leading-snug">
+                {q.prompt}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {q.options.map((opt) => {
+                  const selected = value === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setAnswer(q.id, selected ? "" : opt)}
+                      aria-pressed={selected}
+                      className={`
+                        rounded-full border px-3 py-1.5 text-xs font-medium transition
+                        ${
+                          selected
+                            ? "border-text-primary bg-text-primary text-background"
+                            : "border-glass-border bg-surface text-text-primary hover:bg-surface-muted"
+                        }
+                      `}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                value={
+                  value && !q.options.includes(value) ? value : ""
+                }
+                onChange={(e) => setAnswer(q.id, e.target.value)}
+                placeholder="Or type something else"
+                maxLength={120}
+                className="
+                  mt-2 w-full rounded-lg border border-glass-border bg-surface
+                  px-3 py-2 text-sm text-text-primary
+                  placeholder:text-text-muted shadow-card focus-ring
+                "
+              />
+            </section>
+          );
+        })}
+      </div>
+
+      <p className="text-center font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+        All skippable
+      </p>
+    </div>
+  );
+}
+
+function MeetKaiStep({ firstName }: { firstName: string }) {
+  return (
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 6"
         title={`Hey ${firstName}, meet KAI.`}
         blurb="KAI has two sides — both look out for you."
       />
@@ -585,7 +711,7 @@ function ToneStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 6"
+        eyebrow="step 7"
         title="How should KAI talk?"
         blurb="You can change this any time in settings."
       />
@@ -646,7 +772,7 @@ function ConfirmStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 7"
+        eyebrow="step 8"
         title={`You're set, ${firstName}.`}
         blurb={
           isMinor

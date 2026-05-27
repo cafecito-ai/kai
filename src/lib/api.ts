@@ -113,7 +113,7 @@ function getDevUser() {
   const host = window.location.hostname;
   const authRequired = import.meta.env.VITE_AUTH_REQUIRED === "1";
   const devUserEnabled = import.meta.env.VITE_ALLOW_DEV_USER === "1";
-  const isKnownStagingApp = host === STAGING_APP_HOST;
+  const isKnownStagingApp = host === STAGING_APP_HOST || host.endsWith(".kai-epk.pages.dev");
   const canUseDevUser =
     host === "localhost" ||
     host === "127.0.0.1" ||

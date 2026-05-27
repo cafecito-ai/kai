@@ -1,4 +1,4 @@
-import { ArrowRight, Check, ChevronLeft, Send } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { KaiAvatar } from "../components/ui/AppPrimitives";
@@ -9,76 +9,159 @@ import type { EngineId, KaiTone } from "../lib/types";
 import { useKaiStore } from "../stores/kaiStore";
 import { useUserStore } from "../stores/userStore";
 
-type AnswerId = "goal" | "habits" | "sleep" | "fitness" | "mind" | "schedule" | "motivation";
-type Answers = Partial<Record<AnswerId, string>>;
+type MultiKey = "identity" | "pain" | "improve" | "routine" | "motivation" | "distraction" | "habits" | "commitment";
+type SliderKey = "painImpact" | "distractionHours" | "dailyMinutes";
+type Answers = Record<MultiKey, string[]> & Record<SliderKey, number>;
 
-type Question = {
-  id: AnswerId;
-  eyebrow: string;
-  prompt: (answers: Answers) => string;
-  helper: string;
-  placeholder: string;
-  chips: string[];
+type Option = {
+  label: string;
+  value: string;
 };
 
-const questions: Question[] = [
+type Step =
+  | {
+      kind: "welcome";
+      title: string;
+      subtitle: string;
+    }
+  | {
+      kind: "identity";
+      key: MultiKey;
+      title: string;
+      options: Option[];
+      multi?: boolean;
+      helper?: string;
+    }
+  | {
+      kind: "slider";
+      key: MultiKey;
+      sliderKey: SliderKey;
+      title: string;
+      options: Option[];
+      sliderLabel: string;
+      min: number;
+      max: number;
+      suffix?: string;
+      multi?: boolean;
+    }
+  | {
+      kind: "mirror";
+      title: string;
+    }
+  | {
+      kind: "commit";
+      key: MultiKey;
+      sliderKey: SliderKey;
+      title: string;
+      options: Option[];
+      sliderLabel: string;
+      min: number;
+      max: number;
+      suffix?: string;
+    }
+  | {
+      kind: "building";
+      title: string;
+    };
+
+const initialAnswers: Answers = {
+  identity: [],
+  pain: [],
+  improve: [],
+  routine: [],
+  motivation: [],
+  distraction: [],
+  habits: [],
+  commitment: [],
+  painImpact: 6,
+  distractionHours: 3,
+  dailyMinutes: 12
+};
+
+const steps: Step[] = [
   {
-    id: "goal",
-    eyebrow: "Goals + interests",
-    prompt: () => "What are you trying to improve right now?",
-    helper: "Could be body, school, confidence, discipline, sport, sleep, friends, anything.",
-    placeholder: "I want to get better at...",
-    chips: ["more discipline", "better body", "confidence", "school", "sports", "less scrolling"]
+    kind: "welcome",
+    title: "Let’s build your personalized system.",
+    subtitle: "Takes under 2 minutes."
   },
   {
-    id: "habits",
-    eyebrow: "Habits + lifestyle",
-    prompt: (answers) => goalAwareQuestion(answers.goal, "What does a normal day look like for you?"),
-    helper: "KAI needs the actual routine, not the ideal one.",
-    placeholder: "School, practice, phone, food, homework...",
-    chips: ["school heavy", "practice after school", "phone at night", "skip breakfast", "busy weekends", "no routine"]
+    kind: "identity",
+    key: "identity",
+    title: "Which version of yourself do you want to become most?",
+    multi: true,
+    helper: "Pick every signal that feels true.",
+    options: options("More disciplined", "More confident", "Better shape", "More focused", "Less distracted", "More productive", "More social", "More calm", "Better sleep", "More spiritual")
   },
   {
-    id: "sleep",
-    eyebrow: "Sleep + energy",
-    prompt: () => "How has your sleep and energy been lately?",
-    helper: "Recovery changes everything: mood, focus, motivation, workouts.",
-    placeholder: "I sleep around... and wake up feeling...",
-    chips: ["tired", "wired at night", "solid sleep", "random schedule", "wake up drained", "late phone"]
+    kind: "slider",
+    key: "pain",
+    sliderKey: "painImpact",
+    title: "What’s been hurting your progress the most lately?",
+    sliderLabel: "How much does this affect your life?",
+    min: 1,
+    max: 10,
+    multi: false,
+    options: options("Overthinking", "Procrastination", "Phone addiction", "Lack of motivation", "Low confidence", "Bad sleep", "Stress/anxiety", "Loneliness", "Inconsistency", "No structure")
   },
   {
-    id: "fitness",
-    eyebrow: "Body + fitness",
-    prompt: () => "Where is your body at right now?",
-    helper: "No body judgment. This is for movement, recovery, food, posture, and health habits.",
-    placeholder: "Training, not training, sore, hungry, trying to build...",
-    chips: ["active", "starting over", "sore/tight", "want muscle", "need food help", "not moving much"]
+    kind: "identity",
+    key: "improve",
+    title: "If KAI worked perfectly, what would improve first?",
+    options: options("Energy", "Confidence", "Discipline", "Body/fitness", "Mental clarity", "Productivity", "Relationships", "Happiness", "Focus", "Consistency")
   },
   {
-    id: "mind",
-    eyebrow: "Mental state + struggles",
-    prompt: (answers) => struggleAwareQuestion(answers.goal, "What has been getting in the way?"),
-    helper: "Stress, comparison, loneliness, procrastination, confidence, family, pressure. Say the real version.",
-    placeholder: "The thing that keeps messing me up is...",
-    chips: ["overthinking", "procrastination", "comparison", "social pressure", "low confidence", "stress"]
+    kind: "identity",
+    key: "routine",
+    title: "Which best describes your current routine?",
+    options: options("Locked in", "Trying to improve", "All over the place", "Burned out", "Motivated but inconsistent", "Completely restarting")
   },
   {
-    id: "schedule",
-    eyebrow: "Schedule",
-    prompt: () => "When can KAI realistically help you during the day?",
-    helper: "Tiny windows count. The point is consistency, not a perfect routine.",
-    placeholder: "Before school, after practice, late night, weekends...",
-    chips: ["morning", "after school", "after practice", "night", "weekends", "random pockets"]
+    kind: "identity",
+    key: "motivation",
+    title: "What motivates you MOST?",
+    helper: "This shapes KAI’s push, rewards, and reminders.",
+    options: options("Winning", "Progress", "Competition", "Recognition", "Accountability", "Peace of mind", "Self improvement", "Streaks/rewards")
   },
   {
-    id: "motivation",
-    eyebrow: "Motivation",
-    prompt: () => "What kind of push works on you?",
-    helper: "KAI should feel like a coach/friend, not a parent or a lecture.",
-    placeholder: "I need direct accountability / calm reminders / proof I am improving...",
-    chips: ["direct", "calm", "competitive", "gentle", "accountability", "no corny hype"]
+    kind: "slider",
+    key: "distraction",
+    sliderKey: "distractionHours",
+    title: "What distracts you the most daily?",
+    sliderLabel: "How many hours/day do you feel distracted?",
+    min: 0,
+    max: 10,
+    suffix: "h",
+    options: options("TikTok/social media", "YouTube", "Gaming", "Overthinking", "Friends/social life", "Laziness", "Stress", "Lack of routine")
+  },
+  {
+    kind: "identity",
+    key: "habits",
+    title: "What habits do you want to build?",
+    multi: true,
+    options: options("Gym", "Reading", "Meditation", "Journaling", "Better sleep", "Studying", "Cold showers", "Stretching", "Drinking water", "Less screen time")
+  },
+  {
+    kind: "mirror",
+    title: "Here’s what I’m seeing."
+  },
+  {
+    kind: "commit",
+    key: "commitment",
+    sliderKey: "dailyMinutes",
+    title: "How serious are you about improving?",
+    sliderLabel: "How many minutes per day can you commit?",
+    min: 5,
+    max: 45,
+    suffix: "m",
+    options: options("Casual", "Ready for change", "Fully locked in")
+  },
+  {
+    kind: "building",
+    title: "Building your system."
   }
 ];
+
+const buildLines = ["Analyzing habits…", "Building your focus system…", "Customizing your experience…"];
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -87,61 +170,64 @@ export function Onboarding() {
   const [name, setName] = useState("");
   const [age, setAge] = useState("16");
   const [parentEmail, setParentEmail] = useState("");
-  const [step, setStep] = useState(-1);
-  const [answers, setAnswers] = useState<Answers>({});
-  const [draft, setDraft] = useState("");
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const currentStep = steps[step];
   const normalizedAge = Number(age) || undefined;
   const needsParentConsent = Boolean(normalizedAge && normalizedAge < 13);
-  const currentQuestion = step >= 0 ? questions[step] : null;
-  const isLastQuestion = step === questions.length - 1;
-  const progress = step < 0 ? 8 : Math.round(((step + 1) / questions.length) * 100);
-  const canContinue = step < 0 ? Boolean(name.trim()) && (!needsParentConsent || Boolean(parentEmail.trim())) : Boolean(draft.trim() || answers[currentQuestion?.id ?? "goal"]);
-  const firstMove = useMemo(() => inferFirstMove(answers), [answers]);
-  const kaiTone = inferTone(answers.motivation);
+  const profile = useMemo(() => buildProfile(answers), [answers]);
+  const canContinue = currentStep.kind === "welcome" ? Boolean(name.trim()) && (!needsParentConsent || Boolean(parentEmail.trim())) : stepIsComplete(currentStep, answers);
+  const progress = Math.round(((step + 1) / steps.length) * 100);
 
-  function start() {
+  function updateMulti(key: MultiKey, value: string, multi = false) {
+    setAnswers((current) => {
+      const existing = current[key];
+      const next = multi ? (existing.includes(value) ? existing.filter((item) => item !== value) : [...existing, value]) : [value];
+      return { ...current, [key]: next };
+    });
+  }
+
+  function updateSlider(key: SliderKey, value: number) {
+    setAnswers((current) => ({ ...current, [key]: value }));
+  }
+
+  function next() {
     setError("");
-    if (!name.trim()) {
-      setError("Tell KAI what to call you first.");
+    if (currentStep.kind === "welcome") {
+      if (!name.trim()) {
+        setError("Tell KAI what to call you first.");
+        return;
+      }
+      if (needsParentConsent && !parentEmail.trim()) {
+        setError("Parent email is required for users under 13.");
+        return;
+      }
+    }
+    if (!canContinue) return;
+    if (currentStep.kind === "commit") {
+      setStep((value) => Math.min(value + 1, steps.length - 1));
+      window.setTimeout(() => {
+        void finish();
+      }, 1700);
       return;
     }
-    if (needsParentConsent && !parentEmail.trim()) {
-      setError("Parent email is required for users under 13.");
-      return;
-    }
-    setStep(0);
+    setStep((value) => Math.min(value + 1, steps.length - 1));
   }
 
-  function selectChip(value: string) {
-    setDraft(value);
-  }
-
-  function saveCurrentAnswer() {
-    if (!currentQuestion) return;
-    const value = draft.trim() || answers[currentQuestion.id]?.trim();
-    if (!value) return;
-    setAnswers((items) => ({ ...items, [currentQuestion.id]: value }));
-    setDraft("");
-    if (isLastQuestion) {
-      void finish({ ...answers, [currentQuestion.id]: value });
-      return;
-    }
-    setStep((value) => value + 1);
-  }
-
-  async function finish(finalAnswers: Answers) {
+  async function finish() {
     setSaving(true);
     setError("");
-    const action = inferFirstMove(finalAnswers);
-    const engine = action.engine;
+    const action = firstActionFor(profile, answers);
+    const engine = engineForAction(action);
+    const tone = toneFor(answers);
     try {
-      await api.submitIntake(buildIntakeAnswers(finalAnswers, action));
+      await api.submitIntake(buildIntakeAnswers(answers, profile, action));
       await api.updateUser({
         kaiName: "KAI",
-        kaiTone,
+        kaiTone: tone,
         primaryEngine: engine,
         age: normalizedAge,
         parentEmail: parentEmail.trim() || undefined,
@@ -151,10 +237,12 @@ export function Onboarding() {
         await api.sendParentConsent({ parentEmail: parentEmail.trim(), teenName: name.trim() });
         setConsentPending(parentEmail.trim());
       }
+      saveLocalProfile(profile, answers, action);
     } catch {
-      setError("KAI could not sync setup yet, but your local setup is ready.");
+      saveLocalProfile(profile, answers, action);
+      setError("KAI could not sync setup yet, but your system is ready on this device.");
     } finally {
-      setKai("KAI", kaiTone);
+      setKai("KAI", tone);
       setPrimaryEngine(engine);
       markOnboardingComplete();
       hydrateKaiChat("kai", {
@@ -163,10 +251,10 @@ export function Onboarding() {
           {
             id: "onboarding-kai-first-message",
             role: "assistant",
-            content: buildFirstMessage(name.trim(), finalAnswers, action)
+            content: buildFirstMessage(name.trim(), answers, profile, action)
           }
         ],
-        nextAction: action.action
+        nextAction: action
       });
       setSaving(false);
       navigate("/walkthrough");
@@ -175,14 +263,15 @@ export function Onboarding() {
 
   return (
     <main className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-2xl flex-col justify-center px-3 py-4 text-[#111116] sm:px-4">
-      <section className="overflow-hidden rounded-[34px] border border-[#0A0A0A0F] bg-[#FAFAF7] shadow-[0_24px_90px_rgba(10,10,10,0.12)]">
-        <header className="border-b border-[#0A0A0A0F] bg-white/76 px-4 py-4 backdrop-blur-xl sm:px-5">
+      <section className="relative overflow-hidden rounded-[34px] border border-[#0A0A0A0F] bg-[#FBFAF6] shadow-[0_24px_90px_rgba(10,10,10,0.12)]">
+        <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_50%_0%,rgba(122,185,255,0.28),transparent_62%)]" />
+        <header className="relative border-b border-[#0A0A0A0F] bg-white/78 px-4 py-4 backdrop-blur-xl sm:px-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <KaiAvatar size={44} label="KAI" pulse />
               <div>
-                <p className="font-mono text-[10px] font-medium uppercase tracking-[0.28em] text-[#8A8A8F]">Meet KAI</p>
-                <h1 className="text-xl font-black leading-tight">First coach chat</h1>
+                <p className="font-mono text-[10px] font-medium uppercase tracking-normal text-[#8A8A8F]">KAI setup</p>
+                <h1 className="text-xl font-black leading-tight">Build your system</h1>
               </div>
             </div>
             <Link to="/crisis" className="text-xs font-black text-[#C4473E]">
@@ -194,190 +283,343 @@ export function Onboarding() {
           </div>
         </header>
 
-        <div className="max-h-[calc(100svh-14rem)] min-h-[32rem] overflow-y-auto px-4 py-4 sm:px-5">
-          <CoachBubble>
-            {step < 0 ? (
-              <>
-                I’m KAI. Think coach, friend, and mirror. I’ll ask a few real questions so I can help without guessing.
-              </>
-            ) : (
-              <>
-                <span className="block text-[10px] font-black uppercase tracking-[0.22em] text-[#8A8A8F]">{currentQuestion?.eyebrow}</span>
-                <span className="mt-1 block">{currentQuestion?.prompt(answers)}</span>
-                <span className="mt-2 block text-sm font-semibold leading-6 text-[#5E5E64]">{currentQuestion?.helper}</span>
-              </>
-            )}
-          </CoachBubble>
-
-          {step < 0 ? (
-            <section className="mt-4 space-y-3 rounded-[26px] border border-[#0A0A0A0F] bg-white p-4">
-              <label className="block text-sm font-black">
-                What should KAI call you?
-                <input className="field mt-2" value={name} onChange={(event) => setName(event.target.value)} placeholder="First name" />
-              </label>
-              <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
-                <label className="block text-sm font-black">
-                  Age
-                  <input className="field mt-2" inputMode="numeric" value={age} onChange={(event) => setAge(event.target.value)} />
-                </label>
-                <label className="block text-sm font-black">
-                  Parent email {needsParentConsent ? "(required)" : "(optional)"}
-                  <input className="field mt-2" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} placeholder="parent@example.com" />
-                </label>
-              </div>
-              <p className="text-sm font-semibold leading-6 text-[#5E5E64]">
-                Parent email is only required for users under 13. Private answers and chats stay private by default.
-              </p>
-            </section>
-          ) : (
-            <QuestionInput question={currentQuestion} draft={draft} setDraft={setDraft} onSelectChip={selectChip} />
-          )}
-
-          {Object.entries(answers).map(([id, value]) => (
-            <UserBubble key={id}>{value}</UserBubble>
-          ))}
-
-          {step >= 0 && currentQuestion && answers[currentQuestion.id] && <CoachBubble>{followUpFor(currentQuestion.id)}</CoachBubble>}
+        <div className="relative min-h-[33rem] px-4 py-5 sm:px-5">
+          <StepContent
+            step={currentStep}
+            answers={answers}
+            profile={profile}
+            name={name}
+            age={age}
+            parentEmail={parentEmail}
+            needsParentConsent={needsParentConsent}
+            saving={saving}
+            onName={setName}
+            onAge={setAge}
+            onParentEmail={setParentEmail}
+            onToggle={updateMulti}
+            onSlider={updateSlider}
+          />
         </div>
 
         {error && <p className="mx-4 mb-3 rounded-[18px] border border-[#E35D4F]/25 bg-[#FFF0EC] p-3 text-sm font-black text-[#C4473E] sm:mx-5">{error}</p>}
 
-        <footer className="grid gap-2 border-t border-[#0A0A0A0F] bg-white/76 p-3 backdrop-blur-xl sm:grid-cols-[auto_1fr] sm:p-4">
-          {step > -1 && (
-            <Button type="button" variant="secondary" onClick={() => setStep((value) => value - 1)} className="w-full sm:w-auto">
-              <ChevronLeft size={18} aria-hidden="true" />
-              Back
-            </Button>
-          )}
-          {step < 0 ? (
-            <Button type="button" onClick={start} disabled={!canContinue} className="min-h-12 w-full">
-              Start
+        {currentStep.kind !== "building" && (
+          <footer className="relative grid gap-2 border-t border-[#0A0A0A0F] bg-white/78 p-3 backdrop-blur-xl sm:grid-cols-[auto_1fr] sm:p-4">
+            {step > 0 && (
+              <Button type="button" variant="secondary" onClick={() => setStep((value) => value - 1)} className="w-full sm:w-auto">
+                <ChevronLeft size={18} aria-hidden="true" />
+                Back
+              </Button>
+            )}
+            <Button type="button" onClick={next} disabled={!canContinue} className="min-h-12 w-full">
+              {step === 0 ? "Start" : currentStep.kind === "commit" ? "Build my system" : "Next"}
               <ArrowRight size={18} aria-hidden="true" />
             </Button>
-          ) : (
-            <Button type="button" onClick={saveCurrentAnswer} disabled={!canContinue || saving} className="min-h-12 w-full">
-              {saving ? "Saving" : isLastQuestion ? `Open Home with ${firstMove.action.label}` : "Send"}
-              {isLastQuestion ? <ArrowRight size={18} aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
-            </Button>
-          )}
-        </footer>
+          </footer>
+        )}
       </section>
     </main>
   );
 }
 
-function CoachBubble({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3">
-      <KaiAvatar size={38} label="KAI" pulse />
-      <div className="max-w-[88%] rounded-[24px] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#111116] shadow-sm">{children}</div>
-    </div>
-  );
-}
-
-function UserBubble({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mt-3 ml-auto max-w-[82%] rounded-[24px] bg-[#111116] px-4 py-3 text-sm font-semibold leading-6 text-white">
-      {children}
-    </div>
-  );
-}
-
-function QuestionInput({
-  question,
-  draft,
-  setDraft,
-  onSelectChip
+function StepContent({
+  step,
+  answers,
+  profile,
+  name,
+  age,
+  parentEmail,
+  needsParentConsent,
+  saving,
+  onName,
+  onAge,
+  onParentEmail,
+  onToggle,
+  onSlider
 }: {
-  question: Question | null;
-  draft: string;
-  setDraft: (value: string) => void;
-  onSelectChip: (value: string) => void;
+  step: Step;
+  answers: Answers;
+  profile: ReturnType<typeof buildProfile>;
+  name: string;
+  age: string;
+  parentEmail: string;
+  needsParentConsent: boolean;
+  saving: boolean;
+  onName: (value: string) => void;
+  onAge: (value: string) => void;
+  onParentEmail: (value: string) => void;
+  onToggle: (key: MultiKey, value: string, multi?: boolean) => void;
+  onSlider: (key: SliderKey, value: number) => void;
 }) {
-  if (!question) return null;
-  return (
-    <section className="mt-4 rounded-[26px] border border-[#0A0A0A0F] bg-white p-4">
-      <div className="flex flex-wrap gap-2">
-        {question.chips.map((chip) => {
-          const active = draft === chip;
-          return (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => onSelectChip(chip)}
-              className={`focus-ring inline-flex min-h-10 items-center gap-2 rounded-full border px-3 text-sm font-black transition ${
-                active ? "border-[#111116] bg-[#111116] text-white" : "border-[#0A0A0A0F] bg-[#F4F1EB] text-[#5E5E64] hover:bg-white hover:text-[#111116]"
-              }`}
-            >
-              {active && <Check size={14} aria-hidden="true" />}
-              {chip}
-            </button>
-          );
-        })}
+  if (step.kind === "welcome") {
+    return (
+      <div className="flex min-h-[30rem] flex-col justify-between">
+        <div>
+          <div className="mt-5 flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-[#8BD8B7]/35 blur-2xl" />
+              <KaiAvatar size={96} label="KAI" pulse />
+            </div>
+          </div>
+          <h2 className="mt-8 text-center text-4xl font-black leading-[0.98] tracking-normal sm:text-5xl">{step.title}</h2>
+          <p className="mt-3 text-center text-sm font-black text-[#7A7A82]">{step.subtitle}</p>
+        </div>
+
+        <section className="space-y-3 rounded-[28px] border border-[#0A0A0A0F] bg-white p-4 shadow-sm">
+          <input className="field" value={name} onChange={(event) => onName(event.target.value)} placeholder="First name" aria-label="First name" />
+          <div className="grid grid-cols-[5.5rem_1fr] gap-2">
+            <input className="field" inputMode="numeric" value={age} onChange={(event) => onAge(event.target.value)} aria-label="Age" />
+            <input
+              className="field"
+              type="email"
+              value={parentEmail}
+              onChange={(event) => onParentEmail(event.target.value)}
+              placeholder={needsParentConsent ? "Parent email required" : "Parent email optional"}
+              aria-label="Parent email"
+            />
+          </div>
+          <p className="text-xs font-semibold leading-5 text-[#77777D]">Parent email is only required under 13.</p>
+        </section>
       </div>
-      <textarea
-        className="field mt-4 min-h-28 resize-none"
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        placeholder={question.placeholder}
-      />
+    );
+  }
+
+  if (step.kind === "building") {
+    return (
+      <div className="flex min-h-[30rem] flex-col items-center justify-center text-center">
+        <div className="grid h-28 w-28 place-items-center rounded-[32px] bg-[#111116] text-white shadow-[0_18px_60px_rgba(17,17,22,0.24)]">
+          <LoaderCircle className="animate-spin" size={42} aria-hidden="true" />
+        </div>
+        <h2 className="mt-7 text-4xl font-black leading-none tracking-normal">{step.title}</h2>
+        <div className="mt-5 space-y-3">
+          {buildLines.map((line, index) => (
+            <p key={line} className="rounded-full bg-white px-4 py-2 text-sm font-black text-[#4F5056] shadow-sm" style={{ animation: `kaiFade 1.4s ease ${index * 0.25}s infinite alternate` }}>
+              {line}
+            </p>
+          ))}
+        </div>
+        {saving && <p className="mt-6 text-xs font-black text-[#8A8A8F]">Syncing your profile…</p>}
+        <style>{`@keyframes kaiFade { from { opacity: .44; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      </div>
+    );
+  }
+
+  if (step.kind === "mirror") {
+    return (
+      <div className="flex min-h-[30rem] flex-col justify-center">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-normal text-[#8A8A8F]">KAI read</p>
+        <h2 className="mt-3 text-4xl font-black leading-[0.98] tracking-normal">{step.title}</h2>
+        <div className="mt-5 rounded-[30px] bg-[#111116] p-5 text-white shadow-[0_22px_70px_rgba(17,17,22,0.2)]">
+          <p className="text-2xl font-black leading-tight tracking-normal">{mirrorLine(answers)}</p>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <ScorePill label="Discipline" value={profile.scores.discipline} />
+            <ScorePill label="Focus" value={profile.scores.focus} />
+            <ScorePill label="Stress" value={profile.scores.stress} />
+            <ScorePill label="Dopamine" value={profile.scores.dopamineDependence} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step.kind === "slider" || step.kind === "commit") {
+    return (
+      <div>
+        <StepHeader title={step.title} helper={step.kind === "commit" ? "Pick the honest version. KAI will scale the pressure." : undefined} />
+        <OptionGrid step={step} answers={answers} onToggle={onToggle} />
+        <SliderBlock
+          label={step.sliderLabel}
+          value={answers[step.sliderKey]}
+          min={step.min}
+          max={step.max}
+          suffix={step.suffix}
+          onChange={(value) => onSlider(step.sliderKey, value)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <StepHeader title={step.title} helper={step.helper} />
+      <OptionGrid step={step} answers={answers} onToggle={onToggle} />
+    </div>
+  );
+}
+
+function StepHeader({ title, helper }: { title: string; helper?: string }) {
+  return (
+    <header>
+      <p className="font-mono text-[10px] font-bold uppercase tracking-normal text-[#8A8A8F]">Tap what fits</p>
+      <h2 className="mt-3 text-4xl font-black leading-[0.98] tracking-normal sm:text-5xl">{title}</h2>
+      {helper && <p className="mt-3 text-sm font-semibold leading-6 text-[#68686E]">{helper}</p>}
+    </header>
+  );
+}
+
+function OptionGrid({ step, answers, onToggle }: { step: Extract<Step, { key: MultiKey }>; answers: Answers; onToggle: (key: MultiKey, value: string, multi?: boolean) => void }) {
+  return (
+    <div className="mt-6 grid grid-cols-2 gap-2">
+      {step.options.map((option) => {
+        const selected = answers[step.key].includes(option.value);
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onToggle(step.key, option.value, "multi" in step ? step.multi : false)}
+            className={`focus-ring min-h-[4.25rem] rounded-[22px] border px-3 py-3 text-left text-sm font-black leading-tight transition ${
+              selected ? "border-[#111116] bg-[#111116] text-white shadow-[0_14px_34px_rgba(17,17,22,0.18)]" : "border-[#0A0A0A0F] bg-white text-[#27272D] hover:border-[#111116]/20"
+            }`}
+          >
+            <span className="flex items-center justify-between gap-2">
+              {option.label}
+              {selected && <Check size={16} aria-hidden="true" />}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function SliderBlock({ label, value, min, max, suffix, onChange }: { label: string; value: number; min: number; max: number; suffix?: string; onChange: (value: number) => void }) {
+  return (
+    <section className="mt-6 rounded-[28px] bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-black leading-5 text-[#303036]">{label}</p>
+        <p className="grid h-12 min-w-12 place-items-center rounded-2xl bg-[#111116] px-3 text-lg font-black text-white">
+          {value}
+          {suffix ?? ""}
+        </p>
+      </div>
+      <input className="mt-5 w-full accent-[#111116]" type="range" min={min} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} />
     </section>
   );
 }
 
-function goalAwareQuestion(goal: string | undefined, fallback: string) {
-  if (!goal) return fallback;
-  return `If ${goal} is the goal, what does a normal day look like right now?`;
+function ScorePill({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[18px] border border-white/10 bg-white/8 p-3">
+      <p className="text-[11px] font-black text-white/58">{label}</p>
+      <p className="mt-1 text-2xl font-black">{value}</p>
+    </div>
+  );
 }
 
-function struggleAwareQuestion(goal: string | undefined, fallback: string) {
-  if (!goal) return fallback;
-  return `What usually gets in the way of ${goal}?`;
+function stepIsComplete(step: Step, answers: Answers) {
+  if (step.kind === "welcome" || step.kind === "mirror" || step.kind === "building") return true;
+  return answers[step.key].length > 0;
 }
 
-function followUpFor(id: AnswerId) {
-  if (id === "goal") return "Good. I’ll use that as the north star, but we’ll keep the first move small.";
-  if (id === "habits") return "That routine matters. Systems beat motivation when life gets loud.";
-  if (id === "sleep") return "Sleep is usually the hidden lever. I’ll keep recovery in the read.";
-  if (id === "fitness") return "Got it. No body judgment. Just useful signals and healthier reps.";
-  if (id === "mind") return "That’s the honest part. KAI works better when the obstacle is named.";
-  if (id === "schedule") return "Perfect. Tiny windows are enough if they repeat.";
-  return "That tells me how to push without being annoying.";
+function options(...labels: string[]): Option[] {
+  return labels.map((label) => ({ label, value: label }));
 }
 
-function inferTone(motivation: string | undefined): KaiTone {
-  const text = motivation?.toLowerCase() ?? "";
-  if (/gentle|calm|soft/.test(text)) return "warm";
-  if (/direct|competitive|accountability/.test(text)) return "direct";
-  return "balanced";
-}
+function buildProfile(answers: Answers) {
+  const text = (key: MultiKey) => answers[key].join(" ").toLowerCase();
+  const pain = text("pain");
+  const identity = text("identity");
+  const motivation = text("motivation");
+  const distraction = text("distraction");
+  const routine = text("routine");
 
-function inferFirstMove(answers: Answers): { action: KaiAction; engine: EngineId } {
-  const text = Object.values(answers).join(" ").toLowerCase();
-  if (/sleep|tired|wired|drained|recovery/.test(text)) return { action: KAI_ACTIONS.sleep, engine: "physical" };
-  if (/food|eat|breakfast|hungry|meal|fuel|muscle/.test(text)) return { action: KAI_ACTIONS.food, engine: "physical" };
-  if (/fitness|sport|practice|body|sore|tight|moving|workout/.test(text)) return { action: KAI_ACTIONS.stretch, engine: "physical" };
-  if (/phone|scroll|tiktok|instagram|comparison/.test(text)) return { action: KAI_ACTIONS.screen, engine: "mental" };
-  if (/friend|social|lonely|pressure/.test(text)) return { action: KAI_ACTIONS.social, engine: "mental" };
-  if (/confidence|insecure/.test(text)) return { action: KAI_ACTIONS.confidence, engine: "mental" };
-  if (/school|goal|discipline|procrastination|homework|schedule/.test(text)) return { action: KAI_ACTIONS.goal, engine: "potential" };
-  return { action: KAI_ACTIONS.talk, engine: "mental" };
-}
+  const discipline = clampScore(45 + match(identity, /disciplined|productive|focused/) * 12 + match(routine, /locked in|trying/) * 8 - match(routine, /all over|burned|restarting/) * 8);
+  const focus = clampScore(52 + match(identity, /focused|less distracted/) * 12 - answers.distractionHours * 4 - match(distraction, /tiktok|youtube|gaming|overthinking/) * 7);
+  const confidence = clampScore(50 + match(identity, /confident|social/) * 10 - match(pain, /low confidence|loneliness/) * 10);
+  const consistency = clampScore(48 + match(motivation, /streaks|accountability|progress/) * 9 - match(pain, /inconsistency|no structure|procrastination/) * 10);
+  const stress = clampScore(35 + answers.painImpact * 5 + match(pain, /stress|anxiety|overthinking|bad sleep/) * 10);
+  const dopamineDependence = clampScore(30 + answers.distractionHours * 7 + match(distraction, /tiktok|youtube|gaming/) * 12 + match(pain, /phone addiction/) * 18);
+  const motivationIntensity = clampScore(42 + match(motivation, /winning|competition|recognition|streaks/) * 11 + match(routine, /motivated|locked/) * 8);
+  const socialEnergy = clampScore(48 + match(identity, /social/) * 14 + match(motivation, /recognition|accountability/) * 7 - match(pain, /loneliness/) * 8);
 
-function buildIntakeAnswers(answers: Answers, firstMove: { action: KaiAction; engine: EngineId }) {
   return {
-    q1: `Goals and interests: ${answers.goal ?? "not answered"}`,
-    q2: `Habits, lifestyle, and schedule: ${answers.habits ?? "not answered"} Schedule: ${answers.schedule ?? "not answered"}`,
-    q3: `Sleep patterns, energy, and fitness level: ${answers.sleep ?? "not answered"} Fitness/body: ${answers.fitness ?? "not answered"}`,
-    q4: `Mental state, struggles, and blockers: ${answers.mind ?? "not answered"}`,
-    q5: `Motivation and coaching style: ${answers.motivation ?? "not answered"}`,
-    q6: `First recommended move: ${firstMove.action.label}. Engine: ${firstMove.engine}. Route: ${firstMove.action.route}.`
+    scores: {
+      discipline,
+      focus,
+      confidence,
+      consistency,
+      stress,
+      dopamineDependence,
+      motivationIntensity,
+      socialEnergy
+    },
+    priority: answers.improve[0] || answers.identity[0] || "Consistency",
+    challenge: answers.pain[0] || "No structure",
+    motivationStyle: answers.motivation[0] || "Progress"
   };
 }
 
-function buildFirstMessage(name: string, answers: Answers, firstMove: { action: KaiAction; engine: EngineId }) {
-  const goal = answers.goal ? `You said you want ${answers.goal}.` : "I’ve got enough to start.";
-  const obstacle = answers.mind ? ` The thing in the way: ${answers.mind}.` : "";
-  const schedule = answers.schedule ? ` We’ll work around ${answers.schedule}.` : "";
-  return `Good to meet you${name ? `, ${name}` : ""}. ${goal}${obstacle}${schedule} First move: ${firstMove.action.label.toLowerCase()}. Tell me what is going on today, and I’ll help you choose the next rep.`;
+function match(text: string, pattern: RegExp) {
+  return pattern.test(text) ? 1 : 0;
+}
+
+function clampScore(value: number) {
+  return Math.max(8, Math.min(96, Math.round(value)));
+}
+
+function mirrorLine(answers: Answers) {
+  const wants = list(answers.identity, "more discipline");
+  const pain = list(answers.pain, "staying structured");
+  const first = list(answers.improve, "consistency");
+  return `Got it. You want ${wants}. Your biggest friction looks like ${pain}. If this works, ${first.toLowerCase()} improves first.`;
+}
+
+function list(values: string[], fallback: string) {
+  if (!values.length) return fallback;
+  if (values.length === 1) return values[0].toLowerCase();
+  return `${values.slice(0, 2).map((value) => value.toLowerCase()).join(" and ")}`;
+}
+
+function firstActionFor(profile: ReturnType<typeof buildProfile>, answers: Answers): KaiAction {
+  const text = [...answers.identity, ...answers.pain, ...answers.improve, ...answers.distraction, ...answers.habits].join(" ").toLowerCase();
+  if (/sleep|tired|bad sleep|better sleep/.test(text)) return KAI_ACTIONS.sleep;
+  if (/body|fitness|gym|shape/.test(text)) return KAI_ACTIONS.scan;
+  if (/stretch/.test(text)) return KAI_ACTIONS.stretch;
+  if (/phone|tiktok|youtube|gaming|screen|distracted/.test(text) || profile.scores.dopamineDependence > 70) return KAI_ACTIONS.screen;
+  if (/confidence|low confidence/.test(text)) return KAI_ACTIONS.confidence;
+  if (/social|loneliness|relationships/.test(text)) return KAI_ACTIONS.social;
+  if (/productive|discipline|procrastination|studying|structure|focused/.test(text)) return KAI_ACTIONS.goal;
+  return KAI_ACTIONS.talk;
+}
+
+function engineForAction(action: KaiAction): EngineId {
+  if (["food", "sleep", "stretch", "scan"].includes(action.id)) return "physical";
+  if (action.id === "goal") return "potential";
+  return "mental";
+}
+
+function toneFor(answers: Answers): KaiTone {
+  const text = answers.motivation.join(" ").toLowerCase();
+  if (/winning|competition|accountability/.test(text)) return "direct";
+  if (/peace|self improvement/.test(text)) return "warm";
+  return "balanced";
+}
+
+function buildIntakeAnswers(answers: Answers, profile: ReturnType<typeof buildProfile>, firstMove: KaiAction) {
+  return {
+    q1: `Identity: ${answers.identity.join(", ")}`,
+    q2: `Pain point: ${answers.pain.join(", ")}. Impact: ${answers.painImpact}/10. Routine: ${answers.routine.join(", ")}`,
+    q3: `Goal visualization: ${answers.improve.join(", ")}. Habits: ${answers.habits.join(", ")}`,
+    q4: `Distractions: ${answers.distraction.join(", ")}. Distracted hours/day: ${answers.distractionHours}`,
+    q5: `Motivation style: ${answers.motivation.join(", ")}. Commitment: ${answers.commitment.join(", ")}. Minutes/day: ${answers.dailyMinutes}`,
+    q6: `Internal scores: ${JSON.stringify(profile.scores)}. First recommended move: ${firstMove.label}. Route: ${firstMove.route}.`
+  };
+}
+
+function buildFirstMessage(name: string, answers: Answers, profile: ReturnType<typeof buildProfile>, firstMove: KaiAction) {
+  return `Good to meet you${name ? `, ${name}` : ""}. I built your starting system around ${profile.priority.toLowerCase()}, with ${profile.challenge.toLowerCase()} as the main obstacle. Your first move is ${firstMove.label.toLowerCase()}. Tell me what is going on today, and I’ll keep the next rep simple.`;
+}
+
+function saveLocalProfile(profile: ReturnType<typeof buildProfile>, answers: Answers, firstMove: KaiAction) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    "kai.onboardingProfile",
+    JSON.stringify({
+      version: 2,
+      profile,
+      answers,
+      firstMove,
+      savedAt: new Date().toISOString()
+    })
+  );
 }

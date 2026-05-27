@@ -45,7 +45,7 @@ const connectionErrorCopy = [
 
 const cases = [
   route("/", ["Home", "KAI", "Lock in"], { actionables: ["textarea", "button"] }),
-  route("/onboarding", ["Meet KAI", "First coach chat", "What should KAI call you?"], { actionables: ["button", "input"], onboardingHandoff: true }),
+  route("/onboarding", ["KAI setup", "Build your system", "Let’s build your personalized system.", "Takes under 2 minutes."], { actionables: ["button", "input"], onboardingHandoff: true }),
   route("/walkthrough", ["Quick tour", "How KAI works", "Win the day."], { actionables: ["button", "a[href='/home']"], walkthrough: true }),
   route("/home", ["Home", "KAI", "Lock in"], { actionables: ["textarea", "button"], kaiChatHandoff: true }),
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
@@ -327,30 +327,25 @@ async function assertOnboardingHandoff(client) {
     return set(name, "Demo") && set(age, "18");
   })()`);
   await clickButtonByText(client, "Start");
-  const answers = [
-    "more discipline",
-    "school heavy",
-    "tired",
-    "active",
-    "procrastination",
-    "after school",
-    "direct"
-  ];
-  for (const answer of answers) {
-    await client.evaluate(`(() => {
-      const value = ${JSON.stringify(answer)};
-      const textarea = document.querySelector("textarea");
-      if (!textarea) return false;
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
-      if (setter) setter.call(textarea, value);
-      else textarea.value = value;
-      textarea.dispatchEvent(new Event("input", { bubbles: true }));
-      textarea.dispatchEvent(new Event("change", { bubbles: true }));
-      return true;
-    })()`);
-    await clickButtonByText(client, answer === answers[answers.length - 1] ? "Open Home with" : "Send");
-    await new Promise((resolve) => setTimeout(resolve, 150));
-  }
+  await clickButtonByText(client, "More disciplined");
+  await clickButtonByText(client, "More focused");
+  await clickReadyButton(client, "Next");
+  await clickButtonByText(client, "Overthinking");
+  await clickReadyButton(client, "Next");
+  await clickButtonByText(client, "Energy");
+  await clickReadyButton(client, "Next");
+  await clickButtonByText(client, "Trying to improve");
+  await clickReadyButton(client, "Next");
+  await clickButtonByText(client, "Progress");
+  await clickReadyButton(client, "Next");
+  await clickButtonByText(client, "TikTok/social media");
+  await clickReadyButton(client, "Next");
+  await clickButtonByText(client, "Gym");
+  await clickButtonByText(client, "Journaling");
+  await clickReadyButton(client, "Next");
+  await clickReadyButton(client, "Next");
+  await clickButtonByText(client, "Ready for change");
+  await clickReadyButton(client, "Build my system");
   await waitForClientCondition(
     client,
     `(() => {
@@ -359,6 +354,16 @@ async function assertOnboardingHandoff(client) {
     })()`,
     "Onboarding did not open the post-onboarding walkthrough"
   );
+}
+
+async function clickReadyButton(client, text) {
+  await waitForClientCondition(
+    client,
+    `Array.from(document.querySelectorAll("button")).some((item) => (item.innerText || "").includes(${JSON.stringify(text)}) && !item.disabled)`,
+    `Button ${JSON.stringify(text)} was not ready`,
+    5_000
+  );
+  await clickButtonByText(client, text);
 }
 
 async function assertWalkthrough(client) {

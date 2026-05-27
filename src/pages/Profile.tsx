@@ -11,12 +11,19 @@
 // is for things that don't fit "do a thing today": who KAI is for you,
 // who YOU are to KAI, and the boring account knobs.
 
-import { ChevronRight, Settings as SettingsIcon, Sparkles, User } from "lucide-react";
+import { Award, ChevronRight, Settings as SettingsIcon, Sparkles, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { LevelCard } from "../components/LevelCard";
+import { badgeSummary } from "../lib/local-badges";
 
 export function Profile() {
+  const [badges, setBadges] = useState<{ earned: number; total: number } | null>(null);
+  useEffect(() => {
+    setBadges(badgeSummary());
+  }, []);
+
   return (
     <div className="mx-auto max-w-md py-8 px-5">
       <div className="text-center">
@@ -37,6 +44,27 @@ export function Profile() {
       </div>
 
       <div className="mt-4 space-y-2">
+        {/* Rawz/4 — Badges entry */}
+        <Link
+          to="/badges"
+          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
+        >
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-warm-soft">
+              <Award size={16} className="text-accent-warm" />
+            </span>
+            <span>
+              <span className="block text-sm font-medium text-text-primary">
+                Badges
+              </span>
+              <span className="block text-xs text-text-secondary">
+                {badges ? `${badges.earned} of ${badges.total} earned` : "Milestones, not measurements"}
+              </span>
+            </span>
+          </span>
+          <ChevronRight size={18} className="text-text-muted" />
+        </Link>
+
         {/* Strengths Discovery — the 15-question Q&A flow. Replaces the
             old Goals row here (goals belong in the + quick-action sheet). */}
         <Link

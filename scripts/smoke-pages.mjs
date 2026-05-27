@@ -47,7 +47,7 @@ const cases = [
   route("/", ["Start with what is", "One next move", "Crisis support"], { actionables: ["a[href='/crisis']"] }),
   route("/welcome", ["What should KAI call you?", "wellness companion"], { actionables: ["button", "input"], onboardingHandoff: true }),
   route("/walkthrough", ["Quick tour", "How KAI works", "Win the day."], { actionables: ["button", "a[href='/home']"], walkthrough: true }),
-  route("/home", ["Home", "KAI", "Lock in"], { actionables: ["textarea", "button"], kaiChatHandoff: true }),
+  route("/home", ["KAI home", "What’s loud today?", "one rep"], { actionables: ["textarea", "button"], kaiChatHandoff: true }),
   route("/goal", ["Pick one thing.", "What do you want to get better at?", "Keep going"], { actionables: ["textarea", "button"] }),
   route("/goals", ["Goals", "one next rep"], { actionables: ["a[href='/goal']"], optional: true }),
   route("/loop", ["One clean loop.", "Body", "mind", "goal"], { actionables: ["button"] }),
@@ -503,7 +503,7 @@ async function assertQuickActionLinks(client) {
   await client.send("Page.navigate", { url: `${baseUrl}/home` });
   await waitForLoad(client);
   await waitForRoot(client);
-  await waitForExpectedSnapshot(client, { expectedText: ["Home", "KAI", "Lock in"], actionables: ["textarea", "button"] });
+  await waitForExpectedSnapshot(client, { expectedText: ["KAI home", "What’s loud today?", "one rep"], actionables: ["textarea", "button"] });
   await clickSelector(client, "button[aria-label='Open KAI tasks']");
   await waitForClientCondition(client, `Boolean(document.querySelector("[role='dialog'][aria-label='Quick actions']"))`, "KAI task launcher did not reopen after route checks");
 }

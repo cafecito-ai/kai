@@ -40,6 +40,7 @@ import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
+import { PreviewFlower } from "./pages/PreviewFlower";
 import { Profile } from "./pages/Profile";
 import { Ops } from "./pages/Ops";
 import { OpsDemoSession } from "./pages/OpsDemoSession";
@@ -127,6 +128,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/demo" element={<Demo />} />
+          {/* Visual preview of FlowerProgressBar at every stage — not in nav */}
+          <Route path="/preview/flower" element={<PreviewFlower />} />
           <Route path="/design" element={<DesignPicker />} />
           <Route path="/_design-tokens" element={<DesignTokens />} />
           <Route path="/scope" element={<Scope />} />

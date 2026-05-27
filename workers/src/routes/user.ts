@@ -12,9 +12,13 @@ userRoutes.get("/user/me", async (c) => {
   const userId = c.get("userId");
   await ensureUser(c.env.DB, userId);
   const user = await c.env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(userId).first();
+  const intake = await c.env.DB
+    .prepare("SELECT raw_responses, summary FROM user_intake WHERE user_id = ?")
+    .bind(userId)
+    .first<{ raw_responses: string | null; summary: string | null }>();
   return c.json({
     user,
-    intake: null,
+    intake,
     primaryEngine: user?.primary_engine ?? "physical",
     kaiName: user?.kai_name ?? "Kai",
     kaiTone: user?.kai_tone ?? "balanced",

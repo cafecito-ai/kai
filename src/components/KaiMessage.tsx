@@ -51,8 +51,14 @@ export function KaiMessage({
               KAI · {timestamp}
             </p>
           ) : null}
-          <div className="whitespace-pre-line font-display text-[17px] leading-snug text-text-primary">
-            {children}
+          <div className="text-text-primary">
+            {typeof children === "string" ? (
+              <FormattedKaiText text={children} />
+            ) : (
+              <div className="whitespace-pre-line font-display text-[17px] leading-snug">
+                {children}
+              </div>
+            )}
           </div>
           {action ? (
             <button
@@ -70,6 +76,36 @@ export function KaiMessage({
           ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function FormattedKaiText({ text }: { text: string }) {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="space-y-3">
+      {paragraphs.map((paragraph, index) => {
+        const isFirst = index === 0;
+        const isFinalQuestion = index === paragraphs.length - 1 && paragraph.endsWith("?");
+        return (
+          <p
+            key={`${paragraph}-${index}`}
+            className={
+              isFinalQuestion
+                ? "font-sans text-[14px] font-semibold leading-snug text-accent-cool"
+                : isFirst
+                  ? "font-display text-[18px] font-semibold leading-snug tracking-tight"
+                  : "font-sans text-[15px] leading-relaxed text-text-secondary"
+            }
+          >
+            {paragraph}
+          </p>
+        );
+      })}
     </div>
   );
 }

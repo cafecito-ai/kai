@@ -31,8 +31,10 @@ import { useNavigate } from "react-router-dom";
 import {
   completeMission,
   getTodayMissions,
+  missionPlanLabel,
   type Mission,
 } from "../lib/local-missions";
+import { loadLocalOnboardingProfile, type OnboardingProfile } from "../lib/onboarding-profile";
 
 const ICON_MAP: Record<Mission["icon"], LucideIcon> = {
   Heart,
@@ -47,10 +49,13 @@ const ICON_MAP: Record<Mission["icon"], LucideIcon> = {
 
 export function MissionsCard({ className = "" }: { className?: string }) {
   const [missions, setMissions] = useState<Mission[] | null>(null);
+  const [profile, setProfile] = useState<OnboardingProfile | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    setMissions(getTodayMissions());
+    const nextProfile = loadLocalOnboardingProfile();
+    setProfile(nextProfile);
+    setMissions(getTodayMissions(nextProfile));
   }, []);
 
   if (!missions) {
@@ -71,7 +76,7 @@ export function MissionsCard({ className = "" }: { className?: string }) {
 
   function tick(m: Mission, e: React.MouseEvent) {
     e.stopPropagation();
-    const next = completeMission(m.id);
+    const next = completeMission(m.id, profile);
     setMissions(next);
   }
 
@@ -82,10 +87,10 @@ export function MissionsCard({ className = "" }: { className?: string }) {
       <div className="flex items-center justify-between gap-3 pb-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
-            today's three
+            {missionPlanLabel(profile)}
           </p>
           <h2 className="mt-0.5 font-display text-lg font-semibold leading-tight tracking-tight">
-            {allDone ? "All three done." : "Small wins for today"}
+            {allDone ? "All three done." : "Your goals for today"}
           </h2>
         </div>
         <span

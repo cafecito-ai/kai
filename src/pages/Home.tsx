@@ -39,6 +39,11 @@ import {
   readLocalInputs,
   type LocalInput,
 } from "../lib/local-score";
+import {
+  loadLocalOnboardingProfile,
+  profileFromApiPayload,
+  type OnboardingProfile,
+} from "../lib/onboarding-profile";
 
 // ─────────────────────────────────────────────────────────────────────
 // Static demo data (Phase B replaces)
@@ -99,12 +104,22 @@ export function Home() {
   // kept around for the marketing /demo route only.
   const [data, setData] = useState<DailyScoreView>(EMPTY_SCORE);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [profile, setProfile] = useState<OnboardingProfile | null>(() =>
+    loadLocalOnboardingProfile(),
+  );
   // Rawz/3 — level-up detection. Set once on mount if the user crossed
   // into a new level since they last opened /home. Soft KaiMessage,
   // dismissable, doesn't interrupt anything.
   const [levelUp, setLevelUp] = useState<{ newLevel: number; message: string } | null>(null);
 
   useEffect(() => {
+    api
+      .getUser()
+      .then((payload) => {
+        const apiProfile = profileFromApiPayload(payload);
+        if (apiProfile) setProfile(apiProfile);
+      })
+      .catch(() => {});
     // Rawz/3 — level-up moment + Rawz/7 — fan out to groups.
     import("../lib/local-xp").then(({ checkAndConsumeLevelUp, levelUpMessage, labelForLevel }) => {
       const r = checkAndConsumeLevelUp();
@@ -273,6 +288,8 @@ export function Home() {
         </button>
       </header>
 
+      <MotivationQuote profile={profile} />
+
       {/* Daily Score hero */}
       <DailyScoreCard data={data} />
 
@@ -330,7 +347,7 @@ export function Home() {
         </div>
       )}
 
-      {/* Today's missions — 3 AI-selected actions to nudge the day (Rawz/2) */}
+      {/* Today's goals — personalized from onboarding where available */}
       <MissionsCard />
 
       {/* Hydration tile — small, daily-reset counter (T-025) */}
@@ -398,6 +415,23 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
         <ScoreRing value={data.score} size={104} />
       </div>
     </div>
+  );
+}
+
+function MotivationQuote({ profile }: { profile: OnboardingProfile | null }) {
+  const quote = quoteForProfile(profile);
+  return (
+    <section className="rounded-glass border border-glass-border bg-text-primary px-5 py-4 text-background shadow-card-lg">
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-background/55">
+        {quote.source}
+      </p>
+      <p className="mt-2 font-display text-xl font-semibold leading-tight">
+        "{quote.line}"
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-background/70">
+        {quote.context}
+      </p>
+    </section>
   );
 }
 
@@ -506,6 +540,57 @@ function bandToLabel(b: "low" | "mid" | "high" | null): string {
   if (b === "mid") return "Steady";
   if (b === "low") return "Easy day";
   return "Getting started";
+}
+
+function quoteForProfile(profile: OnboardingProfile | null): {
+  source: string;
+  line: string;
+  context: string;
+} {
+  const text = [
+    ...(profile?.focusAreas ?? []),
+    profile?.hardestLately ?? "",
+    ...Object.values(profile?.followUps ?? {}),
+    profile?.summary ?? "",
+  ].join(" ").toLowerCase();
+
+  if (hasAny(text, ["sad", "mood", "depressed", "lonely", "anxiety", "stress", "overthinking"])) {
+    return {
+      source: "Kobe mindset",
+      line: "Pressure is a chance to rise.",
+      context: "Today is not about fixing your whole life. It is about one clean rep.",
+    };
+  }
+  if (hasAny(text, ["focus", "motivation", "procrastination", "phone", "distracted", "school"])) {
+    return {
+      source: "Goggins energy",
+      line: "Do the first hard thing before your mood votes.",
+      context: "Small start. No debate. Let action create the feeling.",
+    };
+  }
+  if (hasAny(text, ["getting_stronger", "gym", "training", "sport", "energy", "eating"])) {
+    return {
+      source: "Mamba mentality",
+      line: "Stack the reps nobody sees.",
+      context: "Fuel, recovery, and one honest workout log. That is how momentum gets real.",
+    };
+  }
+  if (hasAny(text, ["sleep", "tired", "recovery", "before bed"])) {
+    return {
+      source: "Discipline lens",
+      line: "Recovery is part of the work.",
+      context: "Protect tonight and tomorrow gets easier.",
+    };
+  }
+  return {
+    source: "KAI daily quote",
+    line: "Win the next ten minutes.",
+    context: "No huge speech. Just one move that proves you are still in it.",
+  };
+}
+
+function hasAny(text: string, terms: string[]) {
+  return terms.some((term) => text.includes(term));
 }
 
 function countConsecutiveDays(_inputs: ActivityItem[] | unknown[]): number {

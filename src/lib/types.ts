@@ -23,6 +23,11 @@ export interface UserProfile {
   kaiName: string;
   kaiTone: KaiTone;
   primaryEngine: EngineId;
+  intake?: {
+    rawResponses?: Record<string, string> | string | null;
+    raw_responses?: string | null;
+    summary?: string | null;
+  } | null;
   age?: number | null;
   parentEmail?: string | null;
   onboardingCompletedAt?: string | null;

@@ -12,6 +12,7 @@
 // today and pick 3 actions that move the needle.
 
 import { readLocalInputs, type LocalInput } from "./local-score";
+import { profileKey, type OnboardingProfile } from "./onboarding-profile";
 
 export type MissionId =
   | "check_in"
@@ -39,6 +40,7 @@ type StoredState = {
   date: string; // YYYY-MM-DD when last generated
   missionIds: MissionId[];
   completed: MissionId[];
+  profileKey?: string;
 };
 
 // ─────────────────────────────────────────────────────────────────────
@@ -158,7 +160,7 @@ function writeState(state: StoredState): void {
  * lighter actions (stretch, hydrate, energy check) so there are always
  * 3 things on the board.
  */
-function selectMissionIds(inputs: LocalInput[]): MissionId[] {
+function selectMissionIds(inputs: LocalInput[], profile: OnboardingProfile | null): MissionId[] {
   const today = todayKey();
   const todayInputs = inputs.filter((i) => i.date === today);
   const hasCheckIn = todayInputs.some((i) => i.source === "check_in");
@@ -172,6 +174,11 @@ function selectMissionIds(inputs: LocalInput[]): MissionId[] {
   const tryAdd = (id: MissionId) => {
     if (!picks.includes(id) && picks.length < 3) picks.push(id);
   };
+
+  const plan = planFromProfile(profile);
+  for (const id of plan.priority) {
+    tryAdd(id);
+  }
 
   // Priority 1 — emotional check-in always first if missing
   if (!hasCheckIn) tryAdd("check_in");
@@ -209,15 +216,17 @@ function selectMissionIds(inputs: LocalInput[]): MissionId[] {
  *      anything extra).
  *  This way every existing submit handler "just works" — no edits to
  *  CheckIn.tsx / SleepLog.tsx / etc. needed. */
-export function getTodayMissions(): Mission[] {
+export function getTodayMissions(profile: OnboardingProfile | null = null): Mission[] {
   const today = todayKey();
+  const key = profileKey(profile);
   let state = readState();
-  if (!state || state.date !== today) {
+  if (!state || state.date !== today || state.profileKey !== key) {
     const inputs = readLocalInputs();
     state = {
       date: today,
-      missionIds: selectMissionIds(inputs),
+      missionIds: selectMissionIds(inputs, profile),
       completed: [],
+      profileKey: key,
     };
     writeState(state);
   }
@@ -229,7 +238,7 @@ export function getTodayMissions(): Mission[] {
     if (m) inferredDone.add(m);
   }
   return state.missionIds.map((id) => ({
-    ...CATALOG[id],
+    ...personalizeMission(id, profile),
     completed: state!.completed.includes(id) || inferredDone.has(id),
   }));
 }
@@ -255,14 +264,16 @@ function sourceToMission(source: string): MissionId | null {
 }
 
 /** Mark a mission as completed. Returns the new mission list. */
-export function completeMission(id: MissionId): Mission[] {
+export function completeMission(id: MissionId, profile: OnboardingProfile | null = null): Mission[] {
   const today = todayKey();
+  const key = profileKey(profile);
   let state = readState();
-  if (!state || state.date !== today) {
+  if (!state || state.date !== today || state.profileKey !== key) {
     state = {
       date: today,
-      missionIds: selectMissionIds(readLocalInputs()),
+      missionIds: selectMissionIds(readLocalInputs(), profile),
       completed: [],
+      profileKey: key,
     };
   }
   if (!state.completed.includes(id)) {
@@ -270,9 +281,130 @@ export function completeMission(id: MissionId): Mission[] {
     writeState(state);
   }
   return state.missionIds.map((mid) => ({
-    ...CATALOG[mid],
+    ...personalizeMission(mid, profile),
     completed: state!.completed.includes(mid),
   }));
+}
+
+export function missionPlanLabel(profile: OnboardingProfile | null) {
+  const plan = planFromProfile(profile);
+  return plan.label;
+}
+
+function personalizeMission(id: MissionId, profile: OnboardingProfile | null): Omit<Mission, "completed"> {
+  const plan = planFromProfile(profile);
+  const override = plan.overrides[id];
+  return {
+    ...CATALOG[id],
+    ...(override ?? {}),
+  };
+}
+
+function planFromProfile(profile: OnboardingProfile | null): {
+  label: string;
+  priority: MissionId[];
+  overrides: Partial<Record<MissionId, Partial<Omit<Mission, "id" | "completed">>>>;
+} {
+  const text = [
+    ...(profile?.focusAreas ?? []),
+    profile?.hardestLately ?? "",
+    ...Object.values(profile?.followUps ?? {}),
+    profile?.summary ?? "",
+  ].join(" ").toLowerCase();
+
+  if (matches(text, ["mood", "sad", "depressed", "anxiety", "stress", "overthinking", "mental_clarity", "confidence", "lonely"])) {
+    return {
+      label: "Built from what you told KAI",
+      priority: ["check_in", "journal", "stretch"],
+      overrides: {
+        check_in: {
+          title: "Name the feeling",
+          subtitle: "No fixing yet — just clarity",
+        },
+        journal: {
+          title: "Write the real sentence",
+          subtitle: "What is actually weighing on you?",
+        },
+        stretch: {
+          title: "3-minute nervous system reset",
+          subtitle: "Move first, think second",
+        },
+      },
+    };
+  }
+
+  if (matches(text, ["focus", "motivation", "procrastination", "school_pressure", "workload", "phone", "screens", "distracted"])) {
+    return {
+      label: "Built for focus today",
+      priority: ["journal", "energy_check", "stretch"],
+      overrides: {
+        journal: {
+          title: "Pick the first tiny rep",
+          subtitle: "One task, ten minutes, no drama",
+        },
+        energy_check: {
+          title: "Check your focus level",
+          subtitle: "KAI needs the real read",
+        },
+        stretch: {
+          title: "Phone-down reset",
+          subtitle: "Three minutes before the next sprint",
+        },
+      },
+    };
+  }
+
+  if (matches(text, ["better_sleep", "sleep", "tired", "before bed", "under 5", "5–6", "6-7"])) {
+    return {
+      label: "Built around recovery",
+      priority: ["log_sleep", "hydrate", "journal"],
+      overrides: {
+        log_sleep: {
+          title: "Log last night's sleep",
+          subtitle: "So KAI stops guessing",
+        },
+        hydrate: {
+          title: "Start recovery with water",
+          subtitle: "Small body signal, big mood signal",
+        },
+        journal: {
+          title: "Plan tonight's shutdown",
+          subtitle: "One cue that protects sleep",
+        },
+      },
+    };
+  }
+
+  if (matches(text, ["getting_stronger", "gym", "sport", "training", "better shape", "energy", "eating_better", "food"])) {
+    return {
+      label: "Built for body momentum",
+      priority: ["log_workout", "log_food", "stretch"],
+      overrides: {
+        log_workout: {
+          title: "Move for 10 minutes",
+          subtitle: "Walk, lift, practice — count it",
+        },
+        log_food: {
+          title: "Log one fuel choice",
+          subtitle: "Energy data, not judgment",
+        },
+        stretch: {
+          title: "Protect the machine",
+          subtitle: "Mobility keeps momentum alive",
+        },
+      },
+    };
+  }
+
+  return {
+    label: "Built for a clean start",
+    priority: [],
+    overrides: {},
+  };
+}
+
+function matches(text: string, terms: string[]) {
+  return terms.some((term) => text.includes(term));
 }
 
 /** How many of today's missions are done? Returns {done, total}. */

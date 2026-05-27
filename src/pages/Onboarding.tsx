@@ -23,6 +23,7 @@ import { useNavigate } from "react-router-dom";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { saveLocalOnboardingProfile } from "../lib/onboarding-profile";
 import {
   formatFollowUpsForIntake,
   pickFollowUps,
@@ -239,7 +240,11 @@ export function Onboarding() {
       // so the Mind + Body agents have richer day-one context.
       const questions = pickFollowUps(focusAreas);
       Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
-      await api.submitIntake(keyedResponses);
+      const intake = await api.submitIntake(keyedResponses);
+      saveLocalOnboardingProfile({
+        responses: keyedResponses,
+        summary: intake.summary,
+      });
       // displayName = the teen's name (what KAI calls them). kaiName = what
       // they call KAI. Previously firstName only landed in user_intake.summary
       // and never users.display_name, so the chat agent kept falling back to

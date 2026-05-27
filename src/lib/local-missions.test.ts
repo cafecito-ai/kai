@@ -67,6 +67,30 @@ describe("getTodayMissions", () => {
     const stored = JSON.parse(localStorage.getItem("kai_missions_v1")!);
     expect(stored.date).toBe(new Date().toISOString().slice(0, 10));
   });
+
+  it("personalizes goals from emotional onboarding instead of random defaults", () => {
+    const missions = getTodayMissions({
+      firstName: "Lev",
+      focusAreas: ["mood", "confidence"],
+      hardestLately: "I am sad and overthinking",
+      followUps: {},
+      updatedAt: new Date().toISOString(),
+    });
+    expect(missions.map((m) => m.id)).toEqual(["check_in", "journal", "stretch"]);
+    expect(missions[0].title).toBe("Name the feeling");
+    expect(missions[1].title).toBe("Write the real sentence");
+  });
+
+  it("personalizes goals from focus/distraction onboarding", () => {
+    const missions = getTodayMissions({
+      focusAreas: ["focus", "motivation"],
+      hardestLately: "I keep procrastinating and my phone distracts me",
+      followUps: {},
+      updatedAt: new Date().toISOString(),
+    });
+    expect(missions.map((m) => m.id)).toEqual(["journal", "energy_check", "stretch"]);
+    expect(missions[0].title).toBe("Pick the first tiny rep");
+  });
 });
 
 describe("auto-completion from score inputs", () => {

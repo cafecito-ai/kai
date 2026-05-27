@@ -14,6 +14,8 @@
 import { ChevronRight, Settings as SettingsIcon, Sparkles, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { LevelCard } from "../components/LevelCard";
+
 export function Profile() {
   return (
     <div className="mx-auto max-w-md py-8 px-5">
@@ -29,7 +31,12 @@ export function Profile() {
         </p>
       </div>
 
-      <div className="mt-8 space-y-2">
+      {/* Rawz/3 — level + XP overview */}
+      <div className="mt-6">
+        <LevelCard />
+      </div>
+
+      <div className="mt-4 space-y-2">
         {/* Strengths Discovery — the 15-question Q&A flow. Replaces the
             old Goals row here (goals belong in the + quick-action sheet). */}
         <Link

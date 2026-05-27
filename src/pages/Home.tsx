@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { HydrationTile } from "../components/HydrationTile";
 import { KaiMessage } from "../components/KaiMessage";
 import { MissionsCard } from "../components/MissionsCard";
+import { XpPill } from "../components/XpPill";
 import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
 import { api } from "../lib/api";
@@ -107,6 +108,22 @@ export function Home() {
   // first-launch states before any inputs).
   const [data, setData] = useState<DailyScoreView>(DEMO_SCORE);
   const [activity, setActivity] = useState<ActivityItem[]>(DEMO_ACTIVITY);
+  // Rawz/3 — level-up detection. Set once on mount if the user crossed
+  // into a new level since they last opened /home. Soft KaiMessage,
+  // dismissable, doesn't interrupt anything.
+  const [levelUp, setLevelUp] = useState<{ newLevel: number; message: string } | null>(null);
+
+  useEffect(() => {
+    import("../lib/local-xp").then(({ checkAndConsumeLevelUp, levelUpMessage }) => {
+      const r = checkAndConsumeLevelUp();
+      if (r.leveledUp) {
+        setLevelUp({
+          newLevel: r.newLevel,
+          message: levelUpMessage(r.newLevel),
+        });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -175,11 +192,15 @@ export function Home() {
           <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">
             {greeting.headline}.
           </h1>
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs">
-            <Flame size={12} className="text-accent-warm" />
-            <span className="font-medium text-text-primary">
-              {data.streak}-day streak
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs">
+              <Flame size={12} className="text-accent-warm" />
+              <span className="font-medium text-text-primary">
+                {data.streak}-day streak
+              </span>
             </span>
+            {/* Rawz/3 — Level / XP pill, tap to view profile */}
+            <XpPill />
           </div>
         </div>
         <button
@@ -229,6 +250,35 @@ export function Home() {
           color="warm"
         />
       </div>
+
+      {/* Rawz/3 — soft level-up moment when user crosses a threshold.
+          Renders once per crossing, dismissable, doesn't take over screen. */}
+      {levelUp && (
+        <div className="rounded-glass border border-accent-soft bg-accent-soft px-4 py-3 shadow-card animate-fade-slide-up">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+                level {levelUp.newLevel}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-text-primary">
+                {levelUp.message}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLevelUp(null)}
+              aria-label="Dismiss"
+              className="
+                shrink-0 rounded-full px-2 py-1
+                font-mono text-[10px] uppercase tracking-[0.14em]
+                text-accent transition hover:bg-accent-soft/60 focus-ring
+              "
+            >
+              got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Today's missions — 3 AI-selected actions to nudge the day (Rawz/2) */}
       <MissionsCard />

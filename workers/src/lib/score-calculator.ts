@@ -23,7 +23,11 @@ export type SourceKind =
   | "workout"
   | "sleep_log"
   | "goal_progress"
-  | "energy_check_in";
+  | "energy_check_in"
+  // Fires once per day when the user crosses their hydration target.
+  // Local-only today; the workers PERSIST migration is documented in
+  // workers/migrations/0012_hydration_goal_hit.sql for when we sync.
+  | "hydration_goal_hit";
 
 export type ScoreInput = {
   source: SourceKind;

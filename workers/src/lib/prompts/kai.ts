@@ -95,9 +95,10 @@ Speak as ${kaiName} (the name they chose for you). Keep replies short — usuall
 }
 
 /** Render the Rawz/8 client-supplied "recent activity" block. Null /
- *  empty contexts produce an empty string so the prompt stays compact. */
+ *  undefined / empty contexts produce an empty string so the prompt
+ *  stays compact (older clients, voice mode, tests). */
 function renderClientContextBlock(
-  ctx: import("../context").KaiClientContext | null,
+  ctx: import("../context").KaiClientContext | null | undefined,
 ): string {
   if (!ctx) return "";
   const lines: string[] = [];

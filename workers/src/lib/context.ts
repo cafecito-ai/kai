@@ -17,9 +17,10 @@ export type KaiContext = {
   recentPatterns: string[];
   /** Rawz/8 — KAI memory. Optional client-supplied snapshot of what
    *  the user has been doing day-to-day. Lets the agent reference
-   *  recent activity, today's score, hydration, missing logs. Null when
-   *  the client doesn't ship one (older clients, server-rendered tests). */
-  clientContext: KaiClientContext | null;
+   *  recent activity, today's score, hydration, missing logs. Undefined /
+   *  null when the client doesn't ship one (older clients, server-
+   *  rendered tests, voice-mode prompts that don't take a client ctx). */
+  clientContext?: KaiClientContext | null;
 };
 
 /** Mirrors the frontend's KaiClientContext shape. We don't trust the

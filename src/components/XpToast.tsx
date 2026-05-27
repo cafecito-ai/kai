@@ -52,10 +52,11 @@ export function XpToast() {
       const id = Date.now();
       const label = SOURCE_LABELS[source] ?? source;
       setToasts((prev) => [...prev, { id, xp, label }]);
-      // Auto-dismiss after 2.2 seconds.
+      // Auto-dismiss after 3.5 seconds — longer than before because
+      // testers were missing the 2.2s flash.
       window.setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 2200);
+      }, 3500);
     }
     window.addEventListener("kai:input-appended", onAppended);
     return () => window.removeEventListener("kai:input-appended", onAppended);
@@ -76,14 +77,23 @@ export function XpToast() {
           key={t.id}
           className="
             pointer-events-none flex items-center gap-2 rounded-full
-            border border-accent-soft bg-accent-soft px-3.5 py-1.5
-            text-xs font-medium text-accent shadow-card
+            border-2 border-accent bg-background px-5 py-2.5
+            text-sm font-semibold text-accent shadow-lg
             animate-fade-slide-up
           "
         >
-          <Award size={12} aria-hidden="true" />
+          <span
+            className="
+              flex h-7 w-7 items-center justify-center rounded-full
+              bg-accent text-background
+            "
+            aria-hidden="true"
+          >
+            <Award size={14} strokeWidth={2.5} />
+          </span>
           <span>
-            +{t.xp} XP <span className="text-accent/70">· {t.label}</span>
+            +{t.xp} XP
+            <span className="ml-1 font-normal text-text-secondary">· {t.label}</span>
           </span>
         </div>
       ))}

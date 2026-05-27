@@ -54,7 +54,23 @@ function getDevUser() {
     host.endsWith(".pages.dev") ||
     (host === "kai.boostaisearch.ai" && !authRequired);
   if (!canUseDevUser) return null;
-  return localStorage.getItem("kai.devUser") || "demo-teen";
+  // If the user has an existing dev-user id, reuse it (so reopening the
+  // app in the same browser preserves their data).
+  const stored = localStorage.getItem("kai.devUser");
+  if (stored) return stored;
+  // Fresh browser session (private window, cleared storage, etc) — mint
+  // a random tester id so the backend treats them as a brand new user.
+  // Previously we defaulted to "demo-teen" which meant every Private
+  // Browsing window inherited the same pre-onboarded account, making it
+  // impossible to test the new-user flow without manual localStorage tweaks.
+  const fresh = `tester-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    localStorage.setItem("kai.devUser", fresh);
+  } catch {
+    /* Private mode quota — that's fine, we still return the id; it just
+       won't persist beyond this page load. */
+  }
+  return fresh;
 }
 
 export const api = {

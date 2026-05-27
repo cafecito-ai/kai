@@ -188,12 +188,14 @@ function mentalSubscore(inputs: LocalInput[]): number | null {
 }
 
 function sleepSubscore(inputs: LocalInput[]): number | null {
-  // Sleep = sleep_log (80%) + hydration_goal_hit (20%)
-  // Rationale: proper hydration noticeably affects sleep quality and
-  // recovery — not as much as the actual log entry, but it counts.
+  // Sleep = sleep_log (80%) + hydration progress (20%).
+  // Hydration progress = today's glasses / today's target, clamped 0-1.
+  // Every glass nudges the score up; hitting the goal pegs the
+  // hydration component at 100. Previously only goal-hit counted, which
+  // meant 7/8 glasses moved the score by zero — felt broken.
   const logs = inputs.filter((i) => i.source === "sleep_log");
-  const hyd = inputs.filter((i) => i.source === "hydration_goal_hit");
-  if (logs.length === 0 && hyd.length === 0) return null;
+  const hydProgress = readTodayHydrationProgress();
+  if (logs.length === 0 && hydProgress == null) return null;
   let logScore: number | null = null;
   if (logs.length > 0) {
     const latest = logs[logs.length - 1].value as {
@@ -206,13 +208,37 @@ function sleepSubscore(inputs: LocalInput[]): number | null {
         ? clamp(Math.round(hScore * 0.75 + moodToScore(latest.quality) * 0.25))
         : hScore;
   }
-  // Hitting the daily hydration goal contributes a steady 75 — it's not
-  // sleep itself, but it's a real recovery signal.
-  const hydScore = hyd.length > 0 ? 75 : null;
+  // Hydration → score: 0% goal → 0, 100% goal → 90 (full bloom but
+  // never a perfect 100 since hydration alone isn't sleep). Linear.
+  const hydScore =
+    hydProgress == null ? null : clamp(Math.round(hydProgress * 90));
   return weighted([
     { v: logScore, w: 0.8 },
     { v: hydScore, w: 0.2 },
   ]);
+}
+
+/** Reads today's hydration progress fraction (0..1) from the hydration
+ *  store, or null if hydration storage is unavailable / unreadable.
+ *  Used by sleepSubscore so every glass moves the score (not just
+ *  hitting the goal). */
+function readTodayHydrationProgress(): number | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("kai_hydration_v1");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Array<{
+      date: string;
+      glasses: number;
+      target: number;
+    }>;
+    const today = new Date().toISOString().slice(0, 10);
+    const todayEntry = parsed.find((e) => e.date === today);
+    if (!todayEntry || todayEntry.target <= 0) return null;
+    return Math.max(0, Math.min(1, todayEntry.glasses / todayEntry.target));
+  } catch {
+    return null;
+  }
 }
 
 function moodSubscore(inputs: LocalInput[]): number | null {

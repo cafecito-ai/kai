@@ -183,6 +183,22 @@ export function Home() {
     );
   }, []);
 
+  // Bump this whenever a state-changed event fires (input logged or
+  // hydration bumped). It re-triggers the score-loading effect below so
+  // the user sees their score move in real time.
+  const [refreshKey, setRefreshKey] = useState(0);
+  useEffect(() => {
+    function onChange() {
+      setRefreshKey((k) => k + 1);
+    }
+    window.addEventListener("kai:input-appended", onChange);
+    window.addEventListener("kai:state-changed", onChange);
+    return () => {
+      window.removeEventListener("kai:input-appended", onChange);
+      window.removeEventListener("kai:state-changed", onChange);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -237,7 +253,7 @@ export function Home() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">

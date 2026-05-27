@@ -94,6 +94,12 @@ export function bumpHydration(delta: 1 | -1, now: Date = new Date()): HydrationE
   if (justCrossed) {
     void fireHydrationGoalHit(date);
   }
+  // Always emit a state-changed event so any open Home/Progress page
+  // re-reads the sleep sub-score (every glass now contributes partial
+  // credit, not just the goal-hit).
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("kai:state-changed"));
+  }
   return next;
 }
 

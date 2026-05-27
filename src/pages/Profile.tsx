@@ -1,31 +1,27 @@
-import { BadgeCheck, Brain, Dumbbell, Flame, HeartPulse, Moon, NotebookPen, Settings as SettingsIcon, Target, Trophy, Utensils, UserRound } from "lucide-react";
+import { BadgeCheck, Dumbbell, Flame, HeartPulse, Moon, NotebookPen, Settings as SettingsIcon, Target, Trophy, Utensils } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { NextLoopCard } from "../components/tracker/NextLoopCard";
-import { ProgressSummary } from "../components/tracker/ProgressSummary";
-import { AppPage, AppSurface, KaiMark, MetricPill } from "../components/ui/AppPrimitives";
+import { AppPage, KaiMark } from "../components/ui/AppPrimitives";
 import type { ProgressEvent } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
 import { useUserStore } from "../stores/userStore";
 
 export function Profile() {
-  const { kaiName, kaiTone, primaryEngine, consentStatus } = useUserStore();
+  const { kaiName, kaiTone } = useUserStore();
   const events = useProgressStore((state) => state.events);
   const level = useProgressStore((state) => state.level());
   const streak = useProgressStore((state) => state.streak());
-  const belt = useProgressStore((state) => state.belt());
   const score = dailyScore(events);
   const xp = totalXp(events);
   const nextLevelXp = nextLevelTarget(xp);
   const levelProgress = nextLevelXp ? Math.min(100, Math.round((xp / nextLevelXp) * 100)) : 100;
-  const completions = completionBreakdown(events);
   const badges = achievementBadges({ events, level, streak, score });
   const missions = dailyMissions(events);
   const path = growthPath({ level, streak, score });
 
   return (
     <AppPage className="utility-page-shell pb-28 sm:pb-12">
-      <section className="overflow-hidden rounded-[26px] border border-white/10 bg-ink text-paper shadow-calm">
+      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-ink text-paper shadow-calm">
         <div className="relative p-4 sm:p-7 lg:p-8">
           <div className="pointer-events-none absolute -right-20 -top-28 size-48 rounded-full bg-[#8F5CFF]/30 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 left-0 size-40 rounded-full bg-[#44D7B6]/20 blur-3xl" />
@@ -39,7 +35,7 @@ export function Profile() {
                 Your path.
               </h1>
               <p className="mt-2 max-w-[18rem] text-sm font-semibold leading-5 text-paper/70 sm:max-w-2xl sm:text-base sm:leading-7">
-                Daily proof, streaks, XP, and the next move.
+                Level {level}. {streak} day streak. {kaiName} is tracking the next rep.
               </p>
             </div>
             <Link to="/settings" className="focus-ring grid size-11 shrink-0 place-items-center rounded-full bg-white text-ink sm:inline-flex sm:w-auto sm:px-4">
@@ -47,97 +43,58 @@ export function Profile() {
               <span className="sr-only sm:not-sr-only sm:ml-2 sm:text-sm sm:font-black">Tune</span>
             </Link>
           </div>
-        </div>
-      </section>
 
-      <section className="grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
-        <AppSurface className="p-4 sm:p-6">
-          <div className="grid grid-cols-[7.5rem_1fr] items-center gap-4 sm:grid-cols-[11rem_1fr] sm:gap-5">
-            <ScoreRing score={score} />
+          <div className="relative mt-5 grid grid-cols-[7.5rem_1fr] items-center gap-4 sm:mt-7 sm:grid-cols-[11rem_1fr] sm:gap-6">
+            <ScoreRing score={score} inverted />
             <div className="min-w-0">
-              <p className="eyebrow">daily score</p>
-              <h2 className="mt-2 text-2xl font-black leading-none tracking-normal text-ink sm:text-3xl">Make today count.</h2>
-              <p className="mt-2 text-xs font-semibold leading-5 text-muted sm:mt-3 sm:text-sm sm:leading-6">
-                Points from goals, sleep, movement, food, journaling, wellness, and showing up.
-              </p>
-              <div className="mt-4 sm:mt-5">
-                <ProgressBar label={`Level ${level} XP`} value={levelProgress} detail={`${xp} / ${nextLevelXp ?? "max"}`} />
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-paper/45">daily score</p>
+              <h2 className="mt-2 text-2xl font-black leading-none tracking-normal text-paper sm:text-3xl">Make today count.</h2>
+              <ProgressBar label={`Level ${level} XP`} value={levelProgress} detail={`${xp} / ${nextLevelXp ?? "max"}`} inverted />
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <StatChip icon={Flame} label="Streak" value={String(streak)} />
+                <StatChip icon={Trophy} label="Level" value={String(level)} />
+                <StatChip icon={BadgeCheck} label="XP" value={String(xp)} />
               </div>
             </div>
           </div>
-        </AppSurface>
-
-        <PathCard path={path} level={level} streak={streak} xp={xp} score={score} />
+        </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
-        <div className="grid gap-4">
-          <AppSurface className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <p className="eyebrow">today's path</p>
-              <span className="rounded-full bg-[#F4F1EB] px-3 py-1 text-xs font-black text-muted">{score}% complete</span>
+      <section className="rounded-[26px] border border-line bg-white/86 p-4 shadow-sm backdrop-blur-xl sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <GrowthIcon level={level} score={score} />
+            <div className="min-w-0">
+              <p className="eyebrow">current path</p>
+              <h2 className="mt-1 truncate text-2xl font-black leading-none text-ink">{path.current.name}</h2>
+              <p className="mt-1 text-xs font-semibold capitalize text-muted">{kaiTone} Kai voice</p>
             </div>
-            <div className="mt-3 grid gap-2 sm:mt-4">
-              {missions.map((mission) => (
-                <MissionRow key={mission.label} {...mission} />
-              ))}
-            </div>
-          </AppSurface>
-
-          <AppSurface className="p-4 sm:p-5 lg:hidden">
-            <p className="eyebrow">completion</p>
-            <div className="mt-3 grid gap-3">
-              {completions.map((item) => (
-                <ProgressBar key={item.label} label={item.label} value={item.value} detail={item.detail} />
-              ))}
-            </div>
-          </AppSurface>
-
-          <AppSurface className="p-4 sm:p-5">
-            <p className="eyebrow">next unlocks</p>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4">
-              {badges.map((badge) => (
-                <BadgeTile key={badge.label} {...badge} />
-              ))}
-            </div>
-          </AppSurface>
-
-          <AppSurface className="p-4 sm:p-6">
-            <div className="flex items-center gap-3">
-              <GrowthIcon level={level} score={score} />
-              <div className="min-w-0">
-                <p className="eyebrow">AI coach</p>
-                <h2 className="mt-1 truncate font-display text-2xl font-black tracking-normal sm:text-3xl">{kaiName}</h2>
-                <p className="mt-1 text-xs font-semibold capitalize text-muted sm:text-sm">{kaiTone} voice</p>
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:mt-5">
-              <MetricPill label="Read level" value={String(level)} tone="goals" />
-              <MetricPill label="Days in" value={String(streak)} tone="care" />
-              <MetricPill label="Mode" value={belt} tone="body" />
-            </div>
-            <div className="mt-4 grid gap-2 sm:mt-5 sm:gap-3">
-              <ProfileRow icon={Brain} label="Kai starts with" value={primaryEngine === "physical" ? "Body" : primaryEngine === "potential" ? "Goals" : "Mind"} />
-              <ProfileRow icon={HeartPulse} label="Saved reps" value={String(events.length)} />
-              <ProfileRow icon={UserRound} label="Safety status" value={consentStatus.replace(/_/g, " ")} />
-            </div>
-          </AppSurface>
-
-          <NextLoopCard context="compact" />
+          </div>
+          <span className="rounded-full bg-[#F4F1EB] px-3 py-1 text-xs font-black text-muted">{path.current.label}</span>
         </div>
+        <PathStrip path={path} />
+      </section>
 
-        <div className="grid gap-4">
-          <AppSurface className="hidden p-4 sm:p-5 lg:block">
-            <p className="eyebrow">completion</p>
-            <div className="mt-3 grid gap-3 sm:mt-4 sm:gap-4">
-              {completions.map((item) => (
-                <ProgressBar key={item.label} label={item.label} value={item.value} detail={item.detail} />
-              ))}
-            </div>
-          </AppSurface>
-          <ProgressSummary />
+      <section className="rounded-[26px] border border-line bg-white/86 p-4 shadow-sm backdrop-blur-xl sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="eyebrow">today's path</p>
+          <span className="rounded-full bg-[#F4F1EB] px-3 py-1 text-xs font-black text-muted">{score}% complete</span>
         </div>
-      </div>
+        <div className="mt-3 grid gap-2">
+          {missions.map((mission) => (
+            <MissionRow key={mission.label} {...mission} />
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[26px] border border-line bg-white/70 p-4 shadow-sm backdrop-blur-xl sm:p-5">
+        <p className="eyebrow">next unlocks</p>
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {badges.slice(0, 4).map((badge) => (
+            <UnlockPill key={badge.label} {...badge} />
+          ))}
+        </div>
+      </section>
     </AppPage>
   );
 }
@@ -187,102 +144,65 @@ function GrowthIcon({ level, score, size = "md" }: { level: number; score: numbe
   );
 }
 
-function ScoreRing({ score }: { score: number }) {
+function ScoreRing({ score, inverted = false }: { score: number; inverted?: boolean }) {
   const degrees = Math.max(0, Math.min(100, score)) * 3.6;
   return (
-    <div className="mx-auto grid size-28 place-items-center rounded-full motion-safe:animate-pulse sm:size-44" style={{ background: `conic-gradient(#111116 ${degrees}deg, #ECE7DC 0deg)` }}>
-      <div className="grid size-24 place-items-center rounded-full bg-white shadow-sm sm:size-36">
+    <div className="mx-auto grid size-28 place-items-center rounded-full motion-safe:animate-pulse sm:size-44" style={{ background: `conic-gradient(${inverted ? "#FFFFFF" : "#111116"} ${degrees}deg, ${inverted ? "rgba(255,255,255,0.18)" : "#ECE7DC"} 0deg)` }}>
+      <div className={`grid size-24 place-items-center rounded-full shadow-sm sm:size-36 ${inverted ? "bg-[#111116]" : "bg-white"}`}>
         <div className="text-center">
-          <p className="text-4xl font-black leading-none text-ink sm:text-5xl">{score}</p>
-          <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-muted">today</p>
+          <p className={`text-4xl font-black leading-none sm:text-5xl ${inverted ? "text-paper" : "text-ink"}`}>{score}</p>
+          <p className={`mt-1 text-[10px] font-black uppercase tracking-wider ${inverted ? "text-paper/45" : "text-muted"}`}>today</p>
         </div>
       </div>
     </div>
   );
 }
 
-function PathCard({
-  path,
-  level,
-  streak,
-  xp,
-  score
-}: {
-  path: ReturnType<typeof growthPath>;
-  level: number;
-  streak: number;
-  xp: number;
-  score: number;
-}) {
+function StatChip({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
-    <AppSurface className="p-4 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <GrowthIcon level={level} score={score} size="sm" />
-          <div className="min-w-0">
-            <p className="eyebrow">current path</p>
-            <h2 className="mt-1 truncate text-xl font-black leading-none text-ink sm:text-2xl">{path.current.name}</h2>
-          </div>
-        </div>
-        <span className="rounded-full bg-[#F4F1EB] px-3 py-1 text-xs font-black text-muted">{path.current.label}</span>
+    <div className="min-w-0 rounded-[16px] border border-white/10 bg-white/10 p-2 text-paper backdrop-blur">
+      <div className="flex items-center gap-1.5">
+        <Icon size={14} aria-hidden="true" />
+        <span className="truncate text-[9px] font-black uppercase tracking-wider text-paper/45">{label}</span>
       </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <ProfileStat icon={Flame} label="Streak" value={String(streak)} tone="bg-[#FFF7D6] text-[#9A6A00]" />
-        <ProfileStat icon={Trophy} label="Level" value={String(level)} tone="bg-[#111116] text-white" />
-        <ProfileStat icon={BadgeCheck} label="XP" value={String(xp)} tone="bg-[#E4F7F4] text-[#218A7D]" />
-      </div>
-
-      <div className="mt-4 rounded-[22px] border border-line bg-paper p-3 sm:mt-5">
-        <div className="grid grid-cols-4 gap-1.5">
-          {path.stages.map((stage, index) => (
-            <div key={stage.name} className="grid gap-2">
-              <div className={`h-2 rounded-full transition-all duration-700 ${index <= path.currentIndex ? "bg-[#111116]" : "bg-[#DCD6CA]"}`} />
-              <p className={`truncate text-[10px] font-black uppercase tracking-wider ${index === path.currentIndex ? "text-ink" : "text-muted"}`}>{stage.name}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 text-sm font-semibold leading-5 text-muted">{path.current.copy}</p>
-      </div>
-      <StreakStrip streak={streak} />
-    </AppSurface>
+      <p className="mt-1 text-lg font-black leading-none">{value}</p>
+    </div>
   );
 }
 
-function ProgressBar({ label, value, detail }: { label: string; value: number; detail: string }) {
+function PathStrip({ path }: { path: ReturnType<typeof growthPath> }) {
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3 text-xs font-black uppercase tracking-wider text-muted">
+    <div className="mt-4 rounded-[22px] border border-line bg-paper p-3">
+      <div className="grid grid-cols-4 gap-1.5">
+        {path.stages.map((stage, index) => (
+          <div key={stage.name} className="grid gap-2">
+            <div className={`h-2 rounded-full transition-all duration-700 ${index <= path.currentIndex ? "bg-[#111116]" : "bg-[#DCD6CA]"}`} />
+            <p className={`truncate text-[10px] font-black uppercase tracking-wider ${index === path.currentIndex ? "text-ink" : "text-muted"}`}>{stage.name}</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-sm font-semibold leading-5 text-muted">{path.current.copy}</p>
+    </div>
+  );
+}
+
+function ProgressBar({ label, value, detail, inverted = false }: { label: string; value: number; detail: string; inverted?: boolean }) {
+  return (
+    <div className="mt-4">
+      <div className={`flex items-center justify-between gap-3 text-xs font-black uppercase tracking-wider ${inverted ? "text-paper/55" : "text-muted"}`}>
         <span>{label}</span>
         <span>{detail}</span>
       </div>
-      <div className="mt-2 h-3 overflow-hidden rounded-full bg-[#ECE7DC]">
-        <div className="h-full rounded-full bg-[#111116] transition-all duration-700" style={{ width: `${Math.max(4, Math.min(100, value))}%` }} />
+      <div className={`mt-2 h-3 overflow-hidden rounded-full ${inverted ? "bg-white/14" : "bg-[#ECE7DC]"}`}>
+        <div className={`h-full rounded-full transition-all duration-700 ${inverted ? "bg-white" : "bg-[#111116]"}`} style={{ width: `${Math.max(4, Math.min(100, value))}%` }} />
       </div>
-    </div>
-  );
-}
-
-function StreakStrip({ streak }: { streak: number }) {
-  return (
-    <div className="mt-4 grid grid-cols-7 gap-1.5 sm:mt-5">
-      {Array.from({ length: 7 }, (_, index) => {
-        const active = index < Math.min(streak || 0, 7);
-        return (
-          <div key={index} className="grid gap-1 text-center">
-            <span className={`grid size-7 place-items-center rounded-full text-xs font-black sm:size-8 ${active ? "bg-[#111116] text-white" : "bg-[#F4F1EB] text-muted"}`}>
-              {active ? "✓" : ""}
-            </span>
-          </div>
-        );
-      })}
     </div>
   );
 }
 
 function MissionRow({ icon: Icon, label, points, done }: { icon: LucideIcon; label: string; points: number; done: boolean }) {
   return (
-    <div className={`flex items-center justify-between gap-3 rounded-[18px] border p-2.5 sm:p-3 ${done ? "border-[#D7F0EA] bg-[#F4FFFC]" : "border-line bg-paper"}`}>
+    <div className={`flex items-center justify-between gap-3 rounded-[18px] p-2.5 sm:p-3 ${done ? "bg-[#F4FFFC]" : "bg-paper"}`}>
       <span className="flex min-w-0 items-center gap-3">
         <span className={`grid size-9 shrink-0 place-items-center rounded-full ${done ? "bg-[#E4F7F4] text-[#218A7D]" : "bg-white text-muted"}`}>
           <Icon size={17} aria-hidden="true" />
@@ -297,14 +217,16 @@ function MissionRow({ icon: Icon, label, points, done }: { icon: LucideIcon; lab
   );
 }
 
-function BadgeTile({ icon: Icon, label, unlocked }: { icon: LucideIcon; label: string; unlocked: boolean }) {
+function UnlockPill({ icon: Icon, label, unlocked }: { icon: LucideIcon; label: string; unlocked: boolean }) {
   return (
-    <div className={`rounded-[18px] border p-3 ${unlocked ? "border-[#0A0A0A0F] bg-[#111116] text-white shadow-sm" : "border-line bg-paper text-muted"}`}>
-      <div className={`grid size-9 place-items-center rounded-full ${unlocked ? "bg-white/12" : "bg-white"}`}>
+    <div className={`flex min-w-[9.5rem] items-center gap-2 rounded-full border px-3 py-2 ${unlocked ? "border-[#111116] bg-[#111116] text-white" : "border-line bg-paper text-muted"}`}>
+      <span className={`grid size-8 shrink-0 place-items-center rounded-full ${unlocked ? "bg-white/12" : "bg-white"}`}>
         <Icon size={17} aria-hidden="true" />
-      </div>
-      <p className="mt-3 text-[13px] font-black leading-tight sm:text-sm">{label}</p>
-      <p className={`mt-1 text-xs font-bold ${unlocked ? "text-white/55" : "text-muted"}`}>{unlocked ? "Unlocked" : "In progress"}</p>
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[13px] font-black leading-tight">{label}</span>
+        <span className={`block text-xs font-bold ${unlocked ? "text-white/55" : "text-muted"}`}>{unlocked ? "Unlocked" : "In progress"}</span>
+      </span>
     </div>
   );
 }
@@ -330,28 +252,6 @@ function dailyScore(events: ProgressEvent[]) {
 
 function hasEvent(events: ProgressEvent[], patterns: RegExp[]) {
   return events.some((event) => patterns.some((pattern) => pattern.test(`${event.engine} ${event.eventType}`.toLowerCase())));
-}
-
-function completionBreakdown(events: ProgressEvent[]) {
-  const todays = todayEvents(events);
-  const count = (patterns: RegExp[]) => todays.filter((event) => patterns.some((pattern) => pattern.test(`${event.engine} ${event.eventType}`.toLowerCase()))).length;
-  const item = (label: string, patterns: RegExp[], target: number) => {
-    const completed = count(patterns);
-    return {
-      label,
-      value: Math.min(100, Math.round((completed / target) * 100)),
-      detail: `${Math.min(completed, target)}/${target}`
-    };
-  };
-
-  return [
-    item("Goals", [/goal/, /potential/], 2),
-    item("Sleep", [/sleep/], 1),
-    item("Exercise", [/workout/, /stretch/, /move/, /scan/], 2),
-    item("Food", [/food/, /meal/, /nutrition/], 1),
-    item("Journal", [/journal/, /reflection/, /check/], 1),
-    item("Wellness", [/mental/, /breath/, /reset/, /mood/], 2)
-  ];
 }
 
 function dailyMissions(events: ProgressEvent[]) {
@@ -388,38 +288,4 @@ function growthPath({ level, streak, score }: { level: number; streak: number; s
   if (level >= 4 || streak >= 5 || score >= 70) currentIndex = 2;
   if (level >= 7 || streak >= 14 || score >= 95) currentIndex = 3;
   return { stages, currentIndex, current: stages[currentIndex] };
-}
-
-function ProfileStat({
-  icon: Icon,
-  label,
-  value,
-  tone
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  tone: string;
-}) {
-  return (
-    <div className="rounded-[20px] border border-white/70 bg-white/82 p-3 shadow-sm backdrop-blur-xl sm:rounded-[24px] sm:p-4">
-      <div className={`grid size-8 place-items-center rounded-full sm:size-9 ${tone}`}>
-        <Icon size={17} aria-hidden="true" />
-      </div>
-      <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-muted">{label}</p>
-      <p className="mt-1 text-xl font-black leading-none text-ink sm:text-2xl">{value}</p>
-    </div>
-  );
-}
-
-function ProfileRow({ icon: Icon, label, value }: { icon: typeof Brain; label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-kai border border-line bg-paper p-3">
-      <span className="flex min-w-0 items-center gap-2 text-sm font-black text-ink">
-        <Icon size={17} aria-hidden="true" />
-        <span className="truncate">{label}</span>
-      </span>
-      <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-black capitalize text-muted">{value}</span>
-    </div>
-  );
 }

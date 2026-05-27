@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 
 import { HydrationTile } from "../components/HydrationTile";
 import { KaiMessage } from "../components/KaiMessage";
+import { MissionsCard } from "../components/MissionsCard";
 import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
 import { api } from "../lib/api";
@@ -228,6 +229,9 @@ export function Home() {
           color="warm"
         />
       </div>
+
+      {/* Today's missions — 3 AI-selected actions to nudge the day (Rawz/2) */}
+      <MissionsCard />
 
       {/* Hydration tile — small, daily-reset counter (T-025) */}
       <HydrationTile />

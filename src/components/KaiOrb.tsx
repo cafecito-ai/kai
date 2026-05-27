@@ -5,6 +5,11 @@
 // card (44–56px), and voice mode hero (180–240px). Same component,
 // scales cleanly because it's SVG.
 //
+// Face: at sizes ≥ 80 we paint a subtle two-dot-and-smile face so KAI
+// reads as a *character* rather than just a glow. Below 80 we skip it
+// because the marks turn into pixelly noise at small sizes (chat avatar
+// is 28px — face would just be smudges).
+//
 // Animation: tailwind's `animate-breathe` (4s ease-in-out loop, defined
 // in tailwind.config.js).
 
@@ -17,15 +22,24 @@ type KaiOrbProps = {
   animate?: boolean;
   /** Optional aria-label. KAI's voice presence is decorative by default. */
   label?: string;
+  /** Force show/hide the face. Defaults to auto (shown when size ≥ 80). */
+  face?: boolean;
   className?: string;
 };
+
+/** Size threshold below which we omit the face. Tuned by eye — at 80px
+ *  the eyes are ~6px and the smile is readable; smaller than that it
+ *  starts looking like dirt. */
+const FACE_MIN_SIZE = 80;
 
 export function KaiOrb({
   size = 44,
   animate = true,
   label,
+  face,
   className = "",
 }: KaiOrbProps) {
+  const showFace = face ?? size >= FACE_MIN_SIZE;
   // Each orb instance needs its own gradient id so multiple orbs on the page
   // don't share the same <defs> by accident. React's useId gives us a stable
   // id across renders and SSR.
@@ -80,6 +94,18 @@ export function KaiOrb({
           stroke="rgba(10,10,10,0.04)"
           strokeWidth="1"
         />
+        {/* Face — only at sizes large enough for the marks to read clean.
+            Eyes are positioned slightly above center to feel friendly
+            (eyes-high reads as warmth; eyes-low reads as sad). The
+            smile is a single quadratic curve — gentle, not a grin. The
+            color is a soft near-black for contrast without harshness. */}
+        {showFace && (
+          <g fill="none" stroke="rgba(20,15,40,0.72)" strokeLinecap="round">
+            <circle cx="40" cy="46" r="2.6" fill="rgba(20,15,40,0.72)" stroke="none" />
+            <circle cx="60" cy="46" r="2.6" fill="rgba(20,15,40,0.72)" stroke="none" />
+            <path d="M 40 58 Q 50 64 60 58" strokeWidth="2" />
+          </g>
+        )}
       </svg>
     </span>
   );

@@ -25,6 +25,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { FlowerProgressBar } from "../components/FlowerProgressBar";
 import {
   getActiveChallenges,
   getChallengeListings,
@@ -212,13 +213,18 @@ function ActiveCard({
             </span>
           )}
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
-          <div
-            className={`h-full rounded-full transition-[width] duration-500 ${progress.completed ? "bg-success" : "bg-accent"}`}
-            style={{ width: `${progress.progress * 100}%` }}
-            aria-hidden="true"
-          />
-        </div>
+        {/* The bar IS the flower — stem grows left-to-right, blooms into
+            a full open flower at the right end on completion. */}
+        <FlowerProgressBar
+          value={progress.daysHit}
+          target={progress.challenge.targetDays}
+          completed={progress.completed}
+          ariaLabel={`${progress.daysHit} of ${progress.challenge.targetDays} days logged`}
+          className="text-text-secondary"
+        />
+        <p className="sr-only">
+          {progress.daysHit} of {progress.challenge.targetDays} days logged
+        </p>
       </div>
 
       {/* Leave (silent, no notification, no shame) */}

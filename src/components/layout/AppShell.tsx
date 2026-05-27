@@ -24,6 +24,7 @@ const IMMERSIVE_PREFIXES = [
   "/scope",
   "/crisis",
   "/onboarding",
+  "/welcome",
   "/sign-in",
   "/sign-up",
   "/for-parents",

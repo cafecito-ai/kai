@@ -22,6 +22,7 @@ import { GroupDetail } from "./pages/GroupDetail";
 import { GroupInbox } from "./pages/GroupInbox";
 import { GroupLeaderboard } from "./pages/GroupLeaderboard";
 import { Strengths } from "./pages/Strengths";
+import { Welcome } from "./pages/Welcome";
 import { SleepLog } from "./pages/SleepLog";
 import { WorkoutLog } from "./pages/WorkoutLog";
 import { Demo } from "./pages/Demo";
@@ -87,6 +88,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
             }
           />
           <Route path="/onboarding" element={protectedAuth(<Onboarding />)} />
+          <Route path="/welcome" element={protectedOnboarding(<Welcome />)} />
           <Route path="/home" element={protectedOnboarding(<Home />)} />
           <Route path="/chat" element={protectedOnboarding(<Chat />)} />
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />

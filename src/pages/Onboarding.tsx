@@ -260,7 +260,9 @@ export function Onboarding() {
       }
       setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
-      navigate("/home");
+      // First-timers go through the /welcome walkthrough; the page
+      // self-redirects to /home for anyone who's already seen it.
+      navigate("/welcome");
     } catch {
       // Don't strand the user if the API hiccups — preserve in-memory state
       // and let them into the app. Settings flow lets them retry.
@@ -269,7 +271,9 @@ export function Onboarding() {
       );
       setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
-      navigate("/home");
+      // First-timers go through the /welcome walkthrough; the page
+      // self-redirects to /home for anyone who's already seen it.
+      navigate("/welcome");
     } finally {
       setSaving(false);
     }

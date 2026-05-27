@@ -132,3 +132,21 @@ Append-only log. Every non-trivial decision (especially when picking the conserv
   - [ ] Forbidden-language filter uses word boundaries (the regex fix landed in this commit)
 
 ---
+
+## D-021 — Rawz gamification within KAI's safety voice
+**Date:** 2026-05-26 (Rawz feature additions, post-Phase G)
+**Decision:** Implementing the gamification stack Rawz asked for (XP / levels / badges / missions / streaks / challenges / public progress feed) inside KAI's existing safety voice rather than adopting the typical "compete / beat / rank" framing of fitness apps. Specifically:
+  - **Streak breaks** show "fresh start" framing, never "lost" / "broken" / "you blew it"
+  - **XP/levels** only ACCUMULATE — missed days don't subtract. Show-up is gain, never penalty.
+  - **Badges** are milestone-based (e.g. "30 check-ins," "first body scan"), never comparative ("top 10% of users")
+  - **Leaderboards** stay opt-in default-off per T-039
+  - **Language** stays "show up / build / grow" — never "compete / beat / rank / win / crushing" (already enforced by `findCompetitiveLanguage` in `groups.ts`; extending to all gamification copy)
+  - **Posts** safety-classified before going public (same path as T-038 custom encouragement)
+**Why:** Rawz vision doc asked for the gamification, the KAI spec (CLAUDE.md v2 §3 + Groups guardrail) explicitly forbids competitive language. Both can be satisfied — the rewards mechanics drive return-visits without the social-comparison-as-anxiety failure mode. If Lev/Ratner want it dialed up later, easy. Dialed down, also easy. This middle ground is the safest place to start.
+**Reviewer checklist if dialed up:**
+  - [ ] Add explicit "compare to other users" mechanics (rank, percentile, vs friends)
+  - [ ] Remove the "fresh start" softening on streak breaks
+  - [ ] Allow penalty/decay on XP
+  - [ ] Each change above needs independent Ratner/Lev sign-off
+
+---

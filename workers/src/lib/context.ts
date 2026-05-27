@@ -15,6 +15,29 @@ export type KaiContext = {
   /** T-021 — abstracted observations from the pattern engine, capped at 5.
    *  Empty array if no patterns or the patterns table isn't migrated yet. */
   recentPatterns: string[];
+  /** Rawz/8 — KAI memory. Optional client-supplied snapshot of what
+   *  the user has been doing day-to-day. Lets the agent reference
+   *  recent activity, today's score, hydration, missing logs. Null when
+   *  the client doesn't ship one (older clients, server-rendered tests). */
+  clientContext: KaiClientContext | null;
+};
+
+/** Mirrors the frontend's KaiClientContext shape. We don't trust the
+ *  client values for safety-critical things (this is just background
+ *  context for tone, not authorization). */
+export type KaiClientContext = {
+  todayScore: {
+    final: number | null;
+    mental: number | null;
+    sleep: number | null;
+    mood: number | null;
+  };
+  recentActivity: { source: string; count: number }[];
+  missingLogs: string[];
+  activeGoals: { title: string; identityFrame: string; streakDays: number }[];
+  activeChallenges: { title: string; daysHit: number; target: number; daysRemaining: number }[];
+  hydration: { todayGlasses: number; todayTarget: number; goalHitsLast7Days: number };
+  level: { current: number; label: string };
 };
 
 const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {
@@ -25,7 +48,8 @@ const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {
   primaryEngine: "physical",
   intakeSummary: null,
   streakOverall: 0,
-  recentPatterns: []
+  recentPatterns: [],
+  clientContext: null,
 };
 
 function normaliseTone(value: unknown): KaiTone {
@@ -105,6 +129,7 @@ export async function buildKaiContext(env: Env, userId: string): Promise<KaiCont
     primaryEngine: normaliseEngine(user?.primary_engine),
     intakeSummary,
     streakOverall,
-    recentPatterns
+    recentPatterns,
+    clientContext: null,
   };
 }

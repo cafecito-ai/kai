@@ -90,6 +90,72 @@ ${intakeBlock}
 CURRENT STATE
 - Active engine: ${context.primaryEngine}
 - Current overall streak: ${context.streakOverall} day${context.streakOverall === 1 ? "" : "s"}
-
+${renderClientContextBlock(context.clientContext)}
 Speak as ${kaiName} (the name they chose for you). Keep replies short — usually 2–4 short paragraphs at most.`;
+}
+
+/** Render the Rawz/8 client-supplied "recent activity" block. Null /
+ *  empty contexts produce an empty string so the prompt stays compact. */
+function renderClientContextBlock(
+  ctx: import("../context").KaiClientContext | null,
+): string {
+  if (!ctx) return "";
+  const lines: string[] = [];
+
+  // Today's score breakdown — give KAI a number to reference. Skip if
+  // they haven't logged anything today (null final means no data).
+  if (ctx.todayScore.final != null) {
+    const parts: string[] = [];
+    if (ctx.todayScore.mental != null) parts.push(`mind ${ctx.todayScore.mental}`);
+    if (ctx.todayScore.sleep != null) parts.push(`sleep ${ctx.todayScore.sleep}`);
+    if (ctx.todayScore.mood != null) parts.push(`mood ${ctx.todayScore.mood}`);
+    lines.push(`- Today's score: ${ctx.todayScore.final}/100 (${parts.join(", ")})`);
+  }
+
+  // Recent activity summary — the "you've been doing X" surface.
+  if (ctx.recentActivity.length > 0) {
+    const top = ctx.recentActivity
+      .map((a) => `${a.count} ${a.source.replace(/_/g, " ")}${a.count === 1 ? "" : "s"}`)
+      .join(", ");
+    lines.push(`- Last 7 days: ${top}`);
+  }
+
+  // Things they've been skipping. KAI's most valuable nudges come from
+  // noticing what's missing.
+  if (ctx.missingLogs.length > 0) {
+    lines.push(`- Worth noticing: ${ctx.missingLogs.join("; ")}`);
+  }
+
+  // Hydration — the canonical "raise your goal" nudge surface.
+  const hyd = ctx.hydration;
+  lines.push(
+    `- Hydration today: ${hyd.todayGlasses}/${hyd.todayTarget} glasses (hit goal ${hyd.goalHitsLast7Days}/7 days this week)`,
+  );
+
+  // Active goals — only the titles + identity framing.
+  if (ctx.activeGoals.length > 0) {
+    const goals = ctx.activeGoals
+      .map(
+        (g) =>
+          `"${g.title}" (frame: ${g.identityFrame}, streak: ${g.streakDays}d)`,
+      )
+      .join("; ");
+    lines.push(`- Active goals: ${goals}`);
+  }
+
+  // Active challenges.
+  if (ctx.activeChallenges.length > 0) {
+    const chs = ctx.activeChallenges
+      .map(
+        (c) =>
+          `"${c.title}" (${c.daysHit}/${c.target}, ${c.daysRemaining}d left)`,
+      )
+      .join("; ");
+    lines.push(`- Active challenges: ${chs}`);
+  }
+
+  lines.push(`- XP level: ${ctx.level.current} (${ctx.level.label})`);
+
+  if (lines.length === 0) return "";
+  return `\nRECENT ACTIVITY (use these to ground your reply in what they've actually been doing — never quote verbatim, never lecture about gaps):\n${lines.join("\n")}\n`;
 }

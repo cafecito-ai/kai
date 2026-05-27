@@ -324,9 +324,23 @@ function RecentActivityCard({ recent }: { recent: LocalInput[] }) {
   );
 }
 
+// Same XP table the toast uses — kept inline so we don't pull the whole
+// XP module in just for a label. Tuned to match XP_BY_SOURCE in local-xp.ts.
+const XP_BY_SOURCE: Record<string, number> = {
+  check_in: 10,
+  journal: 10,
+  food_log: 5,
+  workout: 15,
+  sleep_log: 10,
+  goal_progress: 15,
+  energy_check_in: 5,
+  hydration_goal_hit: 10,
+};
+
 function RecentRow({ row }: { row: LocalInput }) {
   const meta = sourceMeta(row);
   const time = friendlyTime(row.createdAt);
+  const xp = XP_BY_SOURCE[row.source] ?? 0;
   return (
     <div className="flex items-center gap-3 py-2.5">
       <span
@@ -340,9 +354,16 @@ function RecentRow({ row }: { row: LocalInput }) {
         </p>
         <p className="truncate text-xs text-text-secondary">{meta.detail}</p>
       </div>
-      <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted">
-        {time}
-      </span>
+      <div className="flex flex-col items-end gap-0.5">
+        {xp > 0 && (
+          <span className="inline-flex items-center rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] font-medium text-accent">
+            +{xp} XP
+          </span>
+        )}
+        <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted">
+          {time}
+        </span>
+      </div>
     </div>
   );
 }

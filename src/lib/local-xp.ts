@@ -30,6 +30,8 @@ const XP_BY_SOURCE: Record<LocalSource, number> = {
   sleep_log: 10,
   goal_progress: 15,
   energy_check_in: 5,
+  // Hits when you cross your daily hydration target. Fires once/day max.
+  hydration_goal_hit: 10,
 };
 
 // ─────────────────────────────────────────────────────────────────────

@@ -15,7 +15,12 @@ export type LocalSource =
   | "workout"
   | "sleep_log"
   | "goal_progress"
-  | "energy_check_in";
+  | "energy_check_in"
+  // Fires once per day when the user crosses their hydration target.
+  // Hydration glasses on their own don't earn XP — only hitting the
+  // goal for that day does. This keeps the incentive on the daily win
+  // rather than spamming the + button.
+  | "hydration_goal_hit";
 
 export type LocalInput = {
   id: string;
@@ -72,6 +77,14 @@ export function appendLocalInput(input: Omit<LocalInput, "id" | "createdAt">): L
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
   } catch {
     /* quota / unavailable — fine */
+  }
+  // Broadcast for the +XP toast. The toast lives in AppShell and
+  // listens for this event. Decoupled from every individual call site
+  // so adding a new input type doesn't require touching the toast UI.
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("kai:input-appended", { detail: { source: next.source } }),
+    );
   }
   return next;
 }

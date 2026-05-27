@@ -13,6 +13,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
 
+import { XpToast } from "../XpToast";
 import { QuickActionSheet } from "./QuickActionSheet";
 import { Tabbar } from "./Tabbar";
 
@@ -80,6 +81,10 @@ export function AppShell() {
     return (
       <div className="min-h-screen bg-background text-text-primary">
         <SkipLink />
+        {/* +XP toast lives at the app shell so it shows up on every
+            page — including immersive ones like /check-in where most
+            logging actually happens. */}
+        <XpToast />
         <div id="main">
           <Outlet />
         </div>
@@ -90,6 +95,7 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       <SkipLink />
+      <XpToast />
       <main
         id="main"
         className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8"

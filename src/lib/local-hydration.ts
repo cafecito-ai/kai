@@ -71,17 +71,42 @@ export function getTodayHydration(now: Date = new Date()): HydrationEntry {
 // Writes
 // ─────────────────────────────────────────────────────────────────────
 
-/** Bump today's glass count by +1 or -1. Floors at 0; no upper cap. */
+/** Bump today's glass count by +1 or -1. Floors at 0; no upper cap.
+ *  When the user CROSSES their daily target (e.g. 7 → 8 with target=8),
+ *  fires a "hydration_goal_hit" input exactly once. That input feeds
+ *  the XP system and KAI's recent-activity context, but spamming the
+ *  + button after you've already hit the goal does nothing extra. */
 export function bumpHydration(delta: 1 | -1, now: Date = new Date()): HydrationEntry {
   const date = todayKey(now);
   const all = readAll();
   const existing = all.find((e) => e.date === date);
+  const prevGlasses = existing?.glasses ?? 0;
+  const target = existing?.target ?? DEFAULT_TARGET;
   const next: HydrationEntry = existing
     ? { ...existing, glasses: Math.max(0, existing.glasses + delta) }
     : { date, glasses: Math.max(0, delta), target: DEFAULT_TARGET };
   const others = all.filter((e) => e.date !== date);
   writeAll([next, ...others]);
+
+  // Goal-hit detection: only fires when we CROSS into "at or above target"
+  // from below. Lazy-imports local-score to avoid a circular dep.
+  const justCrossed = prevGlasses < target && next.glasses >= target;
+  if (justCrossed) {
+    void fireHydrationGoalHit(date);
+  }
   return next;
+}
+
+/** Idempotent — fires a hydration_goal_hit input the first time the
+ *  target is crossed on a given day. Subsequent calls for the same day
+ *  are no-ops (so going below the target then back up doesn't double-pay). */
+async function fireHydrationGoalHit(date: string): Promise<void> {
+  const { appendLocalInput, readLocalInputs } = await import("./local-score");
+  const already = readLocalInputs().some(
+    (i) => i.date === date && i.source === "hydration_goal_hit",
+  );
+  if (already) return;
+  appendLocalInput({ date, source: "hydration_goal_hit", value: {} });
 }
 
 /** Update today's target. */

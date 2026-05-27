@@ -33,10 +33,81 @@ chatRoutes.post("/kai/chat", async (c) => {
   const userId = c.get("userId");
   const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
   if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
-  const body = await c.req.json<{ conversationId?: string; message: string }>();
+  const body = await c.req.json<{
+    conversationId?: string;
+    message: string;
+    // Rawz/8 — KAI memory payload from the client. Shape-validated by
+    // sanitizeClientContext to drop anything weird before it touches the prompt.
+    clientContext?: unknown;
+  }>();
   const context = await buildKaiContext(c.env, userId);
-  return handleRoutedChat(c.env, userId, body.conversationId, body.message, context);
+  const merged = { ...context, clientContext: sanitizeClientContext(body.clientContext) };
+  return handleRoutedChat(c.env, userId, body.conversationId, body.message, merged);
 });
+
+/** Defensive shape check on the client-supplied context. Anything that
+ *  doesn't match the expected shape gets dropped silently. Caps array
+ *  sizes so a malicious client can't blow up our prompt budget. */
+function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClientContext | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const score = (r.todayScore as Record<string, unknown>) ?? {};
+  const hydration = (r.hydration as Record<string, unknown>) ?? {};
+  const level = (r.level as Record<string, unknown>) ?? {};
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const str = (v: unknown, max = 120) =>
+    typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "";
+  return {
+    todayScore: {
+      final: num(score.final),
+      mental: num(score.mental),
+      sleep: num(score.sleep),
+      mood: num(score.mood),
+    },
+    recentActivity: Array.isArray(r.recentActivity)
+      ? r.recentActivity
+          .slice(0, 10)
+          .map((a) => {
+            const o = (a as Record<string, unknown>) ?? {};
+            return { source: str(o.source, 32), count: Math.max(0, Math.floor(num(o.count) ?? 0)) };
+          })
+          .filter((a) => a.source.length > 0)
+      : [],
+    missingLogs: Array.isArray(r.missingLogs)
+      ? (r.missingLogs as unknown[]).slice(0, 6).map((m) => str(m, 60)).filter(Boolean)
+      : [],
+    activeGoals: Array.isArray(r.activeGoals)
+      ? (r.activeGoals as unknown[]).slice(0, 3).map((g) => {
+          const o = (g as Record<string, unknown>) ?? {};
+          return {
+            title: str(o.title, 80),
+            identityFrame: str(o.identityFrame, 100),
+            streakDays: Math.max(0, Math.floor(num(o.streakDays) ?? 0)),
+          };
+        })
+      : [],
+    activeChallenges: Array.isArray(r.activeChallenges)
+      ? (r.activeChallenges as unknown[]).slice(0, 3).map((c) => {
+          const o = (c as Record<string, unknown>) ?? {};
+          return {
+            title: str(o.title, 80),
+            daysHit: Math.max(0, Math.floor(num(o.daysHit) ?? 0)),
+            target: Math.max(1, Math.floor(num(o.target) ?? 1)),
+            daysRemaining: Math.max(0, Math.floor(num(o.daysRemaining) ?? 0)),
+          };
+        })
+      : [],
+    hydration: {
+      todayGlasses: Math.max(0, Math.floor(num(hydration.todayGlasses) ?? 0)),
+      todayTarget: Math.max(1, Math.floor(num(hydration.todayTarget) ?? 8)),
+      goalHitsLast7Days: Math.max(0, Math.min(7, Math.floor(num(hydration.goalHitsLast7Days) ?? 0))),
+    },
+    level: {
+      current: Math.max(1, Math.floor(num(level.current) ?? 1)),
+      label: str(level.label, 40),
+    },
+  };
+}
 
 chatRoutes.post("/engines/:engineId/chat", async (c) => {
   const engineId = c.req.param("engineId") as EngineId;

@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { buildKaiClientContext } from "../lib/kai-client-context";
 import type { ChatMessage } from "../lib/types";
 
 export function Chat() {
@@ -71,7 +72,11 @@ export function Chat() {
     setDraft("");
     setSending(true);
     try {
-      const data = await api.chat("kai", trimmed, conversationId);
+      // Build a fresh client context per turn so KAI sees the latest
+      // hydration, score, missing logs, etc. The rollup is cheap (pure
+      // localStorage reads) — well under 50ms.
+      const clientContext = buildKaiClientContext();
+      const data = await api.chat("kai", trimmed, conversationId, clientContext);
       setConversationId(data.conversationId);
       setMessages((prev) => [
         ...prev,

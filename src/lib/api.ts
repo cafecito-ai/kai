@@ -60,10 +60,14 @@ function getDevUser() {
 export const api = {
   getUser: () =>
     request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
-  chat: (engine: EngineId | "kai", message: string, conversationId?: string | null) =>
+  chat: (engine: EngineId | "kai", message: string, conversationId?: string | null, clientContext?: unknown) =>
     request<{ conversationId: string; reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
       method: "POST",
-      body: JSON.stringify({ conversationId, message })
+      // clientContext (Rawz/8 — KAI memory): a roll-up of the user's
+      // recent activity so KAI can speak to what they've been DOING.
+      // Built fresh in Chat.tsx via buildKaiClientContext() before each
+      // turn so the model always sees current data. Capped to ~2KB.
+      body: JSON.stringify({ conversationId, message, clientContext })
     }),
   getCurrentConversation: (engine: EngineId | "kai" = "kai") =>
     request<{ conversationId: string | null; messages: ChatMessage[] }>(`/api/conversations/current?engine=${engine}`),

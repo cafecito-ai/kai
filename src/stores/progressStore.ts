@@ -20,7 +20,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     set((state) => ({
       events: [
         ...state.events,
-        { ...event, id: crypto.randomUUID(), occurredAt: new Date().toISOString() }
+        { ...event, id: localId(), occurredAt: new Date().toISOString() }
       ]
     }));
   },
@@ -28,3 +28,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   streak: () => calculateStreak(get().events),
   belt: () => beltForLevel(get().level())
 }));
+
+function localId() {
+  return globalThis.crypto?.randomUUID?.() ?? `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}

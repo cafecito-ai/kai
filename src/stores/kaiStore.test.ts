@@ -49,7 +49,7 @@ describe("kaiStore", () => {
     expect(useKaiStore.getState().chats.kai.nextAction?.id).toBe("scan");
   });
 
-  it("adds tool completion summaries back into Kai chat", () => {
+  it("keeps tool completion summaries out of Kai chat", () => {
     useKaiStore.getState().hydrate("kai", {
       conversationId: "tool-context",
       messages: [{ id: "start", role: "assistant", content: "Say it messy." }]
@@ -62,7 +62,27 @@ describe("kaiStore", () => {
     });
 
     const state = useKaiStore.getState().chats.kai;
-    expect(state.messages[state.messages.length - 1]?.content).toBe("Log sleep saved. Recovery is logged. Protect tonight before adding more effort.");
+    expect(state.messages.map((message) => message.content)).not.toContain("Log sleep saved. Recovery is logged. Protect tonight before adding more effort.");
+    expect(state.nextAction?.id).toBe("sleep");
+  });
+
+  it("hides persisted tool completion messages when hydrating Kai chat", () => {
+    useKaiStore.getState().hydrate("kai", {
+      conversationId: "tool-context",
+      messages: [
+        { id: "user", role: "user", content: "I need sleep" },
+        {
+          id: "tool",
+          role: "assistant",
+          content: "Log sleep saved. Recovery is logged.",
+          metadata: { source: "tool_completion", nextAction: { id: "sleep" } }
+        }
+      ]
+    });
+
+    const state = useKaiStore.getState().chats.kai;
+    expect(state.messages).toHaveLength(1);
+    expect(state.messages[0]?.content).toBe("I need sleep");
     expect(state.nextAction?.id).toBe("sleep");
   });
 });

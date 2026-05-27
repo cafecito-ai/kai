@@ -75,7 +75,7 @@ const cases = [
     forbiddenSelectors: ["input[type='file'][capture]"],
     foodPhotoUpload: true
   }),
-  route("/task/sleep", ["Log sleep", exactPhysicalCopy[7]], { actionables: ["button"] }),
+  route("/task/sleep", ["Log sleep", exactPhysicalCopy[7]], { actionables: ["button"], sleepLog: true }),
   route("/task/stretch", ["Stretch / move", exactPhysicalCopy[5]], { actionables: ["button"] }),
   route("/task/scan", ["Body scan", "Private by default"], {
     actionables: ["input[type='file'][accept='image/*']", "button"],
@@ -146,6 +146,7 @@ function route(pathname, expectedText, options = {}) {
     forbiddenSelectors: options.forbiddenSelectors || [],
     optional: Boolean(options.optional),
     foodPhotoUpload: Boolean(options.foodPhotoUpload),
+    sleepLog: Boolean(options.sleepLog),
     kaiChatHandoff: Boolean(options.kaiChatHandoff),
     onboardingHandoff: Boolean(options.onboardingHandoff),
     walkthrough: Boolean(options.walkthrough)
@@ -242,6 +243,9 @@ async function renderPage(target, testCase) {
       await assertFoodPhotoUpload(client);
       result = await snapshotPage(client);
     }
+    if (testCase.sleepLog) {
+      await assertSleepLogCounter(client);
+    }
     if (testCase.kaiChatHandoff) {
       await assertKaiChatHandoff(client);
     }
@@ -284,6 +288,26 @@ async function assertFoodPhotoUpload(client) {
   } finally {
     await rm(foodPath, { force: true }).catch(() => undefined);
   }
+}
+
+async function assertSleepLogCounter(client) {
+  const before = await client.evaluate(`(() => {
+    const button = document.querySelector("[data-sleep-log-button]");
+    return button ? { text: button.innerText, disabled: Boolean(button.disabled), html: button.outerHTML.slice(0, 180) } : null;
+  })()`);
+  if (!before || before.disabled) throw new Error(`Sleep log button unavailable: ${JSON.stringify(before)}`);
+  await clickSelector(client, "[data-sleep-log-button]");
+  await waitForClientCondition(
+    client,
+    `document.body.innerText.includes("Sleep counted toward today's score") && document.body.innerText.includes("Recovery is the base layer.")`,
+    "Sleep log did not show a saved sleep signal"
+  );
+  await clickSelector(client, "a[href='/profile']");
+  await waitForClientCondition(
+    client,
+    `location.pathname === "/profile" && document.body.innerText.includes("TODAY") && document.body.innerText.includes("Log sleep") && document.body.innerText.includes("Done")`,
+    "Sleep log did not increment the profile score and mission counter"
+  );
 }
 
 async function assertOnboardingHandoff(client) {

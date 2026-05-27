@@ -47,6 +47,7 @@ export function EnginePhysical({
   const [movementFocus, setMovementFocus] = useState("hips and back");
   const [sleepHours, setSleepHours] = useState("8");
   const [sleepQuality, setSleepQuality] = useState<SleepQuality>("okay");
+  const [sleepSavedMessage, setSleepSavedMessage] = useState("");
   const foodPhotoPreview = useObjectUrl(foodPhoto);
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function EnginePhysical({
     setFoodSafetyMessage("");
     setSaving(input.entryType);
     const optimistic: EngineEntry = {
-      id: crypto.randomUUID(),
+      id: localId(),
       engine: "physical",
       entryType: input.entryType,
       title: input.title,
@@ -280,11 +281,12 @@ export function EnginePhysical({
 
   function logSleep() {
     const hours = normalizeSleepHours(sleepHours);
+    setSleepSavedMessage(`${hours} hours saved. Sleep counted toward today's score.`);
     void completeEntry({
       entryType: "sleep_log",
       title: "Log sleep",
       payload: { hours, quality: sleepQuality, insight: sleepInsight(hours, sleepQuality) },
-      eventType: "sleep_log",
+      eventType: "sleep",
       eventValue: hours >= 8 ? 22 : 14
     });
   }
@@ -472,8 +474,9 @@ export function EnginePhysical({
             <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-semibold leading-6 text-paper/75">
               {sleepInsight(normalizeSleepHours(sleepHours), sleepQuality)}
             </p>
+            {sleepSavedMessage && <p className="mt-3 rounded-kai border border-white/15 bg-white/10 p-3 text-sm font-black leading-6 text-paper">{sleepSavedMessage}</p>}
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button disabled={saving === "sleep_log"} onClick={logSleep}>{saving === "sleep_log" ? "Logging" : "Log sleep"}</Button>
+              <Button type="button" data-sleep-log-button disabled={saving === "sleep_log"} onClick={logSleep}>{saving === "sleep_log" ? "Logging" : "Log sleep"}</Button>
               <Button variant="secondary" className="border-white/20 bg-white/10 text-paper hover:border-white/50" disabled={saving === "recovery_reset"} onClick={() => void completeEntry({ entryType: "recovery_reset", title: "Recovery reset", payload: { pattern: "box", focus: "breathing and downshift" }, eventType: "breathing_session", eventValue: 20 })}>
                 {saving === "recovery_reset" ? "Saving" : "Complete reset"}
               </Button>
@@ -585,6 +588,10 @@ export function EnginePhysical({
       standalone={standalone}
     />
   );
+}
+
+function localId() {
+  return globalThis.crypto?.randomUUID?.() ?? `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 const foodExamples = [

@@ -43,9 +43,14 @@ function initialChats(): Record<ChatEngine, EngineChatState> {
 
 function normalizeMessages(messages: ChatMessage[]) {
   const visible = messages
-    .filter((message) => message.role === "user" || message.role === "assistant")
+    .filter((message) => (message.role === "user" || message.role === "assistant") && !isToolCompletion(message))
     .map((message) => (message.role === "assistant" ? { ...message, content: cleanAssistantCopy(message.content) } : message));
   return visible.length > 0 ? visible : [welcomeMessage];
+}
+
+function isToolCompletion(message: ChatMessage) {
+  const metadata = message.metadata;
+  return Boolean(metadata && typeof metadata === "object" && !Array.isArray(metadata) && (metadata as { source?: unknown }).source === "tool_completion");
 }
 
 function cleanAssistantCopy(content: string) {
@@ -70,18 +75,11 @@ export const useKaiStore = create<KaiState>((set) => ({
       }
     })),
   rememberToolCompletion: ({ title, summary, nextActionId }) => {
-    const content = `${title} saved. ${summary}`;
-    const localMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "assistant",
-      content
-    };
     set((state) => ({
       chats: {
         ...state.chats,
         kai: {
           ...state.chats.kai,
-          messages: [...state.chats.kai.messages, localMessage],
           nextAction: nextActionId ? KAI_ACTIONS[nextActionId] : state.chats.kai.nextAction
         }
       }

@@ -109,6 +109,11 @@ const SAFETY_CLASSIFIER_PROMPT = [
   "- medium: at-risk language, patterns, or worrying disclosures without immediate intent",
   "- low: passing reference or hypothetical with no distress signal",
   "",
+  "Important distinction:",
+  "- Do NOT classify sadness, depression, loneliness, emptiness, numbness, or hopelessness by itself as suicide_ideation or self_harm.",
+  "- Only classify suicide_ideation/self_harm when the message includes wanting to die, not live, disappear permanently, hurt themselves, self-harm, a plan, intent, or a paraphrase like \"can't keep going\" / \"easier without me\".",
+  "- For \"I'm depressed\", \"I'm so depressed\", \"I feel empty\", or \"I'm sad all the time\" with no self-harm/death signal, return category none.",
+  "",
   "If nothing in the message rises to a safety concern, return:",
   '{"category":"none","severity":"low","explanation":"no safety signal"}',
   "",
@@ -154,8 +159,17 @@ export async function classifySafetyFull(env: Env, text: string): Promise<Safety
   const fast = classifySafety(text);
   if (!fast.safe) return fast;
   const llm = await classifySafetyLLM(env, text);
+  if (llm && !llm.safe && isLowMoodWithoutSafetySignal(text, llm)) return { safe: true };
   if (llm && !llm.safe) return llm;
   return { safe: true };
+}
+
+function isLowMoodWithoutSafetySignal(text: string, classification: SafetyClassification) {
+  if (classification.category !== "suicide_ideation" && classification.category !== "self_harm") return false;
+  const normalized = text.toLowerCase();
+  const lowMoodSignal = /\b(depressed|depression|sad|empty|numb|down|hopeless|lonely)\b/.test(normalized);
+  if (!lowMoodSignal) return false;
+  return !/\b(kill myself|suicide|end my life|not want to live|don't want to live|dont want to live|hurt myself|self harm|cut myself|cut to feel|burn myself|can't keep going|cant keep going|not being here|weren't here|werent here|make it end|want it all to stop|no point|easier without me|disappear permanently)\b/.test(normalized);
 }
 /**
  * Build a privacy-preserving excerpt of a teen message for ops review.

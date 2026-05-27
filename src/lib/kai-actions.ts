@@ -207,7 +207,7 @@ const keywordRules: Array<{ action: KaiActionId; words: string[]; weight?: numbe
   {
     action: "talk",
     weight: 3,
-    words: ["anxious", "anxiety", "stress", "stressed", "sad", "angry", "overthinking", "overthink", "behind", "feel"]
+    words: ["anxious", "anxiety", "stress", "stressed", "sad", "depressed", "depression", "empty", "numb", "hopeless", "lonely", "angry", "overthinking", "overthink", "behind", "feel"]
   },
   {
     action: "reset",

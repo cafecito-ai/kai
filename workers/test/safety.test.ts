@@ -151,6 +151,29 @@ describe("classifySafetyFull (regex + LLM)", () => {
     expect(result.category).toBe("suicide_ideation");
   });
 
+  it("does not escalate depression language without self-harm or death signals", async () => {
+    const env = makeFakeEnv([
+      {
+        contains: "I'm so depressed",
+        response: '{"category":"suicide_ideation","severity":"high","explanation":"overcalled sadness"}'
+      }
+    ]);
+    const result = await classifySafetyFull(env, "I'm so depressed");
+    expect(result.safe).toBe(true);
+  });
+
+  it("still escalates depression language when a self-harm signal is present", async () => {
+    const env = makeFakeEnv([
+      {
+        contains: "I'm so depressed and I want to hurt myself",
+        response: '{"category":"self_harm","severity":"high","explanation":"self-harm signal"}'
+      }
+    ]);
+    const result = await classifySafetyFull(env, "I'm so depressed and I want to hurt myself");
+    expect(result.safe).toBe(false);
+    expect(result.category).toBe("self_harm");
+  });
+
   it("returns safe:true when both regex and LLM say none", async () => {
     const env = makeFakeEnv([]);
     const result = await classifySafetyFull(env, "I'm just tired from school");

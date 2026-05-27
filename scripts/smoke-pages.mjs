@@ -326,17 +326,6 @@ async function assertOnboardingHandoff(client) {
     return set(name, "Demo");
   })()`);
   await clickReadyButton(client, "Continue");
-  await client.evaluate(`(() => {
-    const age = Array.from(document.querySelectorAll("input")).find((input) => input.getAttribute("inputmode") === "numeric");
-    if (!age) return false;
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-    if (setter) setter.call(age, "18");
-    else age.value = "18";
-    age.dispatchEvent(new Event("input", { bubbles: true }));
-    age.dispatchEvent(new Event("change", { bubbles: true }));
-    return true;
-  })()`);
-  await clickReadyButton(client, "Continue");
   await clickButtonByText(client, "Mental clarity");
   await clickButtonByText(client, "Focus");
   await clickButtonByText(client, "Better sleep");

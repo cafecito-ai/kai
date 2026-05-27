@@ -35,7 +35,7 @@ type FollowUp = {
   priority: number;
 };
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 7;
 const LOCAL_PROFILE_KEY = "kai_demo_build_v2";
 
 const focusGroups: Array<{ label: string; options: Array<{ id: FocusId; label: string }> }> = [
@@ -101,13 +101,11 @@ const toneOptions: Array<{ id: KaiTone; title: string; preview: string }> = [
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setKai, setPrimaryEngine, setConsentPending, markOnboardingComplete } = useUserStore();
+  const { setKai, setPrimaryEngine, markOnboardingComplete } = useUserStore();
   const hydrateKaiChat = useKaiStore((state) => state.hydrate);
   const saved = useMemo(readSavedProfile, []);
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState(saved?.firstName ?? "");
-  const [age, setAge] = useState("");
-  const [parentEmail, setParentEmail] = useState("");
   const [focusAreas, setFocusAreas] = useState<FocusId[]>([]);
   const [hardestLately, setHardestLately] = useState("");
   const [responses, setResponses] = useState<Record<string, string>>({});
@@ -115,18 +113,15 @@ export function Onboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const normalizedAge = Number(age) || undefined;
-  const needsParentConsent = Boolean(normalizedAge && normalizedAge < 13);
   const selectedFollowUps = useMemo(() => selectFollowUps(focusAreas), [focusAreas]);
   const primaryEngine = useMemo(() => inferEngine(focusAreas), [focusAreas]);
   const firstAction = useMemo(() => actionFor(focusAreas, hardestLately), [focusAreas, hardestLately]);
   const canAdvance = useMemo(() => {
     if (step === 0) return firstName.trim().length > 0;
-    if (step === 1) return Boolean(normalizedAge && normalizedAge >= 1 && normalizedAge < 100) && (!needsParentConsent || parentEmail.includes("@"));
-    if (step === 2) return focusAreas.length > 0;
-    if (step === 7) return !saving;
+    if (step === 1) return focusAreas.length > 0;
+    if (step === 6) return !saving;
     return true;
-  }, [step, firstName, normalizedAge, needsParentConsent, parentEmail, focusAreas.length, saving]);
+  }, [step, firstName, focusAreas.length, saving]);
 
   function next() {
     if (!canAdvance) return;
@@ -155,14 +150,8 @@ export function Onboarding() {
         kaiName: "KAI",
         kaiTone: tone,
         primaryEngine,
-        age: normalizedAge,
-        parentEmail: needsParentConsent ? parentEmail.trim() : undefined,
         onboardingCompleted: true
       });
-      if (needsParentConsent && parentEmail.trim()) {
-        await api.sendParentConsent({ parentEmail: parentEmail.trim(), teenName: firstName.trim() });
-        setConsentPending(parentEmail.trim());
-      }
     } catch {
       setError("Couldn’t sync your answers just now. You can keep going; KAI saved this on your device.");
     } finally {
@@ -191,17 +180,14 @@ export function Onboarding() {
         <ProgressBar current={step + 1} total={TOTAL_STEPS} />
         <main key={step} className="mt-8 flex-1 animate-[fadeUp_220ms_ease-out]">
           {step === 0 && <NameStep value={firstName} onChange={setFirstName} />}
-          {step === 1 && <AgeStep age={age} setAge={setAge} parentEmail={parentEmail} setParentEmail={setParentEmail} needsParentConsent={needsParentConsent} />}
-          {step === 2 && <FocusStep value={focusAreas} onChange={setFocusAreas} />}
-          {step === 3 && <HardestStep value={hardestLately} onChange={setHardestLately} onSkip={next} />}
-          {step === 4 && <FollowUpStep followUps={selectedFollowUps} responses={responses} onChange={setResponses} />}
-          {step === 5 && <MeetKaiStep firstName={firstName.trim() || "there"} />}
-          {step === 6 && <ToneStep value={tone} onChange={setTone} />}
-          {step === 7 && (
+          {step === 1 && <FocusStep value={focusAreas} onChange={setFocusAreas} />}
+          {step === 2 && <HardestStep value={hardestLately} onChange={setHardestLately} onSkip={next} />}
+          {step === 3 && <FollowUpStep followUps={selectedFollowUps} responses={responses} onChange={setResponses} />}
+          {step === 4 && <MeetKaiStep firstName={firstName.trim() || "there"} />}
+          {step === 5 && <ToneStep value={tone} onChange={setTone} />}
+          {step === 6 && (
             <ReadyStep
               firstName={firstName.trim() || "there"}
-              needsParentConsent={needsParentConsent}
-              parentEmail={parentEmail}
               focusAreas={focusAreas}
               tone={tone}
               error={error}
@@ -220,34 +206,6 @@ function NameStep({ value, onChange }: { value: string; onChange: (value: string
     <div className="space-y-6">
       <StepTitle eyebrow="welcome" title="What should KAI call you?" blurb="Your first name. KAI is your wellness companion, not another school survey." />
       <input autoFocus type="text" value={value} maxLength={30} onChange={(event) => onChange(event.target.value)} placeholder="First name" aria-label="First name" className="field text-lg shadow-soft" />
-    </div>
-  );
-}
-
-function AgeStep({
-  age,
-  setAge,
-  parentEmail,
-  setParentEmail,
-  needsParentConsent
-}: {
-  age: string;
-  setAge: (value: string) => void;
-  parentEmail: string;
-  setParentEmail: (value: string) => void;
-  needsParentConsent: boolean;
-}) {
-  return (
-    <div className="space-y-6">
-      <StepTitle eyebrow="step 2" title="How old are you?" blurb="KAI uses age to keep the experience safe and age-aware." />
-      <input autoFocus type="number" inputMode="numeric" value={age} onChange={(event) => setAge(event.target.value)} placeholder="Age" aria-label="Age" className="field text-lg shadow-soft" />
-      {needsParentConsent && (
-        <div className="space-y-3 rounded-kai border border-line bg-goalsWash/70 p-4">
-          <p className="text-sm font-black text-ink">We need a parent or guardian email.</p>
-          <p className="text-xs font-semibold leading-relaxed text-muted">Required only under 13. They get a consent email; your chats and reflections stay private by default.</p>
-          <input type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} placeholder="parent@example.com" aria-label="Parent email" className="field min-h-11 rounded-[14px] py-2.5 text-sm" />
-        </div>
-      )}
     </div>
   );
 }
@@ -410,16 +368,12 @@ function ToneStep({ value, onChange }: { value: KaiTone; onChange: (value: KaiTo
 
 function ReadyStep({
   firstName,
-  needsParentConsent,
-  parentEmail,
   focusAreas,
   tone,
   error,
   saving
 }: {
   firstName: string;
-  needsParentConsent: boolean;
-  parentEmail: string;
   focusAreas: FocusId[];
   tone: KaiTone;
   error: string;
@@ -428,21 +382,11 @@ function ReadyStep({
   const labels = labelFocusAreas(focusAreas);
   return (
     <div className="space-y-6">
-      <StepTitle eyebrow="step 8" title={`You’re set, ${firstName}.`} blurb={needsParentConsent ? "KAI will send your parent a quick consent email and let you in." : "Ready to meet your home screen?"} />
+      <StepTitle eyebrow="step 7" title={`You’re set, ${firstName}.`} blurb="Ready to meet your home screen?" />
       <div className="rounded-kai border border-line bg-white p-5 shadow-soft">
         <SummaryRow label="Focus">{labels.length ? labels.join(", ") : "Open to anything"}</SummaryRow>
         <SummaryRow label="Tone">{tone[0].toUpperCase() + tone.slice(1)}</SummaryRow>
-        {needsParentConsent && <SummaryRow label="Parent email">{parentEmail}</SummaryRow>}
       </div>
-      {needsParentConsent && (
-        <div className="rounded-kai border border-line bg-goalsWash/70 p-4">
-          <p className="flex items-center gap-2 text-sm font-black text-ink">
-            <ShieldAlert size={14} className="text-goals" aria-hidden="true" />
-            Parent consent is required under 13.
-          </p>
-          <p className="mt-1.5 text-xs font-semibold leading-relaxed text-muted">Your reflections, chats, and scans stay private by default. Crisis resources are always available.</p>
-        </div>
-      )}
       {error && <p className="rounded-kai border border-danger/30 bg-dangerWash p-3 text-sm font-black text-danger">{error}</p>}
       <Link to="/crisis" className="inline-flex items-center gap-1.5 text-sm font-black text-danger underline-offset-4 hover:underline">
         <ShieldAlert size={14} aria-hidden="true" />

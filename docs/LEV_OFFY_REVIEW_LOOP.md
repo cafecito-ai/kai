@@ -39,9 +39,9 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Journey timeline: support Day 0, Day 30, Day 90, and Day 365 private reflections.
 - [x] Motivation detection: when missed habits, inactivity, late-night use, or "unmotivated" appear, surface Day 0 as "Watch this before quitting."
 - [ ] AI Day 0 analysis: generate core mission, desired identity, likely struggles, and home priorities from the video/transcript.
-- [ ] Community / progress sharing: minimal non-toxic posting for achievements, routines, and transformations.
+- [x] Community / progress sharing: minimal non-toxic posting for achievements, routines, and transformations.
 - [ ] Notifications: adapt reminders based on motivation style and onboarding answers.
-- [ ] Advanced analytics: show patterns without feeling clinical or overwhelming.
+- [x] Advanced analytics: show patterns without feeling clinical or overwhelming.
 
 ## Verification Gates
 
@@ -75,3 +75,5 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - Lev/Offy fresh-start URL: `https://kai-pr143-chat-engine.kai-epk.pages.dev/onboarding?fresh=1`. It clears only KAI local app state, preserves auth state, and redirects to `/onboarding`.
 - Day 0 stays small by default, then expands with "Watch this before quitting." when low motivation signals appear.
 - Tapping Day 0 opens `/journey`, with private Day 0, Day 30, Day 90, and Day 365 reflection checkpoints.
+- Groups route verified as the non-toxic progress-sharing surface: create/join trusted groups, exact scores hidden as rough buckets, activity/reactions live under group detail.
+- Progress route verified as the low-clinical analytics surface: 7-day score, sub-scores, weekly proof tallies, and recent moves.

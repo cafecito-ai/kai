@@ -1,4 +1,4 @@
-// Onboarding tests — covers the v3 §4 7-step flow.
+// Onboarding tests — covers the v3 §4 flow plus Day 0.
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -51,7 +51,7 @@ afterEach(() => {
 describe("Onboarding (v3 §4)", () => {
   it("shows step 1 (name) on first render", () => {
     renderOnboarding();
-    expect(screen.getByText("1 of 7")).toBeInTheDocument();
+    expect(screen.getByText("1 of 8")).toBeInTheDocument();
     expect(
       screen.getByText(/what should kai call you/i),
     ).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe("Onboarding (v3 §4)", () => {
     expect(continueBtn).not.toBeDisabled();
   });
 
-  it("walks through step order: name → focus → hardest → follow-ups → meet → tone → confirm", async () => {
+  it("walks through step order: name → focus → hardest → follow-ups → meet → tone → day 0 → confirm", async () => {
     renderOnboarding();
 
     // Step 1: name
@@ -77,18 +77,18 @@ describe("Onboarding (v3 §4)", () => {
     await clickContinue();
 
     // Step 2: focus areas — multi-select, must pick at least one
-    expect(await screen.findByText("2 of 7")).toBeInTheDocument();
+    expect(await screen.findByText("2 of 8")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
     fireEvent.click(screen.getByRole("button", { name: /better sleep/i }));
     await clickContinue();
 
     // Step 3: hardest lately — optional, can skip
-    expect(await screen.findByText("3 of 7")).toBeInTheDocument();
+    expect(await screen.findByText("3 of 8")).toBeInTheDocument();
     expect(screen.getByText(/hardest lately/i)).toBeInTheDocument();
     await clickContinue();
 
     // Step 4: adaptive follow-ups — skippable, all answers optional
-    expect(await screen.findByText("4 of 7")).toBeInTheDocument();
+    expect(await screen.findByText("4 of 8")).toBeInTheDocument();
     await clickContinue();
 
     // Step 5: meet KAI — informational
@@ -98,14 +98,19 @@ describe("Onboarding (v3 §4)", () => {
     await clickContinue();
 
     // Step 6: tone
-    expect(await screen.findByText("6 of 7")).toBeInTheDocument();
+    expect(await screen.findByText("6 of 8")).toBeInTheDocument();
     expect(screen.getByText("Warm")).toBeInTheDocument();
     expect(screen.getByText("Balanced")).toBeInTheDocument();
     expect(screen.getByText("Direct")).toBeInTheDocument();
     await clickContinue();
 
-    // Step 7: confirm — final, button reads "Start"
-    expect(await screen.findByText("7 of 7")).toBeInTheDocument();
+    // Step 7: Day 0 — optional
+    expect(await screen.findByText("7 of 8")).toBeInTheDocument();
+    expect(screen.getByText(/record day 0/i)).toBeInTheDocument();
+    await clickContinue();
+
+    // Step 8: confirm — final, button reads "Start"
+    expect(await screen.findByText("8 of 8")).toBeInTheDocument();
     expect(screen.getByText(/you're set/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /^start$/i }),
@@ -137,7 +142,8 @@ describe("Onboarding (v3 §4)", () => {
     await clickContinue(); // hardest → follow-ups
     await clickContinue(); // follow-ups → meet
     await clickContinue(); // meet → tone
-    await clickContinue(); // tone → confirm
+    await clickContinue(); // tone → day 0
+    await clickContinue(); // day 0 → confirm
 
     fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
 

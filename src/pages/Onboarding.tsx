@@ -16,13 +16,17 @@ import {
   ArrowRight,
   Brain,
   Dumbbell,
+  Lock,
+  RotateCcw,
   Sparkles,
+  Video,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { saveDayZeroVideo } from "../lib/day-zero";
 import { saveLocalOnboardingProfile } from "../lib/onboarding-profile";
 import {
   formatFollowUpsForIntake,
@@ -174,7 +178,7 @@ function isKaiTone(v: unknown): v is KaiTone {
 // Page
 // ─────────────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -207,8 +211,9 @@ export function Onboarding() {
       case 3: // adaptive follow-ups
       case 4: // meet KAI
       case 5: // tone
+      case 6: // Day 0
         return true;
-      case 6: // confirm + save
+      case 7: // confirm + save
         return !saving;
       default:
         return true;
@@ -307,7 +312,8 @@ export function Onboarding() {
           {step === 5 && (
             <ToneStep value={kaiTone} onChange={setKaiTone} />
           )}
-          {step === 6 && (
+          {step === 6 && <DayZeroStep firstName={firstName} />}
+          {step === 7 && (
             <ConfirmStep
               firstName={firstName}
               focusAreas={focusAreas}
@@ -652,6 +658,168 @@ function ToneStep({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function DayZeroStep({ firstName }: { firstName: string }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const startedAtRef = useRef<number>(0);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const [status, setStatus] = useState<"idle" | "camera" | "recording" | "saved" | "error">("idle");
+  const [quote, setQuote] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    return () => {
+      stopStream();
+    };
+  }, []);
+
+  async function openCamera() {
+    setMessage("");
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setStatus("error");
+      setMessage("Camera recording is not available in this browser. You can still keep going.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
+      }
+      setStatus("camera");
+    } catch {
+      setStatus("error");
+      setMessage("Camera access was blocked. No stress — Day 0 is optional.");
+    }
+  }
+
+  function startRecording() {
+    const stream = streamRef.current;
+    if (!stream) return;
+    chunksRef.current = [];
+    const recorder = new MediaRecorder(stream);
+    recorderRef.current = recorder;
+    startedAtRef.current = Date.now();
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunksRef.current.push(event.data);
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "video/webm" });
+      void saveDayZeroVideo({
+        blob,
+        durationMs: Date.now() - startedAtRef.current,
+        quote,
+      }).then(() => {
+        setStatus("saved");
+        setMessage("Saved privately on this device.");
+        stopStream();
+      }).catch(() => {
+        setStatus("error");
+        setMessage("Could not save the video on this device.");
+      });
+    };
+    recorder.start();
+    setStatus("recording");
+  }
+
+  function stopRecording() {
+    recorderRef.current?.stop();
+  }
+
+  function reset() {
+    setStatus("idle");
+    setMessage("");
+    setQuote("");
+    stopStream();
+  }
+
+  function stopStream() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }
+
+  return (
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 7 — optional"
+        title="Record Day 0."
+        blurb={`Talk to future ${firstName || "you"}. Why are you here? What changes now?`}
+      />
+
+      <div className="overflow-hidden rounded-3xl border border-glass-border bg-text-primary text-background shadow-card-lg">
+        <div className="relative aspect-[9/12] bg-background/15">
+          <video
+            ref={videoRef}
+            muted
+            playsInline
+            className="h-full w-full object-cover opacity-90"
+          />
+          {status === "idle" || status === "error" || status === "saved" ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-text-primary text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-background/10">
+                <Video size={26} />
+              </div>
+              <p className="font-display text-2xl font-semibold">Day 0</p>
+              <p className="max-w-[240px] text-sm leading-relaxed text-background/65">
+                Private by default. Re-record or delete anytime.
+              </p>
+            </div>
+          ) : null}
+          {status === "recording" && (
+            <div className="absolute left-4 top-4 rounded-full bg-danger px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-white">
+              recording
+            </div>
+          )}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.22))]" />
+        </div>
+        <div className="space-y-3 p-4">
+          <div className="flex items-center gap-2 text-xs text-background/65">
+            <Lock size={13} />
+            Stored locally on this device
+          </div>
+          <textarea
+            value={quote}
+            onChange={(event) => setQuote(event.target.value)}
+            placeholder="Caption: I downloaded KAI because..."
+            rows={2}
+            maxLength={140}
+            className="w-full resize-none rounded-2xl border border-background/10 bg-background/10 px-3 py-2 text-sm text-background placeholder:text-background/45 focus:outline-none"
+          />
+          <div className="flex gap-2">
+            {status === "idle" || status === "error" ? (
+              <button type="button" onClick={openCamera} className="h-11 flex-1 rounded-full bg-background font-medium text-text-primary">
+                Open camera
+              </button>
+            ) : status === "camera" ? (
+              <button type="button" onClick={startRecording} className="h-11 flex-1 rounded-full bg-danger font-medium text-white">
+                Start
+              </button>
+            ) : status === "recording" ? (
+              <button type="button" onClick={stopRecording} className="h-11 flex-1 rounded-full bg-background font-medium text-text-primary">
+                Save
+              </button>
+            ) : (
+              <button type="button" onClick={reset} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-background font-medium text-text-primary">
+                <RotateCcw size={15} />
+                Re-record
+              </button>
+            )}
+          </div>
+          {message && <p className="text-center text-xs text-background/60">{message}</p>}
+        </div>
+      </div>
+
+      <p className="text-center text-xs leading-relaxed text-text-muted">
+        This is not homework. It is the first scene of your own receipt.
+      </p>
     </div>
   );
 }

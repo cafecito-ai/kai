@@ -18,9 +18,11 @@ import {
   Activity as ActivityIcon,
   ArrowUpRight,
   Brain,
+  Lock,
   Flame,
   Heart,
   Moon,
+  Play,
   Sprout,
   Sparkles,
   Trophy,
@@ -36,6 +38,7 @@ import { XpPill } from "../components/XpPill";
 import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
 import { api } from "../lib/api";
+import { getDayZeroVideoUrl, readDayZeroMeta, type DayZeroMeta } from "../lib/day-zero";
 import {
   computeLocalScore,
   readLocalInputs,
@@ -113,6 +116,8 @@ export function Home() {
   // into a new level since they last opened /home. Soft KaiMessage,
   // dismissable, doesn't interrupt anything.
   const [levelUp, setLevelUp] = useState<{ newLevel: number; message: string } | null>(null);
+  const [dayZero, setDayZero] = useState<DayZeroMeta | null>(() => readDayZeroMeta());
+  const [dayZeroUrl, setDayZeroUrl] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -174,6 +179,37 @@ export function Home() {
         }
       },
     );
+  }, []);
+
+  useEffect(() => {
+    let currentUrl: string | null = null;
+    let cancelled = false;
+    async function load() {
+      if (!dayZero) {
+        setDayZeroUrl(null);
+        return;
+      }
+      const url = await getDayZeroVideoUrl(dayZero.id).catch(() => null);
+      if (cancelled) {
+        if (url) URL.revokeObjectURL(url);
+        return;
+      }
+      currentUrl = url;
+      setDayZeroUrl(url);
+    }
+    load();
+    return () => {
+      cancelled = true;
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+    };
+  }, [dayZero]);
+
+  useEffect(() => {
+    function refreshDayZero() {
+      setDayZero(readDayZeroMeta());
+    }
+    window.addEventListener("kai:day-zero-changed", refreshDayZero);
+    return () => window.removeEventListener("kai:day-zero-changed", refreshDayZero);
   }, []);
 
   // Bump this whenever a state-changed event fires (input logged or
@@ -366,6 +402,8 @@ export function Home() {
         Sleep dipped under 7h again last night — want to start light today
         and see how you feel by lunch?
       </KaiMessage>
+
+      <DayZeroCard meta={dayZero} videoUrl={dayZeroUrl} />
 
       {/* Recent — 3 rows */}
       <RecentActivity items={activity} />
@@ -578,6 +616,50 @@ function RecentActivity({ items }: { items: ActivityItem[] }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function DayZeroCard({
+  meta,
+  videoUrl,
+}: {
+  meta: DayZeroMeta | null;
+  videoUrl: string | null;
+}) {
+  if (!meta) return null;
+  return (
+    <section className="rounded-2xl border border-glass-border bg-surface p-4 shadow-card">
+      <div className="flex items-center gap-3">
+        <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-xl bg-text-primary">
+          {videoUrl ? (
+            <video src={videoUrl} className="h-full w-full object-cover opacity-80" muted playsInline />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-background">
+              <Play size={18} />
+            </div>
+          )}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
+            <Play size={16} fill="currentColor" />
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <Lock size={12} className="text-text-muted" />
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+              Day 0 · private
+            </p>
+          </div>
+          <p className="mt-1 text-sm font-semibold text-text-primary">
+            Recorded {relativeDay(meta.createdAt)}
+          </p>
+          {meta.quote && (
+            <p className="mt-1 truncate text-xs text-text-secondary">
+              "{meta.quote}"
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -819,6 +901,14 @@ function relativeTime(iso: string): string {
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffMin < 60 * 24) return `${Math.round(diffMin / 60)}h ago`;
   return "Yesterday";
+}
+
+function relativeDay(iso: string): string {
+  const t = new Date(iso).getTime();
+  const diffDays = Math.max(0, Math.floor((Date.now() - t) / 86400000));
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  return `${diffDays} days ago`;
 }
 
 function greetingForNow(now = new Date()): {

@@ -47,6 +47,20 @@ describe("fastKaiReply", () => {
     expect(reply).toContain("reset");
     expect(reply).not.toContain("I can help with that");
   });
+
+  it("answers missed-day shame with a reset instead of backup copy", () => {
+    const reply = fastKaiReply("i skipped everything today and feel like i already failed");
+
+    expect(reply).toContain("missed a day");
+    expect(reply).toContain("tiny reset");
+  });
+
+  it("answers gym anxiety with a first-trip script", () => {
+    const reply = fastKaiReply("i want to go to the gym but i feel embarrassed and dont know what to do");
+
+    expect(reply).toContain("Gym anxiety");
+    expect(reply).toContain("walk in");
+  });
 });
 
 describe("fastPhysicalReply", () => {

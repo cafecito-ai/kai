@@ -165,6 +165,18 @@ async function handleRoutedChat(
   const normalized = normalizeUserMessage(message);
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
 
+  const preSafetyReply = safePreSafetyFastReply(normalized.text);
+  if (preSafetyReply) {
+    const formattedReply = formatKaiReply(preSafetyReply, "general");
+    await createMessage(env.DB, {
+      conversationId: conversation,
+      role: "assistant",
+      content: formattedReply,
+      metadata: { fastPath: true, preSafety: true },
+    });
+    return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: "kai" });
+  }
+
   // Safety wins. Always.
   const safety = await classifySafetyFull(env, normalized.text);
   if (!safety.safe) {
@@ -250,7 +262,7 @@ async function handleRoutedChat(
 export function fastKaiReply(message: string): string | null {
   const text = message.toLowerCase();
 
-  if (/^\s*(yo|hey|hi|hello|sup|what'?s up|wassup|wyd)\s*(kai|coach)?[\s?.!]*$/i.test(message)) {
+  if (isBenignGreeting(message)) {
     return [
       "I’m here.",
       "What’s the vibe today: mind, body, school, sleep, or confidence?",
@@ -271,10 +283,24 @@ export function fastKaiReply(message: string): string | null {
     ].join("\n\n");
   }
 
+  if (/\b(gym|lifting|lift|weights|workout)\b/.test(text) && /\b(embarrassed|nervous|anxious|awkward|dont know what to do|don't know what to do|new|first time)\b/.test(text)) {
+    return [
+      "Gym anxiety is normal when you don’t have a script yet.",
+      "Make the first trip almost too simple: walk in, do one machine or dumbbell movement, leave with proof you showed up.",
+    ].join("\n\n");
+  }
+
   if (/\b(ugly|awkward|low confidence|no confidence|insecure|embarrassed|hate how i look|feel weird)\b/.test(text)) {
     return [
       "That feeling can get loud at school.",
       "Don’t debate your whole identity today. Give me the moment it hits hardest: walking in, talking to people, photos, or being compared?",
+    ].join("\n\n");
+  }
+
+  if (/\b(invisible|lonely|alone|no one cares|left out)\b/.test(text) && /\b(weekend|weekends|school|today|lately|feel)\b/.test(text)) {
+    return [
+      "Feeling invisible hits different when there’s no structure around you.",
+      "Don’t disappear into the whole weekend. Pick one proof-of-life move: text one person, get outside, or log what you’re feeling.",
     ].join("\n\n");
   }
 
@@ -285,10 +311,24 @@ export function fastKaiReply(message: string): string | null {
     ].join("\n\n");
   }
 
+  if (/\b(parents?|mom|dad|home)\b/.test(text) && /\b(fighting|fight|yelling|arguing|cant relax|can't relax|unsafe|stressed)\b/.test(text)) {
+    return [
+      "Home stress can make your body stay on alert even when you’re doing nothing wrong.",
+      "Control the tiny circle first: breathe slower, move to the safest quiet spot, and name one thing you can do in the next five minutes.",
+    ].join("\n\n");
+  }
+
   if (/\b(unmotivated|no motivation|lazy|stuck|can't start|cant start|procrastinat|doomscroll|phone addiction)\b/.test(text)) {
     return [
       "Yeah, that stuck feeling is real.",
       "Don’t solve your whole life right now. Give me one thing you’ve been avoiding and I’ll make it a 10-minute start.",
+    ].join("\n\n");
+  }
+
+  if (/\b(skipped everything|missed everything|broke my streak|failed today|already failed|ruined today)\b/.test(text)) {
+    return [
+      "You didn’t fail the whole path. You missed a day.",
+      "Make today count again with one tiny reset: water, mood log, five-minute clean, or lights-out setup.",
     ].join("\n\n");
   }
 
@@ -348,6 +388,14 @@ export function fastKaiReply(message: string): string | null {
   }
 
   return null;
+}
+
+function safePreSafetyFastReply(message: string): string | null {
+  return isBenignGreeting(message) ? fastKaiReply(message) : null;
+}
+
+function isBenignGreeting(message: string): boolean {
+  return /^\s*(yo|hey|hi|hello|sup|what'?s up|wassup|wyd)\s*(kai|coach)?[\s?.!]*$/i.test(message);
 }
 
 export function fastPhysicalReply(message: string): string | null {

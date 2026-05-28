@@ -1,5 +1,24 @@
 # Kai Handoff
 
+## Lev / Offy Review Build — 2026-05-28
+
+Preview: `https://kai-pr143-chat-engine.kai-epk.pages.dev`
+
+Fresh onboarding start: `https://kai-pr143-chat-engine.kai-epk.pages.dev/onboarding?fresh=1`
+
+Use the fresh-start URL first. It clears only KAI's local app state, keeps auth state alone, and opens the first-run onboarding flow. After onboarding, review:
+
+- Home: personalized evolving goal, daily goals, daily score, KAI entry, Day 0 card.
+- Chat: safe coaching responses, readable formatting, teen-friendly tone.
+- `+` button: Check in, Log workout, Log food, Log sleep, Journal, Energy, Mobility, Goals, Body scan, Voice.
+- Profile: level, XP, streak, badges, growth path.
+- Journey: Day 0 plus Day 30 / Day 90 / Day 365 private reflection timeline. KAI's read generates mission, identity, friction, habits, and priorities from the Day 0 caption plus onboarding context.
+- Settings: adaptive reminder style and copy generated from onboarding context.
+- Groups: trusted-circle progress sharing, rough score buckets, reactions.
+- Progress: 7-day analytics and proof-of-showing-up view.
+
+Final smoke pass on `390x844` mobile viewport loaded onboarding, Home, Journey, Settings, Groups, Progress, Chat, Profile, Food, Sleep, Check-in, and Workout with no console errors.
+
 ## What Is Built
 
 - React/Vite mobile-first app with all v1 public routes.

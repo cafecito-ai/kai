@@ -9,13 +9,15 @@
 //   1. KAI identity — kaiName + tone (3-card picker, not a dropdown)
 //   2. Privacy — link to policies and data practices
 
-import { ArrowLeft, Check, Heart, Scale, Zap } from "lucide-react";
+import { ArrowLeft, Bell, Check, Heart, Scale, Zap } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { buildAdaptiveReminderPlan } from "../lib/adaptive-reminders";
+import { loadLocalOnboardingProfile } from "../lib/onboarding-profile";
 import type { KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -61,6 +63,7 @@ export function Settings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const reminderPlan = buildAdaptiveReminderPlan(loadLocalOnboardingProfile());
 
   async function save() {
     setSaving(true);
@@ -181,6 +184,35 @@ export function Settings() {
               </button>
             );
           })}
+        </div>
+      </section>
+
+      <section className="mb-5 rounded-glass border border-glass-border bg-surface p-5 shadow-card">
+        <div className="flex items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+            <Bell size={16} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+              reminders
+            </p>
+            <h2 className="mt-1 font-display text-xl font-semibold leading-tight">
+              {reminderPlan.label}
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              {reminderPlan.cadence}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          {reminderPlan.examples.map((example) => (
+            <p
+              key={example}
+              className="rounded-lg border border-glass-border bg-surface-muted/40 px-3 py-2 text-sm text-text-secondary"
+            >
+              {example}
+            </p>
+          ))}
         </div>
       </section>
 

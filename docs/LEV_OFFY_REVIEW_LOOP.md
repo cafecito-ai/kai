@@ -38,9 +38,9 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 
 - [x] Journey timeline: support Day 0, Day 30, Day 90, and Day 365 private reflections.
 - [x] Motivation detection: when missed habits, inactivity, late-night use, or "unmotivated" appear, surface Day 0 as "Watch this before quitting."
-- [ ] AI Day 0 analysis: generate core mission, desired identity, likely struggles, and home priorities from the video/transcript.
+- [x] AI Day 0 analysis: generate core mission, desired identity, likely struggles, and home priorities from the video/transcript.
 - [x] Community / progress sharing: minimal non-toxic posting for achievements, routines, and transformations.
-- [ ] Notifications: adapt reminders based on motivation style and onboarding answers.
+- [x] Notifications: adapt reminders based on motivation style and onboarding answers.
 - [x] Advanced analytics: show patterns without feeling clinical or overwhelming.
 
 ## Verification Gates
@@ -77,3 +77,5 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - Tapping Day 0 opens `/journey`, with private Day 0, Day 30, Day 90, and Day 365 reflection checkpoints.
 - Groups route verified as the non-toxic progress-sharing surface: create/join trusted groups, exact scores hidden as rough buckets, activity/reactions live under group detail.
 - Progress route verified as the low-clinical analytics surface: 7-day score, sub-scores, weekly proof tallies, and recent moves.
+- Journey now renders KAI's Day 0 analysis from the private Day 0 caption plus onboarding context: core mission, desired identity, likely friction, habits, and home priorities.
+- Settings now shows adaptive reminder style/cadence/copy from onboarding context, including competitive, calm, accountability, and streak/reward modes.

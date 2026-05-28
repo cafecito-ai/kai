@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { KaiOrb } from "../components/KaiOrb";
+import { analyzeDayZero } from "../lib/day-zero-analysis";
 import { readDayZeroMeta, type DayZeroMeta } from "../lib/day-zero";
 import {
   clearJourneyReflection,
@@ -12,17 +13,20 @@ import {
   type JourneyMilestone,
   type JourneyReflection,
 } from "../lib/journey-reflections";
+import { loadLocalOnboardingProfile } from "../lib/onboarding-profile";
 
 export function Journey() {
   const [dayZero, setDayZero] = useState<DayZeroMeta | null>(() => readDayZeroMeta());
   const [reflections, setReflections] = useState<JourneyReflection[]>(() =>
     readJourneyReflections(),
   );
+  const [profile, setProfile] = useState(() => loadLocalOnboardingProfile());
 
   useEffect(() => {
     function refresh() {
       setDayZero(readDayZeroMeta());
       setReflections(readJourneyReflections());
+      setProfile(loadLocalOnboardingProfile());
     }
     window.addEventListener("kai:day-zero-changed", refresh);
     window.addEventListener("kai:journey-changed", refresh);
@@ -35,6 +39,7 @@ export function Journey() {
   const byMilestone = useMemo(() => {
     return new Map(reflections.map((item) => [item.milestone, item]));
   }, [reflections]);
+  const analysis = useMemo(() => analyzeDayZero(dayZero, profile), [dayZero, profile]);
 
   return (
     <div className="mx-auto min-h-[calc(100vh-2rem)] w-full max-w-md px-5 pb-8 pt-2 sm:max-w-lg">
@@ -63,6 +68,7 @@ export function Journey() {
       </section>
 
       <div className="mt-8 space-y-3">
+        {analysis && <DayZeroAnalysisCard analysis={analysis} />}
         {JOURNEY_MILESTONES.map((milestone) => (
           <MilestoneCard
             key={milestone}
@@ -70,6 +76,48 @@ export function Journey() {
             dayZero={milestone === 0 ? dayZero : null}
             reflection={byMilestone.get(milestone)}
           />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DayZeroAnalysisCard({
+  analysis,
+}: {
+  analysis: NonNullable<ReturnType<typeof analyzeDayZero>>;
+}) {
+  return (
+    <section className="rounded-2xl border border-accent-cool/25 bg-accent-cool-soft/40 p-4 shadow-card">
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent-cool">
+        KAI's read
+      </p>
+      <h2 className="mt-2 font-display text-xl font-semibold leading-tight">
+        {analysis.coreMission}
+      </h2>
+      <p className="mt-2 text-sm text-text-secondary">
+        Identity: <span className="font-medium text-text-primary">{analysis.desiredIdentity}</span>
+      </p>
+      <div className="mt-4 grid gap-3">
+        <MiniList title="Likely friction" items={analysis.likelyStruggles} />
+        <MiniList title="Habits to build" items={analysis.habitsToBuild} />
+        <MiniList title="Home priorities" items={analysis.homePriorities} />
+      </div>
+    </section>
+  );
+}
+
+function MiniList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div>
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+        {title}
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {items.map((item) => (
+          <span key={item} className="rounded-full bg-surface px-2.5 py-1 text-xs text-text-secondary">
+            {item}
+          </span>
         ))}
       </div>
     </div>

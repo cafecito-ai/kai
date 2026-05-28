@@ -192,6 +192,36 @@ const kaiWorkflows: Workflow[] = [
     ],
   },
   {
+    id: "messy-room",
+    matches: (text) =>
+      /\b(room|desk|closet|laundry|space)\b/.test(text) &&
+      /\b(messy|mess|dirty|clean|cleaning|overwhelming|overwhelmed)\b/.test(text),
+    reply: [
+      "Don’t clean the whole room. That’s how it turns into a whole thing.",
+      "Set a 7-minute timer and only do trash or laundry. Stop when the timer ends.",
+    ],
+  },
+  {
+    id: "morning-routine",
+    matches: (text) =>
+      /\b(morning|wake up|waking up|before school|routine)\b/.test(text) &&
+      /\b(routine|start|better|tired|late|school|what should)\b/.test(text),
+    reply: [
+      "Make the morning stupid simple.",
+      "Phone stays away for 10 minutes, water first, clothes on, then one tiny win before school. Don’t add ten habits yet.",
+    ],
+  },
+  {
+    id: "bored-weekend",
+    matches: (text) =>
+      /\b(bored|nothing to do|weekend|saturday|sunday)\b/.test(text) &&
+      /\b(bored|nothing|what should|idk|don'?t know)\b/.test(text),
+    reply: [
+      "Bored can turn into scrolling so fast.",
+      "Pick one lane for the next hour: move, make food, clean one thing, text someone, or go outside.",
+    ],
+  },
+  {
     id: "low-motivation",
     matches: (text) => /\b(unmotivated|no motivation|lazy|stuck|can't start|cant start|procrastinat|doomscroll|phone addiction)\b/.test(text),
     reply: [
@@ -292,6 +322,26 @@ const kaiWorkflows: Workflow[] = [
 ];
 
 const physicalWorkflows: Workflow[] = [
+  {
+    id: "pre-practice-food",
+    matches: (text) =>
+      /\b(before practice|before a game|pre practice|pre-game|pregame|practice later|game later)\b/.test(text) &&
+      /\b(eat|food|snack|meal|hungry|what should)\b/.test(text),
+    reply: [
+      "Keep it easy before practice: carbs for energy, a little protein, water.",
+      "Good options: banana and yogurt, peanut butter toast, rice and eggs, a turkey sandwich, or leftovers if they sit well.",
+    ],
+  },
+  {
+    id: "sore-recovery",
+    matches: (text) =>
+      /\b(sore|tight|aching|ache|recovery|legs hurt|shoulder hurts|knee hurts)\b/.test(text) &&
+      /\b(workout|practice|training|gym|after|from)\b/.test(text),
+    reply: [
+      "Sore after training usually means your body needs the basics, not panic.",
+      "Go light today: water, food, easy walk, gentle stretching. If it’s sharp pain or swelling, don’t push through it.",
+    ],
+  },
   {
     id: "basketball-consistency",
     matches: (text) =>

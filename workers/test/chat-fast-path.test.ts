@@ -77,6 +77,13 @@ describe("fastKaiReply", () => {
     expect(reply).toContain("Keep it short");
     expect(reply).toContain("I’m sorry");
   });
+
+  it("answers messy room overwhelm with a tiny timer", () => {
+    const reply = fastKaiReply("my room is so messy and cleaning it feels overwhelming");
+
+    expect(reply).toContain("7-minute timer");
+    expect(reply).toContain("trash or laundry");
+  });
 });
 
 describe("fastPhysicalReply", () => {
@@ -101,6 +108,13 @@ describe("fastPhysicalReply", () => {
 
     expect(reply).toContain("whole story");
     expect(reply).toContain("14 days");
+  });
+
+  it("answers pre-practice food timing", () => {
+    const reply = fastPhysicalReply("what should i eat before practice later");
+
+    expect(reply).toContain("carbs");
+    expect(reply).toContain("water");
   });
 
   it("does not fast-path unrelated physical questions", () => {

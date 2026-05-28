@@ -234,9 +234,9 @@ async function handleRoutedChat(
     conversationId: conversation,
     role: "assistant",
     content: formattedReply,
-    metadata: { routedTo: decision },
+    metadata: { routedTo: decision, responseSource: "model" },
   });
-  return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision });
+  return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision, responseSource: "model" });
 }
 
 export { fastKaiReply, fastPhysicalReply };

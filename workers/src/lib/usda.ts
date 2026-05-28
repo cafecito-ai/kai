@@ -80,20 +80,19 @@ function round(value: number): number {
  * Hit USDA FoodData Central /foods/search and return per-100g nutrition for
  * the top match, scaled to the given grams. Returns null on miss / error.
  *
- * USDA's API allows an unauthenticated `DEMO_KEY` for low-volume use but
- * production should set USDA_API_KEY. Without a key we don't call —
- * silently skip nutrition.
+ * USDA's API allows `DEMO_KEY` for low-volume use. Production should set
+ * USDA_API_KEY, but the demo path still enriches with DEMO_KEY so client
+ * testers can verify nutrition lookup without another secret.
  */
 export async function lookupNutritionForItem(
   env: Env,
   name: string,
   grams: number
 ): Promise<Nutrition | null> {
-  if (!env.USDA_API_KEY) return null;
   if (!name.trim()) return null;
 
   const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
-  url.searchParams.set("api_key", env.USDA_API_KEY);
+  url.searchParams.set("api_key", env.USDA_API_KEY || "DEMO_KEY");
   url.searchParams.set("query", name);
   url.searchParams.set("pageSize", "1");
   url.searchParams.set("dataType", "Foundation,SR Legacy");

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { addNutrition, emptyNutrition, parseFdcFood, scaleNutritionToGrams } from "../src/lib/usda";
+import { describe, expect, it, vi } from "vitest";
+import { addNutrition, emptyNutrition, lookupNutritionForItem, parseFdcFood, scaleNutritionToGrams } from "../src/lib/usda";
 
 describe("parseFdcFood", () => {
   it("extracts the four nutrients we care about", () => {
@@ -59,5 +59,32 @@ describe("addNutrition", () => {
   it("empty + anything = anything", () => {
     const meal = { calories: 200, protein: 20, carbs: 30, fat: 4 };
     expect(addNutrition(emptyNutrition(), meal)).toEqual(meal);
+  });
+});
+
+describe("lookupNutritionForItem", () => {
+  it("falls back to USDA DEMO_KEY when no configured key is present", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          foods: [
+            {
+              foodNutrients: [
+                { nutrientId: 1008, amount: 100 },
+                { nutrientId: 1003, amount: 10 },
+              ],
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+
+    const result = await lookupNutritionForItem({ USDA_API_KEY: "" } as never, "apple", 50);
+    const url = new URL(String(fetchMock.mock.calls[0][0]));
+
+    expect(url.searchParams.get("api_key")).toBe("DEMO_KEY");
+    expect(result).toEqual({ calories: 50, protein: 5, carbs: 0, fat: 0 });
+    fetchMock.mockRestore();
   });
 });

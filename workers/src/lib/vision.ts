@@ -29,13 +29,14 @@ const VISION_PROMPT = [
 const VISION_TIMEOUT_MS = 12_000;
 
 export function parseVisionResponse(raw: string): VisionResult | null {
+  const fallback = parseVisionDescription(raw);
   const jsonText = extractJsonObject(raw);
-  if (!jsonText) return null;
+  if (!jsonText) return fallback;
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonText);
   } catch {
-    return null;
+    return fallback;
   }
   if (!parsed || typeof parsed !== "object") return null;
   const obj = parsed as Record<string, unknown>;
@@ -60,6 +61,41 @@ export function parseVisionResponse(raw: string): VisionResult | null {
   return { items, confidence: confidence as VisionConfidence, notes };
 }
 
+const DESCRIPTION_FOOD_MAP: Array<{ terms: string[]; name: string; grams: number }> = [
+  { terms: ["sandwich", "submarine", "hoagie", "sub"], name: "sandwich", grams: 180 },
+  { terms: ["apple"], name: "apple", grams: 150 },
+  { terms: ["banana"], name: "banana", grams: 120 },
+  { terms: ["rice"], name: "rice", grams: 150 },
+  { terms: ["chicken"], name: "chicken", grams: 140 },
+  { terms: ["salad"], name: "salad", grams: 120 },
+  { terms: ["pizza"], name: "pizza", grams: 120 },
+  { terms: ["burger", "hamburger"], name: "burger", grams: 180 },
+  { terms: ["egg", "eggs"], name: "egg", grams: 50 },
+  { terms: ["yogurt"], name: "yogurt", grams: 170 },
+  { terms: ["oatmeal", "oats"], name: "oatmeal", grams: 180 },
+  { terms: ["broccoli"], name: "broccoli", grams: 90 },
+];
+
+export function parseVisionDescription(raw: string): VisionResult | null {
+  const text = raw.toLowerCase();
+  if (!text.trim() || /\b(no food|not food|does not contain food)\b/.test(text)) {
+    return null;
+  }
+  const items: VisionItem[] = [];
+  for (const entry of DESCRIPTION_FOOD_MAP) {
+    if (entry.terms.some((term) => new RegExp(`\\b${term}\\b`, "i").test(text))) {
+      items.push({ name: entry.name, estimated_grams: entry.grams });
+    }
+    if (items.length >= 6) break;
+  }
+  if (items.length === 0) return null;
+  return {
+    items,
+    confidence: "low",
+    notes: "recognized from vision description",
+  };
+}
+
 /**
  * Call Cloudflare Workers AI vision model on a photo stored in R2.
  * Returns null if the binding is missing or the model output can't be
@@ -81,21 +117,61 @@ export async function analyzeFoodPhoto(env: Env, r2Key: string): Promise<VisionR
   }
 
   try {
-    const result = (await withTimeout(
-      env.AI.run(model, {
-        image: Array.from(image),
-        prompt: VISION_PROMPT,
-        max_tokens: 400,
-        temperature: 0.1
-      }),
+    const result = await withTimeout(
+      runVisionModel(env, model, image),
       VISION_TIMEOUT_MS
-    )) as { response?: string; description?: string };
-    const raw = result.response || result.description || "";
+    );
+    const raw = visionTextFromResult(result);
     return parseVisionResponse(raw);
   } catch (err) {
     console.warn("vision: model call failed", err);
     return null;
   }
+}
+
+function visionTextFromResult(result: unknown): string {
+  if (typeof result === "string") return result;
+  if (!result || typeof result !== "object") return "";
+  const record = result as Record<string, unknown>;
+  for (const key of ["response", "description", "result", "text", "output"]) {
+    const value = record[key];
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object") {
+      const nested = visionTextFromResult(value);
+      if (nested) return nested;
+    }
+  }
+  return JSON.stringify(result);
+}
+
+function runVisionModel(env: Env, model: string, image: Uint8Array) {
+  if (model.includes("llama-3.2-11b-vision-instruct")) {
+    return env.AI!.run(model, {
+      messages: [
+        { role: "system", content: "Return only the requested food-analysis JSON." },
+        { role: "user", content: VISION_PROMPT },
+      ],
+      image: `data:image/jpeg;base64,${bytesToBase64(image)}`,
+      max_tokens: 400,
+      temperature: 0.1,
+    });
+  }
+
+  return env.AI!.run(model, {
+    image: Array.from(image),
+    prompt: VISION_PROMPT,
+    max_tokens: 400,
+    temperature: 0.1
+  });
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.slice(i, i + chunkSize));
+  }
+  return btoa(binary);
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {

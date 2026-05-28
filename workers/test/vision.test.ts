@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseVisionResponse } from "../src/lib/vision";
+import { parseVisionDescription, parseVisionResponse } from "../src/lib/vision";
 
 describe("parseVisionResponse", () => {
   it("parses a clean JSON response", () => {
@@ -71,5 +71,24 @@ describe("parseVisionResponse", () => {
   it("returns null for malformed JSON", () => {
     expect(parseVisionResponse("not json")).toBeNull();
     expect(parseVisionResponse('{"items":[]')).toBeNull();
+  });
+
+  it("falls back from plain captions to recognized food items", () => {
+    const result = parseVisionResponse("The image shows a submarine sandwich with lettuce and tomato.");
+
+    expect(result?.confidence).toBe("low");
+    expect(result?.items).toEqual([{ name: "sandwich", estimated_grams: 180 }]);
+  });
+});
+
+describe("parseVisionDescription", () => {
+  it("extracts common food words from non-JSON model output", () => {
+    const result = parseVisionDescription("A plate with chicken, rice, and broccoli.");
+
+    expect(result?.items.map((item) => item.name)).toEqual(["rice", "chicken", "broccoli"]);
+  });
+
+  it("returns null for explicit non-food captions", () => {
+    expect(parseVisionDescription("This image does not contain food.")).toBeNull();
   });
 });

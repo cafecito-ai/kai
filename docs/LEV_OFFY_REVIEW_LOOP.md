@@ -17,7 +17,7 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Onboarding: ensure first load starts with the premium fast onboarding flow and ends with the personalized system reveal.
 - [x] Day 0: add private Day 0 video capture near the end of onboarding with a small home/Journey card after completion.
 - [x] Plus actions: verify every `+` action opens the right page and completes a real log or task.
-- [ ] Food logger: verify photo upload, AI item identification, USDA nutrition enrichment, and user-facing result copy.
+- [x] Food logger: verify photo upload, AI item identification, USDA nutrition enrichment, and user-facing result copy.
 - [x] Sleep logging: fix the sleep counter / score update path so sleep changes are obvious immediately after logging.
 - [x] Profile gamification: reduce card overload and make the path understandable: score, streak, XP/level, badges, growth visual.
 - [ ] Mobile QA: check home, onboarding, chat, profile, plus sheet, food, sleep, mood, goals, and journal on a 390px mobile viewport.

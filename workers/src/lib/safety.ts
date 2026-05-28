@@ -21,7 +21,7 @@ const rules: Array<{ category: NonNullable<SafetyClassification["category"]>; se
   { category: "suicide_ideation", severity: "critical", pattern: /\b(kill myself|suicide|end my life|not want to live)\b/i },
   { category: "self_harm", severity: "high", pattern: /\b(cut myself|self harm|hurt myself|burn myself)\b/i },
   { category: "eating_disorder", severity: "high", pattern: /\b(purge|starve myself|throw up after eating)\b/i },
-  { category: "eating_disorder", severity: "medium", pattern: /\b(skip meals?|skipping meals?|afraid to eat|hate my body|too fat|calories? are scary|under ?500 calories|need to be skinny)\b/i },
+  { category: "eating_disorder", severity: "medium", pattern: /\b(skip meals?|skipping meals?|afraid to eat|hate my body|too fat|calories? are scary|under ?500 calories|need to be skinny|lose weight fast without eating|without eating|don'?t eat|dont eat)\b/i },
   { category: "abuse_disclosure", severity: "high", pattern: /\b(abuse|molest|assaulted|hit me)\b/i },
   { category: "substance", severity: "high", pattern: /\b(overdose|too many pills|drunk and driving)\b/i },
   { category: "violence_to_others", severity: "critical", pattern: /\b(kill them|hurt someone|shoot|stab)\b/i }
@@ -46,6 +46,18 @@ const VALID_SEVERITIES = new Set<NonNullable<SafetyClassification["severity"]>>(
 const STANDARD_SAFETY_RESPONSE =
   "I'm really glad you said that out loud. This is bigger than a normal KAI coaching moment, and I want you with a real person right now. If you might hurt yourself or someone else, call emergency services now. In the U.S. or Canada, call or text 988. I can stay here while you reach out.";
 
+const EATING_DISORDER_RESPONSE =
+  "I can’t help you not eat or lose weight fast. Your body needs fuel, especially if you’re training, growing, or stressed.\n\nTell me what you ate today and what you’re trying to change, and I’ll help you make a safer plan.";
+
+const ABUSE_RESPONSE =
+  "I’m really glad you told me. If someone is hurting you or making you feel unsafe, this needs a real trusted adult involved now: a parent you trust, school counselor, coach, relative, or emergency services if you’re in immediate danger.\n\nYou don’t have to handle that alone.";
+
+function safetyResponseFor(category: NonNullable<SafetyClassification["category"]>) {
+  if (category === "eating_disorder") return EATING_DISORDER_RESPONSE;
+  if (category === "abuse_disclosure") return ABUSE_RESPONSE;
+  return STANDARD_SAFETY_RESPONSE;
+}
+
 export function classifySafety(text: string): SafetyClassification {
   const match = rules.find((rule) => rule.pattern.test(text));
   if (!match) return { safe: true };
@@ -53,7 +65,7 @@ export function classifySafety(text: string): SafetyClassification {
     safe: false,
     category: match.category,
     severity: match.severity,
-    response: STANDARD_SAFETY_RESPONSE
+    response: safetyResponseFor(match.category)
   };
 }
 
@@ -95,7 +107,7 @@ export function parseSafetyResponse(raw: string): SafetyClassification | null {
     safe: false,
     category: category as NonNullable<SafetyClassification["category"]>,
     severity: severity as NonNullable<SafetyClassification["severity"]>,
-    response: STANDARD_SAFETY_RESPONSE
+    response: safetyResponseFor(category as NonNullable<SafetyClassification["category"]>)
   };
 }
 
@@ -166,7 +178,7 @@ export async function classifySafetyFull(env: Env, text: string): Promise<Safety
 }
 
 function needsLLMSafetyReview(text: string): boolean {
-  return /\b(kill|suicide|die|dead|death|end (it|my life)|make it end|not be (alive|here)|not being here|hurt myself|harm myself|scratch myself|cut myself|cut to feel|self harm|burn myself|burn my|overdose|pills|vodka|drunk and driving|huffing|using every day|purge|starve|haven't eaten|restricting|throw up after|punish myself for eating|don't have to eat|abuse|molest|assault|hit me|violent with me|locks me|touched me|not to tell|hurt them|shoot|stab|knife to school|make him pay|hurt someone)\b/i.test(text);
+  return /\b(kill|suicide|die|dead|death|end (it|my life)|make it end|not be (alive|here)|not being here|hurt myself|harm myself|scratch myself|cut myself|cut to feel|self harm|burn myself|burn my|overdose|pills|vodka|drunk and driving|huffing|using every day|purge|starve|haven't eaten|restricting|throw up after|punish myself for eating|don't have to eat|without eating|lose weight fast|abuse|molest|assault|hit me|violent with me|locks me|touched me|not to tell|hurt them|shoot|stab|knife to school|make him pay|hurt someone)\b/i.test(text);
 }
 /**
  * Build a privacy-preserving excerpt of a teen message for ops review.

@@ -20,6 +20,14 @@ describe("worker safety classifier (regex fast path)", () => {
     expect(result.category).toBe("eating_disorder");
   });
 
+  it("flags unsafe restriction asks without showing suicide crisis copy", () => {
+    const result = classifySafety("how do i lose weight fast without eating");
+    expect(result.safe).toBe(false);
+    expect(result.category).toBe("eating_disorder");
+    expect(result.response).toContain("I can’t help you not eat");
+    expect(result.response).not.toContain("988");
+  });
+
   it("misses paraphrased crisis language (documents the gap the LLM fills)", () => {
     // Product threshold: normal distress should stay in KAI coaching unless
     // the user explicitly mentions death, self-harm, abuse, overdose, severe

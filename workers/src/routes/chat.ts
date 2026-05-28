@@ -264,10 +264,66 @@ export function fastKaiReply(message: string): string | null {
     ].join("\n\n");
   }
 
+  if (/\b(test|quiz|exam|homework|study|studying|school|grades?|class|assignment|finals?)\b/.test(text) && /\b(can'?t focus|focus|pressure|stressed|tomorrow|behind|overwhelmed|locked|lock in)\b/.test(text)) {
+    return [
+      "School pressure can make your brain freeze.",
+      "Do one 12-minute block: phone away, one topic only, then tell me what part still feels messy.",
+    ].join("\n\n");
+  }
+
+  if (/\b(ugly|awkward|low confidence|no confidence|insecure|embarrassed|hate how i look|feel weird)\b/.test(text)) {
+    return [
+      "That feeling can get loud at school.",
+      "Don’t debate your whole identity today. Give me the moment it hits hardest: walking in, talking to people, photos, or being compared?",
+    ].join("\n\n");
+  }
+
+  if (/\b(friend|friends|group chat|left me out|lonely|crush|delivered|rejected|ignored|social)\b/.test(text)) {
+    return [
+      "That kind of stuff stings because it hits belonging.",
+      "What actually happened: left out, ignored, embarrassed, or you’re reading the silence?",
+    ].join("\n\n");
+  }
+
   if (/\b(unmotivated|no motivation|lazy|stuck|can't start|cant start|procrastinat|doomscroll|phone addiction)\b/.test(text)) {
     return [
       "Yeah, that stuck feeling is real.",
       "Don’t solve your whole life right now. Give me one thing you’ve been avoiding and I’ll make it a 10-minute start.",
+    ].join("\n\n");
+  }
+
+  if (/\b(sleep|3am|2am|late|tired|exhausted|can'?t sleep|cant sleep)\b/.test(text) && /\b(scroll|phone|staying up|up until|late|tired|exhausted|can'?t sleep|cant sleep)\b/.test(text)) {
+    return [
+      "Tonight’s win is not a perfect routine.",
+      "It’s making the next hour quieter: dim the screen, plug the phone away from bed, and choose one boring wind-down thing.",
+    ].join("\n\n");
+  }
+
+  if (/\b(tiktok|instagram|youtube|scroll|scrolling|doomscroll|phone|screen time|social media)\b/.test(text)) {
+    return [
+      "Your attention got pulled. That doesn’t mean the day is gone.",
+      "Put the phone across the room for 15 minutes and pick the replacement: shower, walk, homework sprint, or sleep setup.",
+    ].join("\n\n");
+  }
+
+  if (/\b(mad|angry|rage|yelled|fight|fighting|mom|dad|parent|parents)\b/.test(text) && /\b(feel bad|guilty|regret|sorry|mad|angry|yelled|fight)\b/.test(text)) {
+    return [
+      "Feeling bad after anger usually means your standards are still alive.",
+      "First repair is small: cool down, then say one clean sentence about what you wish you handled differently.",
+    ].join("\n\n");
+  }
+
+  if (/\b(point of trying|always quit|why try|i always fail|nothing works|keep quitting|what's the point|whats the point)\b/.test(text)) {
+    return [
+      "Quitting a lot does not prove you’re broken. It proves the system has been too heavy.",
+      "What’s the smallest habit you’d actually repeat for three days?",
+    ].join("\n\n");
+  }
+
+  if (/\b(cooked|fried|drained|burnt out|burned out|overwhelmed)\b/.test(text) && /\b(what do i do|what should i do|help|start|fix)\b/.test(text)) {
+    return [
+      "Cooked usually means overloaded, not hopeless.",
+      "Do the reset version: water, stand up, clear one surface, then tell me the one thing you’re avoiding.",
     ].join("\n\n");
   }
 
@@ -278,7 +334,13 @@ export function fastKaiReply(message: string): string | null {
     ].join("\n\n");
   }
 
-  if (/\b(what should i do|help me|where do i start|start today|lock in|locked in)\b/.test(text)) {
+  if (/\b(what should i do|what do i do|help me|where do i start|start today|lock in|locked in)\b/.test(text)) {
+    if (/\b(week|this week|plan)\b/.test(text)) {
+      return [
+        "Here’s the lock-in week: one body rep, one school/work rep, one sleep rep each day.",
+        "Keep them small enough to actually finish. Want me to make it basketball, confidence, school, or sleep focused?",
+      ].join("\n\n");
+    }
     return [
       "Let’s not make it huge.",
       "Pick one: reset your mind, move your body, handle school, or protect sleep.",
@@ -290,6 +352,13 @@ export function fastKaiReply(message: string): string | null {
 
 export function fastPhysicalReply(message: string): string | null {
   const text = message.toLowerCase();
+  if (/\b(basketball|hoop|shooting|handles|workout|training)\b/.test(text) && /\b(skip|skipping|better|improve|get better|workouts?|practice)\b/.test(text)) {
+    return [
+      "Basketball improvement needs a repeatable floor, not a perfect workout.",
+      "Do 20 minutes today: 5 minutes handles, 10 minutes form shots or wall reps, 5 minutes mobility. Log it so the streak has proof.",
+    ].join("\n\n");
+  }
+
   const asksMusclePlan = /\b(bulk|bulking|gain muscle|muscle gain|muscle-building|meal plan|diet)\b/.test(text) &&
     /\b(summer|muscle|bulk|bulking|diet|meal|food|eat|training|workout)\b/.test(text);
   if (!asksMusclePlan) return null;

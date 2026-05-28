@@ -106,16 +106,31 @@ export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Pr
 function fallbackReply(messages: ClaudeMessage[]) {
   const last = [...messages].reverse().find((message) => message.role === "user")?.content.toLowerCase() ?? "";
   if (/\b(yo|hey|hi|hello|sup|what'?s up|wassup)\b/.test(last)) {
-    return "I’m here. Pick one lane: mind, body, school, sleep, or confidence. I’ll turn it into the next move.";
+    return "I’m here. What’s the vibe today: mind, body, school, sleep, or confidence?";
+  }
+  if (/\b(friend|friends|group chat|left me out|lonely|crush|delivered|rejected|ignored|social)\b/.test(last)) {
+    return "That kind of stuff stings because it hits belonging. What actually happened: left out, ignored, embarrassed, or you’re reading the silence?";
+  }
+  if (/\b(mad|angry|rage|yelled|fight|mom|dad|parent|parents)\b/.test(last)) {
+    return "Feeling bad after anger usually means your standards are still alive. Cool down first, then repair with one clean sentence.";
+  }
+  if (/\b(point of trying|always quit|why try|i always fail|nothing works|keep quitting|what's the point|whats the point)\b/.test(last)) {
+    return "Quitting a lot does not prove you’re broken. It usually means the system was too heavy. What’s one tiny thing you’d repeat for three days?";
+  }
+  if (/\b(test|quiz|exam|homework|study|studying|school|grades?|class|assignment|finals?)\b/.test(last)) {
+    return "School pressure can make your brain freeze. Do one 12-minute block: phone away, one topic only, then stop and check what still feels messy.";
+  }
+  if (/\b(basketball|hoop|shooting|handles)\b/.test(last)) {
+    return "Basketball improvement needs a repeatable floor. Do 20 minutes today: handles, form shots, and mobility. Log it so the streak has proof.";
   }
   if (last.includes("sleep") || last.includes("tired")) {
-    return "Sleep is the move. Keep it simple: protect tonight, lower the pressure today, and log what happened so KAI can spot the pattern.";
+    return "Tonight’s win is not a perfect routine. It’s making the next hour quieter: dim the screen, plug the phone away from bed, and choose one boring wind-down thing.";
   }
   if (last.includes("food") || last.includes("eat") || last.includes("practice")) {
-    return "Fuel is the move. Get something steady in, add water, and log the meal so the next recommendation has context.";
+    return "Fuel should support the day, not turn into pressure. Tell me what you ate and what you’re trying to do, and I’ll keep it simple.";
   }
   if (last.includes("scroll") || last.includes("phone") || last.includes("tiktok") || last.includes("instagram")) {
-    return "Attention reset is the move. Put the phone out of reach for one hour and choose one replacement that actually gives your brain a break.";
+    return "Your attention got pulled. That doesn’t mean the day is gone. Put the phone across the room for 15 minutes and pick one replacement.";
   }
-  return "I can help with that. Start with one small rep you can finish in the next ten minutes, then log it so today counts.";
+  return "I’m with you. Give me the real thing underneath it, and I’ll help you make the next step small enough to do.";
 }

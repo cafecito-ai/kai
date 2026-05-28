@@ -16,7 +16,7 @@ export function formatKaiReply(rawReply: string, mode: ReplyMode = "general") {
     .flatMap((paragraph) => splitLongParagraph(paragraph.trim()))
     .filter(Boolean);
 
-  const body = paragraphs.slice(0, MAX_BODY_PARAGRAPHS).join("\n\n");
+  const body = limitQuestions(paragraphs.slice(0, MAX_BODY_PARAGRAPHS).join("\n\n"));
   if (hasNaturalQuestion(body) || hasEnoughSubstance(body)) return body;
   return `${body}\n\n${gentleFollowUp(body, mode)}`;
 }
@@ -42,6 +42,27 @@ function splitLongParagraph(paragraph: string) {
 
 function hasNaturalQuestion(reply: string) {
   return /\?\s*$/.test(reply.trim());
+}
+
+function limitQuestions(reply: string) {
+  const questionCount = (reply.match(/\?/g) ?? []).length;
+  if (questionCount <= 1) return reply;
+
+  let keptQuestion = false;
+  return reply
+    .split("\n\n")
+    .map((paragraph) => {
+      const sentences = paragraph.match(/[^.!?]+[.!?]+["')\]]?|[^.!?]+$/g) ?? [paragraph];
+      const kept = sentences.filter((sentence) => {
+        if (!sentence.includes("?")) return true;
+        if (keptQuestion) return false;
+        keptQuestion = true;
+        return true;
+      });
+      return kept.join(" ").replace(/\s+/g, " ").trim();
+    })
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function hasEnoughSubstance(reply: string) {

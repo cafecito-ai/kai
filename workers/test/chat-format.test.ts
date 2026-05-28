@@ -31,6 +31,16 @@ describe("formatKaiReply", () => {
     expect(reply.match(/\?/g)?.length).toBe(1);
   });
 
+  it("keeps only one follow-up question when the model over-asks", () => {
+    const reply = formatKaiReply(
+      "Test tomorrow can be really overwhelming. What's going through your mind right now? Is it the material itself or more about the pressure to do well?\n\nWhat's been the most challenging part of studying for this test so far?",
+      "mind",
+    );
+
+    expect(reply.match(/\?/g)?.length).toBe(1);
+    expect(reply).not.toContain("most challenging part");
+  });
+
   it("caps wall-of-text replies without adding a forced menu", () => {
     const reply = formatKaiReply(
       [

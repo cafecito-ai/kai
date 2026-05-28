@@ -20,7 +20,7 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Food logger: verify photo upload, AI item identification, USDA nutrition enrichment, and user-facing result copy.
 - [x] Sleep logging: fix the sleep counter / score update path so sleep changes are obvious immediately after logging.
 - [x] Profile gamification: reduce card overload and make the path understandable: score, streak, XP/level, badges, growth visual.
-- [ ] Mobile QA: check home, onboarding, chat, profile, plus sheet, food, sleep, mood, goals, and journal on a 390px mobile viewport.
+- [x] Mobile QA: check home, onboarding, chat, profile, plus sheet, food, sleep, mood, goals, and journal on a 390px mobile viewport.
 
 ## P1 Client Polish
 
@@ -50,8 +50,8 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Worker deploys to staging.
 - [x] Pages preview deploys for branch.
 - [x] Fresh-profile browser test starts at onboarding.
-- [ ] Completed onboarding produces personalized home goals.
-- [ ] Food, sleep, mood, workout, journal, and goal logging work from mobile.
+- [x] Completed onboarding produces personalized home goals.
+- [x] Food, sleep, mood, workout, journal, and goal logging work from mobile.
 - [x] Explicit crisis language still intercepts; normal sadness/depression routes to coaching.
 - [ ] Lev/Offy can test without local state cleanup or manual setup.
 
@@ -64,3 +64,11 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 5. Fix food logger and sleep score update edge cases.
 6. Simplify profile gamification.
 7. Full mobile QA and deploy.
+
+## Latest Verification Notes
+
+- 2026-05-28: Verified live mobile `390x844` on `kai-pr143-chat-engine.kai-epk.pages.dev`.
+- Personalized basketball onboarding data produces `Built for your game` with shooting, mobility, and recovery fuel missions on Home.
+- `+` sheet opens with Check in, Log workout, Log food, Log sleep, Journal, Energy, Mobility, Goals, Body scan, and Voice routes visible.
+- Food quick note, sleep, mood check-in, workout, journal, and goals all completed from mobile and returned clean console output.
+- Added AI-call timeouts so slow Anthropic / Workers AI meal comments fall back instead of leaving the food logger stuck on sending.

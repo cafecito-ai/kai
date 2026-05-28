@@ -5,6 +5,9 @@ interface ClaudeMessage {
   content: string;
 }
 
+const ANTHROPIC_TIMEOUT_MS = 8_000;
+const WORKERS_AI_TIMEOUT_MS = 6_000;
+
 export async function callClaude(env: Env, system: string, messages: ClaudeMessage[]): Promise<string> {
   if (env.ANTHROPIC_API_KEY) {
     const anthropicReply = await callAnthropic(env, system, messages);
@@ -20,9 +23,12 @@ export async function callClaude(env: Env, system: string, messages: ClaudeMessa
 }
 
 async function callAnthropic(env: Env, system: string, messages: ClaudeMessage[]) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "content-type": "application/json",
         "x-api-key": env.ANTHROPIC_API_KEY ?? "",
@@ -41,6 +47,8 @@ async function callAnthropic(env: Env, system: string, messages: ClaudeMessage[]
     return json.content?.find((item) => item.type === "text" && item.text)?.text?.trim() || null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -52,11 +60,14 @@ async function callWorkersAi(
 ) {
   try {
     const prompt = `${system}\n\nConversation:\n${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}\nassistant:`;
-    const result = (await ai.run(model || "@cf/meta/llama-3.1-8b-instruct", {
-      prompt,
-      max_tokens: 320,
-      temperature: 0.5
-    })) as { response?: string; text?: string };
+    const result = (await withTimeout(
+      ai.run(model || "@cf/meta/llama-3.1-8b-instruct", {
+        prompt,
+        max_tokens: 320,
+        temperature: 0.5
+      }),
+      WORKERS_AI_TIMEOUT_MS,
+    )) as { response?: string; text?: string };
     return (result.response || result.text || "").trim() || null;
   } catch {
     return null;
@@ -76,6 +87,20 @@ function normalizeAnthropicMessages(messages: ClaudeMessage[]) {
     }
   }
   return normalized.length ? normalized : [{ role: "user" as const, content: "Help me choose one small next move." }];
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("AI request timed out")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 function fallbackReply(messages: ClaudeMessage[]) {

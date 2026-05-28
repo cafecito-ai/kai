@@ -257,6 +257,7 @@ export function Home() {
         (i) => i.date === new Date().toISOString().slice(0, 10),
       );
       if (local.final != null) {
+        const latestSleep = latestSleepHours(todayInputs);
         setData({
           score: local.final,
           bandLabel:
@@ -268,7 +269,9 @@ export function Home() {
           trend: 0,
           streak: local.streak,
           mind: { value: local.mental ?? 0, outOf: 100 },
-          sleep: { value: local.sleep ?? 0, outOf: 100, unit: "" },
+          sleep: latestSleep != null
+            ? { value: latestSleep, outOf: 8, unit: "hrs" }
+            : { value: 0, outOf: 8, unit: "hrs" },
           mood: { value: local.mood ?? 0, outOf: 100 },
         });
       }
@@ -339,6 +342,7 @@ export function Home() {
           value={`${data.mind.value}`}
           unit={`/${data.mind.outOf}`}
           color="cool"
+          onClick={() => navigate("/check-in")}
         />
         <SubScoreCard
           icon={<Moon size={16} />}
@@ -346,6 +350,7 @@ export function Home() {
           value={`${data.sleep.value}`}
           unit={data.sleep.unit}
           color="violet"
+          onClick={() => navigate("/sleep/log")}
         />
         <SubScoreCard
           icon={<Heart size={16} />}
@@ -353,6 +358,7 @@ export function Home() {
           value={`${data.mood.value}`}
           unit=""
           color="warm"
+          onClick={() => navigate("/check-in")}
         />
       </div>
 
@@ -548,12 +554,14 @@ function SubScoreCard({
   value,
   unit,
   color,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   unit: string;
   color: "cool" | "warm" | "violet";
+  onClick: () => void;
 }) {
   const tint = {
     cool: "bg-accent-cool-soft text-accent-cool",
@@ -561,7 +569,11 @@ function SubScoreCard({
     violet: "bg-accent-soft text-accent",
   }[color];
   return (
-    <div className="min-w-[120px] flex-1 rounded-lg border border-glass-border bg-surface p-4 shadow-card">
+    <button
+      type="button"
+      onClick={onClick}
+      className="min-w-[120px] flex-1 rounded-lg border border-glass-border bg-surface p-4 text-left shadow-card transition active:scale-[0.98] hover:bg-surface-muted focus-ring"
+    >
       <div
         className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${tint}`}
       >
@@ -578,7 +590,7 @@ function SubScoreCard({
           </span>
         )}
       </p>
-    </div>
+    </button>
   );
 }
 
@@ -674,15 +686,30 @@ function toDailyScoreView(
   res: Awaited<ReturnType<typeof api.getDailyScoreToday>>,
 ): DailyScoreView {
   const { score } = res;
+  const latestSleep = latestSleepHours(res.inputs);
   return {
     score: score.final ?? DEMO_SCORE.score,
     bandLabel: bandToLabel(score.band),
     trend: 0,                              // Phase B follow-up: yesterday delta
     streak: countConsecutiveDays(res.inputs),
     mind: { value: score.mental ?? 0, outOf: 100 },
-    sleep: { value: score.sleep ?? 0, outOf: 100, unit: "" },
+    sleep: latestSleep != null
+      ? { value: latestSleep, outOf: 8, unit: "hrs" }
+      : { value: 0, outOf: 8, unit: "hrs" },
     mood: { value: score.mood ?? 0, outOf: 100 },
   };
+}
+
+function latestSleepHours(
+  inputs: Array<{ source: string; value: unknown; createdAt: string }>,
+): number | null {
+  const latest = [...inputs]
+    .filter((input) => input.source === "sleep_log")
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
+  const hours = (latest?.value as { hours?: unknown } | undefined)?.hours;
+  return typeof hours === "number" && Number.isFinite(hours)
+    ? Math.round(hours * 4) / 4
+    : null;
 }
 
 function bandToLabel(b: "low" | "mid" | "high" | null): string {

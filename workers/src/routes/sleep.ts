@@ -14,6 +14,7 @@ import { Hono } from "hono";
 import { renderMindPrompt } from "../lib/agent-prompts";
 import { callClaude } from "../lib/claude";
 import { buildKaiContext } from "../lib/context";
+import { ensureUser } from "../lib/db";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import {
@@ -75,6 +76,8 @@ sleepRoutes.post("/sleep", async (c) => {
       });
     }
   }
+
+  await ensureUser(c.env.DB, userId);
 
   const { score } = await recordScoreInput(c.env.DB, {
     userId,

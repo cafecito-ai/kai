@@ -91,6 +91,20 @@ describe("getTodayMissions", () => {
     expect(missions.map((m) => m.id)).toEqual(["journal", "energy_check", "stretch"]);
     expect(missions[0].title).toBe("Pick the first tiny rep");
   });
+
+  it("personalizes goals for basketball instead of generic wellness defaults", () => {
+    const missions = getTodayMissions({
+      focusAreas: ["getting_stronger"],
+      hardestLately: "I want to improve at basketball and shooting",
+      followUps: {},
+      updatedAt: new Date().toISOString(),
+    });
+
+    expect(missions.map((m) => m.id)).toEqual(["log_workout", "stretch", "log_food"]);
+    expect(missions[0].title).toBe("Shooting or handles block");
+    expect(missions[1].title).toBe("Ankles, hips, hamstrings");
+    expect(missions[2].title).toBe("Recovery fuel check");
+  });
 });
 
 describe("auto-completion from score inputs", () => {

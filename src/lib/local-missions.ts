@@ -375,6 +375,27 @@ function planFromProfile(profile: OnboardingProfile | null): {
     };
   }
 
+  if (matches(text, ["basketball", "hoops", "shooting", "practice", "court", "vertical", "handles"])) {
+    return {
+      label: "Built for your game",
+      priority: ["log_workout", "stretch", "log_food"],
+      overrides: {
+        log_workout: {
+          title: "Shooting or handles block",
+          subtitle: "Log the session after practice",
+        },
+        stretch: {
+          title: "Ankles, hips, hamstrings",
+          subtitle: "Three minutes before you sit",
+        },
+        log_food: {
+          title: "Recovery fuel check",
+          subtitle: "What did you eat after training?",
+        },
+      },
+    };
+  }
+
   if (matches(text, ["getting_stronger", "gym", "sport", "training", "better shape", "energy", "eating_better", "food"])) {
     return {
       label: "Built for body momentum",

@@ -27,10 +27,10 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Chat depth: KAI should ask better follow-ups for depression/sadness without over-escalating to crisis resources.
 - [x] Chat formatting: keep responses separated and readable, with tasteful emphasis and a closing prompt for philosophy or next move.
 - [x] Chat speed: reduce perceived latency with immediate optimistic state, shorter default responses, and better loading treatment.
-- [ ] "Talk to KAI": make the chat entry larger and impossible to miss on home.
+- [x] "Talk to KAI": make the chat entry larger and impossible to miss on home.
 - [x] Daily score shortcuts: tapping Mind / Sleep / Mood should instantly route to the right logging/tracking flow.
 - [x] Quote module: keep the motivational quote small and profile-relevant.
-- [ ] Mission personalization: avoid generic goals unless they match onboarding. Examples: overthinking -> breathing reset; confidence -> posture / eye contact; basketball -> shooting / recovery.
+- [x] Mission personalization: avoid generic goals unless they match onboarding. Examples: overthinking -> breathing reset; confidence -> posture / eye contact; basketball -> shooting / recovery.
 - [ ] Remove noisy chat updates: logs like "fuel note saved" should not appear as normal chat messages.
 - [ ] Logo and copy: keep KAI branding, not RAWZ; remove age and parent-email asks.
 

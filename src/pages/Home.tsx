@@ -21,6 +21,7 @@ import {
   Lock,
   Flame,
   Heart,
+  MessageCircle,
   Moon,
   Play,
   Sprout,
@@ -327,6 +328,32 @@ export function Home() {
           <KaiOrb size={36} />
         </button>
       </header>
+
+      <button
+        type="button"
+        onClick={() => navigate("/chat")}
+        className="
+          group flex w-full items-center gap-3 rounded-glass
+          border border-glass-border bg-text-primary px-4 py-3.5
+          text-left text-background shadow-card-lg
+          transition active:scale-[0.99] focus-ring
+        "
+      >
+        <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background/10">
+          <KaiOrb size={42} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-xl font-semibold leading-tight">
+            Talk to KAI
+          </span>
+          <span className="mt-0.5 block text-sm leading-snug text-background/68">
+            Ask what to do next, or tell KAI what feels off.
+          </span>
+        </span>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-text-primary transition group-active:scale-95">
+          <MessageCircle size={17} aria-hidden="true" />
+        </span>
+      </button>
 
       <EvolvingGoalCard profile={profile} score={data} />
 

@@ -287,6 +287,8 @@ export function Home() {
     };
   }, [refreshKey]);
 
+  const homeMessage = kaiHomeMessage(profile, data);
+
   return (
     <div className="mx-auto w-full max-w-md space-y-6 overflow-x-hidden pt-2 sm:max-w-lg">
       {/* Greeting + streak chip + orb */}
@@ -405,8 +407,7 @@ export function Home() {
           onClick: () => navigate("/chat"),
         }}
       >
-        Sleep dipped under 7h again last night — want to start light today
-        and see how you feel by lunch?
+        {homeMessage}
       </KaiMessage>
 
       <DayZeroCard meta={dayZero} videoUrl={dayZeroUrl} />
@@ -724,12 +725,7 @@ function quoteForProfile(profile: OnboardingProfile | null): {
   line: string;
   context: string;
 } {
-  const text = [
-    ...(profile?.focusAreas ?? []),
-    profile?.hardestLately ?? "",
-    ...Object.values(profile?.followUps ?? {}),
-    profile?.summary ?? "",
-  ].join(" ").toLowerCase();
+  const text = profileText(profile);
 
   if (hasAny(text, ["sad", "mood", "depressed", "lonely", "anxiety", "stress", "overthinking"])) {
     return {
@@ -766,6 +762,32 @@ function quoteForProfile(profile: OnboardingProfile | null): {
   };
 }
 
+function kaiHomeMessage(
+  profile: OnboardingProfile | null,
+  data: DailyScoreView,
+): string {
+  const text = profileText(profile);
+  if (data.score <= 0) {
+    if (hasAny(text, ["sad", "mood", "lonely", "overthinking", "stress", "anxiety"])) {
+      return "Start small today. Give me one honest check-in, then we will pick the next clean move from there.";
+    }
+    if (hasAny(text, ["gym", "training", "sport", "basketball", "stronger", "better shape", "muscle"])) {
+      return "Let us build the day around fuel, movement, and recovery. Log the first real rep when you are ready.";
+    }
+    if (hasAny(text, ["focus", "phone", "distracted", "procrastination", "school", "productive"])) {
+      return "No need to force a perfect day. Start with one focused block and let the system keep score.";
+    }
+    return "I am here. Start with one honest check-in and I will help turn today into a simple plan.";
+  }
+  if (data.sleep.value > 0 && data.sleep.value < 7) {
+    return "Sleep was short, so today should be steady, not chaotic. Keep the goals light and protect your energy.";
+  }
+  if (data.score >= 75) {
+    return "You have momentum. Do not overcomplicate it. Finish the next small goal and keep the streak alive.";
+  }
+  return "You are on the board. Pick the easiest useful goal next and we will build from there.";
+}
+
 function evolvingGoalForProfile(profile: OnboardingProfile | null): {
   title: string;
   subtitle: string;
@@ -775,12 +797,7 @@ function evolvingGoalForProfile(profile: OnboardingProfile | null): {
   icon: string;
   bar: string;
 } {
-  const text = [
-    ...(profile?.focusAreas ?? []),
-    profile?.hardestLately ?? "",
-    ...Object.values(profile?.followUps ?? {}),
-    profile?.summary ?? "",
-  ].join(" ").toLowerCase();
+  const text = profileText(profile);
 
   if (hasAny(text, ["confidence", "social", "lonely", "relationships", "invisible"])) {
     return {
@@ -824,6 +841,15 @@ function evolvingGoalForProfile(profile: OnboardingProfile | null): {
     icon: "text-success",
     bar: "bg-success",
   };
+}
+
+function profileText(profile: OnboardingProfile | null): string {
+  return [
+    ...(profile?.focusAreas ?? []),
+    profile?.hardestLately ?? "",
+    ...Object.values(profile?.followUps ?? {}),
+    profile?.summary ?? "",
+  ].join(" ").toLowerCase();
 }
 
 function hasAny(text: string, terms: string[]) {

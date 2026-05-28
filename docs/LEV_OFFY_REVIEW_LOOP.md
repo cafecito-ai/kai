@@ -53,7 +53,7 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Completed onboarding produces personalized home goals.
 - [x] Food, sleep, mood, workout, journal, and goal logging work from mobile.
 - [x] Explicit crisis language still intercepts; normal sadness/depression routes to coaching.
-- [ ] Lev/Offy can test without local state cleanup or manual setup.
+- [x] Lev/Offy can test without local state cleanup or manual setup.
 
 ## Suggested Work Order
 
@@ -72,3 +72,4 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - `+` sheet opens with Check in, Log workout, Log food, Log sleep, Journal, Energy, Mobility, Goals, Body scan, and Voice routes visible.
 - Food quick note, sleep, mood check-in, workout, journal, and goals all completed from mobile and returned clean console output.
 - Added AI-call timeouts so slow Anthropic / Workers AI meal comments fall back instead of leaving the food logger stuck on sending.
+- Lev/Offy fresh-start URL: `https://kai-pr143-chat-engine.kai-epk.pages.dev/onboarding?fresh=1`. It clears only KAI local app state, preserves auth state, and redirects to `/onboarding`.

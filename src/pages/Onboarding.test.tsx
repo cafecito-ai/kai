@@ -16,9 +16,9 @@ vi.mock("../lib/api", () => ({
   },
 }));
 
-function renderOnboarding() {
+function renderOnboarding(initialEntry = "/onboarding") {
   return render(
-    <MemoryRouter initialEntries={["/onboarding"]}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Onboarding />
     </MemoryRouter>,
   );
@@ -131,6 +131,21 @@ describe("Onboarding (v3 §4)", () => {
     expect(
       screen.getByRole("button", { name: /continue/i }),
     ).toBeDisabled();
+  });
+
+  it("can restart the review flow without clearing auth storage", async () => {
+    localStorage.setItem("kai_onboarding_profile_v1", "old-profile");
+    localStorage.setItem("kai_missions_v1", "old-missions");
+    localStorage.setItem("__clerk_db_jwt", "keep-auth");
+
+    renderOnboarding("/onboarding?fresh=1");
+
+    expect(
+      await screen.findByText(/let's build your personalized system/i),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem("kai_onboarding_profile_v1")).toBeNull();
+    expect(localStorage.getItem("kai_missions_v1")).toBeNull();
+    expect(localStorage.getItem("__clerk_db_jwt")).toBe("keep-auth");
   });
 
   it("saves onboarding without parent consent", async () => {

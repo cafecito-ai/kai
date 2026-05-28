@@ -23,7 +23,7 @@ import {
   Video,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
@@ -151,6 +151,7 @@ const TONES: Array<{ id: KaiTone; title: string; preview: string }> = [
 ];
 
 const DEMO_STORAGE_KEY = "kai_demo_build_v1";
+const FRESH_REVIEW_PARAM = "fresh";
 type DemoBuildSlice = {
   firstName?: string;
   kaiName?: string;
@@ -175,6 +176,36 @@ function isKaiTone(v: unknown): v is KaiTone {
   return v === "warm" || v === "balanced" || v === "direct";
 }
 
+function clearKaiLocalReviewState() {
+  if (typeof window === "undefined") return;
+
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("kai_") || key.startsWith("rawz_"))) {
+        keys.push(key);
+      }
+    }
+    keys.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    /* Storage may be unavailable in private or embedded contexts. */
+  }
+
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const key = sessionStorage.key(i);
+      if (key && (key.startsWith("kai_") || key.startsWith("rawz_"))) {
+        keys.push(key);
+      }
+    }
+    keys.forEach((key) => sessionStorage.removeItem(key));
+  } catch {
+    /* noop */
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────
@@ -183,6 +214,7 @@ const TOTAL_STEPS = 9;
 
 export function Onboarding() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setKai, setPrimaryEngine } = useUserStore();
 
   const [step, setStep] = useState(0);
@@ -201,6 +233,23 @@ export function Onboarding() {
   const [error, setError] = useState("");
 
   const primaryEngine = useMemo(() => suggestEngine(focusAreas), [focusAreas]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (!params.has(FRESH_REVIEW_PARAM)) return;
+
+    clearKaiLocalReviewState();
+    setStep(0);
+    setFirstName("");
+    setFocusAreas([]);
+    setHardestLately("");
+    setFollowUps({});
+    setKaiTone("balanced");
+    setError("");
+    setSaving(false);
+
+    navigate("/onboarding", { replace: true });
+  }, [location.search, navigate]);
 
   const canAdvance = useMemo(() => {
     switch (step) {

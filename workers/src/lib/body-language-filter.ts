@@ -30,8 +30,11 @@ export const FORBIDDEN_BODY_LANGUAGE = [
   "lean body mass",
   "lean mass",
   "calorie deficit",
+  "calories",
+  "calorie",
   "target weight",
   "ideal weight",
+  "body weight",
   "weight estimate",
   "bmi",
   // Physique descriptors
@@ -61,8 +64,10 @@ export const FORBIDDEN_BODY_LANGUAGE = [
   "cutting",
   // Product / supplement recommendations
   "protein powder",
+  "whey",
   "supplement",
   "supplements",
+  "per kilogram",
 ] as const;
 
 export type ForbiddenMatch = {

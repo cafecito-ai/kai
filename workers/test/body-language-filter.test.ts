@@ -45,7 +45,13 @@ describe("body-language filter", () => {
 
   it("flags supplement and protein powder recommendations", () => {
     expect(passesBodyLanguageFilter("Add protein powder after training.")).toBe(false);
+    expect(passesBodyLanguageFilter("Add whey after training.")).toBe(false);
     expect(passesBodyLanguageFilter("Try a supplement for recovery.")).toBe(false);
+  });
+
+  it("flags calorie targets and body-weight macro math", () => {
+    expect(passesBodyLanguageFilter("This meal has 400 calories.")).toBe(false);
+    expect(passesBodyLanguageFilter("Aim for protein per kilogram of body weight.")).toBe(false);
   });
 
   it("flags comparisons even when worded politely", () => {

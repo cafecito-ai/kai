@@ -18,6 +18,6 @@ export function localSafetyCheck(text: string): SafetyResult {
     category: hit.category,
     severity: hit.severity,
     response:
-      "Hey. I hear you. That's a lot. What you're carrying is bigger than what I can help with directly. If you're in immediate danger, call 911 now. In the U.S. or Canada, call or text 988. You can also text HOME to 741741 for Crisis Text Line. I can stay here while you reach out."
+      "I'm really glad you said that out loud. This is bigger than a normal KAI coaching moment, and I want you with a real person right now. If you might hurt yourself or someone else, call emergency services now. In the U.S. or Canada, call or text 988. I can stay here while you reach out."
   };
 }

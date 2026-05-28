@@ -42,7 +42,7 @@ const VALID_SEVERITIES = new Set<NonNullable<SafetyClassification["severity"]>>(
 ]);
 
 const STANDARD_SAFETY_RESPONSE =
-  "Hey. I hear you. That's a lot. What you're carrying is bigger than what I can help with directly. If you're in immediate danger, call 911 now. In the U.S. or Canada, call or text 988. You can also text HOME to 741741 for Crisis Text Line. I can stay here while you reach out.";
+  "I'm really glad you said that out loud. This is bigger than a normal KAI coaching moment, and I want you with a real person right now. If you might hurt yourself or someone else, call emergency services now. In the U.S. or Canada, call or text 988. I can stay here while you reach out.";
 
 export function classifySafety(text: string): SafetyClassification {
   const match = rules.find((rule) => rule.pattern.test(text));
@@ -112,8 +112,9 @@ const SAFETY_CLASSIFIER_PROMPT = [
   "If nothing in the message rises to a safety concern, return:",
   '{"category":"none","severity":"low","explanation":"no safety signal"}',
   "",
-  "Be paraphrase-aware: \"I can't keep going like this\", \"everything would be easier without me\", \"I'm done\" all map to suicide_ideation with severity high or critical depending on specificity.",
-  "Do not flag normal teen frustration, body-image complaints, school stress, or social drama unless they cross into the categories above.",
+  "Do NOT flag ordinary sadness, depression, anxiety, loneliness, low motivation, school stress, social drama, or phrases like \"I can't keep going like this\" unless the message also includes explicit self-harm, suicide, death, abuse, overdose, severe restriction/purging, or violence-to-others language.",
+  "Only classify suicide_ideation when the teen explicitly mentions wanting to die, kill themselves, end their life, not be alive/not be here, suicide, or a specific plan/intent.",
+  "Do not flag normal teen frustration, body-image complaints, school stress, sadness, depression, or social drama unless they cross into the categories above.",
   ""
 ].join("\n");
 
@@ -153,9 +154,14 @@ export async function classifySafetyLLM(env: Env, text: string): Promise<SafetyC
 export async function classifySafetyFull(env: Env, text: string): Promise<SafetyClassification> {
   const fast = classifySafety(text);
   if (!fast.safe) return fast;
+  if (!needsLLMSafetyReview(text)) return { safe: true };
   const llm = await classifySafetyLLM(env, text);
   if (llm && !llm.safe) return llm;
   return { safe: true };
+}
+
+function needsLLMSafetyReview(text: string): boolean {
+  return /\b(kill|suicide|die|dead|death|end (it|my life)|make it end|not be (alive|here)|not being here|hurt myself|harm myself|scratch myself|cut myself|cut to feel|self harm|burn myself|burn my|overdose|pills|vodka|drunk and driving|huffing|using every day|purge|starve|haven't eaten|restricting|throw up after|punish myself for eating|don't have to eat|abuse|molest|assault|hit me|violent with me|locks me|touched me|not to tell|hurt them|shoot|stab|knife to school|make him pay|hurt someone)\b/i.test(text);
 }
 /**
  * Build a privacy-preserving excerpt of a teen message for ops review.

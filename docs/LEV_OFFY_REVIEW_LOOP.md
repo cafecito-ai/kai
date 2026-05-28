@@ -36,7 +36,7 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 
 ## P2 Working-System Depth
 
-- [ ] Journey timeline: support Day 0, Day 30, Day 90, and Day 365 private reflections.
+- [x] Journey timeline: support Day 0, Day 30, Day 90, and Day 365 private reflections.
 - [x] Motivation detection: when missed habits, inactivity, late-night use, or "unmotivated" appear, surface Day 0 as "Watch this before quitting."
 - [ ] AI Day 0 analysis: generate core mission, desired identity, likely struggles, and home priorities from the video/transcript.
 - [ ] Community / progress sharing: minimal non-toxic posting for achievements, routines, and transformations.
@@ -74,3 +74,4 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - Added AI-call timeouts so slow Anthropic / Workers AI meal comments fall back instead of leaving the food logger stuck on sending.
 - Lev/Offy fresh-start URL: `https://kai-pr143-chat-engine.kai-epk.pages.dev/onboarding?fresh=1`. It clears only KAI local app state, preserves auth state, and redirects to `/onboarding`.
 - Day 0 stays small by default, then expands with "Watch this before quitting." when low motivation signals appear.
+- Tapping Day 0 opens `/journey`, with private Day 0, Day 30, Day 90, and Day 365 reflection checkpoints.

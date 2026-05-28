@@ -438,7 +438,12 @@ export function Home() {
         {homeMessage}
       </KaiMessage>
 
-      <DayZeroCard meta={dayZero} videoUrl={dayZeroUrl} elevated={dayZeroElevated} />
+      <DayZeroCard
+        meta={dayZero}
+        videoUrl={dayZeroUrl}
+        elevated={dayZeroElevated}
+        onOpen={() => navigate("/journey")}
+      />
 
       {/* Recent — 3 rows */}
       <RecentActivity items={activity} />
@@ -664,15 +669,19 @@ function DayZeroCard({
   meta,
   videoUrl,
   elevated,
+  onOpen,
 }: {
   meta: DayZeroMeta | null;
   videoUrl: string | null;
   elevated: boolean;
+  onOpen: () => void;
 }) {
   if (!meta) return null;
   return (
-    <section
-      className={`rounded-2xl border p-4 shadow-card transition ${
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`w-full rounded-2xl border p-4 text-left shadow-card transition active:scale-[0.99] focus-ring ${
         elevated
           ? "border-accent-warm/35 bg-accent-warm-soft/45"
           : "border-glass-border bg-surface"
@@ -718,7 +727,7 @@ function DayZeroCard({
           )}
         </div>
       </div>
-    </section>
+    </button>
   );
 }
 

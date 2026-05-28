@@ -9,6 +9,7 @@ import { Chat } from "./pages/Chat";
 import { CheckIn } from "./pages/CheckIn";
 import { Crisis } from "./pages/Crisis";
 import { Journal } from "./pages/Journal";
+import { Journey } from "./pages/Journey";
 import { EnergyCheckIn } from "./pages/EnergyCheckIn";
 import { Mobility } from "./pages/Mobility";
 import { MobilityPlayer } from "./pages/MobilityPlayer";
@@ -96,6 +97,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/chat" element={protectedOnboarding(<Chat />)} />
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />
+          <Route path="/journey" element={protectedOnboarding(<Journey />)} />
           <Route path="/sleep/log" element={protectedOnboarding(<SleepLog />)} />
           <Route path="/workout/log" element={protectedOnboarding(<WorkoutLog />)} />
           <Route path="/food/log" element={protectedOnboarding(<FoodLog />)} />

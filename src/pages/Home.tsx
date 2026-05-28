@@ -289,6 +289,7 @@ export function Home() {
   }, [refreshKey]);
 
   const homeMessage = kaiHomeMessage(profile, data);
+  const dayZeroElevated = shouldElevateDayZero(profile, data, readLocalInputs());
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6 overflow-x-hidden pt-2 sm:max-w-lg">
@@ -437,7 +438,7 @@ export function Home() {
         {homeMessage}
       </KaiMessage>
 
-      <DayZeroCard meta={dayZero} videoUrl={dayZeroUrl} />
+      <DayZeroCard meta={dayZero} videoUrl={dayZeroUrl} elevated={dayZeroElevated} />
 
       {/* Recent — 3 rows */}
       <RecentActivity items={activity} />
@@ -662,15 +663,33 @@ function RecentActivity({ items }: { items: ActivityItem[] }) {
 function DayZeroCard({
   meta,
   videoUrl,
+  elevated,
 }: {
   meta: DayZeroMeta | null;
   videoUrl: string | null;
+  elevated: boolean;
 }) {
   if (!meta) return null;
   return (
-    <section className="rounded-2xl border border-glass-border bg-surface p-4 shadow-card">
+    <section
+      className={`rounded-2xl border p-4 shadow-card transition ${
+        elevated
+          ? "border-accent-warm/35 bg-accent-warm-soft/45"
+          : "border-glass-border bg-surface"
+      }`}
+    >
+      {elevated && (
+        <div className="mb-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent-warm">
+            Watch this before quitting.
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+            Future you left a reason. Take sixty seconds before deciding the day is over.
+          </p>
+        </div>
+      )}
       <div className="flex items-center gap-3">
-        <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-xl bg-text-primary">
+        <div className={`relative shrink-0 overflow-hidden rounded-xl bg-text-primary ${elevated ? "h-24 w-16" : "h-16 w-12"}`}>
           {videoUrl ? (
             <video src={videoUrl} className="h-full w-full object-cover opacity-80" muted playsInline />
           ) : (
@@ -701,6 +720,41 @@ function DayZeroCard({
       </div>
     </section>
   );
+}
+
+function shouldElevateDayZero(
+  profile: OnboardingProfile | null,
+  score: DailyScoreView,
+  inputs: LocalInput[],
+): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  const todayInputs = inputs.filter((input) => input.date === today);
+  const hasPriorInputs = inputs.some((input) => input.date < today);
+  const text = `${profileText(profile)} ${inputs.map(inputText).join(" ")}`;
+
+  if (hasAny(text, ["unmotivated", "quit", "giving up", "doomscroll", "doom scrolling", "streak break"])) {
+    return true;
+  }
+  if (hasAny(text, ["missed habits", "missed my habits", "late night", "up late"])) {
+    return true;
+  }
+  if (score.score > 0 && score.score <= 45) {
+    return true;
+  }
+  if (hasPriorInputs && todayInputs.length === 0) {
+    return true;
+  }
+  return todayInputs.some((input) => {
+    const value = input.value as { mood?: unknown; energy?: unknown; sentiment?: unknown };
+    return value.mood === 1 || value.energy === 1 || value.sentiment === -1;
+  });
+}
+
+function inputText(input: LocalInput): string {
+  if (!input.value || typeof input.value !== "object") return "";
+  return Object.values(input.value as Record<string, unknown>)
+    .filter((value): value is string => typeof value === "string")
+    .join(" ");
 }
 
 // ─────────────────────────────────────────────────────────────────────

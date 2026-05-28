@@ -188,6 +188,18 @@ async function handleRoutedChat(
   const system = withReadableReplyInstructions(renderAgentPrompt(decision, context));
   const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
+  const fastReply = decision === "physical" ? fastPhysicalReply(normalized.text) : null;
+
+  if (fastReply) {
+    const formattedReply = formatKaiReply(fastReply, "body");
+    await createMessage(env.DB, {
+      conversationId: conversation,
+      role: "assistant",
+      content: formattedReply,
+      metadata: { routedTo: decision, fastPath: true },
+    });
+    return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision });
+  }
 
   let reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
 
@@ -214,12 +226,25 @@ async function handleRoutedChat(
   return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision });
 }
 
+export function fastPhysicalReply(message: string): string | null {
+  const text = message.toLowerCase();
+  const asksMusclePlan = /\b(bulk|bulking|gain muscle|muscle gain|muscle-building|meal plan|diet)\b/.test(text) &&
+    /\b(summer|muscle|bulk|bulking|diet|meal|food|eat|training|workout)\b/.test(text);
+  if (!asksMusclePlan) return null;
+
+  return [
+    "Let's frame this as a muscle-building phase: train consistently, eat steady meals, and protect recovery.",
+    "For food, build each meal around a protein, a carb, a fruit or vegetable, and water. Think eggs with toast and fruit, chicken or tofu with rice and vegetables, or Greek yogurt or a sandwich after training.",
+    "For training, aim for three to four strength sessions a week, keep basketball or conditioning in if you play, and treat sleep like part of practice.",
+  ].join("\n\n");
+}
+
 function withReadableReplyInstructions(system: string) {
   return `${system}
 
 READABILITY OVERRIDE:
 - Do not send a wall of text.
-- Use 2-4 short paragraphs separated by blank lines.
+- Use 2-3 short paragraphs separated by blank lines.
 - Keep each paragraph to 1-2 short sentences.
 - No markdown headers.
 - End with one short invitation that keeps the conversation going. Offer either a practical next move or a philosophy/discipline lens related to what they shared.`;

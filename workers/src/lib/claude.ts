@@ -32,7 +32,7 @@ async function callAnthropic(env: Env, system: string, messages: ClaudeMessage[]
         model: env.ANTHROPIC_MODEL || "claude-3-5-haiku-20241022",
         system,
         messages: normalizeAnthropicMessages(messages),
-        max_tokens: 420,
+        max_tokens: 320,
         temperature: 0.45
       })
     });
@@ -54,7 +54,7 @@ async function callWorkersAi(
     const prompt = `${system}\n\nConversation:\n${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}\nassistant:`;
     const result = (await ai.run(model || "@cf/meta/llama-3.1-8b-instruct", {
       prompt,
-      max_tokens: 500,
+      max_tokens: 320,
       temperature: 0.5
     })) as { response?: string; text?: string };
     return (result.response || result.text || "").trim() || null;

@@ -30,4 +30,22 @@ describe("formatKaiReply", () => {
     expect(reply).toContain("\n\nWant ");
     expect(reply).toMatch(/philosophy lens|Stoic next move/);
   });
+
+  it("caps wall-of-text replies before adding a keep-going prompt", () => {
+    const reply = formatKaiReply(
+      [
+        "First useful thought.",
+        "Second useful thought.",
+        "Third useful thought.",
+        "Fourth extra thought that should not keep expanding the bubble.",
+        "Fifth extra thought that should not keep expanding the bubble.",
+      ].join("\n\n"),
+      "body",
+    );
+
+    expect(reply).toContain("First useful thought.");
+    expect(reply).toContain("Third useful thought.");
+    expect(reply).not.toContain("Fourth extra thought");
+    expect(reply.split("\n\n").length).toBeLessThanOrEqual(4);
+  });
 });

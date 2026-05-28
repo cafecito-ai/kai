@@ -1,6 +1,7 @@
 type ReplyMode = "mind" | "body" | "general";
 
 const MAX_PARAGRAPH_CHARS = 150;
+const MAX_BODY_PARAGRAPHS = 3;
 
 export function formatKaiReply(rawReply: string, mode: ReplyMode = "general") {
   const cleaned = rawReply
@@ -15,7 +16,7 @@ export function formatKaiReply(rawReply: string, mode: ReplyMode = "general") {
     .flatMap((paragraph) => splitLongParagraph(paragraph.trim()))
     .filter(Boolean);
 
-  const body = paragraphs.join("\n\n");
+  const body = paragraphs.slice(0, MAX_BODY_PARAGRAPHS).join("\n\n");
   if (endsWithKeepGoingOffer(body)) return body;
   return `${body}\n\n${closingPrompt(body, mode)}`;
 }

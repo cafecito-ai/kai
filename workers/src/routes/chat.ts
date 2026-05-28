@@ -6,6 +6,14 @@ import {
   passesBodyLanguageFilter,
 } from "../lib/body-language-filter";
 import { formatKaiReply } from "../lib/chat-format";
+import {
+  fastKaiReply,
+  fastPhysicalReply,
+  matchKaiWorkflow,
+  matchPhysicalWorkflow,
+  safePreSafetyFastReply,
+  type WorkflowReply,
+} from "../lib/chat-workflows";
 import { callClaude } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
@@ -166,16 +174,7 @@ async function handleRoutedChat(
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
 
   const preSafetyReply = safePreSafetyFastReply(normalized.text);
-  if (preSafetyReply) {
-    const formattedReply = formatKaiReply(preSafetyReply, "general");
-    await createMessage(env.DB, {
-      conversationId: conversation,
-      role: "assistant",
-      content: formattedReply,
-      metadata: { fastPath: true, preSafety: true },
-    });
-    return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: "kai" });
-  }
+  if (preSafetyReply) return persistWorkflowReply(env, conversation, preSafetyReply, { routedTo: "kai" });
 
   // Safety wins. Always.
   const safety = await classifySafetyFull(env, normalized.text);
@@ -199,17 +198,8 @@ async function handleRoutedChat(
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
 
-  const instantReply = fastKaiReply(normalized.text);
-  if (instantReply) {
-    const formattedReply = formatKaiReply(instantReply, "general");
-    await createMessage(env.DB, {
-      conversationId: conversation,
-      role: "assistant",
-      content: formattedReply,
-      metadata: { fastPath: true },
-    });
-    return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: "kai" });
-  }
+  const instantReply = matchKaiWorkflow(normalized.text);
+  if (instantReply) return persistWorkflowReply(env, conversation, instantReply, { routedTo: "kai" });
 
   const context = {
     ...(await buildKaiContext(env, userId)),
@@ -221,17 +211,10 @@ async function handleRoutedChat(
   const system = withReadableReplyInstructions(renderAgentPrompt(decision, context));
   const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
-  const fastReply = decision === "physical" ? fastPhysicalReply(normalized.text) : null;
+  const fastReply = decision === "physical" ? matchPhysicalWorkflow(normalized.text) : null;
 
   if (fastReply) {
-    const formattedReply = formatKaiReply(fastReply, "body");
-    await createMessage(env.DB, {
-      conversationId: conversation,
-      role: "assistant",
-      content: formattedReply,
-      metadata: { routedTo: decision, fastPath: true },
-    });
-    return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision });
+    return persistWorkflowReply(env, conversation, fastReply, { routedTo: decision });
   }
 
   let reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
@@ -259,170 +242,33 @@ async function handleRoutedChat(
   return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision });
 }
 
-export function fastKaiReply(message: string): string | null {
-  const text = message.toLowerCase();
+export { fastKaiReply, fastPhysicalReply };
 
-  if (isBenignGreeting(message)) {
-    return [
-      "I’m here.",
-      "What’s the vibe today: mind, body, school, sleep, or confidence?",
-    ].join("\n\n");
-  }
-
-  if (/\b(sad|depressed|delressed|lonely|empty|numb|down bad|rough day)\b/.test(text)) {
-    return [
-      "Damn. I’m here with you.",
-      "What made it hit today: people, pressure, sleep, or just one of those waves?",
-    ].join("\n\n");
-  }
-
-  if (/\b(test|quiz|exam|homework|study|studying|school|grades?|class|assignment|finals?)\b/.test(text) && /\b(can'?t focus|focus|pressure|stressed|tomorrow|behind|overwhelmed|locked|lock in)\b/.test(text)) {
-    return [
-      "Yeah, test stress can make your brain just freeze.",
-      "Do 12 minutes on one topic with your phone away. After that, tell me what still feels confusing.",
-    ].join("\n\n");
-  }
-
-  if (/\b(gym|lifting|lift|weights|workout)\b/.test(text) && /\b(embarrassed|nervous|anxious|awkward|dont know what to do|don't know what to do|new|first time)\b/.test(text)) {
-    return [
-      "That’s normal. The gym feels way less scary when you know exactly what you’re doing.",
-      "Keep the first day simple: walk in, do one machine or dumbbell move, and leave. That still counts.",
-    ].join("\n\n");
-  }
-
-  if (/\b(ugly|awkward|low confidence|no confidence|insecure|embarrassed|hate how i look|feel weird)\b/.test(text)) {
-    return [
-      "That feeling gets loud fast at school.",
-      "Where does it hit the most: walking in, talking to people, photos, or comparing yourself?",
-    ].join("\n\n");
-  }
-
-  if (/\b(invisible|lonely|alone|no one cares|left out)\b/.test(text) && /\b(weekend|weekends|school|today|lately|feel)\b/.test(text)) {
-    return [
-      "That invisible feeling is brutal, especially on weekends.",
-      "Don’t let it turn into the whole day. Text one person, get outside for a few minutes, or tell me what happened.",
-    ].join("\n\n");
-  }
-
-  if (/\b(friend|friends|group chat|left me out|lonely|crush|delivered|rejected|ignored|social)\b/.test(text)) {
-    return [
-      "That kind of stuff stings because it hits belonging.",
-      "What actually happened: left out, ignored, embarrassed, or you’re reading the silence?",
-    ].join("\n\n");
-  }
-
-  if (/\b(parents?|mom|dad|home)\b/.test(text) && /\b(fighting|fight|yelling|arguing|cant relax|can't relax|unsafe|stressed)\b/.test(text)) {
-    return [
-      "When your parents are fighting, it makes sense that you can’t relax.",
-      "Get somewhere that feels safe if you can. Then do one small thing to calm your body for five minutes.",
-    ].join("\n\n");
-  }
-
-  if (/\b(unmotivated|no motivation|lazy|stuck|can't start|cant start|procrastinat|doomscroll|phone addiction)\b/.test(text)) {
-    return [
-      "Yeah, that stuck feeling is real.",
-      "Don’t solve your whole life right now. Give me one thing you’ve been avoiding and I’ll make it a 10-minute start.",
-    ].join("\n\n");
-  }
-
-  if (/\b(skipped everything|missed everything|broke my streak|failed today|already failed|ruined today)\b/.test(text)) {
-    return [
-      "You didn’t fail. You had a bad day.",
-      "Pick one small save: drink water, log your mood, clean for five minutes, or set up sleep tonight.",
-    ].join("\n\n");
-  }
-
-  if (/\b(sleep|3am|2am|late|tired|exhausted|can'?t sleep|cant sleep)\b/.test(text) && /\b(scroll|phone|staying up|up until|late|tired|exhausted|can'?t sleep|cant sleep)\b/.test(text)) {
-    return [
-      "Tonight’s win is not a perfect routine.",
-      "It’s making the next hour quieter: dim the screen, plug the phone away from bed, and choose one boring wind-down thing.",
-    ].join("\n\n");
-  }
-
-  if (/\b(tiktok|instagram|youtube|scroll|scrolling|doomscroll|phone|screen time|social media)\b/.test(text)) {
-    return [
-      "Your attention got pulled. That doesn’t mean the day is gone.",
-      "Put the phone across the room for 15 minutes and pick the replacement: shower, walk, homework sprint, or sleep setup.",
-    ].join("\n\n");
-  }
-
-  if (/\b(hungry|lunch|lunc|food|eat|cook)\b/.test(text) && /\b(what should|what do|should i|can i|make|cook|eat|lunch|lunc)\b/.test(text)) {
-    return [
-      "I got you. Make lunch simple: protein + carb + something fresh.",
-      "Easy moves: eggs and toast, a turkey/rice bowl, a tuna sandwich, Greek yogurt with fruit, or leftovers with water. What do you have?",
-    ].join("\n\n");
-  }
-
-  if (/\b(mad|angry|rage|yelled|fight|fighting|mom|dad|parent|parents)\b/.test(text) && /\b(feel bad|guilty|regret|sorry|mad|angry|yelled|fight)\b/.test(text)) {
-    return [
-      "Feeling bad after means you probably care more than you showed in the moment.",
-      "Cool down first. Then say one honest sentence about what you wish you handled differently.",
-    ].join("\n\n");
-  }
-
-  if (/\b(point of trying|always quit|why try|i always fail|nothing works|keep quitting|what's the point|whats the point)\b/.test(text)) {
-    return [
-      "Quitting before doesn’t mean you’re cooked forever.",
-      "It probably means the plan was too big. What’s one tiny thing you could actually do for three days?",
-    ].join("\n\n");
-  }
-
-  if (/\b(cooked|fried|drained|burnt out|burned out|overwhelmed)\b/.test(text) && /\b(what do i do|what should i do|help|start|fix)\b/.test(text)) {
-    return [
-      "You’re probably overloaded, not doomed.",
-      "Do the quick reset: water, stand up, clear one thing, then tell me what you’ve been avoiding.",
-    ].join("\n\n");
-  }
-
-  if (/\b(overthinking|spiraling|anxious|anxiety|stress|stressed|panic)\b/.test(text)) {
-    return [
-      "Your brain is doing the too-many-tabs thing.",
-      "What’s the main loop: school, people, future, or your own self-talk?",
-    ].join("\n\n");
-  }
-
-  if (/\b(what should i do|what do i do|help me|where do i start|start today|lock in|locked in)\b/.test(text)) {
-    if (/\b(week|this week|plan)\b/.test(text)) {
-      return [
-        "Here’s the simple version: one body thing, one school/work thing, one sleep thing each day.",
-        "Want it focused on basketball, confidence, school, or sleep?",
-      ].join("\n\n");
-    }
-    return [
-      "Let’s not make it huge.",
-      "Pick one: reset your mind, move your body, handle school, or protect sleep.",
-    ].join("\n\n");
-  }
-
-  return null;
-}
-
-function safePreSafetyFastReply(message: string): string | null {
-  return isBenignGreeting(message) ? fastKaiReply(message) : null;
-}
-
-function isBenignGreeting(message: string): boolean {
-  return /^\s*(yo|hey|hi|hello|sup|what'?s up|wassup|wyd)\s*(kai|coach)?[\s?.!]*$/i.test(message);
-}
-
-export function fastPhysicalReply(message: string): string | null {
-  const text = message.toLowerCase();
-  if (/\b(basketball|hoop|shooting|handles|workout|training)\b/.test(text) && /\b(skip|skipping|better|improve|get better|workouts?|practice)\b/.test(text)) {
-    return [
-      "Basketball improvement needs a repeatable floor, not a perfect workout.",
-      "Do 20 minutes today: 5 minutes handles, 10 minutes form shots or wall reps, 5 minutes mobility. Log it so the streak has proof.",
-    ].join("\n\n");
-  }
-
-  const asksMusclePlan = /\b(bulk|bulking|gain muscle|muscle gain|muscle-building|meal plan|diet)\b/.test(text) &&
-    /\b(summer|muscle|bulk|bulking|diet|meal|food|eat|training|workout)\b/.test(text);
-  if (!asksMusclePlan) return null;
-
-  return [
-    "Let's frame this as a muscle-building phase: train consistently, eat steady meals, and protect recovery.",
-    "For food, build each meal around a protein, a carb, a fruit or vegetable, and water. Think eggs with toast and fruit, chicken or tofu with rice and vegetables, or Greek yogurt or a sandwich after training.",
-    "For training, aim for three to four strength sessions a week, keep basketball or conditioning in if you play, and treat sleep like part of practice.",
-  ].join("\n\n");
+async function persistWorkflowReply(
+  env: Env,
+  conversation: string,
+  workflowReply: WorkflowReply,
+  input: { routedTo: EngineId | "kai" },
+) {
+  const formattedReply = formatKaiReply(workflowReply.reply, workflowReply.mode);
+  await createMessage(env.DB, {
+    conversationId: conversation,
+    role: "assistant",
+    content: formattedReply,
+    metadata: {
+      routedTo: input.routedTo,
+      fastPath: true,
+      responseSource: workflowReply.source,
+      workflow: workflowReply.workflow,
+    },
+  });
+  return Response.json({
+    conversationId: conversation,
+    reply: formattedReply,
+    routedTo: input.routedTo,
+    responseSource: workflowReply.source,
+    workflow: workflowReply.workflow,
+  });
 }
 
 function withReadableReplyInstructions(system: string) {

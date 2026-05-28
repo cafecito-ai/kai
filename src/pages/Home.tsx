@@ -21,7 +21,9 @@ import {
   Flame,
   Heart,
   Moon,
+  Sprout,
   Sparkles,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -247,7 +249,7 @@ export function Home() {
   }, [refreshKey]);
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
+    <div className="mx-auto w-full max-w-md space-y-6 overflow-x-hidden pt-2 sm:max-w-lg">
       {/* Greeting + streak chip + orb */}
       <header className="flex items-start justify-between gap-3 px-1">
         <div>
@@ -273,22 +275,22 @@ export function Home() {
           onClick={() => navigate("/chat")}
           aria-label="Talk to KAI"
           className="
-            flex items-center gap-2 rounded-full
+            flex shrink-0 items-center gap-2 rounded-full
             border border-glass-border bg-surface
-            py-1.5 pl-1.5 pr-3
+            p-1.5 min-[430px]:pr-3
             shadow-card
             transition active:scale-95 hover:bg-surface-muted
             focus-ring
           "
         >
           <KaiOrb size={36} />
-          <span className="text-sm font-medium text-text-primary">
-            Talk to KAI
-          </span>
         </button>
       </header>
 
-      <MotivationQuote profile={profile} />
+      <EvolvingGoalCard profile={profile} score={data} />
+
+      {/* Today's goals — personalized from onboarding where available */}
+      <MissionsCard variant="hero" />
 
       {/* Daily Score hero */}
       <DailyScoreCard data={data} />
@@ -347,11 +349,10 @@ export function Home() {
         </div>
       )}
 
-      {/* Today's goals — personalized from onboarding where available */}
-      <MissionsCard />
-
       {/* Hydration tile — small, daily-reset counter (T-025) */}
       <HydrationTile />
+
+      <MotivationQuote profile={profile} />
 
       {/* KAI message */}
       <KaiMessage
@@ -421,16 +422,83 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
 function MotivationQuote({ profile }: { profile: OnboardingProfile | null }) {
   const quote = quoteForProfile(profile);
   return (
-    <section className="rounded-glass border border-glass-border bg-text-primary px-5 py-4 text-background shadow-card-lg">
-      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-background/55">
+    <section className="rounded-2xl border border-glass-border bg-surface px-4 py-3 text-text-primary shadow-card">
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
         {quote.source}
       </p>
-      <p className="mt-2 font-display text-xl font-semibold leading-tight">
+      <p className="mt-1.5 font-display text-base font-semibold leading-snug">
         "{quote.line}"
       </p>
-      <p className="mt-2 text-xs leading-relaxed text-background/70">
+      <p className="mt-1 text-xs leading-relaxed text-text-secondary">
         {quote.context}
       </p>
+    </section>
+  );
+}
+
+function EvolvingGoalCard({
+  profile,
+  score,
+}: {
+  profile: OnboardingProfile | null;
+  score: DailyScoreView;
+}) {
+  const goal = evolvingGoalForProfile(profile);
+  const stage = Math.max(1, Math.min(4, Math.floor((score.streak || 0) / 3) + 1));
+  const completion = Math.min(100, Math.max(12, score.score || stage * 18));
+  const petals = stage + 2;
+  const Icon = goal.kind === "fire" ? Flame : goal.kind === "aura" ? Sparkles : Sprout;
+
+  return (
+    <section className="relative overflow-hidden rounded-glass border border-glass-border bg-surface p-4 shadow-card-lg min-[430px]:p-5">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-cool/70 to-transparent" />
+      <div className="flex items-start gap-3">
+        <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
+          <div className={`absolute inset-3 rounded-full ${goal.glow} opacity-50 blur-xl`} />
+          {goal.kind === "flower" ? (
+            <div className="relative h-14 w-14">
+              {Array.from({ length: petals }).map((_, index) => (
+                <span
+                  key={index}
+                  className="absolute left-1/2 top-1/2 h-8 w-5 origin-bottom rounded-full bg-accent-cool/80 shadow-card"
+                  style={{
+                    transform: `translate(-50%, -100%) rotate(${(360 / petals) * index}deg) scale(${0.78 + stage * 0.08})`,
+                  }}
+                />
+              ))}
+              <span className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-warm shadow-card" />
+              <span className="absolute bottom-0 left-1/2 h-9 w-1.5 -translate-x-1/2 rounded-full bg-success" />
+            </div>
+          ) : (
+            <div className={`relative flex h-14 w-14 items-center justify-center rounded-full ${goal.surface} shadow-card animate-pulse`}>
+              <Icon size={28 + stage * 2} className={goal.icon} />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+              evolving goal
+            </p>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-muted px-2 py-1 font-mono text-[10px] text-text-secondary">
+              <Trophy size={11} />
+              {stage}
+            </span>
+          </div>
+          <h2 className="mt-2 font-display text-xl font-semibold leading-tight tracking-tight min-[430px]:text-2xl">
+            {goal.title}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+            {goal.subtitle}
+          </p>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-muted">
+            <div
+              className={`h-full rounded-full ${goal.bar} transition-all duration-700`}
+              style={{ width: `${completion}%` }}
+            />
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -586,6 +654,66 @@ function quoteForProfile(profile: OnboardingProfile | null): {
     source: "KAI daily quote",
     line: "Win the next ten minutes.",
     context: "No huge speech. Just one move that proves you are still in it.",
+  };
+}
+
+function evolvingGoalForProfile(profile: OnboardingProfile | null): {
+  title: string;
+  subtitle: string;
+  kind: "flower" | "fire" | "aura";
+  glow: string;
+  surface: string;
+  icon: string;
+  bar: string;
+} {
+  const text = [
+    ...(profile?.focusAreas ?? []),
+    profile?.hardestLately ?? "",
+    ...Object.values(profile?.followUps ?? {}),
+    profile?.summary ?? "",
+  ].join(" ").toLowerCase();
+
+  if (hasAny(text, ["confidence", "social", "lonely", "relationships", "invisible"])) {
+    return {
+      title: "Build visible confidence",
+      subtitle: "Small proof today: posture, eye contact, one honest rep.",
+      kind: "aura",
+      glow: "bg-accent",
+      surface: "bg-accent-soft",
+      icon: "text-accent",
+      bar: "bg-accent",
+    };
+  }
+  if (hasAny(text, ["gym", "training", "sport", "basketball", "stronger", "better shape", "muscle", "energy"])) {
+    return {
+      title: "Build the body that shows up",
+      subtitle: "Fuel, train, recover. The stack grows when the basics repeat.",
+      kind: "fire",
+      glow: "bg-accent-warm",
+      surface: "bg-accent-warm-soft",
+      icon: "text-accent-warm",
+      bar: "bg-accent-warm",
+    };
+  }
+  if (hasAny(text, ["focus", "procrastination", "phone", "distracted", "productive", "school"])) {
+    return {
+      title: "Grow clean focus",
+      subtitle: "One quiet block beats another hour of thinking about starting.",
+      kind: "flower",
+      glow: "bg-accent-cool",
+      surface: "bg-accent-cool-soft",
+      icon: "text-accent-cool",
+      bar: "bg-accent-cool",
+    };
+  }
+  return {
+    title: "Grow your system",
+    subtitle: "Every check-in, log, and honest answer adds another layer.",
+    kind: "flower",
+    glow: "bg-success",
+    surface: "bg-success-soft",
+    icon: "text-success",
+    bar: "bg-success",
   };
 }
 

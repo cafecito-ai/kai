@@ -47,7 +47,13 @@ const ICON_MAP: Record<Mission["icon"], LucideIcon> = {
   Zap,
 };
 
-export function MissionsCard({ className = "" }: { className?: string }) {
+export function MissionsCard({
+  className = "",
+  variant = "default",
+}: {
+  className?: string;
+  variant?: "default" | "hero";
+}) {
   const [missions, setMissions] = useState<Mission[] | null>(null);
   const [profile, setProfile] = useState<OnboardingProfile | null>(null);
   const navigate = useNavigate();
@@ -82,14 +88,18 @@ export function MissionsCard({ className = "" }: { className?: string }) {
 
   return (
     <section
-      className={`rounded-glass border border-glass-border bg-surface p-5 shadow-card ${className}`}
+      className={`
+        rounded-glass border border-glass-border bg-surface shadow-card
+        ${variant === "hero" ? "p-4 ring-1 ring-accent-cool/20 min-[430px]:p-5" : "p-5"}
+        ${className}
+      `}
     >
       <div className="flex items-center justify-between gap-3 pb-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
             {missionPlanLabel(profile)}
           </p>
-          <h2 className="mt-0.5 font-display text-lg font-semibold leading-tight tracking-tight">
+          <h2 className={`${variant === "hero" ? "text-xl min-[430px]:text-2xl" : "text-lg"} mt-0.5 font-display font-semibold leading-tight tracking-tight`}>
             {allDone ? "All three done." : "Your goals for today"}
           </h2>
         </div>
@@ -114,6 +124,7 @@ export function MissionsCard({ className = "" }: { className?: string }) {
           <MissionRow
             key={m.id}
             mission={m}
+            variant={variant}
             onOpen={() => go(m)}
             onTick={(e) => tick(m, e)}
           />
@@ -131,10 +142,12 @@ export function MissionsCard({ className = "" }: { className?: string }) {
 
 function MissionRow({
   mission,
+  variant,
   onOpen,
   onTick,
 }: {
   mission: Mission;
+  variant: "default" | "hero";
   onOpen: () => void;
   onTick: (e: React.MouseEvent) => void;
 }) {
@@ -144,8 +157,9 @@ function MissionRow({
       type="button"
       onClick={onOpen}
       className={`
-        flex w-full items-center gap-3 rounded-lg border px-3 py-2.5
-        text-left shadow-card transition active:scale-[0.99] focus-ring
+        flex w-full items-center gap-3 rounded-lg border text-left shadow-card
+        transition active:scale-[0.99] focus-ring
+        ${variant === "hero" ? "px-3 py-4 hover:shadow-card-lg min-[430px]:px-4" : "px-3 py-2.5"}
         ${
           mission.completed
             ? "border-glass-border bg-success-soft/40"
@@ -155,7 +169,8 @@ function MissionRow({
     >
       <span
         className={`
-          flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+          flex shrink-0 items-center justify-center rounded-full
+          ${variant === "hero" ? "h-10 w-10 animate-pulse min-[430px]:h-11 min-[430px]:w-11" : "h-9 w-9"}
           ${mission.completed ? "bg-success-soft text-success" : mission.tint}
         `}
       >
@@ -168,13 +183,14 @@ function MissionRow({
       <span className="min-w-0 flex-1">
         <span
           className={`
-            block text-sm font-medium leading-tight
+            block font-medium leading-tight
+            ${variant === "hero" ? "text-[15px] min-[430px]:text-base" : "text-sm"}
             ${mission.completed ? "text-text-secondary line-through" : "text-text-primary"}
           `}
         >
           {mission.title}
         </span>
-        <span className="block text-xs text-text-secondary">
+        <span className={`${variant === "hero" ? "mt-1 text-[13px] min-[430px]:text-sm" : "text-xs"} block text-text-secondary`}>
           {mission.subtitle}
         </span>
       </span>

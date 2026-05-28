@@ -89,6 +89,15 @@ const kaiWorkflows: Workflow[] = [
     ],
   },
   {
+    id: "bad-grade",
+    matches: (text) =>
+      /\b(failed my test|failed a test|failed the test|bombed (my )?(test|quiz|exam)|bad grade|got an f|got a d|grade dropped)\b/.test(text),
+    reply: [
+      "That sucks. Let it sting for a second, but don’t turn one grade into your whole identity.",
+      "Send the teacher one message or look at the missed questions tonight. One repair move is enough.",
+    ],
+  },
+  {
     id: "gym-anxiety",
     matches: (text) =>
       /\b(gym|lifting|lift|weights|workout)\b/.test(text) &&
@@ -120,8 +129,16 @@ const kaiWorkflows: Workflow[] = [
     id: "social-rejection",
     matches: (text) => /\b(friend|friends|group chat|left me out|lonely|crush|delivered|rejected|ignored|social)\b/.test(text),
     reply: [
-      "That kind of stuff stings because it hits belonging.",
-      "What actually happened: left out, ignored, embarrassed, or you’re reading the silence?",
+      "Oof. That actually hurts.",
+      "Was it clearly on purpose, or is the silence making your brain run?",
+    ],
+  },
+  {
+    id: "breakup",
+    matches: (text) => /\b(broke up|breakup|dumped|ex broke|ex texted|heartbroken)\b/.test(text),
+    reply: [
+      "That’s a heavy one. Don’t try to be instantly fine.",
+      "For today, don’t chase closure. Eat something, get off the phone for a bit, and tell me what part hurts most.",
     ],
   },
   {
@@ -156,16 +173,16 @@ const kaiWorkflows: Workflow[] = [
       /\b(sleep|3am|2am|late|tired|exhausted|can'?t sleep|cant sleep)\b/.test(text) &&
       /\b(scroll|phone|staying up|up until|late|tired|exhausted|can'?t sleep|cant sleep)\b/.test(text),
     reply: [
-      "Tonight’s win is not a perfect routine.",
-      "It’s making the next hour quieter: dim the screen, plug the phone away from bed, and choose one boring wind-down thing.",
+      "No perfect routine needed tonight.",
+      "Just make the next hour easier: dim the screen, plug your phone in away from bed, and do one boring thing.",
     ],
   },
   {
     id: "doomscrolling",
     matches: (text) => /\b(tiktok|instagram|youtube|scroll|scrolling|doomscroll|phone|screen time|social media)\b/.test(text),
     reply: [
-      "Your attention got pulled. That doesn’t mean the day is gone.",
-      "Put the phone across the room for 15 minutes and pick the replacement: shower, walk, homework sprint, or sleep setup.",
+      "Okay, the phone won that round. Day’s not over.",
+      "Put it across the room for 15 minutes and pick one replacement: shower, walk, homework sprint, or sleep setup.",
     ],
   },
   {
@@ -175,7 +192,7 @@ const kaiWorkflows: Workflow[] = [
       /\b(what should|what do|should i|can i|make|cook|eat|lunch|lunc)\b/.test(text),
     reply: [
       "I got you. Make lunch simple: protein + carb + something fresh.",
-      "Easy moves: eggs and toast, a turkey/rice bowl, a tuna sandwich, Greek yogurt with fruit, or leftovers with water. What do you have?",
+      "Easy moves: eggs and toast, a turkey/rice bowl, a tuna sandwich, Greek yogurt with fruit, or leftovers with water. What do you actually have?",
     ],
   },
   {
@@ -241,8 +258,17 @@ const physicalWorkflows: Workflow[] = [
       /\b(basketball|hoop|shooting|handles|workout|training)\b/.test(text) &&
       /\b(skip|skipping|better|improve|get better|workouts?|practice)\b/.test(text),
     reply: [
-      "Basketball improvement needs a repeatable floor, not a perfect workout.",
-      "Do 20 minutes today: 5 minutes handles, 10 minutes form shots or wall reps, 5 minutes mobility. Log it so the streak has proof.",
+      "Don’t make it a whole production.",
+      "Do 20 minutes: 5 handles, 10 form shots or wall reps, 5 stretching. Log it after so it counts.",
+    ],
+  },
+  {
+    id: "bad-practice",
+    matches: (text) =>
+      /\b(bad practice|played bad|played terrible|coach yelled|coach was mad|missed every shot|missed shots)\b/.test(text),
+    reply: [
+      "Bad practices mess with your head, but they’re data.",
+      "Pick one thing to clean up next time: effort, handles, shot reps, defense, or sleep.",
     ],
   },
   {
@@ -251,9 +277,9 @@ const physicalWorkflows: Workflow[] = [
       /\b(bulk|bulking|gain muscle|muscle gain|muscle-building|meal plan|diet)\b/.test(text) &&
       /\b(summer|muscle|bulk|bulking|diet|meal|food|eat|training|workout)\b/.test(text),
     reply: [
-      "Let's frame this as a muscle-building phase: train consistently, eat steady meals, and protect recovery.",
-      "For food, build each meal around a protein, a carb, a fruit or vegetable, and water. Think eggs with toast and fruit, chicken or tofu with rice and vegetables, or Greek yogurt or a sandwich after training.",
-      "For training, aim for three to four strength sessions a week, keep basketball or conditioning in if you play, and treat sleep like part of practice.",
+      "Yeah. Think muscle-building, not random eating.",
+      "Each meal: protein + carb + fruit or vegetable + water. Easy examples: eggs with toast, chicken or tofu with rice, Greek yogurt with fruit, or a sandwich after training.",
+      "Train three or four times a week and protect sleep. That’s where the growth actually sticks.",
     ],
   },
 ];

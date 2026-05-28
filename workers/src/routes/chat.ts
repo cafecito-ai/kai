@@ -198,6 +198,9 @@ async function handleRoutedChat(
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
 
+  const physicalWorkflowReply = matchPhysicalWorkflow(normalized.text);
+  if (physicalWorkflowReply) return persistWorkflowReply(env, conversation, physicalWorkflowReply, { routedTo: "physical" });
+
   const instantReply = matchKaiWorkflow(normalized.text);
   if (instantReply) return persistWorkflowReply(env, conversation, instantReply, { routedTo: "kai" });
 
@@ -211,12 +214,6 @@ async function handleRoutedChat(
   const system = withReadableReplyInstructions(renderAgentPrompt(decision, context));
   const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
-  const fastReply = decision === "physical" ? matchPhysicalWorkflow(normalized.text) : null;
-
-  if (fastReply) {
-    return persistWorkflowReply(env, conversation, fastReply, { routedTo: decision });
-  }
-
   let reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
 
   // Body responses get the post-generation forbidden-language guard.

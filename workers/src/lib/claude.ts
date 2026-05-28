@@ -109,7 +109,7 @@ function fallbackReply(messages: ClaudeMessage[]) {
     return "I’m here. What’s the vibe today: mind, body, school, sleep, or confidence?";
   }
   if (/\b(friend|friends|group chat|left me out|lonely|crush|delivered|rejected|ignored|social)\b/.test(last)) {
-    return "Yeah, that kind of thing stings. What happened exactly: left out, ignored, embarrassed, or you’re reading the silence?";
+    return "Oof. That actually hurts. Was it clearly on purpose, or is the silence making your brain run?";
   }
   if (/\b(mad|angry|rage|yelled|fight|mom|dad|parent|parents)\b/.test(last)) {
     return "Feeling bad after means you probably care more than you showed. Cool down first, then say one honest sentence.";
@@ -127,13 +127,13 @@ function fallbackReply(messages: ClaudeMessage[]) {
     return "I got you. Go protein + carb + something fresh: eggs and toast, a turkey/rice bowl, tuna sandwich, Greek yogurt with fruit, or leftovers with water. What do you have?";
   }
   if (last.includes("sleep") || last.includes("tired")) {
-    return "Tonight’s win is not a perfect routine. It’s making the next hour quieter: dim the screen, plug the phone away from bed, and choose one boring wind-down thing.";
+    return "No perfect routine needed tonight. Just make the next hour easier: dim the screen, plug the phone away from bed, and do one boring thing.";
   }
   if (last.includes("food") || last.includes("eat") || last.includes("practice")) {
     return "Fuel should support the day, not turn into pressure. Tell me what you ate and what you’re trying to do, and I’ll keep it simple.";
   }
   if (last.includes("scroll") || last.includes("phone") || last.includes("tiktok") || last.includes("instagram")) {
-    return "Your attention got pulled. That doesn’t mean the day is gone. Put the phone across the room for 15 minutes and pick one replacement.";
+    return "Okay, the phone won that round. Day’s not over. Put it across the room for 15 minutes and pick one replacement.";
   }
   return "I’m here. Say it a little more plainly and I’ll help you figure out the next move.";
 }

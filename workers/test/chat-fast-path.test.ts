@@ -22,7 +22,7 @@ describe("fastKaiReply", () => {
   it("answers social rejection like a coach instead of a generic fallback", () => {
     const reply = fastKaiReply("my crush left me on delivered");
 
-    expect(reply).toContain("belonging");
+    expect(reply).toContain("actually hurts");
     expect(reply).not.toContain("I can help with that");
   });
 
@@ -36,7 +36,7 @@ describe("fastKaiReply", () => {
   it("answers doomscrolling without a model wait", () => {
     const reply = fastKaiReply("i wasted 5 hours on tiktok and feel cooked");
 
-    expect(reply).toContain("attention got pulled");
+    expect(reply).toContain("phone won");
     expect(reply).toContain("15 minutes");
   });
 
@@ -67,7 +67,7 @@ describe("fastKaiReply", () => {
 
     expect(reply).toContain("Make lunch simple");
     expect(reply).toContain("protein");
-    expect(reply).toContain("What do you have");
+    expect(reply).toContain("What do you actually have");
     expect(reply).not.toContain("real thing underneath");
   });
 });
@@ -84,7 +84,7 @@ describe("fastPhysicalReply", () => {
   it("answers safe muscle-building meal plan asks without calorie targets", () => {
     const reply = fastPhysicalReply("create a diet for bulking by this summer");
 
-    expect(reply).toContain("muscle-building phase");
+    expect(reply).toContain("muscle-building");
     expect(reply).toContain("protein");
     expect(reply).not.toMatch(/\bcalorie|calories|weigh|pounds|lbs\b/i);
   });

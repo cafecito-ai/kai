@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KaiContext } from "../src/lib/context";
+import { renderBodyPrompt } from "../src/lib/agent-prompts";
 import { renderEnginePrompt } from "../src/lib/prompts/engines";
 import { renderKaiSystemPrompt } from "../src/lib/prompts/kai";
 
@@ -106,5 +107,16 @@ describe("renderEnginePrompt", () => {
     expect(renderEnginePrompt("potential", baseContext({ primaryEngine: "potential" }))).toContain("pleasing parents");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("Replace therapy");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("identity-based habits");
+  });
+});
+
+describe("renderBodyPrompt", () => {
+  it("answers bulking requests as safe muscle-building instead of refusing", () => {
+    const result = renderBodyPrompt(baseContext());
+    expect(result).toContain('If the user asks for bulking');
+    expect(result).toContain("do NOT refuse");
+    expect(result).toContain("muscle-building phase");
+    expect(result).toContain("Never give calorie targets");
+    expect(result).not.toContain("body composition score, cutting, bulking");
   });
 });

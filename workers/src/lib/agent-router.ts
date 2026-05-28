@@ -71,8 +71,13 @@ export async function pickAgent(
   env: Env,
   userMessage: string,
 ): Promise<AgentDecision> {
+  if (isObviousPhysicalMessage(userMessage)) return "physical";
   const result = await classifyRoute(env, userMessage);
   // "unclear" defaults to "mental" per AGENT_PLAN T-006 §4 ("more
   // general-purpose voice").
   return result === "physical" ? "physical" : "mental";
+}
+
+function isObviousPhysicalMessage(userMessage: string): boolean {
+  return /\b(bulk|bulking|muscle|gain muscle|muscle gain|meal plan|diet|protein|macros?|workout|lift|lifting|gym|basketball|training|strength|exercise|food|eat|nutrition|hydration|recovery|sore|stretch)\b/i.test(userMessage);
 }

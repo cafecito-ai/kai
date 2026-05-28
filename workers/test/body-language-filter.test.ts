@@ -28,11 +28,24 @@ describe("body-language filter", () => {
     expect(passesBodyLanguageFilter("Time for a cutting phase.")).toBe(false);
   });
 
+  it("allows user-facing muscle-gain wording while still blocking appearance framing", () => {
+    expect(
+      passesBodyLanguageFilter(
+        "When you say bulking, I'll frame that as a safe muscle-building phase: protein at each meal, carbs around training, and sleep protected.",
+      ),
+    ).toBe(true);
+  });
+
   it("flags shame language", () => {
     expect(passesBodyLanguageFilter("Stop being lazy about your training.")).toBe(
       false,
     );
     expect(passesBodyLanguageFilter("No excuse to miss leg day.")).toBe(false);
+  });
+
+  it("flags supplement and protein powder recommendations", () => {
+    expect(passesBodyLanguageFilter("Add protein powder after training.")).toBe(false);
+    expect(passesBodyLanguageFilter("Try a supplement for recovery.")).toBe(false);
   });
 
   it("flags comparisons even when worded politely", () => {

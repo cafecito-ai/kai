@@ -59,7 +59,10 @@ export const FORBIDDEN_BODY_LANGUAGE = [
   "no excuse",
   // Diet culture
   "cutting",
-  "bulking",
+  // Product / supplement recommendations
+  "protein powder",
+  "supplement",
+  "supplements",
 ] as const;
 
 export type ForbiddenMatch = {

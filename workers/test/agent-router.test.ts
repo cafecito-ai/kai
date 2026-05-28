@@ -87,6 +87,12 @@ describe("classifyRoute (raw three-value classifier)", () => {
 });
 
 describe("pickAgent (production entrypoint)", () => {
+  it("uses deterministic physical routing for obvious nutrition and muscle-gain requests", async () => {
+    const env = mockEnv("mental");
+    expect(await pickAgent(env, "create a diet for bulking by this summer")).toBe("physical");
+    expect(await pickAgent(env, "give me a protein meal plan for basketball")).toBe("physical");
+  });
+
   it("returns 'mental' when classifier says mental", async () => {
     expect(await pickAgent(mockEnv("mental"), "x")).toBe("mental");
   });

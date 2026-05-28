@@ -151,6 +151,15 @@ const kaiWorkflows: Workflow[] = [
     ],
   },
   {
+    id: "off-day",
+    matches: (text) =>
+      /\b(feels off|feel off|off today|weird today|not myself|out of it)\b/.test(text),
+    reply: [
+      "Yeah, some days just feel off before you even know why.",
+      "Check the basics first: sleep, food, people, pressure, or too much phone. Which one is most likely today?",
+    ],
+  },
+  {
     id: "school-pressure",
     matches: (text) =>
       /\b(test|quiz|exam|homework|study|studying|school|grades?|class|assignment|finals?)\b/.test(text) &&

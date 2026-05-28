@@ -175,7 +175,7 @@ const kaiWorkflows: Workflow[] = [
       /\b(presentation|presenting|present in class|speech|public speaking)\b/.test(text) &&
       /\b(nervous|anxious|scared|tomorrow|panic|embarrassed|freeze)\b/.test(text),
     reply: [
-      "Presentations feel huge because everyone is looking at you. That part is real.",
+      "Presentations feel huge because everyone is looking at you. No wonder your body reacts.",
       "Practice the first two sentences three times. If the start is solid, your brain has somewhere to land.",
     ],
   },
@@ -184,7 +184,7 @@ const kaiWorkflows: Workflow[] = [
     matches: (text) =>
       /\b(failed my test|failed a test|failed the test|bombed (my )?(test|quiz|exam)|bad grade|got an f|got a d|grade dropped)\b/.test(text),
     reply: [
-      "That sucks. Let it sting for a second, but don’t turn one grade into your whole identity.",
+      "That sucks. Let it sting for a second, but one grade doesn’t get to name you.",
       "Send the teacher one message or look at the missed questions tonight. One repair move is enough.",
     ],
   },
@@ -213,7 +213,7 @@ const kaiWorkflows: Workflow[] = [
       /\b(myself|body|life|looks|popular|confidence|feel bad)\b/.test(text),
     reply: [
       "Yeah, comparison apps are basically built to make you feel behind.",
-      "Close it for 20 minutes and do one thing that gives you real evidence: shower, walk, school task, workout, or text someone normal.",
+      "Close it for 20 minutes and do something real: shower, walk, school task, workout, or text someone normal.",
     ],
   },
   {
@@ -269,7 +269,7 @@ const kaiWorkflows: Workflow[] = [
       /\b(stop|quit|pressure|friends|school|again|keep|want to)\b/.test(text),
     reply: [
       "No lecture. That stuff is sticky because it turns into a habit plus a social thing.",
-      "For the next urge, make it physical: leave the spot, drink water, chew gum, or text someone “distract me for 5.”",
+      "For the next urge, change the scene: leave the spot, drink water, chew gum, or text someone “distract me for 5.”",
     ],
   },
   {
@@ -307,7 +307,7 @@ const kaiWorkflows: Workflow[] = [
     matches: (text) => /\b(unmotivated|no motivation|lazy|stuck|can't start|cant start|procrastinat|doomscroll|phone addiction)\b/.test(text),
     reply: [
       "Yeah, that stuck feeling is real.",
-      "Don’t solve your whole life right now. Give me one thing you’ve been avoiding and I’ll make it a 10-minute start.",
+      "Don’t try to fix everything right now. Give me one thing you’ve been avoiding and I’ll make it a 10-minute start.",
     ],
   },
   {
@@ -446,7 +446,7 @@ const physicalWorkflows: Workflow[] = [
     id: "team-cut",
     matches: (text) => /\b(got cut|cut from the team|didn'?t make the team|didnt make the team|benched)\b/.test(text),
     reply: [
-      "That one hurts. Let it hurt without making it your whole story.",
+      "That one hurts. Let it hurt without making it the full story.",
       "If you still want it, ask what to improve, then pick one thing to train for 14 days. Comeback starts boring.",
     ],
   },

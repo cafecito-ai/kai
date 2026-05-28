@@ -106,7 +106,7 @@ describe("fastPhysicalReply", () => {
   it("answers getting cut from a team without generic shame language", () => {
     const reply = fastPhysicalReply("i got cut from the team and i feel embarrassed");
 
-    expect(reply).toContain("whole story");
+    expect(reply).toContain("full story");
     expect(reply).toContain("14 days");
   });
 

@@ -1,138 +1,157 @@
-// Profile — placeholder for the new IA's Profile tab. The real settings
-// page (src/pages/Settings.tsx) is still mounted at /settings; in later
-// phases its functionality will move here. T-004 just needs this to exist
-// so the tabbar's Profile tab has a destination.
-
-// Profile — account + preferences + the deeper "get to know yourself"
-// Strengths Discovery flow.
-//
-// Goals are deliberately NOT linked here — they're set-and-forget
-// daily-action stuff, surfaced from the + sheet ("Set a goal"). Profile
-// is for things that don't fit "do a thing today": who KAI is for you,
-// who YOU are to KAI, and the boring account knobs.
-
-import { Award, ChevronRight, Flame, Settings as SettingsIcon, Sparkles, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Award, ChevronRight, Flame, Settings as SettingsIcon, Sparkles, Trophy, User } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { LevelCard } from "../components/LevelCard";
+import { FlowerProgressBar } from "../components/FlowerProgressBar";
 import { badgeSummary } from "../lib/local-badges";
 import { challengeSummary } from "../lib/local-challenges";
+import { computeLocalScore, readLocalInputs } from "../lib/local-score";
+import { getCurrentLevel, type LevelInfo } from "../lib/local-xp";
+
+type ProfileState = {
+  level: LevelInfo;
+  streak: number;
+  badges: { earned: number; total: number };
+  challenges: { active: number; completed: number };
+};
 
 export function Profile() {
-  const [badges, setBadges] = useState<{ earned: number; total: number } | null>(null);
-  const [challenges, setChallenges] = useState<{ active: number; completed: number } | null>(null);
-  useEffect(() => {
-    setBadges(badgeSummary());
-    setChallenges(challengeSummary());
-  }, []);
+  const [state] = useState<ProfileState>(() => buildProfileState());
+
+  const levelTarget = state.level.nextLevelXp - state.level.levelStartXp;
+  const badgePct = state.badges.total > 0 ? state.badges.earned / state.badges.total : 0;
 
   return (
-    <div className="mx-auto max-w-md py-8 px-5">
-      <div className="text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-cool-soft">
-          <User size={24} className="text-accent-cool" />
+    <div className="mx-auto w-full max-w-xs space-y-5 py-6 sm:max-w-sm">
+      <header className="flex items-center justify-between">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
+            profile
+          </p>
+          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">
+            Your path
+          </h1>
         </div>
-        <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight">
-          Profile
-        </h1>
-        <p className="mt-2 text-text-secondary">
-          Your account and preferences.
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-cool-soft">
+          <User size={21} className="text-accent-cool" />
+        </div>
+      </header>
+
+      <section className="overflow-hidden rounded-glass border border-glass-border bg-surface p-5 shadow-card-lg">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+              growth
+            </p>
+            <p className="mt-1 font-display text-2xl font-semibold leading-tight">
+              Level {state.level.level}
+            </p>
+            <p className="mt-1 text-sm text-text-secondary">
+              {state.level.label}
+            </p>
+          </div>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft">
+            <Sparkles size={18} className="text-accent" />
+          </span>
+        </div>
+
+        <div className="mt-6">
+          <FlowerProgressBar
+            value={state.level.xpInLevel}
+            target={levelTarget}
+            category={state.streak >= 3 ? "body" : "mind"}
+            ariaLabel={`${state.level.xpInLevel} of ${levelTarget} XP to next level`}
+          />
+          <div className="mt-2 flex justify-between font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            <span>{state.level.xpInLevel} XP</span>
+            <span>{state.level.xpToNext} to next</span>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-1.5">
+          <Stat label="streak" value={`${state.streak}d`} icon={Flame} />
+          <Stat label="xp" value={String(state.level.totalXp)} icon={Trophy} />
+          <Stat label="badges" value={`${state.badges.earned}/${state.badges.total}`} icon={Award} />
+        </div>
+      </section>
+
+      <section className="rounded-glass border border-glass-border bg-surface p-4 shadow-card">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+          next on the path
         </p>
-      </div>
+        <div className="mt-3 divide-y divide-glass-border">
+          <PathRow to="/badges" title="Badges" detail={`${Math.round(badgePct * 100)}% discovered`} icon={Award} />
+          <PathRow
+            to="/challenges"
+            title="Challenges"
+            detail={`${state.challenges.active} active · ${state.challenges.completed} done`}
+            icon={Flame}
+          />
+          <PathRow to="/strengths" title="Strengths discovery" detail="Know your patterns" icon={Sparkles} />
+          <PathRow to="/settings" title="Settings" detail="Tone, privacy, notifications" icon={SettingsIcon} />
+        </div>
+      </section>
 
-      {/* Rawz/3 — level + XP overview */}
-      <div className="mt-6">
-        <LevelCard />
-      </div>
-
-      <div className="mt-4 space-y-2">
-        {/* Rawz/6 — Challenges entry */}
-        <Link
-          to="/challenges"
-          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
-        >
-          <span className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success-soft">
-              <Flame size={16} className="text-success" />
-            </span>
-            <span>
-              <span className="block text-sm font-medium text-text-primary">
-                Challenges
-              </span>
-              <span className="block text-xs text-text-secondary">
-                {challenges
-                  ? `${challenges.active} active · ${challenges.completed} done`
-                  : "Short opt-in stretches, no penalties"}
-              </span>
-            </span>
-          </span>
-          <ChevronRight size={18} className="text-text-muted" />
-        </Link>
-
-        {/* Rawz/4 — Badges entry */}
-        <Link
-          to="/badges"
-          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
-        >
-          <span className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-warm-soft">
-              <Award size={16} className="text-accent-warm" />
-            </span>
-            <span>
-              <span className="block text-sm font-medium text-text-primary">
-                Badges
-              </span>
-              <span className="block text-xs text-text-secondary">
-                {badges ? `${badges.earned} of ${badges.total} earned` : "Milestones, not measurements"}
-              </span>
-            </span>
-          </span>
-          <ChevronRight size={18} className="text-text-muted" />
-        </Link>
-
-        {/* Strengths Discovery — the 15-question Q&A flow. Replaces the
-            old Goals row here (goals belong in the + quick-action sheet). */}
-        <Link
-          to="/strengths"
-          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
-        >
-          <span className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-cool-soft">
-              <Sparkles size={16} className="text-accent-cool" />
-            </span>
-            <span>
-              <span className="block text-sm font-medium text-text-primary">
-                Strengths discovery
-              </span>
-              <span className="block text-xs text-text-secondary">
-                15 questions · ~15 min · save and resume
-              </span>
-            </span>
-          </span>
-          <ChevronRight size={18} className="text-text-muted" />
-        </Link>
-
-        <Link
-          to="/settings"
-          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
-        >
-          <span className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted">
-              <SettingsIcon size={16} className="text-text-secondary" />
-            </span>
-            <span>
-              <span className="block text-sm font-medium text-text-primary">
-                Settings
-              </span>
-              <span className="block text-xs text-text-secondary">
-                Tone, notifications, privacy
-              </span>
-            </span>
-          </span>
-          <ChevronRight size={18} className="text-text-muted" />
-        </Link>
-      </div>
+      <p className="px-2 text-center text-xs leading-relaxed text-text-muted">
+        XP never drops. Missed days do not punish you. The path just waits for the next honest rep.
+      </p>
     </div>
+  );
+}
+
+function buildProfileState(): ProfileState {
+  const inputs = readLocalInputs();
+  return {
+    level: getCurrentLevel(),
+    streak: computeLocalScore(inputs).streak,
+    badges: badgeSummary(),
+    challenges: challengeSummary(),
+  };
+}
+
+function Stat({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: typeof Flame;
+}) {
+  return (
+    <div className="rounded-2xl bg-surface-muted px-2 py-3 text-center">
+      <Icon size={14} className="mx-auto text-text-secondary" />
+      <p className="mt-1 font-mono text-base font-semibold tabular-nums text-text-primary">
+        {value}
+      </p>
+      <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-text-muted">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function PathRow({
+  to,
+  title,
+  detail,
+  icon: Icon,
+}: {
+  to: string;
+  title: string;
+  detail: string;
+  icon: typeof Flame;
+}) {
+  return (
+    <Link to={to} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 focus-ring">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-muted text-text-secondary">
+        <Icon size={15} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-text-primary">{title}</span>
+        <span className="block text-xs text-text-secondary">{detail}</span>
+      </span>
+      <ChevronRight size={16} className="text-text-muted" />
+    </Link>
   );
 }

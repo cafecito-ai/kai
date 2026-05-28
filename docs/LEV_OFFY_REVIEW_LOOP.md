@@ -14,7 +14,7 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Nutrition / bulking: KAI must answer safe muscle-gain and summer training questions instead of refusing. Keep teen-safe guardrails: no calorie targets, no weight targets, no body-shaming language.
 - [x] Home hero: add one large evolving goal at the top, alongside daily goals. It should feel alive over time: flower, fire, aura, or level-up style.
 - [x] Daily goals: make them larger, more pressable, lightly animated, and visibly personalized from onboarding answers.
-- [ ] Onboarding: ensure first load starts with the premium fast onboarding flow and ends with the personalized system reveal.
+- [x] Onboarding: ensure first load starts with the premium fast onboarding flow and ends with the personalized system reveal.
 - [x] Day 0: add private Day 0 video capture near the end of onboarding with a small home/Journey card after completion.
 - [x] Plus actions: verify every `+` action opens the right page and completes a real log or task.
 - [ ] Food logger: verify photo upload, AI item identification, USDA nutrition enrichment, and user-facing result copy.

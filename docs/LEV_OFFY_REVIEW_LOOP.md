@@ -31,8 +31,8 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Daily score shortcuts: tapping Mind / Sleep / Mood should instantly route to the right logging/tracking flow.
 - [x] Quote module: keep the motivational quote small and profile-relevant.
 - [x] Mission personalization: avoid generic goals unless they match onboarding. Examples: overthinking -> breathing reset; confidence -> posture / eye contact; basketball -> shooting / recovery.
-- [ ] Remove noisy chat updates: logs like "fuel note saved" should not appear as normal chat messages.
-- [ ] Logo and copy: keep KAI branding, not RAWZ; remove age and parent-email asks.
+- [x] Remove noisy chat updates: logs like "fuel note saved" should not appear as normal chat messages.
+- [x] Logo and copy: keep KAI branding, not RAWZ; remove age and parent-email asks.
 
 ## P2 Working-System Depth
 

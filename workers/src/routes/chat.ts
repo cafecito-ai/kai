@@ -9,6 +9,7 @@ import { formatKaiReply } from "../lib/chat-format";
 import {
   fastKaiReply,
   fastPhysicalReply,
+  matchContinuationWorkflow,
   matchKaiWorkflow,
   matchPhysicalWorkflow,
   safePreSafetyFastReply,
@@ -198,6 +199,12 @@ async function handleRoutedChat(
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
 
+  const recentMessagesForWorkflow = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 8 });
+  const continuationReply = matchContinuationWorkflow(normalized.text, recentMessagesForWorkflow ?? []);
+  if (continuationReply) return persistWorkflowReply(env, conversation, continuationReply, {
+    routedTo: continuationReply.mode === "body" ? "physical" : "kai",
+  });
+
   const physicalWorkflowReply = matchPhysicalWorkflow(normalized.text);
   if (physicalWorkflowReply) return persistWorkflowReply(env, conversation, physicalWorkflowReply, { routedTo: "physical" });
 
@@ -212,7 +219,7 @@ async function handleRoutedChat(
   // Route to Mind or Body. The pick is internal — user never sees it.
   const decision = await pickAgent(env, normalized.text);
   const system = withReadableReplyInstructions(renderAgentPrompt(decision, context));
-  const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
+  const recentMessages = recentMessagesForWorkflow ?? await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
   let reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
 

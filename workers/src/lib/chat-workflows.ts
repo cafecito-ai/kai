@@ -47,6 +47,47 @@ export function matchPhysicalWorkflow(message: string): WorkflowReply | null {
   };
 }
 
+export function matchContinuationWorkflow(
+  message: string,
+  recentMessages: Array<{ role: unknown; content: string }>,
+): WorkflowReply | null {
+  const text = message.toLowerCase().trim();
+  const previousAssistant = [...recentMessages]
+    .reverse()
+    .find((item) => item.role === "assistant" && item.content.trim().length > 0)
+    ?.content.toLowerCase() ?? "";
+
+  if (/\b(photos?|pictures?|pics?)\b/.test(text) && previousAssistant.includes("photos")) {
+    return kaiContinuation("confidence-photos-followup", [
+      "Yeah, photos can mess with your head fast.",
+      "Don’t inspect the picture like it’s evidence against you. Pick one thing you can control today: posture, outfit, haircut, lighting, or just not staring at it for ten minutes.",
+    ]);
+  }
+
+  if (/\b(people|friends|friend|classmates|everyone)\b/.test(text) && previousAssistant.includes("people")) {
+    return kaiContinuation("sad-people-followup", [
+      "Got it. People stuff can make sadness feel personal.",
+      "Was it something someone said, being left out, or just feeling like nobody really sees you today?",
+    ]);
+  }
+
+  if (/\b(eggs?|bread|toast)\b/.test(text) && previousAssistant.includes("what do you actually have")) {
+    return kaiContinuation("lunch-eggs-followup", [
+      "Perfect. Make eggs and toast.",
+      "If you want it better: scramble the eggs, toast the bread, add fruit or water if you have it. That’s a real lunch.",
+    ]);
+  }
+
+  if (/\b(shot reps?|shooting|form shots?)\b/.test(text) && previousAssistant.includes("shot reps")) {
+    return physicalContinuation("shot-reps-followup", [
+      "Good. Keep it boring and repeatable.",
+      "Do 25 close form shots, 25 free throws, then 25 game-speed makes from one spot. Don’t chase everything at once.",
+    ]);
+  }
+
+  return null;
+}
+
 export function fastKaiReply(message: string): string | null {
   return matchKaiWorkflow(message)?.reply ?? null;
 }
@@ -57,6 +98,24 @@ export function fastPhysicalReply(message: string): string | null {
 
 export function isBenignGreeting(message: string): boolean {
   return /^\s*(yo|hey|hi|hello|sup|what'?s up|wassup|wyd)\s*(kai|coach)?[\s?.!]*$/i.test(message);
+}
+
+function kaiContinuation(workflow: string, reply: string[]): WorkflowReply {
+  return {
+    reply: reply.join("\n\n"),
+    mode: "general",
+    source: "kai-workflow",
+    workflow,
+  };
+}
+
+function physicalContinuation(workflow: string, reply: string[]): WorkflowReply {
+  return {
+    reply: reply.join("\n\n"),
+    mode: "body",
+    source: "physical-workflow",
+    workflow,
+  };
 }
 
 const greetingReply = [

@@ -354,6 +354,83 @@ const cases = [
   },
 ];
 
+const multiTurnCases = [
+  {
+    id: "confidence-photos-continuity",
+    persona: "short answer after KAI gives choices",
+    turns: [
+      {
+        message: "i feel ugly and awkward at school",
+        expectWorkflow: "confidence-school",
+        expect: [/photos|comparing yourself/i],
+        maxLatencyMs: 1800,
+      },
+      {
+        message: "photos",
+        expectWorkflow: "confidence-photos-followup",
+        expect: [/photos|control|posture|outfit|staring/i],
+        maxLatencyMs: 1800,
+      },
+    ],
+  },
+  {
+    id: "sad-people-continuity",
+    persona: "short emotional follow-up",
+    turns: [
+      {
+        message: "idk i just feel sad today",
+        expectWorkflow: "sad-vague",
+        expect: [/people|pressure|sleep/i],
+        maxLatencyMs: 1800,
+      },
+      {
+        message: "people",
+        expectWorkflow: "sad-people-followup",
+        expect: [/People|left out|sees you|said/i],
+        maxLatencyMs: 1800,
+      },
+    ],
+  },
+  {
+    id: "lunch-eggs-continuity",
+    persona: "food follow-up",
+    turns: [
+      {
+        message: "im hungry what should i make for lunc",
+        expectWorkflow: "lunch-ideas",
+        expect: [/what do you actually have/i],
+        maxLatencyMs: 1800,
+      },
+      {
+        message: "i have eggs and bread",
+        expectWorkflow: "lunch-eggs-followup",
+        expect: [/eggs and toast|real lunch|water/i],
+        maxLatencyMs: 1800,
+      },
+    ],
+  },
+  {
+    id: "shot-reps-continuity",
+    persona: "sports follow-up",
+    turns: [
+      {
+        message: "coach yelled at me and i missed every shot at practice",
+        expectSource: "physical-workflow",
+        expectWorkflow: "bad-practice",
+        expect: [/shot reps/i],
+        maxLatencyMs: 2200,
+      },
+      {
+        message: "shot reps",
+        expectSource: "physical-workflow",
+        expectWorkflow: "shot-reps-followup",
+        expect: [/25 close|free throws|game-speed|one spot/i],
+        maxLatencyMs: 2200,
+      },
+    ],
+  },
+];
+
 function evaluateCase(testCase, result) {
   const issues = [];
   const reply = result.reply || "";
@@ -406,9 +483,9 @@ async function runCase(testCase) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-dev-user": `chat-sim-${runId}-${testCase.id}`,
+        "x-dev-user": `chat-sim-${runId}-${testCase.userKey || testCase.id}`,
       },
-      body: JSON.stringify({ message: testCase.message }),
+      body: JSON.stringify({ conversationId: testCase.conversationId, message: testCase.message }),
     });
     status = response.status;
     raw = await response.text();
@@ -423,6 +500,7 @@ async function runCase(testCase) {
     persona: testCase.persona,
     message: testCase.message,
     status,
+    conversationId: payload.conversationId,
     latencyMs: Date.now() - started,
     routedTo: payload.routedTo || null,
     responseSource: payload.responseSource || null,
@@ -431,6 +509,24 @@ async function runCase(testCase) {
     reply: payload.reply || "",
     raw,
   });
+}
+
+async function runMultiTurnCase(flow) {
+  let conversationId;
+  const results = [];
+  for (let index = 0; index < flow.turns.length; index++) {
+    const turn = flow.turns[index];
+    const result = await runCase({
+      ...turn,
+      id: `${flow.id}#${index + 1}`,
+      persona: flow.persona,
+      conversationId,
+      userKey: flow.id,
+    });
+    conversationId = result.conversationId;
+    results.push(result);
+  }
+  return results;
 }
 
 function score(results) {
@@ -453,6 +549,9 @@ function score(results) {
 const results = [];
 for (const testCase of cases) {
   results.push(await runCase(testCase));
+}
+for (const flow of multiTurnCases) {
+  results.push(...(await runMultiTurnCase(flow)));
 }
 const summary = score(results);
 

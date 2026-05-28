@@ -1,11 +1,12 @@
 // Onboarding — KAI v3 §4 step order.
 //
-//   1. Name input          (user's first name)
-//   2. Focus areas         (multi-select chips, what they want to work on)
-//   3. Hardest lately      (free text, optional, skippable)
-//   4. Meet KAI            (intro both agents: Mind + Body)
-//   5. Tone picker         (warm / balanced / direct)
-//   6. Confirm             (start the app)
+//   1. Welcome             (fast emotional opener)
+//   2. Name input          (optional first name)
+//   3. Focus areas         (multi-select chips, what they want to work on)
+//   4. Hardest lately      (free text, optional, skippable)
+//   5. Meet KAI            (intro both agents: Mind + Body)
+//   6. Tone picker         (warm / balanced / direct)
+//   7. Confirm             (start the app)
 //
 // Target: under 90 seconds, ≤7 steps. The v0 three-engine picker +
 // 6-question intake battery are retired in favor of focus-area multi-select
@@ -178,7 +179,7 @@ function isKaiTone(v: unknown): v is KaiTone {
 // Page
 // ─────────────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -204,16 +205,17 @@ export function Onboarding() {
   const canAdvance = useMemo(() => {
     switch (step) {
       case 0:
-        return firstName.trim().length > 0;
-      case 1:
-        return focusAreas.length > 0;
-      case 2: // hardest lately
-      case 3: // adaptive follow-ups
-      case 4: // meet KAI
-      case 5: // tone
-      case 6: // Day 0
+      case 1: // optional name
         return true;
-      case 7: // confirm + save
+      case 2:
+        return focusAreas.length > 0;
+      case 3: // hardest lately
+      case 4: // adaptive follow-ups
+      case 5: // meet KAI
+      case 6: // tone
+      case 7: // Day 0
+        return true;
+      case 8: // confirm + save
         return !saving;
       default:
         return true;
@@ -236,8 +238,8 @@ export function Onboarding() {
     try {
       const keyedResponses: Record<string, string> = {
         focus_areas: focusAreas.join(","),
-        first_name: firstName.trim(),
       };
+      if (firstName.trim()) keyedResponses.first_name = firstName.trim();
       if (hardestLately.trim()) {
         keyedResponses.hardest_lately = hardestLately.trim();
       }
@@ -283,16 +285,19 @@ export function Onboarding() {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-8 pt-6">
-        <Progress current={step + 1} total={TOTAL_STEPS} />
+        {step > 0 && <Progress current={step} total={TOTAL_STEPS - 1} />}
 
         <main className="mt-8 flex-1 animate-fade-slide-up" key={step}>
           {step === 0 && (
-            <NameStep value={firstName} onChange={setFirstName} />
+            <WelcomeStep />
           )}
           {step === 1 && (
-            <FocusStep value={focusAreas} onChange={setFocusAreas} />
+            <NameStep value={firstName} onChange={setFirstName} />
           )}
           {step === 2 && (
+            <FocusStep value={focusAreas} onChange={setFocusAreas} />
+          )}
+          {step === 3 && (
             <HardestStep
               value={hardestLately}
               onChange={setHardestLately}
@@ -301,19 +306,19 @@ export function Onboarding() {
           )}
           {/* Rawz/5 — adaptive follow-ups based on the focus areas they
               picked in step 1. Up to 3 quick-tap questions, all skippable. */}
-          {step === 3 && (
+          {step === 4 && (
             <FollowUpsStep
               focusAreas={focusAreas}
               responses={followUps}
               onChange={setFollowUps}
             />
           )}
-          {step === 4 && <MeetKaiStep firstName={firstName} />}
-          {step === 5 && (
+          {step === 5 && <MeetKaiStep firstName={firstName} />}
+          {step === 6 && (
             <ToneStep value={kaiTone} onChange={setKaiTone} />
           )}
-          {step === 6 && <DayZeroStep firstName={firstName} />}
-          {step === 7 && (
+          {step === 7 && <DayZeroStep firstName={firstName} />}
+          {step === 8 && (
             <ConfirmStep
               firstName={firstName}
               focusAreas={focusAreas}
@@ -341,6 +346,23 @@ export function Onboarding() {
 // Steps
 // ─────────────────────────────────────────────────────────────────────
 
+function WelcomeStep() {
+  return (
+    <div className="flex min-h-[62vh] flex-col items-center justify-center text-center">
+      <KaiOrb size={132} />
+      <p className="mt-8 font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
+        Takes under 2 minutes
+      </p>
+      <h1 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-tight">
+        Let's build your personalized system.
+      </h1>
+      <p className="mt-4 max-w-[300px] text-sm leading-relaxed text-text-secondary">
+        A few quick taps. Then KAI turns it into today’s first plan.
+      </p>
+    </div>
+  );
+}
+
 function NameStep({
   value,
   onChange,
@@ -351,9 +373,9 @@ function NameStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="welcome"
+        eyebrow="optional"
         title="What should KAI call you?"
-        blurb="Your first name. KAI is your wellness companion — this is just so you're not 'user'."
+        blurb="First name is enough. You can also skip this."
       />
       <input
         autoFocus
@@ -571,11 +593,12 @@ function FollowUpsStep({
 }
 
 function MeetKaiStep({ firstName }: { firstName: string }) {
+  const title = firstName.trim() ? `Hey ${firstName}, meet KAI.` : "Meet KAI.";
   return (
     <div className="space-y-6">
       <Heading
         eyebrow="step 5"
-        title={`Hey ${firstName}, meet KAI.`}
+        title={title}
         blurb="KAI has two sides — both look out for you."
       />
       <div className="flex justify-center py-2">
@@ -751,7 +774,7 @@ function DayZeroStep({ firstName }: { firstName: string }) {
       <Heading
         eyebrow="step 7 — optional"
         title="Record Day 0."
-        blurb={`Talk to future ${firstName || "you"}. Why are you here? What changes now?`}
+        blurb={`Talk to future ${firstName.trim() || "you"}. Why are you here? What changes now?`}
       />
 
       <div className="overflow-hidden rounded-3xl border border-glass-border bg-text-primary text-background shadow-card-lg">
@@ -844,8 +867,8 @@ function ConfirmStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 7"
-        title={`You're set, ${firstName}.`}
+        eyebrow="step 8"
+        title={firstName.trim() ? `You're set, ${firstName}.` : "You're set."}
         blurb="Ready to meet your home screen?"
       />
       <div className="rounded-lg border border-glass-border bg-surface p-5 shadow-card">
@@ -1003,8 +1026,8 @@ function Footer({
           focus-ring
         "
       >
-        {isLast ? (saving ? "Signing you in…" : "Start") : "Continue"}
-        {!isLast && <ArrowRight size={18} aria-hidden="true" />}
+        {step === 0 ? "Start" : isLast ? (saving ? "Signing you in…" : "Start") : "Continue"}
+        {!isLast && step !== 0 && <ArrowRight size={18} aria-hidden="true" />}
       </button>
     </div>
   );

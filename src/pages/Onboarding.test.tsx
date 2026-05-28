@@ -49,26 +49,27 @@ afterEach(() => {
 });
 
 describe("Onboarding (v3 §4)", () => {
-  it("shows step 1 (name) on first render", () => {
+  it("shows the welcome opener on first render", () => {
     renderOnboarding();
-    expect(screen.getByText("1 of 8")).toBeInTheDocument();
     expect(
-      screen.getByText(/what should kai call you/i),
+      screen.getByText(/let's build your personalized system/i),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^start$/i })).toBeEnabled();
   });
 
-  it("blocks Continue until a name is entered", () => {
+  it("keeps the name step optional", async () => {
     renderOnboarding();
-    const continueBtn = screen.getByRole("button", { name: /continue/i });
-    expect(continueBtn).toBeDisabled();
-    fireEvent.change(screen.getByPlaceholderText(/first name/i), {
-      target: { value: "Lev" },
-    });
-    expect(continueBtn).not.toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
+    expect(await screen.findByText("1 of 8")).toBeInTheDocument();
+    expect(screen.getByText(/what should kai call you/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
   });
 
-  it("walks through step order: name → focus → hardest → follow-ups → meet → tone → day 0 → confirm", async () => {
+  it("walks through step order: welcome → name → focus → hardest → follow-ups → meet → tone → day 0 → confirm", async () => {
     renderOnboarding();
+
+    // Welcome
+    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
 
     // Step 1: name
     fireEvent.change(screen.getByPlaceholderText(/first name/i), {
@@ -119,6 +120,7 @@ describe("Onboarding (v3 §4)", () => {
 
   it("does not ask for age or parent email", async () => {
     renderOnboarding();
+    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
     fireEvent.change(screen.getByPlaceholderText(/first name/i), {
       target: { value: "A" },
     });
@@ -133,6 +135,7 @@ describe("Onboarding (v3 §4)", () => {
 
   it("saves onboarding without parent consent", async () => {
     renderOnboarding();
+    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
     fireEvent.change(screen.getByPlaceholderText(/first name/i), {
       target: { value: "Lev" },
     });

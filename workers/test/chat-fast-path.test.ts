@@ -29,7 +29,7 @@ describe("fastKaiReply", () => {
   it("answers school focus pressure with a concrete short block", () => {
     const reply = fastKaiReply("i have a huge test tomorrow and i cant focus");
 
-    expect(reply).toContain("12-minute block");
+    expect(reply).toContain("12 minutes");
     expect(reply).not.toContain("I can help with that");
   });
 
@@ -51,15 +51,24 @@ describe("fastKaiReply", () => {
   it("answers missed-day shame with a reset instead of backup copy", () => {
     const reply = fastKaiReply("i skipped everything today and feel like i already failed");
 
-    expect(reply).toContain("missed a day");
-    expect(reply).toContain("tiny reset");
+    expect(reply).toContain("bad day");
+    expect(reply).toContain("small save");
   });
 
   it("answers gym anxiety with a first-trip script", () => {
     const reply = fastKaiReply("i want to go to the gym but i feel embarrassed and dont know what to do");
 
-    expect(reply).toContain("Gym anxiety");
+    expect(reply).toContain("gym feels");
     expect(reply).toContain("walk in");
+  });
+
+  it("answers hungry lunch typos with food options", () => {
+    const reply = fastKaiReply("im hungry what should i make for lunc");
+
+    expect(reply).toContain("Make lunch simple");
+    expect(reply).toContain("protein");
+    expect(reply).toContain("What do you have");
+    expect(reply).not.toContain("real thing underneath");
   });
 });
 

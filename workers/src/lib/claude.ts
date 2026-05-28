@@ -109,19 +109,22 @@ function fallbackReply(messages: ClaudeMessage[]) {
     return "I’m here. What’s the vibe today: mind, body, school, sleep, or confidence?";
   }
   if (/\b(friend|friends|group chat|left me out|lonely|crush|delivered|rejected|ignored|social)\b/.test(last)) {
-    return "That kind of stuff stings because it hits belonging. What actually happened: left out, ignored, embarrassed, or you’re reading the silence?";
+    return "Yeah, that kind of thing stings. What happened exactly: left out, ignored, embarrassed, or you’re reading the silence?";
   }
   if (/\b(mad|angry|rage|yelled|fight|mom|dad|parent|parents)\b/.test(last)) {
-    return "Feeling bad after anger usually means your standards are still alive. Cool down first, then repair with one clean sentence.";
+    return "Feeling bad after means you probably care more than you showed. Cool down first, then say one honest sentence.";
   }
   if (/\b(point of trying|always quit|why try|i always fail|nothing works|keep quitting|what's the point|whats the point)\b/.test(last)) {
-    return "Quitting a lot does not prove you’re broken. It usually means the system was too heavy. What’s one tiny thing you’d repeat for three days?";
+    return "Quitting before doesn’t mean you’re cooked forever. The plan was probably too big. What’s one tiny thing you could do for three days?";
   }
   if (/\b(test|quiz|exam|homework|study|studying|school|grades?|class|assignment|finals?)\b/.test(last)) {
-    return "School pressure can make your brain freeze. Do one 12-minute block: phone away, one topic only, then stop and check what still feels messy.";
+    return "Yeah, test stress can make your brain freeze. Do 12 minutes on one topic with your phone away, then check what still feels confusing.";
   }
   if (/\b(basketball|hoop|shooting|handles)\b/.test(last)) {
-    return "Basketball improvement needs a repeatable floor. Do 20 minutes today: handles, form shots, and mobility. Log it so the streak has proof.";
+    return "Keep it simple today: 5 minutes handles, 10 minutes form shots, 5 minutes stretching. Log it after so it counts.";
+  }
+  if (/\b(hungry|lunch|lunc|food|eat|make|cook)\b/.test(last)) {
+    return "I got you. Go protein + carb + something fresh: eggs and toast, a turkey/rice bowl, tuna sandwich, Greek yogurt with fruit, or leftovers with water. What do you have?";
   }
   if (last.includes("sleep") || last.includes("tired")) {
     return "Tonight’s win is not a perfect routine. It’s making the next hour quieter: dim the screen, plug the phone away from bed, and choose one boring wind-down thing.";
@@ -132,5 +135,5 @@ function fallbackReply(messages: ClaudeMessage[]) {
   if (last.includes("scroll") || last.includes("phone") || last.includes("tiktok") || last.includes("instagram")) {
     return "Your attention got pulled. That doesn’t mean the day is gone. Put the phone across the room for 15 minutes and pick one replacement.";
   }
-  return "I’m with you. Give me the real thing underneath it, and I’ll help you make the next step small enough to do.";
+  return "I’m here. Say it a little more plainly and I’ll help you figure out the next move.";
 }

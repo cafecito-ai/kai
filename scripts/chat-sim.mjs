@@ -26,6 +26,10 @@ const globalBadPatterns = [
   /Stoic next move/i,
   /make it practical/i,
   /one clean next move/i,
+  /real thing underneath/i,
+  /proof-of-life/i,
+  /standards are still alive/i,
+  /system has been too heavy/i,
 ];
 
 const cases = [
@@ -97,6 +101,14 @@ const cases = [
     maxLatencyMs: 2200,
   },
   {
+    id: "hungry-lunch-typo",
+    persona: "hungry teen, typo",
+    message: "im hungry what should i make for lunc",
+    expect: [/I got you|lunch|protein|carb|what do you have/i],
+    ban: [/real thing underneath|next step small enough|I can help with that/i],
+    maxLatencyMs: 1800,
+  },
+  {
     id: "sleep-scroll",
     persona: "late-night scroller",
     message: "i keep staying up until 3am scrolling",
@@ -150,7 +162,7 @@ const cases = [
     id: "skipped-day",
     persona: "streak broke",
     message: "i skipped everything today and feel like i already failed",
-    expect: [/not failed|one|reset|today|small/i],
+    expect: [/didn.?t fail|bad day|small save|water|mood/i],
     ban: [/I can help with that/i],
     maxLatencyMs: 2200,
   },
@@ -166,7 +178,7 @@ const cases = [
     id: "gym-anxiety",
     persona: "new to gym",
     message: "i want to go to the gym but i feel embarrassed and dont know what to do",
-    expect: [/gym|embarrassed|simple|first|walk in|machine|plan/i],
+    expect: [/gym|scary|simple|first|walk in|machine|counts/i],
     maxLatencyMs: 2600,
   },
   {

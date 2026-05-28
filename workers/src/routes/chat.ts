@@ -278,29 +278,29 @@ export function fastKaiReply(message: string): string | null {
 
   if (/\b(test|quiz|exam|homework|study|studying|school|grades?|class|assignment|finals?)\b/.test(text) && /\b(can'?t focus|focus|pressure|stressed|tomorrow|behind|overwhelmed|locked|lock in)\b/.test(text)) {
     return [
-      "School pressure can make your brain freeze.",
-      "Do one 12-minute block: phone away, one topic only, then tell me what part still feels messy.",
+      "Yeah, test stress can make your brain just freeze.",
+      "Do 12 minutes on one topic with your phone away. After that, tell me what still feels confusing.",
     ].join("\n\n");
   }
 
   if (/\b(gym|lifting|lift|weights|workout)\b/.test(text) && /\b(embarrassed|nervous|anxious|awkward|dont know what to do|don't know what to do|new|first time)\b/.test(text)) {
     return [
-      "Gym anxiety is normal when you don’t have a script yet.",
-      "Make the first trip almost too simple: walk in, do one machine or dumbbell movement, leave with proof you showed up.",
+      "That’s normal. The gym feels way less scary when you know exactly what you’re doing.",
+      "Keep the first day simple: walk in, do one machine or dumbbell move, and leave. That still counts.",
     ].join("\n\n");
   }
 
   if (/\b(ugly|awkward|low confidence|no confidence|insecure|embarrassed|hate how i look|feel weird)\b/.test(text)) {
     return [
-      "That feeling can get loud at school.",
-      "Don’t debate your whole identity today. Give me the moment it hits hardest: walking in, talking to people, photos, or being compared?",
+      "That feeling gets loud fast at school.",
+      "Where does it hit the most: walking in, talking to people, photos, or comparing yourself?",
     ].join("\n\n");
   }
 
   if (/\b(invisible|lonely|alone|no one cares|left out)\b/.test(text) && /\b(weekend|weekends|school|today|lately|feel)\b/.test(text)) {
     return [
-      "Feeling invisible hits different when there’s no structure around you.",
-      "Don’t disappear into the whole weekend. Pick one proof-of-life move: text one person, get outside, or log what you’re feeling.",
+      "That invisible feeling is brutal, especially on weekends.",
+      "Don’t let it turn into the whole day. Text one person, get outside for a few minutes, or tell me what happened.",
     ].join("\n\n");
   }
 
@@ -313,8 +313,8 @@ export function fastKaiReply(message: string): string | null {
 
   if (/\b(parents?|mom|dad|home)\b/.test(text) && /\b(fighting|fight|yelling|arguing|cant relax|can't relax|unsafe|stressed)\b/.test(text)) {
     return [
-      "Home stress can make your body stay on alert even when you’re doing nothing wrong.",
-      "Control the tiny circle first: breathe slower, move to the safest quiet spot, and name one thing you can do in the next five minutes.",
+      "When your parents are fighting, it makes sense that you can’t relax.",
+      "Get somewhere that feels safe if you can. Then do one small thing to calm your body for five minutes.",
     ].join("\n\n");
   }
 
@@ -327,8 +327,8 @@ export function fastKaiReply(message: string): string | null {
 
   if (/\b(skipped everything|missed everything|broke my streak|failed today|already failed|ruined today)\b/.test(text)) {
     return [
-      "You didn’t fail the whole path. You missed a day.",
-      "Make today count again with one tiny reset: water, mood log, five-minute clean, or lights-out setup.",
+      "You didn’t fail. You had a bad day.",
+      "Pick one small save: drink water, log your mood, clean for five minutes, or set up sleep tonight.",
     ].join("\n\n");
   }
 
@@ -346,24 +346,31 @@ export function fastKaiReply(message: string): string | null {
     ].join("\n\n");
   }
 
+  if (/\b(hungry|lunch|lunc|food|eat|cook)\b/.test(text) && /\b(what should|what do|should i|can i|make|cook|eat|lunch|lunc)\b/.test(text)) {
+    return [
+      "I got you. Make lunch simple: protein + carb + something fresh.",
+      "Easy moves: eggs and toast, a turkey/rice bowl, a tuna sandwich, Greek yogurt with fruit, or leftovers with water. What do you have?",
+    ].join("\n\n");
+  }
+
   if (/\b(mad|angry|rage|yelled|fight|fighting|mom|dad|parent|parents)\b/.test(text) && /\b(feel bad|guilty|regret|sorry|mad|angry|yelled|fight)\b/.test(text)) {
     return [
-      "Feeling bad after anger usually means your standards are still alive.",
-      "First repair is small: cool down, then say one clean sentence about what you wish you handled differently.",
+      "Feeling bad after means you probably care more than you showed in the moment.",
+      "Cool down first. Then say one honest sentence about what you wish you handled differently.",
     ].join("\n\n");
   }
 
   if (/\b(point of trying|always quit|why try|i always fail|nothing works|keep quitting|what's the point|whats the point)\b/.test(text)) {
     return [
-      "Quitting a lot does not prove you’re broken. It proves the system has been too heavy.",
-      "What’s the smallest habit you’d actually repeat for three days?",
+      "Quitting before doesn’t mean you’re cooked forever.",
+      "It probably means the plan was too big. What’s one tiny thing you could actually do for three days?",
     ].join("\n\n");
   }
 
   if (/\b(cooked|fried|drained|burnt out|burned out|overwhelmed)\b/.test(text) && /\b(what do i do|what should i do|help|start|fix)\b/.test(text)) {
     return [
-      "Cooked usually means overloaded, not hopeless.",
-      "Do the reset version: water, stand up, clear one surface, then tell me the one thing you’re avoiding.",
+      "You’re probably overloaded, not doomed.",
+      "Do the quick reset: water, stand up, clear one thing, then tell me what you’ve been avoiding.",
     ].join("\n\n");
   }
 
@@ -377,8 +384,8 @@ export function fastKaiReply(message: string): string | null {
   if (/\b(what should i do|what do i do|help me|where do i start|start today|lock in|locked in)\b/.test(text)) {
     if (/\b(week|this week|plan)\b/.test(text)) {
       return [
-        "Here’s the lock-in week: one body rep, one school/work rep, one sleep rep each day.",
-        "Keep them small enough to actually finish. Want me to make it basketball, confidence, school, or sleep focused?",
+        "Here’s the simple version: one body thing, one school/work thing, one sleep thing each day.",
+        "Want it focused on basketball, confidence, school, or sleep?",
       ].join("\n\n");
     }
     return [

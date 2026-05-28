@@ -252,40 +252,36 @@ export function fastKaiReply(message: string): string | null {
 
   if (/^\s*(yo|hey|hi|hello|sup|what'?s up|wassup|wyd)\s*(kai|coach)?[\s?.!]*$/i.test(message)) {
     return [
-      "I’m here. Quick read: don’t make today huge.",
-      "Pick one lane right now: mind, body, school, sleep, or confidence. I’ll turn it into the next move.",
+      "I’m here.",
+      "What’s the vibe today: mind, body, school, sleep, or confidence?",
     ].join("\n\n");
   }
 
   if (/\b(sad|depressed|delressed|lonely|empty|numb|down bad|rough day)\b/.test(text)) {
     return [
-      "I hear you. Let’s slow this down instead of turning it into a whole verdict on your life.",
-      "What happened today that made the sadness louder: something with people, pressure, sleep, your body, or just a wave that showed up?",
-      "Marcus would call this the first move: name the thing clearly, then take one small action that is still yours.",
+      "Damn. I’m here with you.",
+      "What made it hit today: people, pressure, sleep, or just one of those waves?",
     ].join("\n\n");
   }
 
   if (/\b(unmotivated|no motivation|lazy|stuck|can't start|cant start|procrastinat|doomscroll|phone addiction)\b/.test(text)) {
     return [
-      "Motivation is unreliable. We can still build a first rep.",
-      "Put the phone out of reach and give me ten minutes on the smallest useful task. Not the perfect task, the first one.",
-      "Want me to pick a 10-minute reset, school block, workout start, or sleep reset?",
+      "Yeah, that stuck feeling is real.",
+      "Don’t solve your whole life right now. Give me one thing you’ve been avoiding and I’ll make it a 10-minute start.",
     ].join("\n\n");
   }
 
   if (/\b(overthinking|spiraling|anxious|anxiety|stress|stressed|panic)\b/.test(text)) {
     return [
-      "Your brain is trying to protect you by running every scenario. That does not mean every scenario deserves your attention.",
-      "Do this once: exhale longer than you inhale for five breaths, then write the exact problem in one sentence.",
-      "Want the practical next move, or the philosophy lens for this?",
+      "Your brain is doing the too-many-tabs thing.",
+      "What’s the main loop: school, people, future, or your own self-talk?",
     ].join("\n\n");
   }
 
   if (/\b(what should i do|help me|where do i start|start today|lock in|locked in)\b/.test(text)) {
     return [
-      "Start with one honest rep: check your mood, move your body for five minutes, or clean up one thing you have been avoiding.",
-      "The goal is not to become a new person by tonight. It is to prove you can steer the next ten minutes.",
-      "Pick mind, body, school, or sleep and I will make it specific.",
+      "Let’s not make it huge.",
+      "Pick one: reset your mind, move your body, handle school, or protect sleep.",
     ].join("\n\n");
   }
 
@@ -308,12 +304,13 @@ export function fastPhysicalReply(message: string): string | null {
 function withReadableReplyInstructions(system: string) {
   return `${system}
 
-READABILITY OVERRIDE:
-- Do not send a wall of text.
-- Use 2-3 short paragraphs separated by blank lines.
-- Keep each paragraph to 1-2 short sentences.
-- No markdown headers.
-- End with one short invitation that keeps the conversation going. Offer either a practical next move or a philosophy/discipline lens related to what they shared.`;
+CONVERSATION STYLE:
+- Sound like a trusted friend/coach, not a worksheet or a chatbot script.
+- Usually reply in 1-2 short paragraphs separated by a blank line.
+- Do not force a philosophy lens, options menu, or closing question every time.
+- Ask at most one natural follow-up question, only when it helps the teen keep talking.
+- If the user is casual, be casual. If they ask for a plan, be direct and useful.
+- No markdown headers.`;
 }
 
 function normalizeUserMessage(message: string) {

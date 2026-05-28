@@ -9,29 +9,29 @@ describe("formatKaiReply", () => {
     );
 
     expect(reply).toContain("\n\n");
-    expect(reply).toMatch(/philosophy lens|Stoic next move|purpose lens/);
+    expect(reply).not.toMatch(/philosophy lens|Stoic next move|purpose lens/);
   });
 
-  it("does not append a duplicate keep-going offer", () => {
+  it("does not append after a natural question", () => {
     const reply = formatKaiReply(
-      "Start with one clean action.\n\nWant the philosophy lens on this?",
+      "Start with one clean action.\n\nWhat feels hardest right now?",
       "mind",
     );
 
     expect(reply.match(/\?/g)?.length).toBe(1);
   });
 
-  it("does append after a generic model question", () => {
+  it("keeps a generic model question conversational", () => {
     const reply = formatKaiReply(
       "That's a tough cycle to break. Can you tell me more about what's going on when you procrastinate?",
       "mind",
     );
 
-    expect(reply).toContain("\n\nWant ");
-    expect(reply).toMatch(/philosophy lens|Stoic next move/);
+    expect(reply).not.toContain("\n\nWant ");
+    expect(reply.match(/\?/g)?.length).toBe(1);
   });
 
-  it("caps wall-of-text replies before adding a keep-going prompt", () => {
+  it("caps wall-of-text replies without adding a forced menu", () => {
     const reply = formatKaiReply(
       [
         "First useful thought.",
@@ -46,6 +46,11 @@ describe("formatKaiReply", () => {
     expect(reply).toContain("First useful thought.");
     expect(reply).toContain("Third useful thought.");
     expect(reply).not.toContain("Fourth extra thought");
-    expect(reply.split("\n\n").length).toBeLessThanOrEqual(4);
+    expect(reply).not.toMatch(/discipline lens|one clean next move/);
+    expect(reply.split("\n\n").length).toBeLessThanOrEqual(3);
+  });
+
+  it("uses a small human fallback for empty replies", () => {
+    expect(formatKaiReply("", "mind")).toBe("I’m here. What’s actually going on today?");
   });
 });

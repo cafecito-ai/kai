@@ -9,7 +9,7 @@ export function formatKaiReply(rawReply: string, mode: ReplyMode = "general") {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-  if (!cleaned) return closingPrompt("", mode).trim();
+  if (!cleaned) return gentleFallback(mode);
 
   const paragraphs = cleaned
     .split(/\n{2,}/)
@@ -17,8 +17,8 @@ export function formatKaiReply(rawReply: string, mode: ReplyMode = "general") {
     .filter(Boolean);
 
   const body = paragraphs.slice(0, MAX_BODY_PARAGRAPHS).join("\n\n");
-  if (endsWithKeepGoingOffer(body)) return body;
-  return `${body}\n\n${closingPrompt(body, mode)}`;
+  if (hasNaturalQuestion(body) || hasEnoughSubstance(body)) return body;
+  return `${body}\n\n${gentleFollowUp(body, mode)}`;
 }
 
 function splitLongParagraph(paragraph: string) {
@@ -40,35 +40,31 @@ function splitLongParagraph(paragraph: string) {
   return chunks;
 }
 
-function endsWithKeepGoingOffer(reply: string) {
-  const tail = reply.slice(-220).toLowerCase();
-  return /[?]$/.test(reply.trim()) && (
-    tail.includes("philosophy lens") ||
-    tail.includes("stoic") ||
-    tail.includes("discipline lens") ||
-    tail.includes("purpose lens") ||
-    tail.includes("next move") ||
-    tail.includes("make it practical")
-  );
+function hasNaturalQuestion(reply: string) {
+  return /\?\s*$/.test(reply.trim());
 }
 
-function closingPrompt(reply: string, mode: ReplyMode) {
-  if (mode === "body") {
-    return "Want the discipline lens on this, or should we turn it into one clean next move?";
-  }
-  if (mentionsRelationship(reply)) {
-    return "Want the deeper read on what this says about you, or the Stoic next move?";
-  }
-  if (mentionsPurpose(reply)) {
-    return "Want the purpose lens on this, or should we make it practical for today?";
-  }
-  return "Want a quick philosophy lens on this, or should we turn it into one next move?";
+function hasEnoughSubstance(reply: string) {
+  const sentenceCount = reply.match(/[.!?](\s|$)/g)?.length ?? 0;
+  return sentenceCount >= 2 || reply.length >= 140;
+}
+
+function gentleFallback(mode: ReplyMode) {
+  if (mode === "body") return "I’m here. What are you trying to do with your body or energy today?";
+  return "I’m here. What’s actually going on today?";
+}
+
+function gentleFollowUp(reply: string, mode: ReplyMode) {
+  if (mode === "body") return "What are you trying to do today?";
+  if (mentionsRelationship(reply)) return "What happened?";
+  if (mentionsPurpose(reply)) return "What part of that feels hardest right now?";
+  return "What’s the real thing underneath it?";
 }
 
 function mentionsRelationship(reply: string) {
-  return /\b(friend|friends|lonely|relationship|group chat|social|family|parent|crush)\b/i.test(reply);
+  return /\b(friend|friends|lonely|relationship|group chat|social|family|parent|crush|people)\b/i.test(reply);
 }
 
 function mentionsPurpose(reply: string) {
-  return /\b(purpose|meaning|future|identity|becoming|confidence|discipline)\b/i.test(reply);
+  return /\b(purpose|meaning|future|identity|becoming|confidence|discipline|pressure|school)\b/i.test(reply);
 }

@@ -6,15 +6,17 @@ describe("fastKaiReply", () => {
     const reply = fastKaiReply("whats up Kai");
 
     expect(reply).toContain("I’m here");
-    expect(reply).toContain("mind, body, school, sleep, or confidence");
+    expect(reply).toContain("What’s the vibe today");
     expect(reply).not.toContain("I can help with that");
+    expect(reply).not.toMatch(/philosophy lens|purpose lens|next move/);
   });
 
   it("answers low motivation without waiting for the model", () => {
     const reply = fastKaiReply("I feel unmotivated");
 
-    expect(reply).toContain("Motivation is unreliable");
-    expect(reply).toContain("ten minutes");
+    expect(reply).toContain("stuck feeling is real");
+    expect(reply).toContain("10-minute start");
+    expect(reply).not.toMatch(/philosophy lens|purpose lens/);
   });
 });
 

@@ -117,6 +117,17 @@ select {
   100% { transform: translate(-22px, 22px) scale(0.4); opacity: 0; }
 }
 
+@keyframes kaiBassHit {
+  0% { transform: scale(1); filter: brightness(1); }
+  35% { transform: scale(1.012); filter: brightness(1.14); }
+  62% { transform: scale(0.996); filter: brightness(1.04); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.kai-bass-hit {
+  animation: kaiBassHit 520ms ease-out both;
+}
+
 /*
  * Spec Section 4 / P3-8: "Respect prefers-reduced-motion — replace all
  * motion with instant transitions if set." Belt-and-suspenders approach

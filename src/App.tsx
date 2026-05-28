@@ -25,6 +25,7 @@ import { GroupLeaderboard } from "./pages/GroupLeaderboard";
 import { Badges } from "./pages/Badges";
 import { Challenges } from "./pages/Challenges";
 import { Strengths } from "./pages/Strengths";
+import { Vault } from "./pages/Vault";
 import { Welcome } from "./pages/Welcome";
 import { SleepLog } from "./pages/SleepLog";
 import { WorkoutLog } from "./pages/WorkoutLog";
@@ -122,6 +123,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           {/* Guides (educational content) still useful — keep the route. */}
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
+          <Route path="/vault" element={protectedOnboarding(<Vault />)} />
           <Route path="/groups" element={protectedOnboarding(<Groups />)} />
           <Route path="/groups/inbox" element={protectedOnboarding(<GroupInbox />)} />
           <Route path="/groups/:id" element={protectedOnboarding(<GroupDetail />)} />

@@ -152,10 +152,18 @@ function MissionRow({
   onTick: (e: React.MouseEvent) => void;
 }) {
   const Icon = ICON_MAP[mission.icon];
+  function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onOpen();
+  }
+
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={onKeyDown}
       className={`
         flex w-full items-center gap-3 rounded-lg border text-left shadow-card
         transition active:scale-[0.99] focus-ring
@@ -215,6 +223,6 @@ function MissionRow({
           <ChevronRight size={14} className="text-text-muted" aria-hidden="true" />
         </>
       )}
-    </button>
+    </div>
   );
 }

@@ -14,9 +14,14 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Brain,
+  ChevronRight,
+  Droplets,
   Dumbbell,
   Flame,
+  Gem,
   Heart,
+  Layers,
+  Lock,
   Moon,
   NotebookPen,
   Sparkles,
@@ -30,6 +35,12 @@ import {
   readLocalInputs,
   type LocalInput,
 } from "../lib/local-score";
+import { getRecentHydration } from "../lib/local-hydration";
+import { readDayZeroMeta } from "../lib/day-zero";
+import {
+  loadLocalOnboardingProfile,
+  type OnboardingProfile,
+} from "../lib/onboarding-profile";
 
 type DayBucket = {
   date: string;          // YYYY-MM-DD
@@ -50,16 +61,35 @@ type WeekTallies = {
   goalProgress: number;
 };
 
+type ProgressSystems = {
+  heat: number;
+  rank: "Focused" | "Relentless" | "Elite";
+  combo: string;
+  environmentLevel: number;
+  evolutionPhase: string;
+  rareDrop: string;
+  lockedIn: boolean;
+  vaultUnlocks: string[];
+  totalHardActions: number;
+};
+
 export function Progress() {
   const [inputs, setInputs] = useState<LocalInput[]>([]);
+  const [profile, setProfile] = useState<OnboardingProfile | null>(null);
 
   useEffect(() => {
     setInputs(readLocalInputs());
+    setProfile(loadLocalOnboardingProfile());
   }, []);
 
   const days = useMemo(() => buildSevenDayBuckets(inputs), [inputs]);
   const tallies = useMemo(() => weekTallies(inputs), [inputs]);
   const streak = useMemo(() => computeStreakFromInputs(inputs), [inputs]);
+  const hydration = useMemo(() => getRecentHydration(7), []);
+  const systems = useMemo(
+    () => buildProgressSystems(inputs, tallies, streak),
+    [inputs, tallies, streak],
+  );
   const recent = useMemo(
     () =>
       [...inputs]
@@ -83,30 +113,39 @@ export function Progress() {
           progress
         </p>
         <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight">
-          Your last 7 days
+          Your growth system
         </h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Just the read — what you've done, how it lands. Not a scoreboard.
+          Data, trends, evolution, unlocks, and the deeper read over time.
         </p>
       </header>
 
-      {!hasAnyActivity ? (
-        <EmptyState />
-      ) : (
-        <>
-          {/* This week tallies */}
-          <ThisWeekCard tallies={tallies} streak={streak} />
+      <EvolvingGoalPanel profile={profile} systems={systems} />
 
-          {/* 7-day Daily Score chart */}
-          <DailyScoreChart days={days} />
+      {!hasAnyActivity && <EmptyState />}
 
-          {/* Sub-score mini-bars */}
-          <SubScoreTrends days={days} />
+      {/* This week tallies */}
+      <ThisWeekCard tallies={tallies} streak={streak} />
 
-          {/* Recent activity feed */}
-          <RecentActivityCard recent={recent} />
-        </>
-      )}
+      <RewardSystemsCard systems={systems} />
+
+      {/* 7-day Daily Score chart */}
+      <DailyScoreChart days={days} />
+
+      {/* Sub-score mini-bars */}
+      <SubScoreTrends days={days} />
+
+      <DeepTrackingCard
+        days={days}
+        hydration={hydration}
+        streak={streak}
+        systems={systems}
+      />
+
+      <VaultUnlockCard systems={systems} />
+
+      {/* Recent activity feed */}
+      {recent.length > 0 && <RecentActivityCard recent={recent} />}
     </div>
   );
 }
@@ -114,6 +153,81 @@ export function Progress() {
 // ─────────────────────────────────────────────────────────────────────
 // Sections
 // ─────────────────────────────────────────────────────────────────────
+
+function EvolvingGoalPanel({
+  profile,
+  systems,
+}: {
+  profile: OnboardingProfile | null;
+  systems: ProgressSystems;
+}) {
+  const goal = evolvingGoalForProfile(profile);
+  const stage = Math.max(1, systems.environmentLevel);
+  const completion = Math.min(100, 18 + systems.totalHardActions * 8 + systems.heat * 10);
+  const petals = stage + 3;
+  const Icon = goal.kind === "fire" ? Flame : goal.kind === "aura" ? Sparkles : Target;
+
+  return (
+    <section
+      className={`
+        relative mb-5 overflow-hidden rounded-glass border p-5 shadow-card-lg
+        ${systems.lockedIn ? "border-accent-warm/45 bg-[#1F1A2E] text-white kai-bass-hit" : "border-glass-border bg-surface"}
+      `}
+    >
+      <div
+        className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${systems.lockedIn ? "via-accent-warm" : "via-accent-cool/70"} to-transparent`}
+      />
+      <div className="flex items-start gap-3">
+        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+          <div className={`absolute inset-3 rounded-full ${goal.glow} opacity-50 blur-xl`} />
+          {goal.kind === "flower" ? (
+            <div className="relative h-16 w-16">
+              {Array.from({ length: petals }).map((_, index) => (
+                <span
+                  key={index}
+                  className="absolute left-1/2 top-1/2 h-9 w-5 origin-bottom rounded-full bg-accent-cool/80 shadow-card"
+                  style={{
+                    transform: `translate(-50%, -100%) rotate(${(360 / petals) * index}deg) scale(${0.8 + stage * 0.08})`,
+                  }}
+                />
+              ))}
+              <span className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-warm shadow-card" />
+              <span className="absolute bottom-0 left-1/2 h-10 w-1.5 -translate-x-1/2 rounded-full bg-success" />
+            </div>
+          ) : (
+            <div className={`relative flex h-16 w-16 items-center justify-center rounded-full ${goal.surface} shadow-card motion-safe:animate-pulse`}>
+              <Icon size={30 + stage * 2} className={goal.icon} />
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <p className={`font-mono text-[10px] uppercase tracking-[0.16em] ${systems.lockedIn ? "text-white/55" : "text-text-muted"}`}>
+              evolving goal
+            </p>
+            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 font-mono text-[10px] ${systems.lockedIn ? "bg-white/10 text-white/75" : "bg-surface-muted text-text-secondary"}`}>
+              <Layers size={11} aria-hidden="true" />
+              phase {stage}
+            </span>
+          </div>
+          <h2 className="mt-2 font-display text-2xl font-semibold leading-tight tracking-tight">
+            {goal.title}
+          </h2>
+          <p className={`mt-2 text-sm leading-relaxed ${systems.lockedIn ? "text-white/68" : "text-text-secondary"}`}>
+            {goal.subtitle}
+          </p>
+          <div className={`mt-4 h-2 overflow-hidden rounded-full ${systems.lockedIn ? "bg-white/10" : "bg-surface-muted"}`}>
+            <div
+              className={`h-full rounded-full ${goal.bar} transition-all duration-700`}
+              style={{ width: `${completion}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function ThisWeekCard({
   tallies,
@@ -159,6 +273,88 @@ function ThisWeekCard({
             </p>
             <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted">
               {t.label}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RewardSystemsCard({ systems }: { systems: ProgressSystems }) {
+  const tiles: Array<{
+    icon: LucideIcon;
+    label: string;
+    value: string;
+    detail: string;
+    accent: string;
+  }> = [
+    {
+      icon: Flame,
+      label: "Heat",
+      value: `${systems.heat}x`,
+      detail: systems.lockedIn ? "Locked in mode active" : "Hard actions raise the temperature",
+      accent: "text-accent-warm bg-accent-warm-soft",
+    },
+    {
+      icon: Sparkles,
+      label: "Combo",
+      value: systems.combo,
+      detail: "Workout, hydration, journaling, check-ins stack together",
+      accent: "text-accent-cool bg-accent-cool-soft",
+    },
+    {
+      icon: Gem,
+      label: "Rare drop",
+      value: systems.rareDrop,
+      detail: "Secret moments appear after difficult logs",
+      accent: "text-accent bg-accent-soft",
+    },
+    {
+      icon: Target,
+      label: "Tonight",
+      value: systems.rank,
+      detail: "Daily ending rank for the cinematic recap",
+      accent: "text-success bg-success-soft",
+    },
+  ];
+
+  return (
+    <section className="mb-5 rounded-glass border border-glass-border bg-surface p-5 shadow-card">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+            progress systems
+          </p>
+          <h2 className="mt-1 font-display text-xl font-semibold leading-tight tracking-tight">
+            Discipline changes the interface
+          </h2>
+        </div>
+        {systems.lockedIn && (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-warm-soft px-3 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-accent-warm">
+            <Flame size={11} aria-hidden="true" />
+            locked in
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {tiles.map((tile) => (
+          <div
+            key={tile.label}
+            className={`rounded-lg border border-glass-border p-3 ${systems.lockedIn ? "kai-bass-hit" : ""}`}
+          >
+            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${tile.accent}`}>
+              <tile.icon size={15} aria-hidden="true" />
+            </span>
+            <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+              {tile.label}
+            </p>
+            <p className="mt-1 text-sm font-semibold leading-tight text-text-primary">
+              {tile.value}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-text-secondary">
+              {tile.detail}
             </p>
           </div>
         ))}
@@ -306,6 +502,163 @@ function SubScoreTrends({ days }: { days: DayBucket[] }) {
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function DeepTrackingCard({
+  days,
+  hydration,
+  streak,
+  systems,
+}: {
+  days: DayBucket[];
+  hydration: ReturnType<typeof getRecentHydration>;
+  streak: number;
+  systems: ProgressSystems;
+}) {
+  const latest = days[days.length - 1];
+  const hydrationToday = hydration[hydration.length - 1];
+  const hydrationPct = Math.min(100, Math.round((hydrationToday.glasses / hydrationToday.target) * 100));
+  const modules: Array<{
+    icon: LucideIcon;
+    label: string;
+    value: string;
+    detail: string;
+    href: string;
+    tint: string;
+  }> = [
+    {
+      icon: Heart,
+      label: "Mood analytics",
+      value: latest?.mood != null ? `${latest.mood}/100` : "No read",
+      detail: "Check-ins and journal sentiment over time",
+      href: "/check-in",
+      tint: "text-accent-warm bg-accent-warm-soft",
+    },
+    {
+      icon: Droplets,
+      label: "Hydration",
+      value: `${hydrationToday.glasses}/${hydrationToday.target}`,
+      detail: `${hydrationPct}% of today's water target`,
+      href: "/home",
+      tint: "text-accent-cool bg-accent-cool-soft",
+    },
+    {
+      icon: Moon,
+      label: "Sleep",
+      value: latest?.sleep != null ? `${latest.sleep}/100` : "No log",
+      detail: "Recovery trend and sleep quality inputs",
+      href: "/sleep/log",
+      tint: "text-accent bg-accent-soft",
+    },
+    {
+      icon: Flame,
+      label: "Streak history",
+      value: `${streak} days`,
+      detail: "Consistency, breaks, rebuilds, and heat",
+      href: "/challenges",
+      tint: "text-success bg-success-soft",
+    },
+    {
+      icon: Layers,
+      label: "Buildable space",
+      value: `Room ${systems.environmentLevel}`,
+      detail: "Your digital environment grows through discipline",
+      href: "/progress",
+      tint: "text-accent-cool bg-accent-cool-soft",
+    },
+    {
+      icon: Sparkles,
+      label: "Evolution phase",
+      value: systems.evolutionPhase,
+      detail: "Identity stages change as proof accumulates",
+      href: "/profile",
+      tint: "text-accent-warm bg-accent-warm-soft",
+    },
+  ];
+
+  return (
+    <section className="mb-5 rounded-glass border border-glass-border bg-surface p-5 shadow-card">
+      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+        deeper tracking
+      </p>
+      <h2 className="mt-1 font-display text-xl font-semibold leading-tight tracking-tight">
+        Everything that should not crowd Home
+      </h2>
+
+      <div className="mt-4 grid gap-2">
+        {modules.map((module) => (
+          <Link
+            key={module.label}
+            to={module.href}
+            className="flex items-center gap-3 rounded-lg border border-glass-border bg-surface-muted/35 p-3 transition hover:bg-surface-muted focus-ring"
+          >
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${module.tint}`}>
+              <module.icon size={16} aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-text-primary">
+                {module.label}
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-text-secondary">
+                {module.detail}
+              </span>
+            </span>
+            <span className="shrink-0 text-right">
+              <span className="block font-mono text-xs font-semibold text-text-primary">
+                {module.value}
+              </span>
+              <ChevronRight size={14} className="ml-auto mt-1 text-text-muted" aria-hidden="true" />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function VaultUnlockCard({ systems }: { systems: ProgressSystems }) {
+  const hasVideo = readDayZeroMeta() != null;
+  return (
+    <section className="mb-5 overflow-hidden rounded-glass border border-glass-border bg-[#1F1A2E] p-5 text-white shadow-card-lg">
+      <div className="flex items-start gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10">
+          <Lock size={17} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-white/50">
+            vault unlocks
+          </p>
+          <h2 className="mt-1 font-display text-xl font-semibold leading-tight tracking-tight">
+            Private motivation stays private
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-white/68">
+            Difficult actions unlock deeper KAI modes, UI styles, ambient moments, and the Day 0 reason without parking it on Home.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        {systems.vaultUnlocks.map((unlock) => (
+          <div
+            key={unlock}
+            className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+          >
+            <span className="text-sm font-medium">{unlock}</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/45">
+              unlocked
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <Link
+        to="/vault"
+        className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-[#1F1A2E] transition active:scale-[0.99] focus-ring"
+      >
+        {hasVideo ? "Open private vault" : "Set up private vault"}
+      </Link>
     </section>
   );
 }
@@ -543,4 +896,142 @@ function friendlyTime(iso: string): string {
 
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
+}
+
+function buildProgressSystems(
+  inputs: LocalInput[],
+  tallies: WeekTallies,
+  streak: number,
+): ProgressSystems {
+  const today = new Date().toISOString().slice(0, 10);
+  const todayInputs = inputs.filter((input) => input.date === today);
+  const hardActions = todayInputs.filter((input) =>
+    ["workout", "goal_progress", "journal", "check_in", "sleep_log", "hydration_goal_hit"].includes(input.source),
+  );
+  const sources = new Set(todayInputs.map((input) => input.source));
+  const comboParts = [
+    sources.has("workout") ? "Workout" : null,
+    sources.has("hydration_goal_hit") ? "Hydration" : null,
+    sources.has("journal") ? "Journal" : null,
+    sources.has("check_in") ? "Check-in" : null,
+  ].filter(Boolean);
+  const totalHardActions =
+    tallies.checkIns +
+    tallies.sleepLogs +
+    tallies.workouts +
+    tallies.journals +
+    tallies.goalProgress;
+  const heat = Math.min(9, streak + Math.max(0, hardActions.length - 1));
+  const rank =
+    totalHardActions >= 10 || heat >= 7
+      ? "Elite"
+      : totalHardActions >= 5 || heat >= 4
+        ? "Relentless"
+        : "Focused";
+  const environmentLevel = Math.max(1, Math.min(5, Math.floor(totalHardActions / 4) + 1));
+  const evolutionPhase =
+    environmentLevel >= 5
+      ? "Self-led"
+      : environmentLevel >= 4
+        ? "Locked in"
+        : environmentLevel >= 3
+          ? "Builder"
+          : environmentLevel >= 2
+            ? "Awakening"
+            : "Day one";
+  const rareDrops = [
+    "Secret quote",
+    "Hidden theme",
+    "Legendary badge",
+    "Slow-motion recap",
+    "Ambient sound",
+  ];
+  const rareDrop = rareDrops[(totalHardActions + streak) % rareDrops.length];
+  const vaultUnlocks = [
+    "Why I Started",
+    "Locked-in glow",
+    ...(environmentLevel >= 2 ? ["Ambient focus room"] : []),
+    ...(environmentLevel >= 3 ? ["Deeper KAI mode"] : []),
+    ...(environmentLevel >= 4 ? ["Cinematic night recap"] : []),
+  ];
+
+  return {
+    heat,
+    rank,
+    combo: comboParts.length >= 2 ? `${comboParts.length}-chain` : "No chain yet",
+    environmentLevel,
+    evolutionPhase,
+    rareDrop,
+    lockedIn: heat >= 4 || hardActions.length >= 3,
+    vaultUnlocks,
+    totalHardActions,
+  };
+}
+
+function evolvingGoalForProfile(profile: OnboardingProfile | null): {
+  title: string;
+  subtitle: string;
+  kind: "flower" | "fire" | "aura";
+  glow: string;
+  surface: string;
+  icon: string;
+  bar: string;
+} {
+  const text = profileText(profile);
+
+  if (hasAny(text, ["confidence", "social", "lonely", "relationships", "invisible"])) {
+    return {
+      title: "Build visible confidence",
+      subtitle: "Small proof today: posture, eye contact, one honest rep.",
+      kind: "aura",
+      glow: "bg-accent",
+      surface: "bg-accent-soft",
+      icon: "text-accent",
+      bar: "bg-accent",
+    };
+  }
+  if (hasAny(text, ["gym", "training", "sport", "basketball", "stronger", "better shape", "muscle", "energy"])) {
+    return {
+      title: "Build the body that shows up",
+      subtitle: "Fuel, train, recover. The space grows when the basics repeat.",
+      kind: "fire",
+      glow: "bg-accent-warm",
+      surface: "bg-accent-warm-soft",
+      icon: "text-accent-warm",
+      bar: "bg-accent-warm",
+    };
+  }
+  if (hasAny(text, ["focus", "procrastination", "phone", "distracted", "productive", "school"])) {
+    return {
+      title: "Grow clean focus",
+      subtitle: "One quiet block beats another hour of thinking about starting.",
+      kind: "flower",
+      glow: "bg-accent-cool",
+      surface: "bg-accent-cool-soft",
+      icon: "text-accent-cool",
+      bar: "bg-accent-cool",
+    };
+  }
+  return {
+    title: "Grow your system",
+    subtitle: "Every check-in, log, and honest answer adds another layer.",
+    kind: "flower",
+    glow: "bg-success",
+    surface: "bg-success-soft",
+    icon: "text-success",
+    bar: "bg-success",
+  };
+}
+
+function profileText(profile: OnboardingProfile | null): string {
+  return [
+    ...(profile?.focusAreas ?? []),
+    profile?.hardestLately ?? "",
+    ...Object.values(profile?.followUps ?? {}),
+    profile?.summary ?? "",
+  ].join(" ").toLowerCase();
+}
+
+function hasAny(text: string, terms: string[]) {
+  return terms.some((term) => text.includes(term));
 }

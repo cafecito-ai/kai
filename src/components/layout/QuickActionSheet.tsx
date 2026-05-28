@@ -1,9 +1,8 @@
 // QuickActionSheet — bottom sheet that opens from the + button.
 //
 // Per CLAUDE_v3_PATCH §5: actions are Check in, Log workout, Log food,
-// Journal, Log sleep. The actions themselves wire up in Phase C/D as those
-// features land — for T-004 each one navigates to a placeholder route so
-// the sheet is functional but the destinations are stubs.
+// Journal, Log sleep, plus secondary growth tools. Each action navigates
+// to a dedicated working page so the + button is not just a menu.
 
 import {
   Brain,

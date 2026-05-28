@@ -1,5 +1,4 @@
-// QuickActionSheet tests — covers v3 §5 quick-action set:
-// Check in, Log workout, Log food, Journal, Log sleep.
+// QuickActionSheet tests — covers the working + action set.
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -29,6 +28,7 @@ describe("QuickActionSheet", () => {
       "Log workout",
       "Log food",
       "Journal",
+      "Energy check",
       "Log sleep",
       "Set a goal",
       "Stretch / move",

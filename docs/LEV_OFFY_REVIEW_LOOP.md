@@ -24,9 +24,9 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 
 ## P1 Client Polish
 
-- [ ] Chat depth: KAI should ask better follow-ups for depression/sadness without over-escalating to crisis resources.
-- [ ] Chat formatting: keep responses separated and readable, with tasteful emphasis and a closing prompt for philosophy or next move.
-- [ ] Chat speed: reduce perceived latency with immediate optimistic state, shorter default responses, and better loading treatment.
+- [x] Chat depth: KAI should ask better follow-ups for depression/sadness without over-escalating to crisis resources.
+- [x] Chat formatting: keep responses separated and readable, with tasteful emphasis and a closing prompt for philosophy or next move.
+- [x] Chat speed: reduce perceived latency with immediate optimistic state, shorter default responses, and better loading treatment.
 - [ ] "Talk to KAI": make the chat entry larger and impossible to miss on home.
 - [x] Daily score shortcuts: tapping Mind / Sleep / Mood should instantly route to the right logging/tracking flow.
 - [x] Quote module: keep the motivational quote small and profile-relevant.
@@ -52,7 +52,7 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [x] Fresh-profile browser test starts at onboarding.
 - [ ] Completed onboarding produces personalized home goals.
 - [ ] Food, sleep, mood, workout, journal, and goal logging work from mobile.
-- [ ] Explicit crisis language still intercepts; normal sadness/depression routes to coaching.
+- [x] Explicit crisis language still intercepts; normal sadness/depression routes to coaching.
 - [ ] Lev/Offy can test without local state cleanup or manual setup.
 
 ## Suggested Work Order

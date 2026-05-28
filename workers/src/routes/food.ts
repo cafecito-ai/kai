@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { buildKaiContext } from "../lib/context";
+import { ensureUser } from "../lib/db";
 import {
   analyzeMeal,
   extensionForContentType,
@@ -7,6 +8,7 @@ import {
   type MealAnalysis
 } from "../lib/food-analysis";
 import { generateFoodComment } from "../lib/food-comment";
+import { recordScoreInput } from "../lib/score-store";
 import type { Env } from "../types";
 
 export const foodRoutes = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
@@ -18,6 +20,7 @@ type FoodPhotoResponse = MealAnalysis & {
    *  Always present (falls back to a safe canned string if AI is unavailable
    *  or the body-language filter rejects 3 regens in a row). */
   bodyComment: string;
+  score: unknown;
 };
 
 foodRoutes.post("/food-photo", async (c) => {
@@ -65,11 +68,12 @@ async function analyzeAndSaveMeal(
 ): Promise<FoodPhotoResponse> {
   const id = crypto.randomUUID();
   const analysis = await analyzeMeal(env, body);
+  await ensureUser(env.DB, userId);
 
   // T-022 — generate the Body-agent comment in parallel with the DB write.
   // Filtered + regen-protected; always returns a safe string.
   const context = await buildKaiContext(env, userId);
-  const [commentResult] = await Promise.all([
+  const [commentResult, , scoreResult] = await Promise.all([
     generateFoodComment(env, context, analysis),
     env.DB
       .prepare(
@@ -84,12 +88,23 @@ async function analyzeAndSaveMeal(
         analysis.totals ? analysis.totals.protein : null
       )
       .run()
+    ,
+    recordScoreInput(env.DB, {
+      userId,
+      source: "food_log",
+      value: {
+        mealId: id,
+        items: analysis.items.map((item) => item.name),
+        confidence: analysis.confidence,
+      }
+    })
   ]);
 
   return {
     mealId: id,
     r2Key: body.r2Key,
     bodyComment: commentResult.comment,
+    score: scoreResult.score,
     ...analysis
   };
 }

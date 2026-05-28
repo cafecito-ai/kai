@@ -18,6 +18,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { appendLocalInput } from "../lib/local-score";
 import type { FoodPhotoResult } from "../lib/types";
 
 type Phase = "form" | "sending" | "done";
@@ -37,6 +38,7 @@ export function FoodLog() {
     setError(null);
     try {
       const r = await api.uploadFoodPhoto(file, note.trim() || undefined);
+      recordLocalFoodLog(r, note);
       setResult(r);
       setPhase("done");
     } catch {
@@ -51,6 +53,7 @@ export function FoodLog() {
     setError(null);
     try {
       const r = await api.analyzeFoodPhoto({ note: note.trim() });
+      recordLocalFoodLog(r, note);
       setResult(r);
       setPhase("done");
     } catch {
@@ -216,6 +219,19 @@ export function FoodLog() {
       )}
     </div>
   );
+}
+
+function recordLocalFoodLog(result: FoodPhotoResult, note: string) {
+  appendLocalInput({
+    date: new Date().toISOString().slice(0, 10),
+    source: "food_log",
+    value: {
+      mealId: result.mealId,
+      items: result.items.map((item) => item.name),
+      note: note.trim() || undefined,
+      confidence: result.confidence,
+    },
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────

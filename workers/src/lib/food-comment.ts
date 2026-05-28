@@ -25,6 +25,9 @@ const MAX_REGENERATIONS = 3;
 export const FOOD_COMMENT_FALLBACK =
   "Logged. Eat regularly today and notice how your energy holds — that's the read that matters more than any single meal.";
 
+export const FOOD_COMMENT_UNCLEAR_PHOTO =
+  "Photo saved. I couldn't read the food clearly from that image, so add a quick note and I'll make the next read more useful.";
+
 /**
  * Build the focused Body-agent system prompt for a one-shot food comment.
  *
@@ -82,6 +85,9 @@ export async function generateFoodComment(
   context: KaiContext,
   analysis: MealAnalysis,
 ): Promise<{ comment: string; usedFallback: boolean; attempts: number }> {
+  if (isUnclearPhotoAnalysis(analysis)) {
+    return { comment: FOOD_COMMENT_UNCLEAR_PHOTO, usedFallback: false, attempts: 0 };
+  }
   // If we don't have AI at all, return the static fallback. (Same shape as
   // the rest of the local-first behaviour — never block the user on AI.)
   if (!env.AI) {
@@ -117,6 +123,11 @@ IMPORTANT: A previous response was rejected by the post-generation filter for us
   // small models sometimes pad.
   const trimmed = trimToTwoSentences(comment.trim());
   return { comment: trimmed, usedFallback: false, attempts };
+}
+
+function isUnclearPhotoAnalysis(analysis: MealAnalysis): boolean {
+  return analysis.confidence === "photo_stub" ||
+    (analysis.confidence === "low" && analysis.items.every((item) => item.source !== "vision"));
 }
 
 /** Keep at most the first 2 sentences. Never returns empty. */

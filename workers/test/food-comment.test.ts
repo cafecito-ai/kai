@@ -8,7 +8,7 @@
 //   - Long output gets trimmed to 2 sentences
 
 import { describe, expect, it, vi } from "vitest";
-import { FOOD_COMMENT_FALLBACK, generateFoodComment } from "../src/lib/food-comment";
+import { FOOD_COMMENT_FALLBACK, FOOD_COMMENT_UNCLEAR_PHOTO, generateFoodComment } from "../src/lib/food-comment";
 import type { KaiContext } from "../src/lib/context";
 import type { MealAnalysis } from "../src/lib/food-analysis";
 import type { Nutrition } from "../src/lib/usda";
@@ -76,6 +76,24 @@ describe("generateFoodComment — happy path", () => {
     expect(result.attempts).toBe(1);
     expect(result.comment).toMatch(/protein/i);
     expect(runMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not invent food details when photo analysis is unclear", async () => {
+    const { env, runMock } = mockEnv([
+      "It looks like chicken and rice.",
+    ]);
+    const result = await generateFoodComment(
+      env,
+      ctx(),
+      analysis({
+        items: [{ name: "Meal photo logged", source: "manual" }],
+        totals: null,
+        confidence: "photo_stub",
+      }),
+    );
+    expect(result.comment).toBe(FOOD_COMMENT_UNCLEAR_PHOTO);
+    expect(result.attempts).toBe(0);
+    expect(runMock).not.toHaveBeenCalled();
   });
 
   it("trims a 3-sentence response down to 2 sentences", async () => {

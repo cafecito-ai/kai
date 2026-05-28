@@ -11,15 +11,15 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 
 ## P0 Demo Blockers
 
-- [ ] Nutrition / bulking: KAI must answer safe muscle-gain and summer training questions instead of refusing. Keep teen-safe guardrails: no calorie targets, no weight targets, no body-shaming language.
-- [ ] Home hero: add one large evolving goal at the top, alongside daily goals. It should feel alive over time: flower, fire, aura, or level-up style.
-- [ ] Daily goals: make them larger, more pressable, lightly animated, and visibly personalized from onboarding answers.
+- [x] Nutrition / bulking: KAI must answer safe muscle-gain and summer training questions instead of refusing. Keep teen-safe guardrails: no calorie targets, no weight targets, no body-shaming language.
+- [x] Home hero: add one large evolving goal at the top, alongside daily goals. It should feel alive over time: flower, fire, aura, or level-up style.
+- [x] Daily goals: make them larger, more pressable, lightly animated, and visibly personalized from onboarding answers.
 - [ ] Onboarding: ensure first load starts with the premium fast onboarding flow and ends with the personalized system reveal.
-- [ ] Day 0: add private Day 0 video capture near the end of onboarding with a small home/Journey card after completion.
-- [ ] Plus actions: verify every `+` action opens the right page and completes a real log or task.
+- [x] Day 0: add private Day 0 video capture near the end of onboarding with a small home/Journey card after completion.
+- [x] Plus actions: verify every `+` action opens the right page and completes a real log or task.
 - [ ] Food logger: verify photo upload, AI item identification, USDA nutrition enrichment, and user-facing result copy.
-- [ ] Sleep logging: fix the sleep counter / score update path so sleep changes are obvious immediately after logging.
-- [ ] Profile gamification: reduce card overload and make the path understandable: score, streak, XP/level, badges, growth visual.
+- [x] Sleep logging: fix the sleep counter / score update path so sleep changes are obvious immediately after logging.
+- [x] Profile gamification: reduce card overload and make the path understandable: score, streak, XP/level, badges, growth visual.
 - [ ] Mobile QA: check home, onboarding, chat, profile, plus sheet, food, sleep, mood, goals, and journal on a 390px mobile viewport.
 
 ## P1 Client Polish
@@ -28,8 +28,8 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 - [ ] Chat formatting: keep responses separated and readable, with tasteful emphasis and a closing prompt for philosophy or next move.
 - [ ] Chat speed: reduce perceived latency with immediate optimistic state, shorter default responses, and better loading treatment.
 - [ ] "Talk to KAI": make the chat entry larger and impossible to miss on home.
-- [ ] Daily score shortcuts: tapping Mind / Sleep / Mood should instantly route to the right logging/tracking flow.
-- [ ] Quote module: keep the motivational quote small and profile-relevant.
+- [x] Daily score shortcuts: tapping Mind / Sleep / Mood should instantly route to the right logging/tracking flow.
+- [x] Quote module: keep the motivational quote small and profile-relevant.
 - [ ] Mission personalization: avoid generic goals unless they match onboarding. Examples: overthinking -> breathing reset; confidence -> posture / eye contact; basketball -> shooting / recovery.
 - [ ] Remove noisy chat updates: logs like "fuel note saved" should not appear as normal chat messages.
 - [ ] Logo and copy: keep KAI branding, not RAWZ; remove age and parent-email asks.
@@ -45,11 +45,11 @@ Get Kai into a clean, mobile-first, client-testable state for Lev and Offy: firs
 
 ## Verification Gates
 
-- [ ] Unit tests pass for touched logic.
-- [ ] Typecheck passes.
-- [ ] Worker deploys to staging.
-- [ ] Pages preview deploys for branch.
-- [ ] Fresh-profile browser test starts at onboarding.
+- [x] Unit tests pass for touched logic.
+- [x] Typecheck passes.
+- [x] Worker deploys to staging.
+- [x] Pages preview deploys for branch.
+- [x] Fresh-profile browser test starts at onboarding.
 - [ ] Completed onboarding produces personalized home goals.
 - [ ] Food, sleep, mood, workout, journal, and goal logging work from mobile.
 - [ ] Explicit crisis language still intercepts; normal sadness/depression routes to coaching.

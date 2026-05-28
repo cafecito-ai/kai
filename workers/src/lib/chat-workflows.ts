@@ -13,6 +13,11 @@ type Workflow = {
   reply: string[];
 };
 
+export type WorkflowCatalogItem = {
+  id: string;
+  source: WorkflowReply["source"];
+};
+
 export function safePreSafetyFastReply(message: string): WorkflowReply | null {
   if (!isBenignGreeting(message)) return null;
   return {
@@ -96,6 +101,14 @@ export function fastPhysicalReply(message: string): string | null {
   return matchPhysicalWorkflow(message)?.reply ?? null;
 }
 
+export function getWorkflowCatalog(): WorkflowCatalogItem[] {
+  return [
+    { id: "casual-greeting", source: "preSafety" },
+    ...kaiWorkflows.map((workflow) => ({ id: workflow.id, source: "kai-workflow" as const })),
+    ...physicalWorkflows.map((workflow) => ({ id: workflow.id, source: "physical-workflow" as const })),
+  ];
+}
+
 export function isBenignGreeting(message: string): boolean {
   return /^\s*(yo|hey|hi|hello|sup|what'?s up|wassup|wyd)\s*(kai|coach)?[\s?.!]*$/i.test(message);
 }
@@ -125,7 +138,7 @@ const greetingReply = [
 
 const kaiWorkflows: Workflow[] = [
   {
-    id: "casual-greeting",
+    id: "casual-greeting-post-safety",
     matches: (_text, raw) => isBenignGreeting(raw),
     reply: greetingReply,
   },

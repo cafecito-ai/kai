@@ -41,6 +41,7 @@ import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
 import { PreviewFlower } from "./pages/PreviewFlower";
+import { Vault } from "./pages/Vault";
 import { Profile } from "./pages/Profile";
 import { Ops } from "./pages/Ops";
 import { OpsDemoSession } from "./pages/OpsDemoSession";
@@ -125,6 +126,10 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/groups/:id" element={protectedOnboarding(<GroupDetail />)} />
           <Route path="/groups/:id/leaderboard" element={protectedOnboarding(<GroupLeaderboard />)} />
           <Route path="/profile" element={protectedOnboarding(<Profile />)} />
+          {/* Vault — private/sacred space behind a biometric lock.
+              Not in the tabbar. Surfaces from Home only when fading
+              signals fire (low activity / streak break / low mood). */}
+          <Route path="/vault" element={protectedOnboarding(<Vault />)} />
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/demo" element={<Demo />} />

@@ -25,11 +25,13 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { HydrationTile } from "../components/HydrationTile";
 import {
   computeLocalScoreFor,
   readLocalInputs,
   type LocalInput,
 } from "../lib/local-score";
+import { getRecentHydration } from "../lib/local-hydration";
 
 type DayBucket = {
   date: string;          // YYYY-MM-DD
@@ -97,11 +99,20 @@ export function Progress() {
           {/* This week tallies */}
           <ThisWeekCard tallies={tallies} streak={streak} />
 
+          {/* Streak record — current + longest. Moved here from the
+              old Home page so /home stays focused on action and
+              /progress becomes the data deep-dive. */}
+          <StreakRecordCard inputs={inputs} currentStreak={streak} />
+
           {/* 7-day Daily Score chart */}
           <DailyScoreChart days={days} />
 
           {/* Sub-score mini-bars */}
           <SubScoreTrends days={days} />
+
+          {/* Hydration — the live tile (add water) PLUS a 7-day strip
+              showing which days hit goal. Lives here, not on Home. */}
+          <HydrationSection />
 
           {/* Recent activity feed */}
           <RecentActivityCard recent={recent} />
@@ -394,6 +405,137 @@ function EmptyState() {
       </Link>
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// New sections (moved from Home — Progress is the data deep-dive surface)
+// ─────────────────────────────────────────────────────────────────────
+
+function StreakRecordCard({
+  inputs,
+  currentStreak,
+}: {
+  inputs: LocalInput[];
+  currentStreak: number;
+}) {
+  // Longest streak ever: walk every distinct date, find the longest
+  // run of consecutive days the user logged anything. Cheap because
+  // we already have all the inputs in memory.
+  const longest = useMemo(() => longestStreak(inputs), [inputs]);
+  return (
+    <section className="mb-5 rounded-glass border border-glass-border bg-surface p-5 shadow-card">
+      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+        streak
+      </p>
+      <h2 className="mt-1 font-display text-xl font-semibold leading-tight tracking-tight">
+        Showing up
+      </h2>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <div className="rounded-lg border border-glass-border bg-surface-muted/40 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            current
+          </p>
+          <p className="mt-1 flex items-baseline gap-1">
+            <span className="font-mono text-2xl font-bold leading-none tabular-nums text-text-primary">
+              {currentStreak}
+            </span>
+            <span className="font-mono text-[10px] text-text-muted">
+              {currentStreak === 1 ? "day" : "days"}
+            </span>
+          </p>
+        </div>
+        <div className="rounded-lg border border-glass-border bg-surface-muted/40 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            longest
+          </p>
+          <p className="mt-1 flex items-baseline gap-1">
+            <span className="font-mono text-2xl font-bold leading-none tabular-nums text-text-primary">
+              {longest}
+            </span>
+            <span className="font-mono text-[10px] text-text-muted">
+              {longest === 1 ? "day" : "days"}
+            </span>
+          </p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-text-secondary">
+        Every day you check in counts. Skip a day, it's a fresh start —
+        no penalty, no shame.
+      </p>
+    </section>
+  );
+}
+
+function HydrationSection() {
+  // 7-day strip — which days hit goal vs. which days fell short.
+  const week = getRecentHydration(7);
+  return (
+    <section className="mb-5">
+      <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+        hydration
+      </p>
+      {/* Live tile: add or remove a glass for today */}
+      <HydrationTile />
+      {/* 7-day strip below the tile — small dots, filled when goal hit */}
+      <div className="mt-3 rounded-glass border border-glass-border bg-surface p-4 shadow-card">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+          last 7 days
+        </p>
+        <div className="mt-3 flex items-end justify-between gap-2">
+          {week.map((e) => {
+            const pct = Math.max(0, Math.min(1, e.glasses / Math.max(1, e.target)));
+            const hit = pct >= 1;
+            return (
+              <div key={e.date} className="flex flex-1 flex-col items-center gap-1.5">
+                <div
+                  className="relative flex h-12 w-full items-end overflow-hidden rounded-md bg-surface-muted/50"
+                  title={`${e.glasses}/${e.target} glasses`}
+                >
+                  <div
+                    className={`w-full transition-all ${hit ? "bg-accent" : "bg-accent/40"}`}
+                    style={{ height: `${Math.max(8, pct * 100)}%` }}
+                  />
+                </div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.1em] text-text-muted">
+                  {dayLabelShort(e.date)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-xs leading-relaxed text-text-secondary">
+          Filled bar = hit goal that day. Half = halfway there. Skip days
+          don't count against you.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function dayLabelShort(date: string): string {
+  const d = new Date(date);
+  return ["S", "M", "T", "W", "T", "F", "S"][d.getDay()] ?? "?";
+}
+
+function longestStreak(inputs: LocalInput[]): number {
+  const dates = Array.from(new Set(inputs.map((i) => i.date))).sort();
+  if (dates.length === 0) return 0;
+  let longest = 1;
+  let current = 1;
+  for (let i = 1; i < dates.length; i += 1) {
+    const prev = new Date(dates[i - 1]);
+    const next = new Date(dates[i]);
+    const diff = Math.round(
+      (next.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    if (diff === 1) {
+      current += 1;
+      if (current > longest) longest = current;
+    } else {
+      current = 1;
+    }
+  }
+  return longest;
 }
 
 // ─────────────────────────────────────────────────────────────────────

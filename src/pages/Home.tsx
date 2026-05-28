@@ -27,12 +27,11 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { HydrationTile } from "../components/HydrationTile";
-import { KaiMessage } from "../components/KaiMessage";
 import { MissionsCard } from "../components/MissionsCard";
 import { XpPill } from "../components/XpPill";
 import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
+import { shouldSurfaceVaultOnHome } from "../lib/local-vault";
 import { api } from "../lib/api";
 import {
   computeLocalScore,
@@ -187,6 +186,13 @@ export function Home() {
   // hydration bumped). It re-triggers the score-loading effect below so
   // the user sees their score move in real time.
   const [refreshKey, setRefreshKey] = useState(0);
+  // Vault auto-resurface: only true when fading signals fire (low
+  // activity, broken streak, low mood, etc). When false, the Vault tile
+  // stays hidden and the page stays minimal.
+  const [vaultSurfaced, setVaultSurfaced] = useState(false);
+  useEffect(() => {
+    setVaultSurfaced(shouldSurfaceVaultOnHome());
+  }, []);
   useEffect(() => {
     function onChange() {
       setRefreshKey((k) => k + 1);
@@ -257,7 +263,10 @@ export function Home() {
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
-      {/* Greeting + streak chip + orb */}
+      {/* Greeting + streak chip — minimal, ambient context. Sub-scores,
+          hydration, recent activity all moved to /progress so Home
+          stays focused on the 3 things that matter:
+            1) Today's Goals    2) Daily Score    3) Check-in / Talk to KAI */}
       <header className="flex items-start justify-between gap-3 px-1">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
@@ -273,7 +282,6 @@ export function Home() {
                 {data.streak}-day streak
               </span>
             </span>
-            {/* Rawz/3 — Level / XP pill, tap to view profile */}
             <XpPill />
           </div>
         </div>
@@ -297,36 +305,11 @@ export function Home() {
         </button>
       </header>
 
-      {/* Daily Score hero */}
+      {/* 1. Daily Score — the hero metric */}
       <DailyScoreCard data={data} />
 
-      {/* Sub-scores — horizontal scroll on mobile */}
-      <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-        <SubScoreCard
-          icon={<Brain size={16} />}
-          label="Mind"
-          value={`${data.mind.value}`}
-          unit={`/${data.mind.outOf}`}
-          color="cool"
-        />
-        <SubScoreCard
-          icon={<Moon size={16} />}
-          label="Sleep"
-          value={`${data.sleep.value}`}
-          unit={data.sleep.unit}
-          color="violet"
-        />
-        <SubScoreCard
-          icon={<Heart size={16} />}
-          label="Mood"
-          value={`${data.mood.value}`}
-          unit=""
-          color="warm"
-        />
-      </div>
-
-      {/* Rawz/3 — soft level-up moment when user crosses a threshold.
-          Renders once per crossing, dismissable, doesn't take over screen. */}
+      {/* Level-up moment lands here when it fires — kept on Home
+          because it's an event/celebration, not data. Dismissable. */}
       {levelUp && (
         <div className="rounded-glass border border-accent-soft bg-accent-soft px-4 py-3 shadow-card animate-fade-slide-up">
           <div className="flex items-start justify-between gap-3">
@@ -354,27 +337,69 @@ export function Home() {
         </div>
       )}
 
-      {/* Today's missions — 3 AI-selected actions to nudge the day (Rawz/2) */}
+      {/* Vault resurface — only visible when the user is showing
+          signs of fading (low activity, broken streak, low mood).
+          Gentle door, not a guilt trip. Stays hidden otherwise so the
+          emotional weight isn't worn down by daily presence. */}
+      {vaultSurfaced && (
+        <button
+          type="button"
+          onClick={() => navigate("/vault")}
+          className="
+            flex w-full items-center justify-between gap-3 rounded-glass
+            border border-accent-soft bg-accent-soft/40
+            px-4 py-3 shadow-card
+            transition active:scale-[0.99] hover:bg-accent-soft/60
+            focus-ring text-left
+          "
+        >
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-background">
+              <Sparkles size={14} aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+                vault
+              </span>
+              <span className="block text-sm font-medium text-text-primary">
+                Remember why you started
+              </span>
+            </span>
+          </span>
+          <ArrowUpRight size={16} className="text-accent" aria-hidden="true" />
+        </button>
+      )}
+
+      {/* 2. Today's Goals (3 AI-selected actions for today, Rawz/2) */}
       <MissionsCard />
 
-      {/* Hydration tile — small, daily-reset counter (T-025) */}
-      <HydrationTile />
-
-      {/* KAI message */}
-      <KaiMessage
-        timestamp={greeting.timestampLabel}
-        orbSize={32}
-        action={{
-          label: "Reply",
-          onClick: () => navigate("/chat"),
-        }}
+      {/* 3. Primary check-in CTA — the single biggest action on the page.
+          Bigger than the header's "Talk to KAI" pill so a teen who opened
+          the app knows what to do next. */}
+      <button
+        type="button"
+        onClick={() => navigate("/chat")}
+        className="
+          flex w-full items-center justify-between gap-3 rounded-glass
+          border border-glass-border bg-surface
+          px-5 py-4 shadow-card
+          transition active:scale-[0.99] hover:bg-surface-muted
+          focus-ring
+        "
       >
-        Sleep dipped under 7h again last night — want to start light today
-        and see how you feel by lunch?
-      </KaiMessage>
-
-      {/* Recent — 3 rows */}
-      <RecentActivity items={activity} />
+        <span className="flex items-center gap-3">
+          <KaiOrb size={44} />
+          <span className="text-left">
+            <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+              check in
+            </span>
+            <span className="mt-0.5 block font-display text-lg font-semibold text-text-primary">
+              Talk to KAI
+            </span>
+          </span>
+        </span>
+        <ArrowUpRight size={18} className="text-text-secondary" aria-hidden="true" />
+      </button>
     </div>
   );
 }

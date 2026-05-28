@@ -70,6 +70,13 @@ describe("fastKaiReply", () => {
     expect(reply).toContain("What do you actually have");
     expect(reply).not.toContain("real thing underneath");
   });
+
+  it("answers apology repair with a usable script", () => {
+    const reply = fastKaiReply("i need to apologize to my friend but i dont know what to say");
+
+    expect(reply).toContain("Keep it short");
+    expect(reply).toContain("I’m sorry");
+  });
 });
 
 describe("fastPhysicalReply", () => {
@@ -87,6 +94,13 @@ describe("fastPhysicalReply", () => {
     expect(reply).toContain("muscle-building");
     expect(reply).toContain("protein");
     expect(reply).not.toMatch(/\bcalorie|calories|weigh|pounds|lbs\b/i);
+  });
+
+  it("answers getting cut from a team without generic shame language", () => {
+    const reply = fastPhysicalReply("i got cut from the team and i feel embarrassed");
+
+    expect(reply).toContain("whole story");
+    expect(reply).toContain("14 days");
   });
 
   it("does not fast-path unrelated physical questions", () => {

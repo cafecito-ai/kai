@@ -89,6 +89,16 @@ const kaiWorkflows: Workflow[] = [
     ],
   },
   {
+    id: "presentation-anxiety",
+    matches: (text) =>
+      /\b(presentation|presenting|present in class|speech|public speaking)\b/.test(text) &&
+      /\b(nervous|anxious|scared|tomorrow|panic|embarrassed|freeze)\b/.test(text),
+    reply: [
+      "Presentations feel huge because everyone is looking at you. That part is real.",
+      "Practice the first two sentences three times. If the start is solid, your brain has somewhere to land.",
+    ],
+  },
+  {
     id: "bad-grade",
     matches: (text) =>
       /\b(failed my test|failed a test|failed the test|bombed (my )?(test|quiz|exam)|bad grade|got an f|got a d|grade dropped)\b/.test(text),
@@ -116,6 +126,16 @@ const kaiWorkflows: Workflow[] = [
     ],
   },
   {
+    id: "social-comparison",
+    matches: (text) =>
+      /\b(compare|comparing|jealous|everyone looks better|everyone is better|instagram|tiktok)\b/.test(text) &&
+      /\b(myself|body|life|looks|popular|confidence|feel bad)\b/.test(text),
+    reply: [
+      "Yeah, comparison apps are basically built to make you feel behind.",
+      "Close it for 20 minutes and do one thing that gives you real evidence: shower, walk, school task, workout, or text someone normal.",
+    ],
+  },
+  {
     id: "lonely-weekend",
     matches: (text) =>
       /\b(invisible|lonely|alone|no one cares|left out)\b/.test(text) &&
@@ -123,6 +143,16 @@ const kaiWorkflows: Workflow[] = [
     reply: [
       "That invisible feeling is brutal, especially on weekends.",
       "Don’t let it turn into the whole day. Text one person, get outside for a few minutes, or tell me what happened.",
+    ],
+  },
+  {
+    id: "apology-repair",
+    matches: (text) =>
+      /\b(apologize|apology|say sorry|make it right|fix it)\b/.test(text) &&
+      /\b(friend|mom|dad|parent|teacher|coach|them|her|him)\b/.test(text),
+    reply: [
+      "Keep it short. Big apology speeches usually make it weirder.",
+      "Say: “I’m sorry for how I handled that. You didn’t deserve it. I’ll do better next time.” Then stop talking and let them respond.",
     ],
   },
   {
@@ -149,6 +179,16 @@ const kaiWorkflows: Workflow[] = [
     reply: [
       "When your parents are fighting, it makes sense that you can’t relax.",
       "Get somewhere that feels safe if you can. Then do one small thing to calm your body for five minutes.",
+    ],
+  },
+  {
+    id: "vape-pressure",
+    matches: (text) =>
+      /\b(vape|vaping|nic|weed|smoke|smoking)\b/.test(text) &&
+      /\b(stop|quit|pressure|friends|school|again|keep|want to)\b/.test(text),
+    reply: [
+      "No lecture. That stuff is sticky because it turns into a habit plus a social thing.",
+      "For the next urge, make it physical: leave the spot, drink water, chew gum, or text someone “distract me for 5.”",
     ],
   },
   {
@@ -267,8 +307,16 @@ const physicalWorkflows: Workflow[] = [
     matches: (text) =>
       /\b(bad practice|played bad|played terrible|coach yelled|coach was mad|missed every shot|missed shots)\b/.test(text),
     reply: [
-      "Bad practices mess with your head, but they’re data.",
+      "Bad practices mess with your head, but they also show you what to fix.",
       "Pick one thing to clean up next time: effort, handles, shot reps, defense, or sleep.",
+    ],
+  },
+  {
+    id: "team-cut",
+    matches: (text) => /\b(got cut|cut from the team|didn'?t make the team|didnt make the team|benched)\b/.test(text),
+    reply: [
+      "That one hurts. Let it hurt without making it your whole story.",
+      "If you still want it, ask what to improve, then pick one thing to train for 14 days. Comeback starts boring.",
     ],
   },
   {

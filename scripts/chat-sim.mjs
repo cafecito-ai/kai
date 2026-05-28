@@ -33,6 +33,8 @@ const globalBadPatterns = [
   /hits belonging/i,
   /repeatable floor/i,
   /nervous system/i,
+  /as a teenager/i,
+  /it is important to/i,
 ];
 
 const cases = [
@@ -80,12 +82,28 @@ const cases = [
     maxLatencyMs: 1800,
   },
   {
+    id: "presentation-anxiety",
+    persona: "class presentation",
+    message: "i have a presentation tomorrow and im scared im going to freeze",
+    expect: [/presentations|looking at you|first two sentences|brain/i],
+    expectWorkflow: "presentation-anxiety",
+    maxLatencyMs: 1800,
+  },
+  {
     id: "confidence-school",
     persona: "awkward sophomore",
     message: "i feel ugly and awkward at school",
     expect: [/identity|school|confidence|moment|hits hardest|walking in|photos/i],
     ban: [/988|911/i],
     expectWorkflow: "confidence-school",
+    maxLatencyMs: 1800,
+  },
+  {
+    id: "social-comparison",
+    persona: "Instagram comparison",
+    message: "i keep comparing myself to people on instagram and feel bad",
+    expect: [/comparison apps|behind|20 minutes|real evidence/i],
+    expectWorkflow: "social-comparison",
     maxLatencyMs: 1800,
   },
   {
@@ -113,6 +131,22 @@ const cases = [
     maxLatencyMs: 1800,
   },
   {
+    id: "apology-repair",
+    persona: "needs repair script",
+    message: "i need to apologize to my friend but i dont know what to say",
+    expect: [/short|sorry|handled|respond/i],
+    expectWorkflow: "apology-repair",
+    maxLatencyMs: 1800,
+  },
+  {
+    id: "vape-pressure",
+    persona: "wants to quit vaping",
+    message: "i keep vaping at school and i want to stop",
+    expect: [/No lecture|sticky|leave the spot|chew gum|distract/i],
+    expectWorkflow: "vape-pressure",
+    maxLatencyMs: 1800,
+  },
+  {
     id: "basketball-consistency",
     persona: "basketball player",
     message: "i want to get better at basketball but i keep skipping workouts",
@@ -125,9 +159,18 @@ const cases = [
     id: "bad-practice",
     persona: "athlete after rough practice",
     message: "coach yelled at me and i missed every shot at practice",
-    expect: [/bad practices|data|clean up|shot reps|sleep/i],
+    expect: [/bad practices|what to fix|clean up|shot reps|sleep/i],
     expectSource: "physical-workflow",
     expectWorkflow: "bad-practice",
+    maxLatencyMs: 2200,
+  },
+  {
+    id: "team-cut",
+    persona: "athlete got cut",
+    message: "i got cut from the team and i feel embarrassed",
+    expect: [/hurts|whole story|improve|14 days|Comeback/i],
+    expectSource: "physical-workflow",
+    expectWorkflow: "team-cut",
     maxLatencyMs: 2200,
   },
   {

@@ -20,7 +20,10 @@ import {
   parseRoutingResult,
   type RoutingResult,
 } from "./prompts/routing-classifier";
+import { withTimeout } from "./claude";
 import type { Env } from "../types";
+
+const ROUTING_TIMEOUT_MS = 1_200;
 
 /**
  * The decision the router emits to the chat handler. "unclear" is collapsed
@@ -44,14 +47,17 @@ export async function classifyRoute(
   }
   try {
     const prompt = buildRoutingRequest(userMessage);
-    const result = (await env.AI.run(
-      env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct",
-      {
-        prompt,
-        max_tokens: 8,
-        // Tight temperature — we want one word, deterministic.
-        temperature: 0,
-      },
+    const result = (await withTimeout(
+      env.AI.run(
+        env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct",
+        {
+          prompt,
+          max_tokens: 8,
+          // Tight temperature — we want one word, deterministic.
+          temperature: 0,
+        },
+      ),
+      ROUTING_TIMEOUT_MS,
     )) as { response?: string; text?: string };
     const raw = result.response || result.text || "";
     return parseRoutingResult(raw);

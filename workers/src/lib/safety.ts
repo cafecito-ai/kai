@@ -1,4 +1,5 @@
 import type { Env, SafetyClassification } from "../types";
+import { withTimeout } from "./claude";
 import { ensureUser } from "./db";
 import { sendParentSafetyAlert } from "./email";
 import { extractJsonObject } from "./json-utils";
@@ -14,6 +15,7 @@ const PARENT_NOTIFIABLE_CATEGORIES = new Set<NonNullable<SafetyClassification["c
 ]);
 
 const PARENT_NOTIFY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const SAFETY_LLM_TIMEOUT_MS = 1_500;
 
 const rules: Array<{ category: NonNullable<SafetyClassification["category"]>; severity: NonNullable<SafetyClassification["severity"]>; pattern: RegExp }> = [
   { category: "suicide_ideation", severity: "critical", pattern: /\b(kill myself|suicide|end my life|not want to live)\b/i },
@@ -130,11 +132,14 @@ export async function classifySafetyLLM(env: Env, text: string): Promise<SafetyC
   const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
   try {
     const prompt = `${SAFETY_CLASSIFIER_PROMPT}\nMessage: ${text}\n\nJSON:`;
-    const result = (await env.AI.run(model, {
-      prompt,
-      max_tokens: 200,
-      temperature: 0.1
-    })) as { response?: string; text?: string };
+    const result = (await withTimeout(
+      env.AI.run(model, {
+        prompt,
+        max_tokens: 200,
+        temperature: 0.1
+      }),
+      SAFETY_LLM_TIMEOUT_MS,
+    )) as { response?: string; text?: string };
     const raw = result.response || result.text || "";
     return parseSafetyResponse(raw);
   } catch (err) {

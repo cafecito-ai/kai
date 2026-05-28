@@ -41,9 +41,13 @@ chatRoutes.post("/kai/chat", async (c) => {
     // sanitizeClientContext to drop anything weird before it touches the prompt.
     clientContext?: unknown;
   }>();
-  const context = await buildKaiContext(c.env, userId);
-  const merged = { ...context, clientContext: sanitizeClientContext(body.clientContext) };
-  return handleRoutedChat(c.env, userId, body.conversationId, body.message, merged);
+  return handleRoutedChat(
+    c.env,
+    userId,
+    body.conversationId,
+    body.message,
+    sanitizeClientContext(body.clientContext),
+  );
 });
 
 /** Defensive shape check on the client-supplied context. Anything that
@@ -155,7 +159,7 @@ async function handleRoutedChat(
   userId: string,
   conversationId: string | undefined,
   message: string,
-  context: KaiContext,
+  clientContext: KaiContext["clientContext"],
 ) {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine: "kai" });
   const normalized = normalizeUserMessage(message);
@@ -182,6 +186,23 @@ async function handleRoutedChat(
     });
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
+
+  const instantReply = fastKaiReply(normalized.text);
+  if (instantReply) {
+    const formattedReply = formatKaiReply(instantReply, "general");
+    await createMessage(env.DB, {
+      conversationId: conversation,
+      role: "assistant",
+      content: formattedReply,
+      metadata: { fastPath: true },
+    });
+    return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: "kai" });
+  }
+
+  const context = {
+    ...(await buildKaiContext(env, userId)),
+    clientContext,
+  };
 
   // Route to Mind or Body. The pick is internal — user never sees it.
   const decision = await pickAgent(env, normalized.text);
@@ -224,6 +245,51 @@ async function handleRoutedChat(
     metadata: { routedTo: decision },
   });
   return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision });
+}
+
+export function fastKaiReply(message: string): string | null {
+  const text = message.toLowerCase();
+
+  if (/^\s*(yo|hey|hi|hello|sup|what'?s up|wassup|wyd)\s*(kai|coach)?[\s?.!]*$/i.test(message)) {
+    return [
+      "I’m here. Quick read: don’t make today huge.",
+      "Pick one lane right now: mind, body, school, sleep, or confidence. I’ll turn it into the next move.",
+    ].join("\n\n");
+  }
+
+  if (/\b(sad|depressed|delressed|lonely|empty|numb|down bad|rough day)\b/.test(text)) {
+    return [
+      "I hear you. Let’s slow this down instead of turning it into a whole verdict on your life.",
+      "What happened today that made the sadness louder: something with people, pressure, sleep, your body, or just a wave that showed up?",
+      "Marcus would call this the first move: name the thing clearly, then take one small action that is still yours.",
+    ].join("\n\n");
+  }
+
+  if (/\b(unmotivated|no motivation|lazy|stuck|can't start|cant start|procrastinat|doomscroll|phone addiction)\b/.test(text)) {
+    return [
+      "Motivation is unreliable. We can still build a first rep.",
+      "Put the phone out of reach and give me ten minutes on the smallest useful task. Not the perfect task, the first one.",
+      "Want me to pick a 10-minute reset, school block, workout start, or sleep reset?",
+    ].join("\n\n");
+  }
+
+  if (/\b(overthinking|spiraling|anxious|anxiety|stress|stressed|panic)\b/.test(text)) {
+    return [
+      "Your brain is trying to protect you by running every scenario. That does not mean every scenario deserves your attention.",
+      "Do this once: exhale longer than you inhale for five breaths, then write the exact problem in one sentence.",
+      "Want the practical next move, or the philosophy lens for this?",
+    ].join("\n\n");
+  }
+
+  if (/\b(what should i do|help me|where do i start|start today|lock in|locked in)\b/.test(text)) {
+    return [
+      "Start with one honest rep: check your mood, move your body for five minutes, or clean up one thing you have been avoiding.",
+      "The goal is not to become a new person by tonight. It is to prove you can steer the next ten minutes.",
+      "Pick mind, body, school, or sleep and I will make it specific.",
+    ].join("\n\n");
+  }
+
+  return null;
 }
 
 export function fastPhysicalReply(message: string): string | null {

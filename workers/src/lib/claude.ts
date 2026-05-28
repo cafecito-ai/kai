@@ -5,8 +5,8 @@ interface ClaudeMessage {
   content: string;
 }
 
-const ANTHROPIC_TIMEOUT_MS = 8_000;
-const WORKERS_AI_TIMEOUT_MS = 6_000;
+const ANTHROPIC_TIMEOUT_MS = 1_800;
+const WORKERS_AI_TIMEOUT_MS = 1_800;
 
 export async function callClaude(env: Env, system: string, messages: ClaudeMessage[]): Promise<string> {
   if (env.ANTHROPIC_API_KEY) {
@@ -89,7 +89,7 @@ function normalizeAnthropicMessages(messages: ClaudeMessage[]) {
   return normalized.length ? normalized : [{ role: "user" as const, content: "Help me choose one small next move." }];
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
@@ -105,6 +105,9 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
 
 function fallbackReply(messages: ClaudeMessage[]) {
   const last = [...messages].reverse().find((message) => message.role === "user")?.content.toLowerCase() ?? "";
+  if (/\b(yo|hey|hi|hello|sup|what'?s up|wassup)\b/.test(last)) {
+    return "I’m here. Pick one lane: mind, body, school, sleep, or confidence. I’ll turn it into the next move.";
+  }
   if (last.includes("sleep") || last.includes("tired")) {
     return "Sleep is the move. Keep it simple: protect tonight, lower the pressure today, and log what happened so KAI can spot the pattern.";
   }

@@ -14,6 +14,7 @@ import { ArrowLeft, ArrowUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { GrowthPlanSuggestion } from "../components/GrowthPlanSuggestion";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
@@ -85,6 +86,7 @@ export function Chat() {
           role: "assistant",
           content: data.reply,
           createdAt: new Date().toISOString(),
+          growthPlanSuggestion: data.growthPlanSuggestion,
         },
       ]);
     } catch {
@@ -150,9 +152,14 @@ export function Chat() {
             m.role === "user" ? (
               <UserBubble key={m.id}>{m.content}</UserBubble>
             ) : (
-              <KaiMessage key={m.id} orbSize={28}>
-                {m.content}
-              </KaiMessage>
+              <div key={m.id}>
+                <KaiMessage orbSize={28}>{m.content}</KaiMessage>
+                {m.growthPlanSuggestion ? (
+                  <div className="ml-10 max-w-[82%]">
+                    <GrowthPlanSuggestion suggestion={m.growthPlanSuggestion} />
+                  </div>
+                ) : null}
+              </div>
             ),
           )
         )}

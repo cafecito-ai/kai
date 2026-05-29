@@ -37,16 +37,20 @@ export async function getConversationMessages(db: D1Database, input: { conversat
   if (!conversation) return null;
 
   const { results } = await db
-    .prepare("SELECT id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?")
+    .prepare("SELECT id, role, content, metadata, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?")
     .bind(input.conversationId, input.limit ?? 50)
     .all();
 
-  return (results as Array<Record<string, unknown>>).map((row) => ({
-    id: String(row.id),
-    role: row.role,
-    content: String(row.content),
-    createdAt: row.created_at
-  }));
+  return (results as Array<Record<string, unknown>>).map((row) => {
+    const metadata = parseMetadata(row.metadata);
+    return {
+      id: String(row.id),
+      role: row.role,
+      content: String(row.content),
+      createdAt: row.created_at,
+      ...(isGrowthPlanSuggestion(metadata.growthPlanSuggestion) ? { growthPlanSuggestion: metadata.growthPlanSuggestion } : {}),
+    };
+  });
 }
 
 export async function createMessage(
@@ -66,4 +70,30 @@ export async function createMessage(
     .bind(input.conversationId)
     .run();
   return { id };
+}
+
+function parseMetadata(value: unknown): Record<string, unknown> {
+  if (typeof value !== "string" || !value) return {};
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
+}
+
+function isGrowthPlanSuggestion(value: unknown): value is {
+  title: string;
+  description: string;
+  category: "growth";
+  source: "chat" | "check_in";
+} {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const suggestion = value as Record<string, unknown>;
+  return (
+    typeof suggestion.title === "string" &&
+    typeof suggestion.description === "string" &&
+    suggestion.category === "growth" &&
+    (suggestion.source === "chat" || suggestion.source === "check_in")
+  );
 }

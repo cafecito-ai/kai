@@ -200,10 +200,31 @@ const kaiWorkflows: Workflow[] = [
   },
   {
     id: "confidence-school",
-    matches: (text) => /\b(ugly|awkward|low confidence|no confidence|insecure|embarrassed|hate how i look|feel weird)\b/.test(text),
+    matches: (text) =>
+      /\b(ugly|awkward|low confidence|no confidence|insecure|embarrassed|hate how i look|feel weird)\b/.test(text) &&
+      !/\b(girlfriend|gf|boyfriend|bf|relationship|date|dating|crush)\b/.test(text),
     reply: [
       "That feeling gets loud fast at school.",
       "Where does it hit the most: walking in, talking to people, photos, or comparing yourself?",
+    ],
+  },
+  {
+    id: "dating-confidence",
+    matches: (text) =>
+      /\b(girlfriend|gf|boyfriend|bf|relationship|date|dating|crush|ask (her|him|them) out)\b/.test(text) &&
+      /\b(want|wish|need|never had|can't get|cant get|how do i|get|find|meet|talk to|like me|confidence)\b/.test(text),
+    reply: [
+      "Wanting that kind of connection makes sense. Don’t turn it into a shallow prize thing; turn it into becoming easier to talk to, more confident, and more present around people.",
+      "Start with one real social rep this week: say hi first, ask one normal question, or make one low-pressure plan with someone. Confidence comes from reps, not waiting until you feel smooth.",
+    ],
+  },
+  {
+    id: "social-life-growth",
+    matches: (text) =>
+      /\b(social life|more outgoing|outgoing|social skills|talk to people|start conversations?|conversation skills|fit in|make plans|meet new people)\b/.test(text),
+    reply: [
+      "That’s a real thing to work on, and it’s buildable.",
+      "For this week, don’t aim for a whole new personality. Aim for three small reps: greet someone first, ask one follow-up question, and say yes to one normal hangout or group moment.",
     ],
   },
   {
@@ -456,9 +477,9 @@ const physicalWorkflows: Workflow[] = [
       /\b(bulk|bulking|gain muscle|muscle gain|muscle-building|meal plan|diet)\b/.test(text) &&
       /\b(summer|muscle|bulk|bulking|diet|meal|food|eat|training|workout)\b/.test(text),
     reply: [
-      "Yeah. Think muscle-building, not random eating.",
-      "Each meal: protein + carb + fruit or vegetable + water. Easy examples: eggs with toast, chicken or tofu with rice, Greek yogurt with fruit, or a sandwich after training.",
-      "Train three or four times a week and protect sleep. That’s where the growth actually sticks.",
+      "Yeah. I’d frame bulking as a safe muscle-building phase: eat enough consistently, train with structure, recover hard, and don’t turn it into obsessing over your body.",
+      "School-day template: breakfast with protein and carbs like eggs with toast, Greek yogurt with granola, oatmeal with milk, or leftovers; lunch with a real base like chicken, tofu, turkey, beans, rice, pasta, potatoes, fruit, and water; after school or pre-workout, do banana and peanut butter, yogurt and granola, a sandwich, or chocolate milk; dinner should repeat protein + carb + vegetable, then add a bedtime snack if you’re still hungry.",
+      "Training side: lift or train 3-4 days a week, keep a warm-up, use controlled reps, add a little difficulty over time, and sleep 8-10 hours when you can. For the next 7 days, don’t count calories or chase body numbers; just hit breakfast, lunch, dinner, one workout-adjacent snack, water, and tell me your equipment and practice schedule so I can make it more exact.",
     ],
   },
 ];

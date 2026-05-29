@@ -1,4 +1,4 @@
-import type { ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, GrowthPlanSuggestion, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
@@ -77,7 +77,7 @@ export const api = {
   getUser: () =>
     request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
   chat: (engine: EngineId | "kai", message: string, conversationId?: string | null, clientContext?: unknown) =>
-    request<{ conversationId: string; reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
+    request<{ conversationId: string; reply: string; safetyEvent?: unknown; growthPlanSuggestion?: GrowthPlanSuggestion }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
       method: "POST",
       // clientContext (Rawz/8 — KAI memory): a roll-up of the user's
       // recent activity so KAI can speak to what they've been DOING.
@@ -133,6 +133,7 @@ export const api = {
     request<{
       score: unknown;
       reflection: string;
+      growthPlanSuggestion?: GrowthPlanSuggestion;
       window: "morning" | "evening" | "other";
       duplicateInWindow: boolean;
       safetyEvent?: unknown;

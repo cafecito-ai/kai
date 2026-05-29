@@ -18,6 +18,7 @@ import { renderMindPrompt } from "../lib/agent-prompts";
 import { callClaude } from "../lib/claude";
 import { buildKaiContext } from "../lib/context";
 import { sendSafetyAlert } from "../lib/email";
+import { detectGrowthPlanSuggestion } from "../lib/growth-plan";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import { getScoreInputs, recordScoreInput, todayUtc } from "../lib/score-store";
@@ -55,6 +56,7 @@ checkInRoutes.post("/check-in", async (c) => {
   }
   const mind = (body.mind ?? "").trim();
   const better = (body.better ?? "").trim();
+  const growthPlanSuggestion = detectGrowthPlanSuggestion([mind, better].filter(Boolean).join(" "), "check_in");
 
   // Safety check on the free text. If safety fires we don't record the
   // check-in as a score input — we hand the user off and end the flow.
@@ -119,6 +121,7 @@ checkInRoutes.post("/check-in", async (c) => {
     reflection,
     window,
     duplicateInWindow: dupInWindow,
+    ...(growthPlanSuggestion ? { growthPlanSuggestion } : {}),
   });
 });
 

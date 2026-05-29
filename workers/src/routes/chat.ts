@@ -19,6 +19,7 @@ import { callClaude } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
+import { detectGrowthPlanSuggestion, type GrowthPlanSuggestion } from "../lib/growth-plan";
 import { renderEnginePrompt } from "../lib/prompts/engines";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
@@ -137,6 +138,7 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
   const normalized = normalizeUserMessage(message);
+  const growthPlanSuggestion = detectGrowthPlanSuggestion(normalized.text, "chat");
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
   const safety = await classifySafetyFull(env, normalized.text);
   if (!safety.safe) {
@@ -151,8 +153,8 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
   const rawReply = await callClaude(env, withReadableReplyInstructions(system), modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
   const reply = repairComplexMessageReply(formatKaiReply(rawReply, engine === "physical" ? "body" : "general"), normalized.text);
-  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply });
-  return Response.json({ conversationId: conversation, reply });
+  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { growthPlanSuggestion } });
+  return chatJson({ conversationId: conversation, reply, growthPlanSuggestion });
 }
 
 /**
@@ -172,10 +174,11 @@ async function handleRoutedChat(
 ) {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine: "kai" });
   const normalized = normalizeUserMessage(message);
+  const growthPlanSuggestion = detectGrowthPlanSuggestion(normalized.text, "chat");
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
 
   const preSafetyReply = safePreSafetyFastReply(normalized.text);
-  if (preSafetyReply) return persistWorkflowReply(env, conversation, preSafetyReply, { routedTo: "kai" });
+  if (preSafetyReply) return persistWorkflowReply(env, conversation, preSafetyReply, { routedTo: "kai", growthPlanSuggestion });
 
   // Safety wins. Always.
   const safety = await classifySafetyFull(env, normalized.text);
@@ -203,13 +206,14 @@ async function handleRoutedChat(
   const continuationReply = matchContinuationWorkflow(normalized.text, recentMessagesForWorkflow ?? []);
   if (continuationReply) return persistWorkflowReply(env, conversation, continuationReply, {
     routedTo: continuationReply.mode === "body" ? "physical" : "kai",
+    growthPlanSuggestion,
   });
 
   const physicalWorkflowReply = matchPhysicalWorkflow(normalized.text);
-  if (physicalWorkflowReply) return persistWorkflowReply(env, conversation, physicalWorkflowReply, { routedTo: "physical" });
+  if (physicalWorkflowReply) return persistWorkflowReply(env, conversation, physicalWorkflowReply, { routedTo: "physical", growthPlanSuggestion });
 
   const instantReply = matchKaiWorkflow(normalized.text);
-  if (instantReply) return persistWorkflowReply(env, conversation, instantReply, { routedTo: "kai" });
+  if (instantReply) return persistWorkflowReply(env, conversation, instantReply, { routedTo: "kai", growthPlanSuggestion });
 
   const context = {
     ...(await buildKaiContext(env, userId)),
@@ -241,9 +245,9 @@ async function handleRoutedChat(
     conversationId: conversation,
     role: "assistant",
     content: formattedReply,
-    metadata: { routedTo: decision, responseSource: "model" },
+    metadata: { routedTo: decision, responseSource: "model", growthPlanSuggestion },
   });
-  return Response.json({ conversationId: conversation, reply: formattedReply, routedTo: decision, responseSource: "model" });
+  return chatJson({ conversationId: conversation, reply: formattedReply, routedTo: decision, responseSource: "model", growthPlanSuggestion });
 }
 
 export { fastKaiReply, fastPhysicalReply };
@@ -252,7 +256,7 @@ async function persistWorkflowReply(
   env: Env,
   conversation: string,
   workflowReply: WorkflowReply,
-  input: { routedTo: EngineId | "kai" },
+  input: { routedTo: EngineId | "kai"; growthPlanSuggestion?: GrowthPlanSuggestion | null },
 ) {
   const formattedReply = formatKaiReply(workflowReply.reply, workflowReply.mode);
   await createMessage(env.DB, {
@@ -264,15 +268,29 @@ async function persistWorkflowReply(
       fastPath: true,
       responseSource: workflowReply.source,
       workflow: workflowReply.workflow,
+      growthPlanSuggestion: input.growthPlanSuggestion ?? null,
     },
   });
-  return Response.json({
+  return chatJson({
     conversationId: conversation,
     reply: formattedReply,
     routedTo: input.routedTo,
     responseSource: workflowReply.source,
     workflow: workflowReply.workflow,
+    growthPlanSuggestion: input.growthPlanSuggestion ?? null,
   });
+}
+
+function chatJson(body: {
+  conversationId: string;
+  reply?: string;
+  routedTo?: EngineId | "kai";
+  responseSource?: string;
+  workflow?: string;
+  growthPlanSuggestion?: GrowthPlanSuggestion | null;
+}) {
+  const { growthPlanSuggestion, ...rest } = body;
+  return Response.json(growthPlanSuggestion ? { ...rest, growthPlanSuggestion } : rest);
 }
 
 function withReadableReplyInstructions(system: string) {

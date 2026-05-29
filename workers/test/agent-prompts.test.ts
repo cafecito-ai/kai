@@ -59,6 +59,16 @@ describe("renderBodyPrompt", () => {
     expect(prompt).toContain("FORBIDDEN LANGUAGE");
     expect(prompt.toLowerCase()).toContain("shame");
   });
+
+  it("requires specific safe muscle-building plans instead of vague bulking advice", () => {
+    const prompt = renderBodyPrompt(ctx);
+
+    expect(prompt).toContain("do NOT refuse");
+    expect(prompt).toContain("specific school-day plan");
+    expect(prompt).toContain("3-4 training days");
+    expect(prompt).toContain("equipment access");
+    expect(prompt).toContain("Never give calorie targets");
+  });
 });
 
 describe("renderAgentPrompt (dispatcher)", () => {

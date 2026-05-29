@@ -20,10 +20,12 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { GrowthPlanSuggestion } from "../components/GrowthPlanSuggestion";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
 import { appendLocalInput, offlineReflection } from "../lib/local-score";
+import type { GrowthPlanSuggestion as GrowthPlanSuggestionType } from "../lib/types";
 
 type Phase = "form" | "submitting" | "done" | "error";
 
@@ -44,6 +46,7 @@ export function CheckIn() {
   const [screenHours, setScreenHours] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("form");
   const [reflection, setReflection] = useState<string>("");
+  const [growthPlanSuggestion, setGrowthPlanSuggestion] = useState<GrowthPlanSuggestionType | null>(null);
   const [duplicateInWindow, setDuplicateInWindow] = useState(false);
 
   // Detect the current time window for the headline.
@@ -80,6 +83,7 @@ export function CheckIn() {
         res.reflection ||
           offlineReflection(mood, mind, better),
       );
+      setGrowthPlanSuggestion(res.growthPlanSuggestion ?? null);
       setDuplicateInWindow(res.duplicateInWindow);
       setPhase("done");
     } catch {
@@ -109,9 +113,10 @@ export function CheckIn() {
 
       {phase === "done" ? (
         <DoneState
-          reflection={reflection}
-          duplicate={duplicateInWindow}
-          onClose={() => navigate("/home")}
+      reflection={reflection}
+      growthPlanSuggestion={growthPlanSuggestion}
+      duplicate={duplicateInWindow}
+      onClose={() => navigate("/home")}
         />
       ) : (
         <FormState
@@ -306,10 +311,12 @@ function isEvening(): boolean {
 
 function DoneState({
   reflection,
+  growthPlanSuggestion,
   duplicate,
   onClose,
 }: {
   reflection: string;
+  growthPlanSuggestion: GrowthPlanSuggestionType | null;
   duplicate: boolean;
   onClose: () => void;
 }) {
@@ -325,6 +332,12 @@ function DoneState({
       <div className="mt-4">
         <KaiMessage orbSize={32}>{reflection}</KaiMessage>
       </div>
+
+      {growthPlanSuggestion ? (
+        <div className="mt-4">
+          <GrowthPlanSuggestion suggestion={growthPlanSuggestion} />
+        </div>
+      ) : null}
 
       {duplicate ? (
         <p className="mt-4 text-center text-xs text-text-muted">

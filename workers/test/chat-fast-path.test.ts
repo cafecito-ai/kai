@@ -62,6 +62,23 @@ describe("fastKaiReply", () => {
     expect(reply).toContain("walk in");
   });
 
+  it("reframes wanting a girlfriend into healthy relationship reps", () => {
+    const reply = fastKaiReply("i want a girlfriend but i have no confidence talking to girls");
+
+    expect(reply).toContain("connection");
+    expect(reply).toContain("Don’t turn it into");
+    expect(reply).toContain("social rep");
+    expect(reply).not.toMatch(/get a girl/i);
+  });
+
+  it("answers social-life asks with specific small reps", () => {
+    const reply = fastKaiReply("i need a better social life and conversation skills");
+
+    expect(reply).toContain("buildable");
+    expect(reply).toContain("three small reps");
+    expect(reply).toContain("follow-up question");
+  });
+
   it("answers hungry lunch typos with food options", () => {
     const reply = fastKaiReply("im hungry what should i make for lunc");
 
@@ -99,8 +116,13 @@ describe("fastPhysicalReply", () => {
     const reply = fastPhysicalReply("create a diet for bulking by this summer");
 
     expect(reply).toContain("muscle-building");
+    expect(reply).toContain("School-day template");
+    expect(reply).toContain("pre-workout");
+    expect(reply).toContain("3-4 days");
+    expect(reply).toContain("equipment");
     expect(reply).toContain("protein");
-    expect(reply).not.toMatch(/\bcalorie|calories|weigh|pounds|lbs\b/i);
+    expect(reply).not.toMatch(/\b\d+\s*(calorie|calories|pounds|lbs)\b/i);
+    expect(reply).not.toMatch(/\btarget weight|weigh in|weigh-in|scale number\b/i);
   });
 
   it("answers getting cut from a team without generic shame language", () => {

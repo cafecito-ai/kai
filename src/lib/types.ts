@@ -19,6 +19,13 @@ export interface Goal {
   status: "active" | "achieved" | "paused" | "released";
 }
 
+export interface GrowthPlanSuggestion {
+  title: string;
+  description: string;
+  category: "growth";
+  source: "chat" | "check_in";
+}
+
 export interface UserProfile {
   kaiName: string;
   kaiTone: KaiTone;
@@ -57,6 +64,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
+  growthPlanSuggestion?: GrowthPlanSuggestion;
 }
 
 /**

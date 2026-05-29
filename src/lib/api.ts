@@ -87,6 +87,11 @@ export const api = {
     }),
   getCurrentConversation: (engine: EngineId | "kai" = "kai") =>
     request<{ conversationId: string | null; messages: ChatMessage[] }>(`/api/conversations/current?engine=${engine}`),
+  deleteConversation: (conversationId: string) =>
+    request<{ ok: true }>(`/api/conversations/${conversationId}`, {
+      method: "DELETE",
+      body: "{}",
+    }),
   getDailyScoreToday: () =>
     request<{
       date: string;

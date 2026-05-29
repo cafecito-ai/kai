@@ -17,7 +17,7 @@ import {
 } from "../lib/chat-workflows";
 import { callClaude } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
-import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
+import { createMessage, deleteConversationForUser, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
 import { detectGrowthPlanSuggestion, type GrowthPlanSuggestion } from "../lib/growth-plan";
 import { renderEnginePrompt } from "../lib/prompts/engines";
@@ -38,6 +38,15 @@ chatRoutes.get("/conversations/current", async (c) => {
   if (!conversation) return c.json({ conversationId: null, messages: [] });
   const messages = await getConversationMessages(c.env.DB, { conversationId: conversation.id, userId: c.get("userId") });
   return c.json({ conversationId: conversation.id, messages: messages ?? [] });
+});
+
+chatRoutes.delete("/conversations/:conversationId", async (c) => {
+  const deleted = await deleteConversationForUser(c.env.DB, {
+    conversationId: c.req.param("conversationId"),
+    userId: c.get("userId"),
+  });
+  if (!deleted) return c.json({ error: "Conversation not found" }, 404);
+  return c.json({ ok: true });
 });
 
 chatRoutes.post("/kai/chat", async (c) => {

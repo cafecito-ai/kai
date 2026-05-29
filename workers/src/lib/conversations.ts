@@ -72,6 +72,31 @@ export async function createMessage(
   return { id };
 }
 
+export async function deleteConversationForUser(
+  db: D1Database,
+  input: { conversationId: string; userId: string }
+) {
+  const conversation = await db
+    .prepare("SELECT id FROM conversations WHERE id = ? AND user_id = ?")
+    .bind(input.conversationId, input.userId)
+    .first<{ id: string }>();
+  if (!conversation) return false;
+
+  await db
+    .prepare("UPDATE safety_events SET conversation_id = NULL, message_id = NULL WHERE user_id = ? AND conversation_id = ?")
+    .bind(input.userId, input.conversationId)
+    .run();
+  await db
+    .prepare("DELETE FROM messages WHERE conversation_id = ?")
+    .bind(input.conversationId)
+    .run();
+  await db
+    .prepare("DELETE FROM conversations WHERE id = ? AND user_id = ?")
+    .bind(input.conversationId, input.userId)
+    .run();
+  return true;
+}
+
 function parseMetadata(value: unknown): Record<string, unknown> {
   if (typeof value !== "string" || !value) return {};
   try {

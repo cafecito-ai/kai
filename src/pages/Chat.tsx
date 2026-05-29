@@ -10,7 +10,7 @@
 // left off. Send: POST via api.chat("kai", message, conversationId)
 // and append the reply when it lands.
 
-import { ArrowLeft, ArrowUp } from "lucide-react";
+import { ArrowLeft, ArrowUp, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -26,6 +26,7 @@ export function Chat() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [hydrating, setHydrating] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -106,6 +107,30 @@ export function Chat() {
     }
   }
 
+  async function deleteChat() {
+    if (!conversationId || deleting) return;
+    const confirmed = window.confirm("Delete this chat? This clears the thread from KAI.");
+    if (!confirmed) return;
+    setDeleting(true);
+    try {
+      await api.deleteConversation(conversationId);
+      setMessages([]);
+      setConversationId(null);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `delete-err-${Date.now()}`,
+          role: "assistant",
+          content: "I couldn’t delete this chat right now. Try again in a minute.",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -132,7 +157,19 @@ export function Chat() {
             KAI
           </span>
         </div>
-        <div className="h-10 w-10" aria-hidden="true" />
+        {conversationId && messages.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => void deleteChat()}
+            disabled={deleting || sending}
+            aria-label="Delete chat"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-50 focus-ring"
+          >
+            <Trash2 size={17} aria-hidden="true" />
+          </button>
+        ) : (
+          <div className="h-10 w-10" aria-hidden="true" />
+        )}
       </header>
 
       {/* Thread */}

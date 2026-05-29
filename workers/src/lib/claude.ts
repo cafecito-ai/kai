@@ -135,5 +135,8 @@ function fallbackReply(messages: ClaudeMessage[]) {
   if (last.includes("scroll") || last.includes("phone") || last.includes("tiktok") || last.includes("instagram")) {
     return "Okay, the phone won that round. Day’s not over. Put it across the room for 15 minutes and pick one replacement.";
   }
-  return "I’m here. Say it a little more plainly and I’ll help you figure out the next move.";
+  if (last.length > 220) {
+    return "That’s a lot to carry, but you don’t need to rewrite it for me. The next move is to separate it into three pieces: what happened, what hit you the hardest, and what you can control in the next 10 minutes. Start with the part that feels most urgent right now.";
+  }
+  return "I can work with that. The next move is to name the part that matters most right now, then take one small action instead of trying to solve the whole thing at once.";
 }

@@ -117,14 +117,14 @@ function fallbackReply(messages: ClaudeMessage[]) {
   if (/\b(point of trying|always quit|why try|i always fail|nothing works|keep quitting|what's the point|whats the point)\b/.test(last)) {
     return "Quitting before doesn’t mean you’re cooked forever. The plan was probably too big. What’s one tiny thing you could do for three days?";
   }
+  if (/\b(protein|high protein|hungry|lunch|lunc|food|eat|make|cook)\b/.test(last)) {
+    return "I got you. Go protein + carb + something fresh: eggs and toast, a turkey/rice bowl, tuna sandwich, Greek yogurt with fruit, beans and rice, or leftovers with water. What do you have?";
+  }
   if (/\b(test|quiz|exam|homework|study|studying|school|grades?|class|assignment|finals?)\b/.test(last)) {
     return "Yeah, test stress can make your brain freeze. Do 12 minutes on one topic with your phone away, then check what still feels confusing.";
   }
   if (/\b(basketball|hoop|shooting|handles)\b/.test(last)) {
     return "Keep it simple today: 5 minutes handles, 10 minutes form shots, 5 minutes stretching. Log it after so it counts.";
-  }
-  if (/\b(hungry|lunch|lunc|food|eat|make|cook)\b/.test(last)) {
-    return "I got you. Go protein + carb + something fresh: eggs and toast, a turkey/rice bowl, tuna sandwich, Greek yogurt with fruit, or leftovers with water. What do you have?";
   }
   if (last.includes("sleep") || last.includes("tired")) {
     return "No perfect routine needed tonight. Just make the next hour easier: dim the screen, plug the phone away from bed, and do one boring thing.";

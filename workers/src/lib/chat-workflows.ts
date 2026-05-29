@@ -170,6 +170,26 @@ const kaiWorkflows: Workflow[] = [
     ],
   },
   {
+    id: "teacher-conflict",
+    matches: (text) =>
+      /\b(teacher|class|coach)\b/.test(text) &&
+      /\b(hates me|doesn'?t like me|doesnt like me|no point trying|unfair|picks on me)\b/.test(text),
+    reply: [
+      "That feeling can make a class feel pointless fast. Still, don’t let one adult’s vibe decide your effort.",
+      "Separate the facts from the story: write one thing they actually did, then choose one repair move — ask what would improve your grade, turn in one missing thing, or talk after class for two minutes.",
+    ],
+  },
+  {
+    id: "parent-grade-pressure",
+    matches: (text) =>
+      /\b(parents?|mom|dad|family)\b/.test(text) &&
+      /\b(straight a|all a|grades?|never enough|expect|pressure|disappointed)\b/.test(text),
+    reply: [
+      "That kind of grade pressure can make love feel conditional, even if they don’t mean it that way.",
+      "For tonight, separate your worth from the scoreboard. Pick one class that actually needs attention, do one visible repair move, and use a simple line: “I’m working on a plan, but pressure is making it harder to think.”",
+    ],
+  },
+  {
     id: "presentation-anxiety",
     matches: (text) =>
       /\b(presentation|presenting|present in class|speech|public speaking)\b/.test(text) &&
@@ -299,6 +319,26 @@ const kaiWorkflows: Workflow[] = [
     ],
   },
   {
+    id: "jealous-friend",
+    matches: (text) =>
+      /\b(friend|teammate|classmate|someone)\b/.test(text) &&
+      /\b(better than me|better at everything|jealous|envy|hate that im jealous|hate that i.?m jealous)\b/.test(text),
+    reply: [
+      "Jealousy feels ugly, but it usually points at something you care about.",
+      "Don’t attack yourself for it. Name the exact thing you admire, then turn it into one rep you can practice this week. Their strength can become information, not evidence against you.",
+    ],
+  },
+  {
+    id: "no-one-texts",
+    matches: (text) =>
+      /\b(no one|nobody|none of my friends|people don'?t|people dont)\b/.test(text) &&
+      /\b(texts? me first|checks on me|invites? me|reaches out|makes plans|unwanted|forgotten)\b/.test(text),
+    reply: [
+      "Not being reached for first can hit like proof you don’t matter. It isn’t proof, but it does hurt.",
+      "Try one clean test instead of reading everyone’s mind: text one person something specific like “Want to do something after school this week?” Their response gives you data; silence is not your identity.",
+    ],
+  },
+  {
     id: "lonely-weekend",
     matches: (text) =>
       /\b(invisible|lonely|alone|no one cares|left out)\b/.test(text) &&
@@ -404,10 +444,30 @@ const kaiWorkflows: Workflow[] = [
     id: "sleep-scroll",
     matches: (text) =>
       /\b(sleep|3am|2am|late|tired|exhausted|can'?t sleep|cant sleep)\b/.test(text) &&
-      /\b(scroll|phone|staying up|up until|late|tired|exhausted|can'?t sleep|cant sleep)\b/.test(text),
+      /\b(scroll|phone|staying up|up until|late|tired|exhausted|can'?t sleep|cant sleep|thinking|tomorrow|anxious|worry)\b/.test(text),
     reply: [
       "No perfect routine needed tonight.",
-      "Just make the next hour easier: dim the screen, plug your phone in away from bed, and do one boring thing.",
+      "Just make the next hour easier: write the tomorrow-thoughts on paper, pick the first thing you’ll do in the morning, dim the screen, and do one boring thing. Your brain needs somewhere to park the tabs.",
+    ],
+  },
+  {
+    id: "snap-drama",
+    matches: (text) =>
+      /\b(snap|snapchat|screenshot|screenshotted|posted|story|dm|text screenshot)\b/.test(text) &&
+      /\b(people are talking|everyone knows|exposed|embarrassed|spread|sharing|drama)\b/.test(text),
+    reply: [
+      "That feels violating because it is: someone took something private-ish and turned it into social currency.",
+      "Don’t spiral in the group chat. Screenshot what happened, ask one trusted person what’s actually being said, and if it’s explicit, threatening, or being spread around school, bring in an adult fast.",
+    ],
+  },
+  {
+    id: "first-job-interview",
+    matches: (text) =>
+      /\b(job interview|interview|first job|hiring|application)\b/.test(text) &&
+      /\b(nervous|scared|anxious|what do i say|prepare|tomorrow)\b/.test(text),
+    reply: [
+      "First interview nerves are normal because you’re walking into a script you haven’t practiced yet.",
+      "Prepare three answers: why you want the job, one time you were responsible, and when you’re available. Wear something clean, show up 10 minutes early, and ask one question at the end: “What would make someone good at this role?”",
     ],
   },
   {
@@ -486,6 +546,16 @@ const kaiWorkflows: Workflow[] = [
 
 const physicalWorkflows: Workflow[] = [
   {
+    id: "cheap-school-protein",
+    matches: (text) =>
+      /\b(cheap|budget|affordable|easy|bring to school|school)\b/.test(text) &&
+      /\b(protein|high protein|muscle|snack|foods?|lunch)\b/.test(text),
+    reply: [
+      "Good school protein does not need to be fancy.",
+      "Cheap options: Greek yogurt, string cheese, tuna packets, turkey or chicken sandwich, eggs, beans and rice, peanut butter sandwich, cottage cheese if you like it, roasted chickpeas, or leftovers in a container. Pair it with carbs and water so it actually fuels you, not just “hits protein.”",
+    ],
+  },
+  {
     id: "pre-practice-food",
     matches: (text) =>
       /\b(before practice|before a game|pre practice|pre-game|pregame|practice later|game later)\b/.test(text) &&
@@ -526,10 +596,22 @@ const physicalWorkflows: Workflow[] = [
   },
   {
     id: "team-cut",
-    matches: (text) => /\b(got cut|cut from the team|didn'?t make the team|didnt make the team|benched)\b/.test(text),
+    matches: (text) =>
+      /\b(got cut|cut from the team|didn'?t make the team|didnt make the team|benched)\b/.test(text) &&
+      !/\b(coach|ask|why|what do i say|talk to)\b/.test(text),
     reply: [
       "That one hurts. Let it hurt without making it the full story.",
       "If you still want it, ask what to improve, then pick one thing to train for 14 days. Comeback starts boring.",
+    ],
+  },
+  {
+    id: "coach-bench-conversation",
+    matches: (text) =>
+      /\b(coach|benched|bench|playing time|minutes)\b/.test(text) &&
+      /\b(scared|nervous|ask|why|what do i say|talk to)\b/.test(text),
+    reply: [
+      "That’s a hard ask, but it’s a useful one if you keep it calm.",
+      "Say: “Coach, what are one or two things I need to improve to earn more minutes?” Don’t argue in the moment. Write down the answer, train that for two weeks, then check back.",
     ],
   },
   {

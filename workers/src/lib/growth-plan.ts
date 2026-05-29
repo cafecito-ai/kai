@@ -67,8 +67,11 @@ function mentionsDating(text: string) {
 
 function mentionsFriendship(text: string) {
   return (
-    /\b(friends?|friend group|new people|people to hang|someone to hang|social circle)\b/.test(text) &&
-    /\b(want|wish|need|more|make|meet|find|no|none|lonely|alone|left out)\b/.test(text)
+    (
+      /\b(friends?|friend group|new people|people to hang|someone to hang|social circle)\b/.test(text) &&
+      /\b(want|wish|need|more|make|meet|find|no|none|lonely|alone|left out)\b/.test(text)
+    ) ||
+    /\b(no one|nobody|none of my friends)\b.*\b(texts? me first|checks on me|invites? me|reaches out|makes plans)\b/.test(text)
   );
 }
 

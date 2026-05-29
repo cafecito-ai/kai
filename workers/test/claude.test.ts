@@ -23,4 +23,12 @@ describe("callClaude fallback", () => {
     expect(reply).toContain("I can work with that");
     expect(reply).not.toMatch(/say it .*plain|more plainly|restate it/i);
   });
+
+  it("does not let school wording override food fallback intent", async () => {
+    const reply = await callClaude({} as Env, "system", [{ role: "user", content: "what are cheap high protein foods i can bring to school" }]);
+
+    expect(reply).toContain("protein");
+    expect(reply).toContain("Greek yogurt");
+    expect(reply).not.toContain("test stress");
+  });
 });

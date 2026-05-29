@@ -27,6 +27,12 @@ describe("detectGrowthPlanSuggestion", () => {
     });
   });
 
+  it("turns not being reached out to into a social growth goal", () => {
+    const suggestion = detectGrowthPlanSuggestion("no one texts me first and it makes me feel unwanted", "chat");
+
+    expect(suggestion?.title).toBe("Meet new people");
+  });
+
   it("detects confidence and social skill language", () => {
     expect(detectGrowthPlanSuggestion("I feel awkward and want better confidence", "chat")?.title).toBe("Improve confidence");
     expect(detectGrowthPlanSuggestion("I need a better social life and conversation skills", "chat")?.title).toBe("Strengthen social skills");

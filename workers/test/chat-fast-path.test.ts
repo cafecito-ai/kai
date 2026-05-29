@@ -126,6 +126,54 @@ describe("fastKaiReply", () => {
     expect(reply).toContain("next honest option");
   });
 
+  it("answers teacher conflict with facts and a repair move", () => {
+    const reply = fastKaiReply("my teacher hates me and i feel like theres no point trying in that class");
+
+    expect(reply).toContain("one adult’s vibe");
+    expect(reply).toContain("facts from the story");
+    expect(reply).toContain("repair move");
+  });
+
+  it("answers parent grade pressure without tying worth to grades", () => {
+    const reply = fastKaiReply("my parents expect straight As and i feel like im never enough");
+
+    expect(reply).toContain("love feel conditional");
+    expect(reply).toContain("separate your worth");
+    expect(reply).toContain("I’m working on a plan");
+  });
+
+  it("answers jealousy with admiration-to-rep framing", () => {
+    const reply = fastKaiReply("my friend is better than me at everything and i hate that im jealous");
+
+    expect(reply).toContain("Jealousy");
+    expect(reply).toContain("exact thing you admire");
+    expect(reply).toContain("one rep");
+  });
+
+  it("answers no-one-texts loneliness with a clean social test", () => {
+    const reply = fastKaiReply("no one texts me first and it makes me feel unwanted");
+
+    expect(reply).toContain("does hurt");
+    expect(reply).toContain("one clean test");
+    expect(reply).toContain("Their response gives you data");
+  });
+
+  it("answers screenshot drama with privacy triage", () => {
+    const reply = fastKaiReply("someone screenshotted my snap and now people are talking");
+
+    expect(reply).toContain("feels violating");
+    expect(reply).toContain("Screenshot what happened");
+    expect(reply).toContain("bring in an adult fast");
+  });
+
+  it("answers first job interview nerves with prep bullets in prose", () => {
+    const reply = fastKaiReply("i have my first job interview and im nervous");
+
+    expect(reply).toContain("three answers");
+    expect(reply).toContain("10 minutes early");
+    expect(reply).toContain("What would make someone good at this role");
+  });
+
   it("answers hungry lunch typos with food options", () => {
     const reply = fastKaiReply("im hungry what should i make for lunc");
 
@@ -185,6 +233,23 @@ describe("fastPhysicalReply", () => {
 
     expect(reply).toContain("carbs");
     expect(reply).toContain("water");
+  });
+
+  it("answers cheap school protein asks with specific foods", () => {
+    const reply = fastPhysicalReply("what are cheap high protein foods i can bring to school");
+
+    expect(reply).toContain("Greek yogurt");
+    expect(reply).toContain("tuna packets");
+    expect(reply).toContain("peanut butter sandwich");
+    expect(reply).not.toContain("test stress");
+  });
+
+  it("answers coach bench anxiety with a script", () => {
+    const reply = fastPhysicalReply("im scared to ask coach why im benched");
+
+    expect(reply).toContain("what are one or two things");
+    expect(reply).toContain("earn more minutes");
+    expect(reply).toContain("check back");
   });
 
   it("does not fast-path unrelated physical questions", () => {

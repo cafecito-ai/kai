@@ -79,6 +79,53 @@ describe("fastKaiReply", () => {
     expect(reply).toContain("follow-up question");
   });
 
+  it("answers new-school friendship asks with repeatable places", () => {
+    const reply = fastKaiReply("i just moved schools and i dont know how to make friends");
+
+    expect(reply).toContain("New school");
+    expect(reply).toContain("repeatable place");
+    expect(reply).toContain("talking stops feeling random");
+  });
+
+  it("answers ask-out questions without pretending to have human experience", () => {
+    const reply = fastKaiReply("how do i ask a girl out without making it weird");
+
+    expect(reply).toContain("low-pressure");
+    expect(reply).toContain("Want to hang out sometime");
+    expect(reply).not.toMatch(/I've been|I have been|my experience/i);
+  });
+
+  it("answers party pressure with a boundary script", () => {
+    const reply = fastKaiReply("my friends want me to go to a party but i dont drink and i feel lame");
+
+    expect(reply).toContain("doesn’t make you lame");
+    expect(reply).toContain("I’m good tonight");
+    expect(reply).toContain("leave if the vibe");
+  });
+
+  it("answers photo anxiety with a posting boundary", () => {
+    const reply = fastKaiReply("i hate how i look in photos and dont want anyone to post me");
+
+    expect(reply).toContain("Don’t post that one");
+    expect(reply).toContain("inspecting yourself");
+  });
+
+  it("answers pregame nerves with a performance routine", () => {
+    const reply = fastKaiReply("i get nervous before games and play worse than practice");
+
+    expect(reply).toContain("Pregame nerves");
+    expect(reply).toContain("slow exhale");
+    expect(reply).toContain("first useful rep");
+  });
+
+  it("answers college pressure with a concrete sorting exercise", () => {
+    const reply = fastKaiReply("everyone keeps asking about college and i feel behind");
+
+    expect(reply).toContain("College pressure");
+    expect(reply).toContain("three columns");
+    expect(reply).toContain("next honest option");
+  });
+
   it("answers hungry lunch typos with food options", () => {
     const reply = fastKaiReply("im hungry what should i make for lunc");
 
@@ -120,6 +167,7 @@ describe("fastPhysicalReply", () => {
     expect(reply).toContain("pre-workout");
     expect(reply).toContain("3-4 days");
     expect(reply).toContain("equipment");
+    expect(reply).toContain("Training side");
     expect(reply).toContain("protein");
     expect(reply).not.toMatch(/\b\d+\s*(calorie|calories|pounds|lbs)\b/i);
     expect(reply).not.toMatch(/\btarget weight|weigh in|weigh-in|scale number\b/i);

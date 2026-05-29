@@ -10,6 +10,13 @@ describe("detectGrowthPlanSuggestion", () => {
     expect(suggestion?.title).not.toMatch(/get a girl|girlfriend/i);
   });
 
+  it("turns ask-out language into a relationship growth goal", () => {
+    const suggestion = detectGrowthPlanSuggestion("how do i ask a girl out without making it weird", "chat");
+
+    expect(suggestion?.title).toBe("Build meaningful relationships");
+    expect(suggestion?.description).not.toMatch(/girlfriend|get a girl/i);
+  });
+
   it("turns wanting more friends into meeting new people", () => {
     const suggestion = detectGrowthPlanSuggestion("I wish I had more friends at school", "check_in");
 

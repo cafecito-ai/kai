@@ -60,7 +60,7 @@ function normalize(message: string) {
 
 function mentionsDating(text: string) {
   return (
-    /\b(girlfriend|gf|girl friend|boyfriend|bf|relationship|date|dating|ask (her|him|them) out|crush)\b/.test(text) &&
+    /\b(girlfriend|gf|girl friend|boyfriend|bf|relationship|date|dating|ask (a )?(girl|boy|someone|her|him|them) out|crush)\b/.test(text) &&
     /\b(want|wish|need|never had|can't get|cant get|how do i|get|find|meet|talk to|like me|confidence)\b/.test(text)
   );
 }

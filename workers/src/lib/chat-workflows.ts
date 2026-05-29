@@ -180,6 +180,26 @@ const kaiWorkflows: Workflow[] = [
     ],
   },
   {
+    id: "pregame-nerves",
+    matches: (text) =>
+      /\b(game|games|match|meet|tryout|performance)\b/.test(text) &&
+      /\b(nervous|anxious|scared|worse than practice|play worse|freeze|choke)\b/.test(text),
+    reply: [
+      "Pregame nerves are your body trying to give you energy, not proof you’re about to fold.",
+      "Before the game, pick a tiny routine: slow exhale twice, name your first simple job, then do that job hard for the first two minutes. Don’t chase a perfect game; chase the first useful rep.",
+    ],
+  },
+  {
+    id: "college-pressure",
+    matches: (text) =>
+      /\b(college|application|applications|major|future|career|sat|act)\b/.test(text) &&
+      /\b(behind|pressure|everyone|asking|stressed|overwhelmed|dont know|don't know)\b/.test(text),
+    reply: [
+      "College pressure gets loud because adults ask giant questions like you’re supposed to already be finished becoming a person.",
+      "Shrink it: make one list with three columns — what you might like, what you’re decent at, and what you’re curious enough to try. You don’t need your whole future today; you need the next honest option.",
+    ],
+  },
+  {
     id: "bad-grade",
     matches: (text) =>
       /\b(failed my test|failed a test|failed the test|bombed (my )?(test|quiz|exam)|bad grade|got an f|got a d|grade dropped)\b/.test(text),
@@ -202,20 +222,41 @@ const kaiWorkflows: Workflow[] = [
     id: "confidence-school",
     matches: (text) =>
       /\b(ugly|awkward|low confidence|no confidence|insecure|embarrassed|hate how i look|feel weird)\b/.test(text) &&
-      !/\b(girlfriend|gf|boyfriend|bf|relationship|date|dating|crush)\b/.test(text),
+      !/\b(girlfriend|gf|boyfriend|bf|relationship|date|dating|crush|photo|photos|picture|pictures|pics|posted|post me|tagged|tag me)\b/.test(text),
     reply: [
       "That feeling gets loud fast at school.",
       "Where does it hit the most: walking in, talking to people, photos, or comparing yourself?",
     ],
   },
   {
+    id: "photo-boundary",
+    matches: (text) =>
+      /\b(photo|photos|picture|pictures|pics|posted|post me|tagged|tag me)\b/.test(text) &&
+      /\b(hate how i look|ugly|awkward|dont want|don't want|embarrassed|insecure)\b/.test(text),
+    reply: [
+      "Photos can make your brain act like one frame is the whole truth. It isn’t.",
+      "Use a simple boundary: “Don’t post that one, I don’t like it.” You don’t need a whole speech. Then get your attention off the picture before you start inspecting yourself like evidence.",
+    ],
+  },
+  {
     id: "dating-confidence",
     matches: (text) =>
       /\b(girlfriend|gf|boyfriend|bf|relationship|date|dating|crush|ask (her|him|them) out)\b/.test(text) &&
-      /\b(want|wish|need|never had|can't get|cant get|how do i|get|find|meet|talk to|like me|confidence)\b/.test(text),
+      /\b(want|wish|need|never had|can't get|cant get|how do i|get|find|meet|talk to|like me|confidence)\b/.test(text) &&
+      !/\b(ask (a )?(girl|boy|someone|her|him|them) out|ask out|ask her out|ask him out|ask them out)\b/.test(text),
     reply: [
       "Wanting that kind of connection makes sense. Don’t turn it into a shallow prize thing; turn it into becoming easier to talk to, more confident, and more present around people.",
       "Start with one real social rep this week: say hi first, ask one normal question, or make one low-pressure plan with someone. Confidence comes from reps, not waiting until you feel smooth.",
+    ],
+  },
+  {
+    id: "ask-out-respectfully",
+    matches: (text) =>
+      /\b(ask (a )?(girl|boy|someone|her|him|them) out|ask out|ask her out|ask him out|ask them out)\b/.test(text) &&
+      /\b(weird|awkward|how|what do i say|nervous|scared)\b/.test(text),
+    reply: [
+      "Keep it low-pressure and respectful. Don’t make it a dramatic confession.",
+      "Say something like: “I like talking to you. Want to hang out sometime, just us?” If they hesitate or say no, you stay normal and kind. That’s what makes it not weird.",
     ],
   },
   {
@@ -225,6 +266,26 @@ const kaiWorkflows: Workflow[] = [
     reply: [
       "That’s a real thing to work on, and it’s buildable.",
       "For this week, don’t aim for a whole new personality. Aim for three small reps: greet someone first, ask one follow-up question, and say yes to one normal hangout or group moment.",
+    ],
+  },
+  {
+    id: "new-school-friends",
+    matches: (text) =>
+      /\b(new school|moved schools|switched schools|transfer|transferred)\b/.test(text) &&
+      /\b(friend|friends|make friends|meet people|fit in|alone|lonely)\b/.test(text),
+    reply: [
+      "New school is awkward because everyone else already has patterns. That doesn’t mean you’re behind socially.",
+      "Pick one repeatable place: lunch table, club, sport, class partner, or after-school spot. Your first goal is not “best friends”; it’s seeing the same people enough times that talking stops feeling random.",
+    ],
+  },
+  {
+    id: "party-pressure",
+    matches: (text) =>
+      /\b(party|parties|drink|drinking|alcohol|weed|smoke)\b/.test(text) &&
+      /\b(friends|people|everyone|pressure|want me to|feel lame|left out|fit in)\b/.test(text),
+    reply: [
+      "Not drinking doesn’t make you lame. It means you know one boundary before you walk in.",
+      "Use a boring line and don’t over-explain: “I’m good tonight.” Hold a water or soda, stay near one person you trust, and leave if the vibe gets stupid.",
     ],
   },
   {
@@ -477,9 +538,9 @@ const physicalWorkflows: Workflow[] = [
       /\b(bulk|bulking|gain muscle|muscle gain|muscle-building|meal plan|diet)\b/.test(text) &&
       /\b(summer|muscle|bulk|bulking|diet|meal|food|eat|training|workout)\b/.test(text),
     reply: [
-      "Yeah. I’d frame bulking as a safe muscle-building phase: eat enough consistently, train with structure, recover hard, and don’t turn it into obsessing over your body.",
+      "I’d frame bulking as a safe muscle-building phase: eat enough consistently, train with structure, recover hard, and don’t turn it into obsessing over your body.",
       "School-day template: breakfast with protein and carbs like eggs with toast, Greek yogurt with granola, oatmeal with milk, or leftovers; lunch with a real base like chicken, tofu, turkey, beans, rice, pasta, potatoes, fruit, and water; after school or pre-workout, do banana and peanut butter, yogurt and granola, a sandwich, or chocolate milk; dinner should repeat protein + carb + vegetable, then add a bedtime snack if you’re still hungry.",
-      "Training side: lift or train 3-4 days a week, keep a warm-up, use controlled reps, add a little difficulty over time, and sleep 8-10 hours when you can. For the next 7 days, don’t count calories or chase body numbers; just hit breakfast, lunch, dinner, one workout-adjacent snack, water, and tell me your equipment and practice schedule so I can make it more exact.",
+      "Training side: lift or train 3-4 days a week, warm up, use controlled reps, add a little difficulty over time, and sleep 8-10 hours when you can. For the next 7 days: breakfast, lunch, dinner, one workout-adjacent snack, water, and tell me your equipment and practice schedule so I can make it more exact.",
     ],
   },
 ];

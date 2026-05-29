@@ -65,6 +65,27 @@ describe("formatKaiReply", () => {
   it("uses a small human fallback for empty replies", () => {
     expect(formatKaiReply("", "mind")).toBe("I’m here. What’s actually going on today?");
   });
+
+  it("keeps bullet lists together so deeper guidance is not truncated early", () => {
+    const reply = formatKaiReply(
+      [
+        "Opening thought that sets context.",
+        [
+          "- Confidence: build evidence through small reps.",
+          "- Communication: ask normal questions and listen.",
+          "- Respect: stay kind if someone is not interested.",
+          "- Self-improvement: build a life you are proud of.",
+        ].join("\n"),
+        "A simple first-week plan goes here.",
+        "One useful follow-up question?",
+      ].join("\n\n"),
+      "mind",
+    );
+
+    expect(reply).toContain("Self-improvement");
+    expect(reply).toContain("first-week plan");
+    expect(reply).toContain("follow-up question");
+  });
 });
 
 describe("repairComplexMessageReply", () => {

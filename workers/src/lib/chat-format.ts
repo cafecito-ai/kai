@@ -33,6 +33,10 @@ export function repairComplexMessageReply(reply: string, userMessage: string) {
 }
 
 function splitLongParagraph(paragraph: string) {
+  const lines = paragraph.split("\n").map((line) => line.trim()).filter(Boolean);
+  if (lines.length > 1 && (lines.every((line) => /^[-*]\s+/.test(line)) || lines.every((line) => /^\d+\.\s+/.test(line)))) {
+    return [paragraph];
+  }
   if (paragraph.length <= MAX_PARAGRAPH_CHARS) return [paragraph];
   const sentences = paragraph.match(/[^.!?]+[.!?]+["')\]]?|[^.!?]+$/g)?.map((s) => s.trim()) ?? [paragraph];
   const chunks: string[] = [];

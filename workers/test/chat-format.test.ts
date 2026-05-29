@@ -41,23 +41,25 @@ describe("formatKaiReply", () => {
     expect(reply).not.toContain("most challenging part");
   });
 
-  it("caps wall-of-text replies without adding a forced menu", () => {
+  it("allows deeper replies without adding a forced menu", () => {
     const reply = formatKaiReply(
       [
         "First useful thought.",
         "Second useful thought.",
         "Third useful thought.",
-        "Fourth extra thought that should not keep expanding the bubble.",
-        "Fifth extra thought that should not keep expanding the bubble.",
+        "Fourth useful example.",
+        "Fifth useful step.",
+        "Sixth useful follow-up.",
+        "Seventh extra thought that should not keep expanding the bubble.",
       ].join("\n\n"),
       "body",
     );
 
     expect(reply).toContain("First useful thought.");
-    expect(reply).toContain("Third useful thought.");
-    expect(reply).not.toContain("Fourth extra thought");
+    expect(reply).toContain("Sixth useful follow-up.");
+    expect(reply).not.toContain("Seventh extra thought");
     expect(reply).not.toMatch(/discipline lens|one clean next move/);
-    expect(reply.split("\n\n").length).toBeLessThanOrEqual(3);
+    expect(reply.split("\n\n").length).toBeLessThanOrEqual(6);
   });
 
   it("uses a small human fallback for empty replies", () => {

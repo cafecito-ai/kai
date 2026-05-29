@@ -261,12 +261,15 @@ const kaiWorkflows: Workflow[] = [
   {
     id: "dating-confidence",
     matches: (text) =>
-      /\b(girlfriend|gf|boyfriend|bf|relationship|date|dating|crush|ask (her|him|them) out)\b/.test(text) &&
+      /\b(girlfriend|gf|boyfriend|bf|relationship|date|dating|crush|get a girl|get girls|pull girls|talk to girls|ask (her|him|them) out)\b/.test(text) &&
       /\b(want|wish|need|never had|can't get|cant get|how do i|get|find|meet|talk to|like me|confidence)\b/.test(text) &&
       !/\b(ask (a )?(girl|boy|someone|her|him|them) out|ask out|ask her out|ask him out|ask them out)\b/.test(text),
     reply: [
-      "Wanting that kind of connection makes sense. Don’t turn it into a shallow prize thing; turn it into becoming easier to talk to, more confident, and more present around people.",
-      "Start with one real social rep this week: say hi first, ask one normal question, or make one low-pressure plan with someone. Confidence comes from reps, not waiting until you feel smooth.",
+      "Wanting that kind of connection makes sense. I’m not going to frame it as “getting a girl” like someone is a prize, but I can absolutely help you become better at confidence, communication, flirting respectfully, and building real connection.",
+      "The deeper version is this: people are usually drawn to someone who feels comfortable in themselves, listens well, has their own life, and doesn’t make every interaction feel like a high-stakes audition.",
+      "- Confidence: build evidence by doing small social reps, not by waiting until you magically feel smooth.\n- Communication: ask normal questions, listen to the answer, and add something real instead of trying to perform.\n- Respect: if someone is not interested, stay kind and normal. That actually makes you more mature, not less.\n- Self-improvement: take care of your body, clothes, hygiene, interests, and friendships so dating is part of your life, not the whole mission.",
+      "A simple first-week plan: say hi first to three people, ask one follow-up question in a conversation, make one low-pressure plan with a friend or group, and practice not overthinking every response.",
+      "If you want, tell me your actual situation: are you trying to talk to one specific person, or do you mostly want more confidence around girls in general?",
     ],
   },
   {

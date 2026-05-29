@@ -338,7 +338,18 @@ const cases = [
     id: "girlfriend-growth-plan",
     persona: "junior wants dating confidence",
     message: "i want a girlfriend but i have no confidence talking to girls",
-    expect: [/connection|shallow prize|talk to|social rep|Confidence/i],
+    expect: [/connection|shallow prize|Confidence|Communication|first-week plan/i],
+    expectWorkflow: "dating-confidence",
+    expectGrowthPlan: /Build meaningful relationships/i,
+    banGrowthPlan: /get a girl|girlfriend/i,
+    maxLatencyMs: 2200,
+  },
+  {
+    id: "get-a-girl-depth",
+    persona: "blunt dating ask",
+    message: "how can i get a girl",
+    expect: [/I can absolutely help|flirting respectfully|Self-improvement|specific person/i],
+    ban: [/I can.?t help/i],
     expectWorkflow: "dating-confidence",
     expectGrowthPlan: /Build meaningful relationships/i,
     banGrowthPlan: /get a girl|girlfriend/i,
@@ -595,7 +606,7 @@ function evaluateCase(testCase, result) {
   if (result.latencyMs > testCase.maxLatencyMs) {
     issues.push(`slow ${result.latencyMs}ms > ${testCase.maxLatencyMs}ms`);
   }
-  if (paragraphs > 3) issues.push(`too many paragraphs (${paragraphs})`);
+  if (paragraphs > (testCase.maxParagraphs ?? 6)) issues.push(`too many paragraphs (${paragraphs})`);
   if (questions > 1) issues.push(`too many questions (${questions})`);
   if (!testCase.allowSafety && result.safetyEvent) issues.push("unexpected safety event");
   if (testCase.expectSource && result.responseSource !== testCase.expectSource) {

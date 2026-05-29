@@ -1,7 +1,7 @@
 type ReplyMode = "mind" | "body" | "general";
 
 const MAX_PARAGRAPH_CHARS = 150;
-const MAX_BODY_PARAGRAPHS = 3;
+const MAX_BODY_PARAGRAPHS = 6;
 
 export function formatKaiReply(rawReply: string, mode: ReplyMode = "general") {
   const cleaned = rawReply

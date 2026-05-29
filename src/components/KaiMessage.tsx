@@ -81,16 +81,39 @@ export function KaiMessage({
 }
 
 function FormattedKaiText({ text }: { text: string }) {
-  const paragraphs = text
+  const blocks = text
     .split(/\n{2,}/)
     .map((part) => part.trim())
     .filter(Boolean);
 
   return (
     <div className="space-y-3">
-      {paragraphs.map((paragraph, index) => {
+      {blocks.map((paragraph, index) => {
+        const lines = paragraph.split("\n").map((line) => line.trim()).filter(Boolean);
+        if (lines.length > 1 && lines.every((line) => /^[-*]\s+/.test(line))) {
+          return (
+            <ul key={`${paragraph}-${index}`} className="space-y-1.5 pl-5 font-sans text-[15px] leading-relaxed text-text-secondary">
+              {lines.map((line, lineIndex) => (
+                <li key={`${line}-${lineIndex}`} className="list-disc">
+                  {line.replace(/^[-*]\s+/, "")}
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        if (lines.length > 1 && lines.every((line) => /^\d+\.\s+/.test(line))) {
+          return (
+            <ol key={`${paragraph}-${index}`} className="space-y-1.5 pl-5 font-sans text-[15px] leading-relaxed text-text-secondary">
+              {lines.map((line, lineIndex) => (
+                <li key={`${line}-${lineIndex}`} className="list-decimal">
+                  {line.replace(/^\d+\.\s+/, "")}
+                </li>
+              ))}
+            </ol>
+          );
+        }
         const isFirst = index === 0;
-        const isFinalQuestion = index === paragraphs.length - 1 && paragraph.endsWith("?");
+        const isFinalQuestion = index === blocks.length - 1 && paragraph.endsWith("?");
         return (
           <p
             key={`${paragraph}-${index}`}

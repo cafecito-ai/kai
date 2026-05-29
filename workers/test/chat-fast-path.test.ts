@@ -66,9 +66,22 @@ describe("fastKaiReply", () => {
     const reply = fastKaiReply("i want a girlfriend but i have no confidence talking to girls");
 
     expect(reply).toContain("connection");
-    expect(reply).toContain("Don’t turn it into");
+    expect(reply).toContain("I can absolutely help");
     expect(reply).toContain("social rep");
-    expect(reply).not.toMatch(/get a girl/i);
+    expect(reply).toContain("Confidence:");
+    expect(reply).toContain("Communication:");
+    expect(reply).toContain("first-week plan");
+    expect(reply).not.toMatch(/I can.?t help/i);
+  });
+
+  it("answers get-a-girl wording by redirecting into respectful relationship skills", () => {
+    const reply = fastKaiReply("how can i get a girl");
+
+    expect(reply).toContain("I can absolutely help");
+    expect(reply).toContain("flirting respectfully");
+    expect(reply).toContain("Self-improvement:");
+    expect(reply).toContain("specific person");
+    expect(reply).not.toMatch(/I can.?t help/i);
   });
 
   it("answers social-life asks with specific small reps", () => {

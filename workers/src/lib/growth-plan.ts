@@ -14,7 +14,7 @@ export function detectGrowthPlanSuggestion(message: string, source: Source): Gro
   if (mentionsDating(text)) {
     return suggestion(
       "Build meaningful relationships",
-      "Turn wanting a girlfriend or dating life into confidence, social reps, and healthier connection.",
+      "Turn wanting connection into confidence, social reps, and healthier relationships.",
       source,
     );
   }

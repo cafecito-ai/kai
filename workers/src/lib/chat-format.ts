@@ -21,6 +21,17 @@ export function formatKaiReply(rawReply: string, mode: ReplyMode = "general") {
   return `${body}\n\n${gentleFollowUp(body, mode)}`;
 }
 
+export function repairComplexMessageReply(reply: string, userMessage: string) {
+  if (!isComplexUserMessage(userMessage)) return reply;
+
+  if (isPlainLanguageDeflection(reply)) {
+    return "You don’t need to simplify it for me. The next move is to separate the situation into what happened, what hit you the hardest, and what you can control in the next 10 minutes. Start with the piece that feels most urgent right now.";
+  }
+
+  if (hasConcreteNextMove(reply)) return reply;
+  return `${reply}\n\nFor right now, don’t try to solve all of it. Take 10 minutes to calm your body, avoid sending any big message, and write the one decision that actually has to be made today.`;
+}
+
 function splitLongParagraph(paragraph: string) {
   if (paragraph.length <= MAX_PARAGRAPH_CHARS) return [paragraph];
   const sentences = paragraph.match(/[^.!?]+[.!?]+["')\]]?|[^.!?]+$/g)?.map((s) => s.trim()) ?? [paragraph];
@@ -68,6 +79,22 @@ function limitQuestions(reply: string) {
 function hasEnoughSubstance(reply: string) {
   const sentenceCount = reply.match(/[.!?](\s|$)/g)?.length ?? 0;
   return sentenceCount >= 2 || reply.length >= 140;
+}
+
+function isComplexUserMessage(message: string) {
+  const text = message.trim().toLowerCase();
+  return (
+    text.length > 220 ||
+    /\b(complicated|complex|explicit|messy|hard to explain|long story|a lot|too much|spiral|overwhelmed)\b/.test(text)
+  );
+}
+
+function isPlainLanguageDeflection(reply: string) {
+  return /\b(say it .*plain|say that .*plain|more plainly|restate it|rewrite it|simplify it|tell me more about each piece)\b/i.test(reply);
+}
+
+function hasConcreteNextMove(reply: string) {
+  return /\b(next move|right now|start with|for the next|do this|take 10|take ten|pause|write|send no|drink|walk|breathe|choose one|try this|set a timer|put your phone)\b/i.test(reply);
 }
 
 function gentleFallback(mode: ReplyMode) {

@@ -5,7 +5,7 @@ import {
   BODY_LANGUAGE_FALLBACK,
   passesBodyLanguageFilter,
 } from "../lib/body-language-filter";
-import { formatKaiReply } from "../lib/chat-format";
+import { formatKaiReply, repairComplexMessageReply } from "../lib/chat-format";
 import {
   fastKaiReply,
   fastPhysicalReply,
@@ -150,7 +150,7 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
   const rawReply = await callClaude(env, withReadableReplyInstructions(system), modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
-  const reply = formatKaiReply(rawReply, engine === "physical" ? "body" : "general");
+  const reply = repairComplexMessageReply(formatKaiReply(rawReply, engine === "physical" ? "body" : "general"), normalized.text);
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply });
   return Response.json({ conversationId: conversation, reply });
 }
@@ -235,7 +235,7 @@ async function handleRoutedChat(
       reply = BODY_LANGUAGE_FALLBACK;
     }
   }
-  const formattedReply = formatKaiReply(reply, decision === "physical" ? "body" : "mind");
+  const formattedReply = repairComplexMessageReply(formatKaiReply(reply, decision === "physical" ? "body" : "mind"), normalized.text);
 
   await createMessage(env.DB, {
     conversationId: conversation,

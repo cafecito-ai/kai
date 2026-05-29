@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatKaiReply } from "../src/lib/chat-format";
+import { formatKaiReply, repairComplexMessageReply } from "../src/lib/chat-format";
 
 describe("formatKaiReply", () => {
   it("breaks long KAI replies into readable paragraphs", () => {
@@ -62,5 +62,35 @@ describe("formatKaiReply", () => {
 
   it("uses a small human fallback for empty replies", () => {
     expect(formatKaiReply("", "mind")).toBe("I’m here. What’s actually going on today?");
+  });
+});
+
+describe("repairComplexMessageReply", () => {
+  const complexMessage =
+    "I wrote this in a complicated way because the whole thing is complicated. There are three different pieces happening at once, and every time I try to explain one part, the other two parts change what it means. Now I cannot tell if I should act, wait, or just try to calm down first because every option feels wrong.";
+
+  it("adds a concrete next move when a complex-message reply stays vague", () => {
+    const reply = repairComplexMessageReply(
+      "You’re overwhelmed by a situation that keeps changing every time you look at it.",
+      complexMessage,
+    );
+
+    expect(reply).toContain("For right now");
+    expect(reply).toContain("10 minutes");
+    expect(reply).toContain("one decision");
+  });
+
+  it("replaces plain-language deflections for complex messages", () => {
+    const reply = repairComplexMessageReply("Say it a little more plainly and I’ll help.", complexMessage);
+
+    expect(reply).toContain("don’t need to simplify it");
+    expect(reply).toContain("next move");
+    expect(reply).not.toMatch(/say it .*plain|more plainly/i);
+  });
+
+  it("leaves replies with a concrete action alone", () => {
+    const reply = repairComplexMessageReply("This is messy. Start with water and write one sentence.", complexMessage);
+
+    expect(reply).toBe("This is messy. Start with water and write one sentence.");
   });
 });

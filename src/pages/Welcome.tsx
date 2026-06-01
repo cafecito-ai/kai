@@ -146,8 +146,8 @@ export function Welcome() {
 
       {/* THE STAGE — where KAI flies around */}
       <div className="relative flex-1">
-        {/* Tagline title (beat 1 only) — big, slow-fade-in, with a
-            shimmer pass that runs once after the title lands. */}
+        {/* Tagline title (beat 1 only) — big, solid white. Removed the
+            shimmer effect because it was hurting readability. */}
         {beat.title && (
           <div
             key={`title-${idx}`}
@@ -156,13 +156,7 @@ export function Welcome() {
               kai-title-pop
             "
           >
-            <h1
-              className="
-                whitespace-pre-line font-display text-5xl font-semibold leading-[1.05]
-                tracking-tight sm:text-6xl
-                kai-tagline-shimmer bg-clip-text text-transparent
-              "
-            >
+            <h1 className="whitespace-pre-line font-display text-5xl font-semibold leading-[1.05] tracking-tight text-text-primary drop-shadow-[0_2px_12px_rgba(123,110,246,0.4)] sm:text-6xl">
               {beat.title}
             </h1>
           </div>
@@ -363,25 +357,7 @@ export function Welcome() {
         }
         .kai-title-pop { animation: kai-title-pop 1100ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-        /* Tagline shimmer — a moving gradient sweeps across the text
-           so the words feel alive. Three-color gradient (white →
-           accent → white) repeats slowly. */
-        @keyframes kai-tagline-shimmer {
-          0%   { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .kai-tagline-shimmer {
-          background-image: linear-gradient(
-            90deg,
-            #F0F0F5 0%,
-            #F0F0F5 35%,
-            #C9BCFF 50%,
-            #F0F0F5 65%,
-            #F0F0F5 100%
-          );
-          background-size: 200% auto;
-          animation: kai-tagline-shimmer 6000ms linear infinite;
-        }
+        /* (tagline shimmer removed — hurt readability) */
 
         @keyframes kai-line-pop {
           0%   { transform: translateY(14px) scale(0.96); opacity: 0; filter: blur(6px); }
@@ -417,9 +393,9 @@ export function Welcome() {
 // ─────────────────────────────────────────────────────────────────────
 
 function MagicField() {
-  // 32 sparkles with deterministic positions, varied size, blur level
+  // 12 sparkles with deterministic positions, varied size, blur level
   // (some are bokeh — soft and large, some are sharp — small and bright),
-  // and varied drift directions. Looks like a magical particle field.
+  // and varied drift directions. Tuned down from 32 — too many felt busy.
   const sparks = useMemo(() => {
     const out: {
       x: number;
@@ -430,7 +406,7 @@ function MagicField() {
       tint: "violet" | "teal" | "warm";
       drift: number;
     }[] = [];
-    for (let i = 0; i < 32; i += 1) {
+    for (let i = 0; i < 12; i += 1) {
       const tintIdx = (i * 7) % 3;
       out.push({
         x: ((i * 7919) % 100) / 100,
@@ -447,16 +423,17 @@ function MagicField() {
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {/* Aurora rays — a soft conic gradient that slowly rotates behind
-          everything, giving the scene a moving sense of light. */}
+      {/* Aurora rays — softened from the original (max opacity halved)
+          so it doesn't compete with the tagline text. Still rotates
+          to give the scene movement. */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 kai-aurora"
         style={{
           width: "180%",
           height: "180%",
           background:
-            "conic-gradient(from 0deg at 50% 50%, rgba(123,110,246,0) 0deg, rgba(123,110,246,0.18) 40deg, rgba(155,138,240,0) 80deg, rgba(104,197,184,0.14) 140deg, rgba(123,110,246,0) 200deg, rgba(240,168,104,0.10) 260deg, rgba(123,110,246,0) 320deg, rgba(123,110,246,0) 360deg)",
-          filter: "blur(40px)",
+            "conic-gradient(from 0deg at 50% 50%, rgba(123,110,246,0) 0deg, rgba(123,110,246,0.10) 40deg, rgba(155,138,240,0) 80deg, rgba(104,197,184,0.08) 140deg, rgba(123,110,246,0) 200deg, rgba(240,168,104,0.06) 260deg, rgba(123,110,246,0) 320deg, rgba(123,110,246,0) 360deg)",
+          filter: "blur(50px)",
         }}
       />
 

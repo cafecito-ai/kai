@@ -615,7 +615,7 @@ function ScoreVisual() {
 
 function PillarsVisual() {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center justify-center gap-3">
       <Pillar icon={Brain} tint="bg-accent-cool-soft text-accent-cool" />
       <Pillar icon={Moon} tint="bg-accent-soft text-accent" />
       <Pillar icon={Heart} tint="bg-accent-warm-soft text-accent-warm" />
@@ -649,12 +649,12 @@ function Pillar({ icon: Icon, tint }: { icon: typeof Brain; tint: string }) {
   return (
     <div
       className={`
-        flex h-14 w-14 items-center justify-center
+        flex h-16 w-16 items-center justify-center
         rounded-glass border border-glass-border shadow-card
         ${tint}
       `}
     >
-      <Icon size={20} aria-hidden="true" strokeWidth={1.6} />
+      <Icon size={24} aria-hidden="true" strokeWidth={1.6} />
     </div>
   );
 }

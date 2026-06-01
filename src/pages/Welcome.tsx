@@ -106,10 +106,10 @@ export function Welcome() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* Subtle atmosphere — sparkles + a soft accent glow at the
-          bottom of the screen. Standard app dark background otherwise
-          so the text contrasts cleanly. */}
-      <AmbientGlow />
+      {/* Magic environment — aurora rays + dense sparkle field + soft
+          accent halo at the horizon. Text stays high-contrast because
+          everything magical sits at low opacity. */}
+      <MagicField />
 
       {/* Header: progress dots + Skip */}
       <header className="relative z-20 flex items-center justify-between pb-3">
@@ -142,7 +142,8 @@ export function Welcome() {
 
       {/* THE STAGE — where KAI flies around */}
       <div className="relative flex-1">
-        {/* Tagline title (beat 1 only) — big, slow-fade-in */}
+        {/* Tagline title (beat 1 only) — big, slow-fade-in, with a
+            shimmer pass that runs once after the title lands. */}
         {beat.title && (
           <div
             key={`title-${idx}`}
@@ -151,7 +152,13 @@ export function Welcome() {
               kai-title-pop
             "
           >
-            <h1 className="whitespace-pre-line font-display text-5xl font-semibold leading-[1.05] tracking-tight text-text-primary sm:text-6xl">
+            <h1
+              className="
+                whitespace-pre-line font-display text-5xl font-semibold leading-[1.05]
+                tracking-tight sm:text-6xl
+                kai-tagline-shimmer bg-clip-text text-transparent
+              "
+            >
               {beat.title}
             </h1>
           </div>
@@ -183,15 +190,30 @@ export function Welcome() {
             transition: "transform 1300ms cubic-bezier(0.16, 1, 0.3, 1), top 1300ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          {/* Halo */}
+          {/* Halo — color-cycles slowly between accent / cool / warm
+              so it always feels alive. */}
           <div
             className="
               pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2
-              h-[140%] w-[140%] rounded-full bg-accent/30 blur-3xl
-              kai-halo-pulse
+              h-[160%] w-[160%] rounded-full blur-3xl
+              kai-halo-cycle kai-halo-pulse
             "
             aria-hidden="true"
           />
+          {/* Orbiting particles — three small glow dots that circle
+              KAI's head at different radii + speeds. Reads as a small
+              magical aura around the character. */}
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <span className="kai-orbit-1 absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
+              <span className="block h-2 w-2 rounded-full bg-accent shadow-[0_0_12px_rgba(123,110,246,0.9)]" />
+            </span>
+            <span className="kai-orbit-2 absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
+              <span className="block h-1.5 w-1.5 rounded-full bg-accent-cool shadow-[0_0_10px_rgba(104,197,184,0.9)]" />
+            </span>
+            <span className="kai-orbit-3 absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
+              <span className="block h-1.5 w-1.5 rounded-full bg-accent-warm shadow-[0_0_10px_rgba(240,168,104,0.9)]" />
+            </span>
+          </div>
           <KaiCharacter size={220} face speaking gesture={beat.gesture} />
 
           {/* On beat 1 only — a "tap me" pulse ring around KAI so
@@ -292,6 +314,33 @@ export function Welcome() {
         }
         .kai-halo-pulse { animation: kai-halo-pulse 2600ms ease-in-out infinite; }
 
+        /* Halo color cycle — violet → cool → warm → back. Slow enough
+           (8s) that it's a felt change, not a flicker. */
+        @keyframes kai-halo-cycle {
+          0%, 100% { background: radial-gradient(circle, rgba(123,110,246,0.45) 0%, rgba(123,110,246,0) 70%); }
+          33%      { background: radial-gradient(circle, rgba(104,197,184,0.40) 0%, rgba(104,197,184,0) 70%); }
+          66%      { background: radial-gradient(circle, rgba(240,168,104,0.40) 0%, rgba(240,168,104,0) 70%); }
+        }
+        .kai-halo-cycle { animation: kai-halo-cycle 8000ms ease-in-out infinite; }
+
+        /* Three orbiting particles around KAI's head, different radii
+           and speeds so they look like they have their own physics. */
+        @keyframes kai-orbit-1 {
+          0%   { transform: translate(-50%, -50%) rotate(0deg)   translateX(85px) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg) translateX(85px) rotate(-360deg); }
+        }
+        .kai-orbit-1 { animation: kai-orbit-1 9000ms linear infinite; }
+        @keyframes kai-orbit-2 {
+          0%   { transform: translate(-50%, -50%) rotate(120deg) translateX(105px) rotate(-120deg); }
+          100% { transform: translate(-50%, -50%) rotate(480deg) translateX(105px) rotate(-480deg); }
+        }
+        .kai-orbit-2 { animation: kai-orbit-2 14000ms linear infinite; }
+        @keyframes kai-orbit-3 {
+          0%   { transform: translate(-50%, -50%) rotate(240deg) translateX(70px) rotate(-240deg); }
+          100% { transform: translate(-50%, -50%) rotate(-120deg) translateX(70px) rotate(120deg); }
+        }
+        .kai-orbit-3 { animation: kai-orbit-3 11000ms linear infinite; }
+
         /* Pulsing ring on beat 1 — "tap me" affordance */
         @keyframes kai-tap-ring {
           0%   { transform: translate(-50%, -50%) scale(0.95); opacity: 0.9; }
@@ -306,6 +355,26 @@ export function Welcome() {
           100% { transform: translateY(0)    scale(1);    opacity: 1; filter: blur(0); }
         }
         .kai-title-pop { animation: kai-title-pop 1100ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+        /* Tagline shimmer — a moving gradient sweeps across the text
+           so the words feel alive. Three-color gradient (white →
+           accent → white) repeats slowly. */
+        @keyframes kai-tagline-shimmer {
+          0%   { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .kai-tagline-shimmer {
+          background-image: linear-gradient(
+            90deg,
+            #F0F0F5 0%,
+            #F0F0F5 35%,
+            #C9BCFF 50%,
+            #F0F0F5 65%,
+            #F0F0F5 100%
+          );
+          background-size: 200% auto;
+          animation: kai-tagline-shimmer 6000ms linear infinite;
+        }
 
         @keyframes kai-line-pop {
           0%   { transform: translateY(14px) scale(0.96); opacity: 0; filter: blur(6px); }
@@ -335,55 +404,112 @@ export function Welcome() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// AmbientGlow — soft accent halo at the bottom of the canvas + a few
-// drifting sparkles. Stays subtle so the standard app background
-// (#0A0A0F) carries through and text contrast is preserved.
+// MagicField — aurora-style rotating glow, dense sparkle field with
+// varied sizes + bokeh blur for depth, soft horizon halo. Text contrast
+// stays clean because every magical layer is below ~30% opacity.
 // ─────────────────────────────────────────────────────────────────────
 
-function AmbientGlow() {
+function MagicField() {
+  // 32 sparkles with deterministic positions, varied size, blur level
+  // (some are bokeh — soft and large, some are sharp — small and bright),
+  // and varied drift directions. Looks like a magical particle field.
   const sparks = useMemo(() => {
-    const out: { x: number; y: number; size: number; delay: number }[] = [];
-    for (let i = 0; i < 8; i += 1) {
+    const out: {
+      x: number;
+      y: number;
+      size: number;
+      delay: number;
+      blur: boolean;
+      tint: "violet" | "teal" | "warm";
+      drift: number;
+    }[] = [];
+    for (let i = 0; i < 32; i += 1) {
+      const tintIdx = (i * 7) % 3;
       out.push({
         x: ((i * 7919) % 100) / 100,
-        y: 0.55 + ((i * 31) % 30) / 100,
-        size: 2 + ((i * 13) % 4),
-        delay: ((i * 17) % 40) / 10,
+        y: ((i * 4253) % 100) / 100,
+        size: 2 + ((i * 13) % 6) * 1.2, // 2 → 8 px
+        delay: ((i * 17) % 50) / 10,
+        blur: i % 3 === 0,
+        tint: tintIdx === 0 ? "violet" : tintIdx === 1 ? "teal" : "warm",
+        drift: ((i * 11) % 5) - 2, // -2 → 2 (horizontal drift while rising)
       });
     }
     return out;
   }, []);
+
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {/* Soft accent glow rising from the bottom — gives the scene a
-          sense of horizon without darkening the rest of the page. */}
+      {/* Aurora rays — a soft conic gradient that slowly rotates behind
+          everything, giving the scene a moving sense of light. */}
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 kai-aurora"
+        style={{
+          width: "180%",
+          height: "180%",
+          background:
+            "conic-gradient(from 0deg at 50% 50%, rgba(123,110,246,0) 0deg, rgba(123,110,246,0.18) 40deg, rgba(155,138,240,0) 80deg, rgba(104,197,184,0.14) 140deg, rgba(123,110,246,0) 200deg, rgba(240,168,104,0.10) 260deg, rgba(123,110,246,0) 320deg, rgba(123,110,246,0) 360deg)",
+          filter: "blur(40px)",
+        }}
+      />
+
+      {/* Horizon halo — soft pool of accent light pooling at the bottom */}
       <div
         className="absolute inset-x-0 bottom-0 h-2/5"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 100%, rgba(123, 110, 246, 0.18) 0%, rgba(123, 110, 246, 0) 70%)",
+            "radial-gradient(ellipse at 50% 100%, rgba(123, 110, 246, 0.22) 0%, rgba(123, 110, 246, 0) 70%)",
         }}
       />
-      {/* Drifting sparkles — fewer, more subtle */}
-      {sparks.map((s, i) => (
-        <span
-          key={i}
-          className="absolute rounded-full bg-accent/60 shadow-[0_0_10px_rgba(123,110,246,0.7)]"
-          style={{
-            left: `${s.x * 100}%`,
-            top: `${s.y * 100}%`,
-            width: s.size,
-            height: s.size,
-            animation: `kai-sparkle-drift 5000ms ease-in-out ${s.delay}s infinite`,
-          }}
-        />
-      ))}
+
+      {/* Sparkle field — 32 particles. Each drifts upward with a slight
+          horizontal wander, fades in and out on its own clock. Some are
+          blurred (bokeh, large) for depth. */}
+      {sparks.map((s, i) => {
+        const color =
+          s.tint === "violet"
+            ? "rgba(123,110,246,0.85)"
+            : s.tint === "teal"
+              ? "rgba(104,197,184,0.85)"
+              : "rgba(240,168,104,0.85)";
+        const glow =
+          s.tint === "violet"
+            ? "0 0 12px rgba(123,110,246,0.8)"
+            : s.tint === "teal"
+              ? "0 0 12px rgba(104,197,184,0.8)"
+              : "0 0 12px rgba(240,168,104,0.8)";
+        return (
+          <span
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: `${s.x * 100}%`,
+              top: `${s.y * 100}%`,
+              width: s.size,
+              height: s.size,
+              background: color,
+              boxShadow: glow,
+              filter: s.blur ? "blur(2px)" : undefined,
+              ["--drift" as string]: `${s.drift * 10}px`,
+              animation: `kai-magic-drift 7000ms ease-in-out ${s.delay}s infinite`,
+            }}
+          />
+        );
+      })}
+
       <style>{`
-        @keyframes kai-sparkle-drift {
-          0%, 100% { transform: translateY(0)    scale(0.6); opacity: 0; }
-          20%      { opacity: 0.8; }
-          80%      { opacity: 0.8; }
-          100%     { transform: translateY(-80px) scale(1.1); opacity: 0; }
+        @keyframes kai-aurora {
+          0%   { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .kai-aurora {
+          animation: kai-aurora 60s linear infinite;
+        }
+        @keyframes kai-magic-drift {
+          0%        { transform: translate(0, 0)               scale(0.4); opacity: 0; }
+          20%       { opacity: 1; }
+          80%       { opacity: 1; }
+          100%      { transform: translate(var(--drift), -120px) scale(1.2); opacity: 0; }
         }
       `}</style>
     </div>

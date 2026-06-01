@@ -564,13 +564,13 @@ function buildBeats(): Beat[] {
       magic: "starBurst",
     },
 
-    // 8. Streak — new copy "Show up every day. That's the goal." Flame
-    //    pushed further left, KAI shifted left from the far right into
-    //    a more centered position (per tester).
+    // 8. Streak — flame + "+1" pip placed ABOVE KAI (same layout that
+    //    works on the pillars slide) so the emblem has its own zone
+    //    and the "+1" pip is never tucked behind KAI's body.
     {
       line: "Show up every day. That's the goal.",
-      kaiOffsetX: 60, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "talk",
-      visual: <FlameVisual />, visualOffsetX: -160, visualTopPct: 0.42,
+      kaiOffsetX: 0, kaiTopPct: 0.55, kaiScale: 0.65, gesture: "point",
+      visual: <FlameVisual />, visualOffsetX: 0, visualTopPct: 0.20,
       hint: "tap",
       magic: "summon-left",
     },

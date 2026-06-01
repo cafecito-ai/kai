@@ -102,9 +102,10 @@ export function Welcome() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* THE WORLD — cosmic background. Rendered behind everything,
-          gives KAI a place to exist. */}
-      <CosmicWorld />
+      {/* Subtle atmosphere — sparkles + a soft accent glow at the
+          bottom of the screen. Standard app dark background otherwise
+          so the text contrasts cleanly. */}
+      <AmbientGlow />
 
       {/* Header: progress dots + Skip */}
       <header className="relative z-20 flex items-center justify-between pb-3">
@@ -307,68 +308,56 @@ export function Welcome() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// CosmicWorld — background environment so KAI doesn't float in a void
+// AmbientGlow — soft accent halo at the bottom of the canvas + a few
+// drifting sparkles. Stays subtle so the standard app background
+// (#0A0A0F) carries through and text contrast is preserved.
 // ─────────────────────────────────────────────────────────────────────
 
-function CosmicWorld() {
-  // 28 small star dots scattered across the canvas with varied opacity
-  // and twinkle speeds. Deterministic positions via a seed-like sequence
-  // so the layout doesn't shift between renders.
-  const stars = useMemo(() => {
-    const result: { x: number; y: number; size: number; opacity: number; delay: number }[] = [];
-    for (let i = 0; i < 28; i += 1) {
-      const s = (i * 7919) % 100;
-      const t = (i * 4253) % 100;
-      result.push({
-        x: s,
-        y: t,
-        size: 1.5 + ((i * 31) % 4) * 0.6,
-        opacity: 0.3 + ((i * 13) % 7) * 0.08,
-        delay: ((i * 17) % 30) / 10,
+function AmbientGlow() {
+  const sparks = useMemo(() => {
+    const out: { x: number; y: number; size: number; delay: number }[] = [];
+    for (let i = 0; i < 8; i += 1) {
+      out.push({
+        x: ((i * 7919) % 100) / 100,
+        y: 0.55 + ((i * 31) % 30) / 100,
+        size: 2 + ((i * 13) % 4),
+        delay: ((i * 17) % 40) / 10,
       });
     }
-    return result;
+    return out;
   }, []);
-
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {/* Deep cosmic gradient */}
+      {/* Soft accent glow rising from the bottom — gives the scene a
+          sense of horizon without darkening the rest of the page. */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-x-0 bottom-0 h-2/5"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 30%, rgba(123, 110, 246, 0.18) 0%, rgba(10, 10, 15, 0) 60%), linear-gradient(180deg, #0A0A0F 0%, #13131A 60%, #1A1426 100%)",
+            "radial-gradient(ellipse at 50% 100%, rgba(123, 110, 246, 0.18) 0%, rgba(123, 110, 246, 0) 70%)",
         }}
       />
-      {/* Horizon glow at bottom */}
-      <div
-        className="absolute inset-x-0 bottom-0 h-1/3"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(123, 110, 246, 0) 0%, rgba(123, 110, 246, 0.08) 60%, rgba(240, 168, 104, 0.06) 100%)",
-        }}
-      />
-      {/* Stars — small twinkling dots scattered across the field */}
-      {stars.map((star, i) => (
+      {/* Drifting sparkles — fewer, more subtle */}
+      {sparks.map((s, i) => (
         <span
           key={i}
-          className="absolute rounded-full bg-text-primary kai-star-twinkle"
+          className="absolute rounded-full bg-accent/60 shadow-[0_0_10px_rgba(123,110,246,0.7)]"
           style={{
-            left: `${star.x}%`,
-            top: `${star.y}%`,
-            width: star.size,
-            height: star.size,
-            opacity: star.opacity,
-            animationDelay: `${star.delay}s`,
+            left: `${s.x * 100}%`,
+            top: `${s.y * 100}%`,
+            width: s.size,
+            height: s.size,
+            animation: `kai-sparkle-drift 5000ms ease-in-out ${s.delay}s infinite`,
           }}
         />
       ))}
       <style>{`
-        @keyframes kai-star-twinkle {
-          0%, 100% { opacity: var(--o, 0.5); transform: scale(1); }
-          50%      { opacity: 1;             transform: scale(1.4); }
+        @keyframes kai-sparkle-drift {
+          0%, 100% { transform: translateY(0)    scale(0.6); opacity: 0; }
+          20%      { opacity: 0.8; }
+          80%      { opacity: 0.8; }
+          100%     { transform: translateY(-80px) scale(1.1); opacity: 0; }
         }
-        .kai-star-twinkle { animation: kai-star-twinkle 4000ms ease-in-out infinite; }
       `}</style>
     </div>
   );

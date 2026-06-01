@@ -178,16 +178,22 @@ export function KaiCharacter({
         .kai-hand-l-talk { animation: kai-hand-talk-l 2200ms ease-in-out infinite; }
         .kai-hand-r-talk { animation: kai-hand-talk-r 2200ms ease-in-out infinite; }
 
-        /* WAVE — right hand sweeps up and over, left hand stays subtle.
-           A real "hi nice to meet you" wave. */
+        /* WAVE — right hand flies UP all the way to head-height, then
+           swings side to side 3-4 times, then comes back down. The
+           hand scales up slightly at the peak so the motion is super
+           readable even at smaller character sizes. */
         @keyframes kai-hand-wave-r {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          15%      { transform: translate(8px, -30px) rotate(20deg); }
-          35%      { transform: translate(14px, -36px) rotate(-15deg); }
-          55%      { transform: translate(14px, -36px) rotate(20deg); }
-          75%      { transform: translate(10px, -28px) rotate(-10deg); }
+          0%   { transform: translate(0, 0)        rotate(0deg)   scale(1);    }
+          12%  { transform: translate(20px, -125px) rotate(15deg)  scale(1.15); }
+          24%  { transform: translate(20px, -125px) rotate(-35deg) scale(1.15); }
+          36%  { transform: translate(20px, -125px) rotate(35deg)  scale(1.15); }
+          48%  { transform: translate(20px, -125px) rotate(-35deg) scale(1.15); }
+          60%  { transform: translate(20px, -125px) rotate(35deg)  scale(1.15); }
+          72%  { transform: translate(20px, -125px) rotate(0deg)   scale(1.15); }
+          88%  { transform: translate(8px,  -50px)  rotate(0deg)   scale(1);    }
+          100% { transform: translate(0, 0)         rotate(0deg)   scale(1);    }
         }
-        .kai-hand-r-wave { animation: kai-hand-wave-r 2400ms ease-in-out infinite; }
+        .kai-hand-r-wave { animation: kai-hand-wave-r 3200ms ease-in-out infinite; }
         .kai-hand-l-wave { animation: kai-hand-idle-l 3600ms ease-in-out infinite; }
 
         /* POINT — right hand extends out to the side, sustained. The

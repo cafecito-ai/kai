@@ -404,18 +404,30 @@ function buildBeats(): Beat[] {
       hint: "tap to meet KAI",
     },
 
-    // 2. The combined intro — all four "Hi I'm KAI / your AI buddy /
-    //    this is your space / let me show you around" lines on one
-    //    slide. They stagger in 450ms apart and stay visible together
-    //    so the user reads it as one moment, not four taps.
+    // 2. WHO — the introduction. KAI greets the user, sets the role.
+    {
+      lines: ["Hi, I'm KAI.", "Your AI buddy."],
+      kaiOffsetX: 0, kaiTopPct: 0.32, kaiScale: 1.10, gesture: "wave",
+      hint: "tap to continue",
+    },
+
+    // 3. WHY — the purpose. This is what makes KAI feel different from
+    //    a generic chatbot without saying so out loud. Everyday presence
+    //    + helps you find who you really are.
     {
       lines: [
-        "Hi, I'm KAI.",
-        "Your AI buddy.",
-        "This is your space.",
-        "Let me show you around.",
+        "I'm here every day.",
+        "For the real stuff in your head.",
+        "Helping you find who you really are.",
       ],
-      kaiOffsetX: 0, kaiTopPct: 0.32, kaiScale: 1.10, gesture: "wave",
+      kaiOffsetX: 0, kaiTopPct: 0.30, kaiScale: 1.05, gesture: "reach",
+      hint: "tap to continue",
+    },
+
+    // 4. WELCOME — into their space, into the tour.
+    {
+      lines: ["This is your space.", "Let me show you around."],
+      kaiOffsetX: 0, kaiTopPct: 0.32, kaiScale: 1.10, gesture: "point",
       hint: "tap to start the tour",
     },
 

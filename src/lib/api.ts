@@ -48,10 +48,15 @@ function getDevUser() {
   if (typeof window === "undefined") return null;
   const host = window.location.hostname;
   const authRequired = import.meta.env.VITE_AUTH_REQUIRED === "1";
+  // Public *.pages.dev preview URLs are shareable, and non-production hosts
+  // route to the staging worker — so an open `.pages.dev` rule let anyone mint
+  // an x-dev-user and write to staging unauthenticated. Gate previews behind an
+  // explicit build-time opt-in (VITE_ALLOW_DEV_USER=1) instead.
+  const devUserOptIn = import.meta.env.VITE_ALLOW_DEV_USER === "1";
   const canUseDevUser =
     host === "localhost" ||
     host === "127.0.0.1" ||
-    host.endsWith(".pages.dev") ||
+    (host.endsWith(".pages.dev") && devUserOptIn) ||
     (host === "kai.boostaisearch.ai" && !authRequired);
   if (!canUseDevUser) return null;
   // If the user has an existing dev-user id, reuse it (so reopening the

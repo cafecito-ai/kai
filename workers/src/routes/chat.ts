@@ -120,6 +120,17 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
   return handleChat(c.env, userId, body.conversationId, body.message, renderEnginePrompt(engineId, context), engineId);
 });
 
+/** Load recent conversation turns (incl. the just-saved user message) so the
+ *  model has coaching continuity — follow-ups like "why?" / "what next?" need
+ *  the prior turns, not just the latest message. */
+async function buildHistory(env: Env, conversationId: string, userId: string, fallbackMessage: string) {
+  const recent = await getConversationMessages(env.DB, { conversationId, userId, limit: 10 });
+  const msgs = (recent ?? [])
+    .filter((m): m is typeof m & { role: "user" | "assistant" } => m.role === "user" || m.role === "assistant")
+    .map((m) => ({ role: m.role, content: m.content }));
+  return msgs.length ? msgs : [{ role: "user" as const, content: fallbackMessage }];
+}
+
 async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
@@ -132,7 +143,8 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
     await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: safety.response ?? "", metadata: { safetyEventId: event?.id } });
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
-  const generated = await callClaudeDetailed(env, system, [{ role: "user", content: message }], { model: selectChatModel(env, engine, message), maxTokens: 700 });
+  const history = await buildHistory(env, conversation, userId, message);
+  const generated = await callClaudeDetailed(env, system, history, { model: selectChatModel(env, engine, message), maxTokens: 700 });
   const responseSource = generated.source === "anthropic" ? "model" : generated.source === "workers-ai" ? "workers-ai" : "fallback";
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: generated.text, metadata: { responseSource } });
   return Response.json({ conversationId: conversation, reply: generated.text, responseSource });
@@ -186,7 +198,8 @@ async function handleRoutedChat(
   // token/latency budget, and we record provenance so a hardcoded fallback is
   // never mislabeled "model".
   const chatOpts = { model: selectChatModel(env, decision, message), maxTokens: 700 };
-  const generated = await callClaudeDetailed(env, system, [{ role: "user", content: message }], chatOpts);
+  const history = await buildHistory(env, conversation, userId, message);
+  const generated = await callClaudeDetailed(env, system, history, chatOpts);
   let reply = generated.text;
   let source = generated.source;
 
@@ -196,7 +209,7 @@ async function handleRoutedChat(
     while (!passesBodyLanguageFilter(reply) && attempt < MAX_BODY_REGENERATIONS) {
       attempt += 1;
       const stricter = `${renderBodyPrompt(context)}\n\nIMPORTANT: A previous response was rejected by the post-generation filter for using forbidden body-language. Try again, focusing only on posture, mobility, recovery, and performance. Do not describe size, shape, or appearance.`;
-      const regen = await callClaudeDetailed(env, stricter, [{ role: "user", content: message }], chatOpts);
+      const regen = await callClaudeDetailed(env, stricter, history, chatOpts);
       reply = regen.text;
       source = regen.source;
     }

@@ -39,6 +39,7 @@ import { Groups } from "./pages/Groups";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
+import { RootGate } from "./components/RootGate";
 import { Onboarding } from "./pages/Onboarding";
 import { PreviewFlower } from "./pages/PreviewFlower";
 import { Vault } from "./pages/Vault";
@@ -58,7 +59,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
   const routes = (
       <Routes>
         <Route element={<AppShell />}>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={authEnabled ? <Landing /> : <RootGate />} />
           <Route
             path="/sign-in/*"
             element={

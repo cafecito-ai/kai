@@ -22,4 +22,21 @@ describe("chat workflow catalog", () => {
     expect(reply?.reply).toMatch(/signal, not a sentence/i);
     expect(reply?.reply).toMatch(/5% safe/i);
   });
+
+  it("keeps common teen-coach workflows deeper than a two-line canned reply", () => {
+    const prompts = [
+      "idk i just feel sad today",
+      "i have a huge test tomorrow and i cant focus",
+      "i feel ugly and awkward at school",
+      "my friends left me out of the group chat",
+      "i have no motivation and cant start",
+      "i keep overthinking everything",
+      "im hungry what should i make for lunc",
+    ];
+
+    for (const prompt of prompts) {
+      const reply = matchKaiWorkflow(prompt);
+      expect(reply?.reply.split("\n\n").length, prompt).toBeGreaterThanOrEqual(4);
+    }
+  });
 });

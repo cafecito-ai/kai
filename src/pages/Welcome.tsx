@@ -546,11 +546,13 @@ function buildBeats(): Beat[] {
     },
 
     // ── TOUR ─────────────────────────────────────────────────────
-    // 6. Daily score — KAI moves left, ring appears on right.
+    // 6. Daily score — KAI well to the LEFT, ring well to the RIGHT.
+    //    Wider separation than the previous ±80 so KAI's wisp body
+    //    doesn't overlap the emblem.
     {
       line: "Every day you open this, a score.",
-      kaiOffsetX: -80, kaiTopPct: 0.45, kaiScale: 0.9, gesture: "point",
-      visual: <ScoreVisual />, visualOffsetX: 80, visualTopPct: 0.40,
+      kaiOffsetX: -110, kaiTopPct: 0.45, kaiScale: 0.85, gesture: "point",
+      visual: <ScoreVisual />, visualOffsetX: 110, visualTopPct: 0.40,
       hint: "tap",
       magic: "summon-right",
     },
@@ -564,20 +566,23 @@ function buildBeats(): Beat[] {
       magic: "starBurst",
     },
 
-    // 8. Streak.
+    // 8. Streak — KAI well to the RIGHT, flame well to the LEFT. The
+    //    flame was hiding under KAI's body wisp at ±70; ±115 gives the
+    //    emblem its own space.
     {
       line: "Show up. Miss a day? Fresh start.",
-      kaiOffsetX: 70, kaiTopPct: 0.42, kaiScale: 0.95, gesture: "talk",
-      visual: <FlameVisual />, visualOffsetX: -70, visualTopPct: 0.42,
+      kaiOffsetX: 115, kaiTopPct: 0.42, kaiScale: 0.85, gesture: "talk",
+      visual: <FlameVisual />, visualOffsetX: -115, visualTopPct: 0.42,
       hint: "tap",
       magic: "summon-left",
     },
 
-    // 9. Goals — identity-based.
+    // 9. Goals — KAI well to the LEFT, goal card well to the RIGHT.
+    //    Wider separation matches the rest of the tour beats.
     {
       line: "Pick who you wanna be. I'll help you live it.",
-      kaiOffsetX: -70, kaiTopPct: 0.42, kaiScale: 0.9, gesture: "reach",
-      visual: <GoalVisual />, visualOffsetX: 70, visualTopPct: 0.42,
+      kaiOffsetX: -110, kaiTopPct: 0.42, kaiScale: 0.85, gesture: "reach",
+      visual: <GoalVisual />, visualOffsetX: 110, visualTopPct: 0.42,
       hint: "tap",
       magic: "summon-right",
     },

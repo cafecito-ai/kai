@@ -12,7 +12,7 @@
 
 import { ArrowLeft, ArrowUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
@@ -21,9 +21,16 @@ import { buildKaiClientContext } from "../lib/kai-client-context";
 import type { ChatMessage } from "../lib/types";
 
 export function Chat() {
+  const location = useLocation();
+  // Pre-fill the input from a tap-to-talk chip on Home. Cleared after
+  // we read it so subsequent renders don't repopulate.
+  const initialDraft =
+    typeof (location.state as { draft?: string } | null)?.draft === "string"
+      ? (location.state as { draft: string }).draft
+      : "";
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initialDraft);
   const [sending, setSending] = useState(false);
   const [hydrating, setHydrating] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);

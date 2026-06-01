@@ -27,9 +27,9 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { KaiGreeting } from "../components/KaiGreeting";
 import { MissionsCard } from "../components/MissionsCard";
 import { XpPill } from "../components/XpPill";
-import { KaiOrb } from "../components/KaiOrb";
 import { ScoreRing } from "../components/ScoreRing";
 import { shouldSurfaceVaultOnHome } from "../lib/local-vault";
 import { api } from "../lib/api";
@@ -263,49 +263,23 @@ export function Home() {
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
-      {/* Greeting + streak chip — minimal, ambient context. Sub-scores,
-          hydration, recent activity all moved to /progress so Home
-          stays focused on the 3 things that matter:
-            1) Today's Goals    2) Daily Score    3) Check-in / Talk to KAI */}
-      <header className="flex items-start justify-between gap-3 px-1">
-        <div>
-          <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
-            {greeting.eyebrow}
-          </p>
-          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">
-            {greeting.headline}.
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs">
-              <Flame size={12} className="text-accent-warm" />
-              <span className="font-medium text-text-primary">
-                {data.streak}-day streak
-              </span>
-            </span>
-            <XpPill />
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate("/chat")}
-          aria-label="Talk to KAI"
-          className="
-            flex items-center gap-2 rounded-full
-            border border-glass-border bg-surface
-            py-1.5 pl-1.5 pr-3
-            shadow-card
-            transition active:scale-95 hover:bg-surface-muted
-            focus-ring
-          "
-        >
-          <KaiOrb size={36} />
-          <span className="text-sm font-medium text-text-primary">
-            Talk to KAI
-          </span>
-        </button>
-      </header>
+      {/* KAI greets you the moment you open the app — character +
+          contextual line + tap-to-talk. This is the surface that makes
+          the user WANT to come back and talk to their best friend. */}
+      <KaiGreeting />
 
-      {/* 1. Daily Score — the hero metric */}
+      {/* Small ambient context row — streak + level pill */}
+      <div className="flex items-center justify-center gap-2 px-1">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs">
+          <Flame size={12} className="text-accent-warm" />
+          <span className="font-medium text-text-primary">
+            {data.streak}-day streak
+          </span>
+        </span>
+        <XpPill />
+      </div>
+
+      {/* Daily Score — hero metric */}
       <DailyScoreCard data={data} />
 
       {/* Level-up moment lands here when it fires — kept on Home
@@ -370,36 +344,8 @@ export function Home() {
         </button>
       )}
 
-      {/* 2. Today's Goals (3 AI-selected actions for today, Rawz/2) */}
+      {/* Today's Goals (3 AI-selected actions for today, Rawz/2) */}
       <MissionsCard />
-
-      {/* 3. Primary check-in CTA — the single biggest action on the page.
-          Bigger than the header's "Talk to KAI" pill so a teen who opened
-          the app knows what to do next. */}
-      <button
-        type="button"
-        onClick={() => navigate("/chat")}
-        className="
-          flex w-full items-center justify-between gap-3 rounded-glass
-          border border-glass-border bg-surface
-          px-5 py-4 shadow-card
-          transition active:scale-[0.99] hover:bg-surface-muted
-          focus-ring
-        "
-      >
-        <span className="flex items-center gap-3">
-          <KaiOrb size={44} />
-          <span className="text-left">
-            <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
-              check in
-            </span>
-            <span className="mt-0.5 block font-display text-lg font-semibold text-text-primary">
-              Talk to KAI
-            </span>
-          </span>
-        </span>
-        <ArrowUpRight size={18} className="text-text-secondary" aria-hidden="true" />
-      </button>
     </div>
   );
 }

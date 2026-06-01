@@ -28,6 +28,10 @@ export interface UserProfile {
   onboardingCompletedAt?: string | null;
   consentStatus?: "not_required" | "pending" | "complete";
   parentConsentAt?: string | null;
+  /** The user's first name — what KAI calls them in conversation.
+   *  Surfaced from users.display_name. May arrive nested under
+   *  profile.user.display_name; userStore.hydrate normalises both. */
+  displayName?: string | null;
 }
 
 export interface EngineEntry {

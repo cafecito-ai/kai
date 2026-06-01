@@ -162,17 +162,17 @@ export function Welcome() {
           </div>
         )}
 
-        {/* Visual element next to KAI — translate(-50%) on its own axis
-            centers it on its anchor point. The wrapper is sized to its
-            content, no extra flex needed. */}
+        {/* Visual element — full-width wrapper with flex justify-center
+            so the inner content is guaranteed centered. visualOffsetX
+            offsets horizontally from that centered anchor. This is
+            bulletproof centering — no math, no width tricks. */}
         {beat.visual && (
           <div
             key={`visual-${idx}`}
-            className="kai-visual-pop absolute z-[5]"
+            className="kai-visual-pop absolute inset-x-0 z-[5] flex justify-center"
             style={{
-              left: "50%",
               top: `${(beat.visualTopPct ?? 0.40) * 100}%`,
-              transform: `translate(calc(-50% + ${beat.visualOffsetX ?? 0}px), -50%)`,
+              transform: `translateX(${beat.visualOffsetX ?? 0}px) translateY(-50%)`,
             }}
           >
             {beat.visual}

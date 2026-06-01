@@ -583,10 +583,6 @@ function DeepTrackingCard({
       <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
         deeper tracking
       </p>
-      <h2 className="mt-1 font-display text-xl font-semibold leading-tight tracking-tight">
-        Everything that should not crowd Home
-      </h2>
-
       <div className="mt-4 grid gap-2">
         {modules.map((module) => (
           <Link

@@ -44,9 +44,13 @@ const MODEL_HIGH_STAKES = "claude-sonnet-4-6";
  *  the high-stakes tier. Greeting/fast turns don't reach here — they're served
  *  by the workflow fast-paths before any model call. */
 export function selectChatModel(env: Env, decision: EngineId | "kai" | "mental", message: string): string {
+  // Depth tiers use their own env override or the code default — NOT the generic
+  // ANTHROPIC_MODEL var, which is the *fast* default for lightweight callers and
+  // may point at an older/cheaper (or stale) model. Letting it leak into the
+  // depth path silently downgrades chat (and a dead id sends it to the fallback).
   if (isHighStakes(message)) return env.ANTHROPIC_MODEL_HIGH_STAKES || MODEL_HIGH_STAKES;
-  if (decision === "physical") return env.ANTHROPIC_MODEL_PHYSICAL || env.ANTHROPIC_MODEL || MODEL_DEPTH;
-  return env.ANTHROPIC_MODEL_MENTAL || env.ANTHROPIC_MODEL || MODEL_DEPTH;
+  if (decision === "physical") return env.ANTHROPIC_MODEL_PHYSICAL || MODEL_DEPTH;
+  return env.ANTHROPIC_MODEL_MENTAL || MODEL_DEPTH;
 }
 
 export { MODEL_FAST };

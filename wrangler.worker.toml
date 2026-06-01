@@ -29,7 +29,7 @@ APP_ENV = "production"
 EMAIL_FROM = "hello@kai.boostaisearch.ai"
 AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
 AI_VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf"
-ANTHROPIC_MODEL = "claude-3-5-haiku-20241022"
+ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 
 [[d1_databases]]
 binding = "DB"
@@ -60,7 +60,7 @@ APP_ENV = "staging"
 EMAIL_FROM = "hello@kai.boostaisearch.ai"
 AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
 AI_VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf"
-ANTHROPIC_MODEL = "claude-3-5-haiku-20241022"
+ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 
 [[env.staging.d1_databases]]
 binding = "DB"

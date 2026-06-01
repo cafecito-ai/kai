@@ -541,42 +541,44 @@ function buildBeats(): Beat[] {
     },
 
     // ── TOUR ─────────────────────────────────────────────────────
-    // 6. Daily score — KAI further left, ring further right. KAI
-    //    scales down to 0.75 so the body wisp doesn't reach the emblem.
+    // Layout pattern (per tester — matches the goals slide which is
+    // the gold standard):
+    //   Score   — KAI left, ring right    (goals-style)
+    //   Pillars — pillars centered above, KAI under  (vertical)
+    //   Streak  — flame LEFT, KAI right   (mirrored goals)
+    //   Goals   — KAI left, card right    (gold standard)
+
+    // 6. Daily score — KAI left, ring right.
     {
       lines: [
         "Keep track with your daily score.",
         "Fresh slate every morning.",
       ],
-      kaiOffsetX: -140, kaiTopPct: 0.45, kaiScale: 0.75, gesture: "point",
-      visual: <ScoreVisual />, visualOffsetX: 140, visualTopPct: 0.40,
+      kaiOffsetX: -140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "point",
+      visual: <ScoreVisual />, visualOffsetX: 110, visualTopPct: 0.42,
       hint: "tap",
       magic: "summon-right",
     },
 
-    // 7. Three pillars — KAI smaller and more centered so the body wisp
-    //    doesn't reach the text below.
+    // 7. Three pillars — pillars centered above KAI, KAI under.
     {
       line: "Three things feed it: how you feel, sleep, and move.",
-      kaiOffsetX: 0, kaiTopPct: 0.50, kaiScale: 0.70, gesture: "talk",
+      kaiOffsetX: 0, kaiTopPct: 0.55, kaiScale: 0.70, gesture: "talk",
       visual: <PillarsVisual />, visualOffsetX: 0, visualTopPct: 0.22,
       hint: "tap",
       magic: "starBurst",
     },
 
-    // 8. Streak — flame + "+1" pip placed ABOVE KAI (same layout that
-    //    works on the pillars slide) so the emblem has its own zone
-    //    and the "+1" pip is never tucked behind KAI's body.
+    // 8. Streak — flame LEFT, KAI RIGHT (mirror of goals).
     {
       line: "Show up every day. That's the goal.",
-      kaiOffsetX: 0, kaiTopPct: 0.55, kaiScale: 0.65, gesture: "point",
-      visual: <FlameVisual />, visualOffsetX: 0, visualTopPct: 0.20,
+      kaiOffsetX: 140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "point",
+      visual: <FlameVisual />, visualOffsetX: -110, visualTopPct: 0.42,
       hint: "tap",
       magic: "summon-left",
     },
 
-    // 9. Goals — KAI further left (per tester "little more left"), card
-    //    further right. KAI smaller so the wider goal card has room.
+    // 9. Goals — KAI left, goal card right (the gold-standard layout).
     {
       line: "Pick who you wanna be. I'll help you live it.",
       kaiOffsetX: -140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "reach",

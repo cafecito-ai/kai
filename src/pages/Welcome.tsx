@@ -1,30 +1,27 @@
-// /welcome — the cinematic intro to KAI.
+// /welcome — the magical intro to KAI.
 //
-// This is the moment that has to land: KAI swoops in, says hi, walks
-// you through what matters, and tells you they're here for you. It's a
-// short movie, not a tutorial. ~40 seconds end-to-end, auto-advances,
-// tap to skip ahead.
+// Inspired by Ticket to Read's character world — you step INTO a
+// place, the character greets you, walks you through their space.
+// No auto-advance. User taps to move through each beat at their pace.
 //
-// Each scene has:
-//   - a position (KAI floats to a different spot on the canvas)
-//   - a gesture (wave / point / reach / talk / idle)
-//   - a visual element that fades in alongside
-//   - a single line that the user reads while KAI gestures
+// Structure:
+//   1. Tagline screen     — "Stop waiting. Start becoming." Small KAI
+//                            visible in the distance. Tap KAI / anywhere
+//                            to meet them.
+//   2. KAI arrives        — flies in big, waves
+//   3-4. Introduction     — "Hi, I'm KAI." → "Your AI buddy."
+//   5. Welcome            — "Welcome to your space. Let me show you around."
+//   6-9. Tour             — score, pillars, streak, goals (KAI gestures
+//                            at each visual element)
+//   10. Handoff           — "Now let me get to know you a little."
+//                            Big explicit "Start" button → onboarding
 //
-// The character is one persistent instance — it MOVES between scenes
-// with smooth transforms, never remounts. Story flows continuous.
+// Background: a cosmic gradient + starfield + horizon glow so KAI feels
+// like they're floating in their own mindscape, not on a blank page.
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowRight,
-  Brain,
-  Flame,
-  Heart,
-  Moon,
-  Sparkles,
-  Target,
-} from "lucide-react";
+import { ArrowRight, Brain, Flame, Heart, Moon, Target } from "lucide-react";
 
 import { KaiCharacter } from "../components/KaiCharacter";
 import { ScoreRing } from "../components/ScoreRing";
@@ -35,32 +32,30 @@ const STORAGE_KEY = "kai_walkthrough_seen_v1";
 type Gesture = "wave" | "point" | "reach" | "idle" | "talk";
 
 type Beat = {
-  /** Line KAI says on this beat. Multiple beats can share a scene. */
-  line: string;
-  /** Where the character sits on the canvas this beat. Pixels of
-   *  horizontal offset from center; positive = right. */
+  /** What KAI says (or what shows on screen — beat 1 is the tagline). */
+  line?: string;
+  /** Larger title shown above the line. Used for the opening tagline. */
+  title?: string;
+  /** Where KAI is on the canvas this beat (px offset from center). */
   kaiOffsetX: number;
-  /** Vertical position as a % of canvas. 0.4 = upper-middle, 0.5 = middle. */
+  /** Vertical position as % of canvas. */
   kaiTopPct: number;
-  /** Character scale. 1.0 = default, 1.15 = hero, 0.85 = small. */
+  /** Character scale. */
   kaiScale: number;
-  /** Gesture for KAI's hands during this beat. */
+  /** KAI's hand gesture this beat. */
   gesture: Gesture;
-  /** Optional visual element that fades in next to KAI. */
+  /** Optional small visual element next to KAI. */
   visual?: React.ReactNode;
-  /** Horizontal offset for the visual element (px from center). */
   visualOffsetX?: number;
-  /** Vertical position for the visual element (% of canvas). */
   visualTopPct?: number;
-  /** How long this beat stays on screen before auto-advancing (ms). */
-  holdMs: number;
+  /** Hint shown at the bottom of the screen on this beat. */
+  hint?: string;
 };
 
 export function Welcome() {
   const navigate = useNavigate();
   const { onboardingCompletedAt } = useUserStore();
   const [idx, setIdx] = useState(0);
-  const [showFinishCta, setShowFinishCta] = useState(false);
 
   useEffect(() => {
     if (onboardingCompletedAt) {
@@ -82,31 +77,11 @@ export function Welcome() {
   }
 
   function advance() {
-    if (!isLast) {
-      setIdx((i) => i + 1);
-    } else {
-      // On the final beat, the "Let's go" button takes over — we don't
-      // auto-finish from a tap-on-canvas because the user should commit
-      // by pressing the explicit CTA.
-      setShowFinishCta(true);
-    }
+    if (!isLast) setIdx((i) => i + 1);
+    else finish();
   }
 
-  // Auto-advance through beats. Final beat: hold, then show the
-  // explicit "Let's go" CTA instead of auto-navigating.
-  useEffect(() => {
-    if (!beat) return;
-    const t = window.setTimeout(() => {
-      if (isLast) {
-        setShowFinishCta(true);
-      } else {
-        setIdx((i) => i + 1);
-      }
-    }, beat.holdMs);
-    return () => window.clearTimeout(t);
-  }, [idx, beat, isLast]);
-
-  // Touch swipe — fast forward through scenes.
+  // Touch swipe — fast forward.
   const touchStart = { x: 0 };
   function onTouchStart(e: React.TouchEvent) {
     touchStart.x = e.touches[0].clientX;
@@ -123,10 +98,14 @@ export function Welcome() {
         relative mx-auto flex h-[100vh] w-full max-w-md flex-col px-5 pt-3 pb-6
         sm:max-w-lg cursor-pointer select-none overflow-hidden
       "
-      onClick={advance}
+      onClick={isLast ? undefined : advance}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      {/* THE WORLD — cosmic background. Rendered behind everything,
+          gives KAI a place to exist. */}
+      <CosmicWorld />
+
       {/* Header: progress dots + Skip */}
       <header className="relative z-20 flex items-center justify-between pb-3">
         <div className="flex items-center gap-1.5">
@@ -136,7 +115,7 @@ export function Welcome() {
               aria-hidden="true"
               className={`
                 h-1.5 rounded-full transition-all duration-500
-                ${i === idx ? "w-5 bg-text-primary" : i < idx ? "w-1.5 bg-text-primary/60" : "w-1.5 bg-surface-muted"}
+                ${i === idx ? "w-5 bg-text-primary" : i < idx ? "w-1.5 bg-text-primary/60" : "w-1.5 bg-surface-muted/70"}
               `}
             />
           ))}
@@ -156,21 +135,31 @@ export function Welcome() {
         </button>
       </header>
 
-      {/* THE STAGE — canvas where KAI flies around. Everything inside is
-          absolutely positioned and transitions between beats. */}
+      {/* THE STAGE — where KAI flies around */}
       <div className="relative flex-1">
-        {/* Floating sparkles drift the whole flow */}
-        <Sparkles6 />
+        {/* Tagline title (beat 1 only) — big, slow-fade-in */}
+        {beat.title && (
+          <div
+            key={`title-${idx}`}
+            className="
+              absolute inset-x-0 top-[15%] flex flex-col items-center px-4 text-center
+              kai-title-pop
+            "
+          >
+            <h1 className="whitespace-pre-line font-display text-5xl font-semibold leading-[1.05] tracking-tight text-text-primary sm:text-6xl">
+              {beat.title}
+            </h1>
+          </div>
+        )}
 
-        {/* The visual element for the current beat — appears next to
-            KAI and fades when scene changes. */}
+        {/* Visual element next to KAI */}
         {beat.visual && (
           <div
             key={`visual-${idx}`}
-            className="kai-visual-pop absolute"
+            className="kai-visual-pop absolute z-[5]"
             style={{
               left: "50%",
-              top: `${(beat.visualTopPct ?? 0.35) * 100}%`,
+              top: `${(beat.visualTopPct ?? 0.40) * 100}%`,
               transform: `translate(calc(-50% + ${beat.visualOffsetX ?? 0}px), -50%)`,
             }}
           >
@@ -178,44 +167,58 @@ export function Welcome() {
           </div>
         )}
 
-        {/* KAI — persistent across all beats. Position + scale animate
-            smoothly via CSS transitions. The character itself never
-            unmounts. */}
+        {/* KAI — persistent across all beats. The character translates
+            and scales smoothly between beats without remounting. */}
         <div
           className="absolute z-10 kai-fly-in"
           style={{
             left: "50%",
             top: `${beat.kaiTopPct * 100}%`,
             transform: `translate(calc(-50% + ${beat.kaiOffsetX}px), -50%) scale(${beat.kaiScale})`,
-            transition: "transform 1500ms cubic-bezier(0.16, 1, 0.3, 1), top 1500ms cubic-bezier(0.16, 1, 0.3, 1)",
+            transition: "transform 1300ms cubic-bezier(0.16, 1, 0.3, 1), top 1300ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          {/* Halo behind KAI */}
+          {/* Halo */}
           <div
             className="
               pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2
-              h-[140%] w-[140%] rounded-full bg-accent/25 blur-3xl
+              h-[140%] w-[140%] rounded-full bg-accent/30 blur-3xl
               kai-halo-pulse
             "
             aria-hidden="true"
           />
           <KaiCharacter size={220} face speaking gesture={beat.gesture} />
+
+          {/* On beat 1 only — a "tap me" pulse ring around KAI so
+              the user knows to interact. */}
+          {idx === 0 && (
+            <div
+              className="
+                pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                h-[100%] w-[100%] rounded-full border-2 border-accent/70
+                kai-tap-ring
+              "
+              aria-hidden="true"
+            />
+          )}
         </div>
 
-        {/* The line — pinned to the bottom third, fade-pops per beat */}
-        <div className="absolute inset-x-0 bottom-[18%] flex justify-center px-2">
-          <p
-            key={`line-${idx}`}
-            className="kai-line-pop max-w-xs text-center font-display text-3xl font-medium leading-snug tracking-tight text-text-primary sm:max-w-md sm:text-4xl"
-            aria-live="polite"
-          >
-            {beat.line}
-          </p>
-        </div>
+        {/* Spoken line — pinned to the bottom third */}
+        {beat.line && (
+          <div className="absolute inset-x-0 bottom-[24%] flex justify-center px-4">
+            <p
+              key={`line-${idx}`}
+              className="kai-line-pop max-w-xs text-center font-display text-3xl font-medium leading-snug tracking-tight text-text-primary sm:max-w-md sm:text-4xl"
+              aria-live="polite"
+            >
+              {beat.line}
+            </p>
+          </div>
+        )}
 
-        {/* Final-beat CTA — explicit commitment to start onboarding */}
-        {showFinishCta && (
-          <div className="absolute inset-x-0 bottom-6 flex justify-center px-5 kai-line-pop">
+        {/* Last beat — explicit Start CTA */}
+        {isLast && (
+          <div className="absolute inset-x-0 bottom-8 flex justify-center px-5 kai-line-pop">
             <button
               type="button"
               onClick={(e) => {
@@ -228,167 +231,234 @@ export function Welcome() {
                 shadow-card transition active:scale-[0.99] focus-ring
               "
             >
-              Let's go
+              Start
               <ArrowRight size={18} aria-hidden="true" />
             </button>
           </div>
         )}
 
-        {/* First-beat hint */}
-        {idx === 0 && !showFinishCta && (
+        {/* Tap hint — always show, fades after a few seconds */}
+        {!isLast && beat.hint && (
           <p
+            key={`hint-${idx}`}
             className="
-              absolute bottom-4 left-1/2 -translate-x-1/2
+              absolute bottom-6 left-1/2 -translate-x-1/2
               font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted
-              animate-pulse kai-tap-hint
+              kai-hint-pulse
             "
             aria-hidden="true"
           >
-            tap anywhere to advance
+            {beat.hint}
           </p>
         )}
       </div>
 
       <style>{`
-        /* KAI flies in from above on first render — a real entrance,
-           not a fade. Only happens once because the character never
-           remounts. */
+        /* KAI fly-in on first render */
         @keyframes kai-fly-in {
           0%   { opacity: 0; transform: translate(calc(-50% + 60px), calc(-50% - 200px)) scale(0.5) rotate(-12deg); filter: blur(8px); }
           60%  { opacity: 1; filter: blur(0); }
-          100% { /* transform managed by parent style — handoff to live position */ }
+          100% { /* handoff to live position via inline style */ }
         }
-        .kai-fly-in {
-          animation: kai-fly-in 1600ms cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
+        .kai-fly-in { animation: kai-fly-in 1600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
         @keyframes kai-halo-pulse {
           0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.7; }
-          50%      { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+          50%      { transform: translate(-50%, -50%) scale(1.18); opacity: 1; }
         }
-        .kai-halo-pulse {
-          animation: kai-halo-pulse 2600ms ease-in-out infinite;
+        .kai-halo-pulse { animation: kai-halo-pulse 2600ms ease-in-out infinite; }
+
+        /* Pulsing ring on beat 1 — "tap me" affordance */
+        @keyframes kai-tap-ring {
+          0%   { transform: translate(-50%, -50%) scale(0.95); opacity: 0.9; }
+          100% { transform: translate(-50%, -50%) scale(1.35); opacity: 0; }
         }
+        .kai-tap-ring { animation: kai-tap-ring 1800ms ease-out infinite; }
+
+        /* Title pop — bigger, slower than line pop because it's the
+           tagline moment. */
+        @keyframes kai-title-pop {
+          0%   { transform: translateY(20px) scale(0.95); opacity: 0; filter: blur(8px); }
+          100% { transform: translateY(0)    scale(1);    opacity: 1; filter: blur(0); }
+        }
+        .kai-title-pop { animation: kai-title-pop 1100ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
         @keyframes kai-line-pop {
           0%   { transform: translateY(14px) scale(0.96); opacity: 0; filter: blur(6px); }
           100% { transform: translateY(0)    scale(1);    opacity: 1; filter: blur(0); }
         }
-        .kai-line-pop {
-          animation: kai-line-pop 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
+        .kai-line-pop { animation: kai-line-pop 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
         @keyframes kai-visual-pop {
           0%   { transform: translate(calc(-50% + var(--vx, 0)), -50%) scale(0.7); opacity: 0; filter: blur(6px); }
           100% { transform: translate(calc(-50% + var(--vx, 0)), -50%) scale(1);   opacity: 1; filter: blur(0); }
         }
-        .kai-visual-pop {
-          animation: kai-visual-pop 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
+        .kai-visual-pop { animation: kai-visual-pop 800ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-        @keyframes kai-tap-hint {
-          0%, 70%  { opacity: 0.6; }
-          100%     { opacity: 0; }
+        /* Hint pulses gently */
+        @keyframes kai-hint-pulse {
+          0%, 100% { opacity: 0.45; }
+          50%      { opacity: 0.8;  }
         }
-        .kai-tap-hint {
-          animation: kai-tap-hint 5500ms ease-out forwards;
-        }
-
-        @keyframes kai-sparkle-rise {
-          0%   { transform: translateY(0)     scale(0.6); opacity: 0; }
-          15%  { opacity: 1; }
-          85%  { opacity: 1; }
-          100% { transform: translateY(-100px) scale(1.2); opacity: 0; }
-        }
+        .kai-hint-pulse { animation: kai-hint-pulse 1800ms ease-in-out infinite; }
       `}</style>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// The story — beat by beat
+// CosmicWorld — background environment so KAI doesn't float in a void
+// ─────────────────────────────────────────────────────────────────────
+
+function CosmicWorld() {
+  // 28 small star dots scattered across the canvas with varied opacity
+  // and twinkle speeds. Deterministic positions via a seed-like sequence
+  // so the layout doesn't shift between renders.
+  const stars = useMemo(() => {
+    const result: { x: number; y: number; size: number; opacity: number; delay: number }[] = [];
+    for (let i = 0; i < 28; i += 1) {
+      const s = (i * 7919) % 100;
+      const t = (i * 4253) % 100;
+      result.push({
+        x: s,
+        y: t,
+        size: 1.5 + ((i * 31) % 4) * 0.6,
+        opacity: 0.3 + ((i * 13) % 7) * 0.08,
+        delay: ((i * 17) % 30) / 10,
+      });
+    }
+    return result;
+  }, []);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {/* Deep cosmic gradient */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 30%, rgba(123, 110, 246, 0.18) 0%, rgba(10, 10, 15, 0) 60%), linear-gradient(180deg, #0A0A0F 0%, #13131A 60%, #1A1426 100%)",
+        }}
+      />
+      {/* Horizon glow at bottom */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-1/3"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(123, 110, 246, 0) 0%, rgba(123, 110, 246, 0.08) 60%, rgba(240, 168, 104, 0.06) 100%)",
+        }}
+      />
+      {/* Stars — small twinkling dots scattered across the field */}
+      {stars.map((star, i) => (
+        <span
+          key={i}
+          className="absolute rounded-full bg-text-primary kai-star-twinkle"
+          style={{
+            left: `${star.x}%`,
+            top: `${star.y}%`,
+            width: star.size,
+            height: star.size,
+            opacity: star.opacity,
+            animationDelay: `${star.delay}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes kai-star-twinkle {
+          0%, 100% { opacity: var(--o, 0.5); transform: scale(1); }
+          50%      { opacity: 1;             transform: scale(1.4); }
+        }
+        .kai-star-twinkle { animation: kai-star-twinkle 4000ms ease-in-out infinite; }
+      `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// The story — beat by beat. All tap-to-advance.
 // ─────────────────────────────────────────────────────────────────────
 
 function buildBeats(): Beat[] {
   return [
-    // ── ACT 1 — The arrival + the tagline ─────────────────────────
-    { line: "Stop waiting.",        kaiOffsetX: 0,   kaiTopPct: 0.38, kaiScale: 1.15, gesture: "wave",  holdMs: 2400 },
-    { line: "Start becoming.",      kaiOffsetX: 0,   kaiTopPct: 0.38, kaiScale: 1.15, gesture: "wave",  holdMs: 2600 },
-    { line: "I'm KAI.",             kaiOffsetX: 0,   kaiTopPct: 0.40, kaiScale: 1.10, gesture: "talk",  holdMs: 2200 },
-    { line: "We're doing this together.", kaiOffsetX: 0, kaiTopPct: 0.40, kaiScale: 1.10, gesture: "reach", holdMs: 2800 },
-
-    // ── ACT 2 — The score ─────────────────────────────────────────
+    // 1. Tagline screen — KAI small in the distance, big tagline up top.
+    //    User taps to "meet" KAI.
     {
-      line: "Every day, you get a score.",
-      kaiOffsetX: -80, kaiTopPct: 0.42, kaiScale: 0.9, gesture: "point",
-      visual: <ScoreVisual />, visualOffsetX: 80, visualTopPct: 0.38,
-      holdMs: 2800,
-    },
-    {
-      line: "How today's going. Resets in the morning.",
-      kaiOffsetX: -80, kaiTopPct: 0.42, kaiScale: 0.9, gesture: "point",
-      visual: <ScoreVisual />, visualOffsetX: 80, visualTopPct: 0.38,
-      holdMs: 3200,
+      title: "Stop waiting.\nStart becoming.",
+      kaiOffsetX: 0, kaiTopPct: 0.65, kaiScale: 0.75, gesture: "idle",
+      hint: "tap to meet KAI",
     },
 
-    // ── ACT 3 — The pillars ───────────────────────────────────────
+    // 2. KAI flies into the foreground and waves.
     {
-      line: "Three things feed it.",
-      kaiOffsetX: 0, kaiTopPct: 0.55, kaiScale: 0.85, gesture: "talk",
-      visual: <PillarsVisual />, visualOffsetX: 0, visualTopPct: 0.25,
-      holdMs: 2400,
-    },
-    {
-      line: "How you feel, sleep, and move.",
-      kaiOffsetX: 0, kaiTopPct: 0.55, kaiScale: 0.85, gesture: "talk",
-      visual: <PillarsVisual />, visualOffsetX: 0, visualTopPct: 0.25,
-      holdMs: 3000,
+      line: "Hi, I'm KAI.",
+      kaiOffsetX: 0, kaiTopPct: 0.42, kaiScale: 1.15, gesture: "wave",
+      hint: "tap to continue",
     },
 
-    // ── ACT 4 — Show up. No drama. ───────────────────────────────
+    // 3. Sets the role — clear, teen-friendly framing.
     {
-      line: "Show up.",
-      kaiOffsetX: 70, kaiTopPct: 0.40, kaiScale: 0.95, gesture: "talk",
-      visual: <FlameVisual />, visualOffsetX: -70, visualTopPct: 0.40,
-      holdMs: 1800,
-    },
-    {
-      line: "That's the whole thing.",
-      kaiOffsetX: 70, kaiTopPct: 0.40, kaiScale: 0.95, gesture: "talk",
-      visual: <FlameVisual />, visualOffsetX: -70, visualTopPct: 0.40,
-      holdMs: 2200,
-    },
-    {
-      line: "Miss a day? Fresh start, no drama.",
-      kaiOffsetX: 70, kaiTopPct: 0.40, kaiScale: 0.95, gesture: "reach",
-      visual: <FlameVisual />, visualOffsetX: -70, visualTopPct: 0.40,
-      holdMs: 3000,
+      line: "Your AI buddy.",
+      kaiOffsetX: 0, kaiTopPct: 0.42, kaiScale: 1.10, gesture: "talk",
+      hint: "tap to continue",
     },
 
-    // ── ACT 5 — Become someone ──────────────────────────────────
+    // 4. Welcome them in.
     {
-      line: "Pick who you wanna be.",
-      kaiOffsetX: -70, kaiTopPct: 0.42, kaiScale: 0.9, gesture: "point",
-      visual: <GoalVisual />, visualOffsetX: 70, visualTopPct: 0.42,
-      holdMs: 2800,
+      line: "Welcome to your space.",
+      kaiOffsetX: 0, kaiTopPct: 0.42, kaiScale: 1.10, gesture: "reach",
+      hint: "tap to continue",
     },
+
+    // 5. Transition to the tour.
     {
-      line: "I'll help you live it.",
+      line: "Let me show you around.",
+      kaiOffsetX: 0, kaiTopPct: 0.42, kaiScale: 1.05, gesture: "point",
+      hint: "tap to start the tour",
+    },
+
+    // ── TOUR ─────────────────────────────────────────────────────
+    // 6. Daily score — KAI moves left, ring appears on right.
+    {
+      line: "Every day you open this, a score.",
+      kaiOffsetX: -80, kaiTopPct: 0.45, kaiScale: 0.9, gesture: "point",
+      visual: <ScoreVisual />, visualOffsetX: 80, visualTopPct: 0.40,
+      hint: "tap",
+    },
+
+    // 7. Three pillars.
+    {
+      line: "Three things feed it: how you feel, sleep, and move.",
+      kaiOffsetX: 0, kaiTopPct: 0.60, kaiScale: 0.85, gesture: "talk",
+      visual: <PillarsVisual />, visualOffsetX: 0, visualTopPct: 0.28,
+      hint: "tap",
+    },
+
+    // 8. Streak.
+    {
+      line: "Show up. Miss a day? Fresh start.",
+      kaiOffsetX: 70, kaiTopPct: 0.42, kaiScale: 0.95, gesture: "talk",
+      visual: <FlameVisual />, visualOffsetX: -70, visualTopPct: 0.42,
+      hint: "tap",
+    },
+
+    // 9. Goals — identity-based.
+    {
+      line: "Pick who you wanna be. I'll help you live it.",
       kaiOffsetX: -70, kaiTopPct: 0.42, kaiScale: 0.9, gesture: "reach",
       visual: <GoalVisual />, visualOffsetX: 70, visualTopPct: 0.42,
-      holdMs: 2800,
+      hint: "tap",
     },
 
-    // ── ACT 6 — Climax: this is our thing ───────────────────────
-    { line: "This is our thing now.",  kaiOffsetX: 0, kaiTopPct: 0.40, kaiScale: 1.15, gesture: "reach", holdMs: 2800 },
-    { line: "I'm here for you.",       kaiOffsetX: 0, kaiTopPct: 0.40, kaiScale: 1.20, gesture: "reach", holdMs: 2800 },
-    { line: "Whenever it gets loud.",  kaiOffsetX: 0, kaiTopPct: 0.40, kaiScale: 1.20, gesture: "reach", holdMs: 2800 },
-    { line: "Let's go.",               kaiOffsetX: 0, kaiTopPct: 0.40, kaiScale: 1.20, gesture: "wave",  holdMs: 3000 },
+    // 10. Handoff — big "Start" CTA appears.
+    {
+      line: "Now let me get to know you a little.",
+      kaiOffsetX: 0, kaiTopPct: 0.38, kaiScale: 1.20, gesture: "reach",
+    },
   ];
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Visual elements (small floating cards / chips KAI gestures toward)
+// Tour visuals
 // ─────────────────────────────────────────────────────────────────────
 
 function ScoreVisual() {
@@ -449,42 +519,3 @@ function Pillar({ icon: Icon, tint }: { icon: typeof Brain; tint: string }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────
-// Sparkles
-// ─────────────────────────────────────────────────────────────────────
-
-function Sparkles6() {
-  const sparks = [
-    { left: "10%", delay: "0s",   size: 5 },
-    { left: "28%", delay: "1.2s", size: 4 },
-    { left: "44%", delay: "2.4s", size: 6 },
-    { left: "60%", delay: "0.6s", size: 4 },
-    { left: "78%", delay: "3.0s", size: 5 },
-    { left: "92%", delay: "1.8s", size: 4 },
-  ];
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-      aria-hidden="true"
-    >
-      {sparks.map((s, i) => (
-        <span
-          key={i}
-          className="absolute rounded-full bg-accent/60 shadow-[0_0_8px_rgba(123,110,246,0.7)]"
-          style={{
-            left: s.left,
-            top: "75%",
-            width: s.size,
-            height: s.size,
-            animation: `kai-sparkle-rise 4500ms ease-in-out ${s.delay} infinite`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// Used inline above when generating the Sparkle particles' Sparkles
-// icon for the final "magic" beat-on-tap moment.
-export const _decoSparkles = Sparkles;

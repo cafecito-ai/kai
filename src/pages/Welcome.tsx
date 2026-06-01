@@ -150,7 +150,7 @@ function buildScenes(): Scene[] {
   return [
     {
       id: "meet",
-      orbSize: 140,
+      orbSize: 280,
       // First impression. Owned entirely by the orb + voice. No visual
       // underneath — let KAI have the room. Opens with the tagline so
       // the first thing the user hears is the mission.
@@ -163,7 +163,7 @@ function buildScenes(): Scene[] {
     },
     {
       id: "score",
-      orbSize: 96,
+      orbSize: 200,
       visual: (
         <div className="relative">
           <ScoreRing value={72} size={120} stroke={9} />
@@ -181,7 +181,7 @@ function buildScenes(): Scene[] {
     },
     {
       id: "inputs",
-      orbSize: 96,
+      orbSize: 200,
       visual: (
         <div className="flex items-center gap-3">
           <PillarChip icon={Brain} label="Mind" tint="bg-accent-cool-soft text-accent-cool" />
@@ -196,7 +196,7 @@ function buildScenes(): Scene[] {
     },
     {
       id: "streak",
-      orbSize: 96,
+      orbSize: 200,
       visual: (
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-accent-warm/20 blur-2xl" aria-hidden="true" />
@@ -212,7 +212,7 @@ function buildScenes(): Scene[] {
     },
     {
       id: "goals",
-      orbSize: 96,
+      orbSize: 200,
       visual: (
         <div className="w-full max-w-xs space-y-1.5">
           <GoalCard icon={Target} text="Someone who moves daily" />
@@ -226,7 +226,7 @@ function buildScenes(): Scene[] {
     },
     {
       id: "go",
-      orbSize: 130,
+      orbSize: 260,
       lines: [
         "Alright.",
         "I'm gonna ask you a few quick things so I know who you are.",

@@ -17,50 +17,43 @@
 import { Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { KaiOrb } from "./KaiOrb";
+import { KaiCharacter } from "./KaiCharacter";
 
 type KaiSpeaksProps = {
-  /** The lines KAI says, in order. Each line gets its own typewriter pass. */
+  /** The lines KAI says, in order. Each line gets a fade-in pop. */
   lines: string[];
-  /** Fires after the last line has fully typed AND been seen briefly. */
+  /** Fires after the last line has finished speaking + a short pause. */
   onDone?: () => void;
-  /** Orb size during the speech. Default 120 — large enough to feel "present." */
+  /** Total character height (head + body) in pixels. Default 240. */
   orbSize?: number;
   /** Subtle "tap to continue" prompt after all lines are done. Default true. */
   showTapPrompt?: boolean;
-  /** Entrance animation on the orb (slide-up + scale). Default true. */
+  /** Entrance animation on the character (slide-up + scale). Default true. */
   animateEntrance?: boolean;
-  /** Milliseconds per character. Default 85 — easy reading-along pace
-   *  for younger users. Override to speed up specific scenes. */
-  charsPerMs?: number;
-  /** Milliseconds between lines (after punctuation pause). Default 800. */
-  pauseBetweenLines?: number;
+  /** How long each line stays on screen before the next one fades in.
+   *  Default scales with line length — roughly the time KAI needs to
+   *  say it out loud (~280ms/word). Override per scene if needed. */
+  msPerLine?: (line: string) => number;
 };
 
-// Punctuation gives speech rhythm — sentences land, commas breathe.
-const PUNCT_PAUSE_MS: Record<string, number> = {
-  ".": 320,
-  "!": 320,
-  "?": 320,
-  ",": 160,
-  ";": 200,
-  ":": 200,
-  "—": 220,
-};
+/** Default: roughly enough time for the device voice to finish speaking.
+ *  Tuned so a short line lingers ~1.6s and a long line ~3.5s. */
+function defaultMsPerLine(line: string): number {
+  const words = line.trim().split(/\s+/).length;
+  return Math.max(1400, words * 280 + 600);
+}
 
 const VOICE_PREF_KEY = "kai_voice_enabled_v1";
 
 export function KaiSpeaks({
   lines,
   onDone,
-  orbSize = 120,
+  orbSize = 240,
   showTapPrompt = true,
   animateEntrance = true,
-  charsPerMs = 85,
-  pauseBetweenLines = 800,
+  msPerLine = defaultMsPerLine,
 }: KaiSpeaksProps) {
   const [lineIdx, setLineIdx] = useState(0);
-  const [charIdx, setCharIdx] = useState(0);
   const [done, setDone] = useState(false);
   const finishedRef = useRef(false);
 
@@ -84,70 +77,45 @@ export function KaiSpeaks({
   }, [voiceOn]);
 
   const currentLine = lines[lineIdx] ?? "";
-  const currentLineDone = charIdx >= currentLine.length;
   const isLastLine = lineIdx >= lines.length - 1;
 
-  // Speak the current line aloud the moment we start typing it.
+  // Speak the current line aloud the moment it appears, then advance
+  // after a duration scaled to the line length (roughly how long the
+  // device voice takes to read it).
   useEffect(() => {
-    if (!voiceOn) return;
-    if (charIdx !== 0) return;
     if (!currentLine) return;
-    speakLine(currentLine);
+    if (voiceOn) speakLine(currentLine);
+    const hold = msPerLine(currentLine);
+    const t = window.setTimeout(() => {
+      if (isLastLine) {
+        setDone(true);
+      } else {
+        setLineIdx((i) => i + 1);
+      }
+    }, hold);
     return () => {
-      // Stop any in-flight speech if the component re-keys or unmounts.
+      window.clearTimeout(t);
       try {
         window.speechSynthesis?.cancel();
       } catch {
         /* ignore */
       }
     };
-  }, [lineIdx, currentLine, voiceOn, charIdx]);
-
-  // Typewriter with punctuation pauses.
-  useEffect(() => {
-    if (currentLineDone) return;
-    const nextChar = currentLine[charIdx];
-    const punctPause = PUNCT_PAUSE_MS[nextChar] ?? 0;
-    const delay = charsPerMs + punctPause;
-    const t = window.setTimeout(() => {
-      setCharIdx((c) => c + 1);
-    }, delay);
-    return () => window.clearTimeout(t);
-  }, [charIdx, currentLine, currentLineDone, charsPerMs]);
-
-  // When a line completes, after the pause, advance to the next one.
-  useEffect(() => {
-    if (!currentLineDone) return;
-    if (isLastLine) {
-      const t = window.setTimeout(() => setDone(true), 300);
-      return () => window.clearTimeout(t);
-    }
-    const t = window.setTimeout(() => {
-      setLineIdx((i) => i + 1);
-      setCharIdx(0);
-    }, pauseBetweenLines);
-    return () => window.clearTimeout(t);
-  }, [currentLineDone, isLastLine, pauseBetweenLines]);
+  }, [lineIdx, currentLine, voiceOn, isLastLine, msPerLine]);
 
   // Tap to skip / advance.
   function handleTap() {
-    if (!currentLineDone) {
-      // Skip typing — jump to full line.
-      setCharIdx(currentLine.length);
-      return;
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* ignore */
     }
     if (!isLastLine) {
       setLineIdx((i) => i + 1);
-      setCharIdx(0);
       return;
     }
     if (!finishedRef.current) {
       finishedRef.current = true;
-      try {
-        window.speechSynthesis?.cancel();
-      } catch {
-        /* ignore */
-      }
       onDone?.();
     }
   }
@@ -166,8 +134,8 @@ export function KaiSpeaks({
     });
   }
 
-  // Halo pulses while a line is actively being typed (i.e. KAI is "speaking").
-  const speaking = !currentLineDone;
+  // KAI is "speaking" the whole time the line is on screen.
+  const speaking = true;
 
   return (
     <div
@@ -182,68 +150,46 @@ export function KaiSpeaks({
       }}
       className="relative flex w-full cursor-pointer select-none flex-col items-center text-center focus-ring"
     >
-      {/* Voice toggle — top-right corner, doesn't trigger tap-to-advance */}
+      {/* Voice toggle — top-right, doesn't trigger tap-to-advance */}
       <button
         type="button"
         onClick={toggleVoice}
         aria-label={voiceOn ? "Mute KAI's voice" : "Unmute KAI's voice"}
         className="
-          absolute right-0 top-0 inline-flex h-9 w-9 items-center justify-center
+          absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center
           rounded-full text-text-secondary
-          transition hover:bg-surface-muted focus-ring
+          transition hover:bg-surface-muted focus-ring z-10
         "
       >
-        {voiceOn ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
+        {voiceOn ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
       </button>
 
-      {/* The orb, surrounded by a pulsing halo while speaking */}
+      {/* The character — orb head + wisp body + hand orbs. Halo glow
+          behind it pulses while speaking. */}
       <div
-        className={`relative ${animateEntrance ? "kai-orb-enter" : ""}`}
-        style={{ width: orbSize, height: orbSize }}
+        className={`relative ${animateEntrance ? "kai-character-enter" : ""}`}
       >
         <div
-          className={`
-            pointer-events-none absolute inset-[-22%] rounded-full
-            bg-accent/30 blur-2xl transition-opacity duration-500
-            ${speaking ? "opacity-90 kai-halo-pulse" : "opacity-30"}
-          `}
+          className="
+            pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2
+            h-[120%] w-[120%] rounded-full bg-accent/25 blur-3xl
+            kai-halo-pulse
+          "
           aria-hidden="true"
         />
-        <div
-          className={speaking ? "kai-orb-speak" : ""}
-          style={{ width: orbSize, height: orbSize }}
-        >
-          <KaiOrb size={orbSize} face />
-        </div>
+        <KaiCharacter size={orbSize} face speaking={speaking} />
       </div>
 
-      {/* Spoken text — typewriter area */}
-      <div className="mt-7 min-h-[8rem] w-full max-w-md px-4">
+      {/* Spoken text — full line fade-pops in. No reading-along.
+          Keyed on line index so each new line replays the animation. */}
+      <div className="mt-6 min-h-[5rem] w-full max-w-md px-4">
         <p
-          className="font-display text-2xl font-medium leading-snug tracking-tight text-text-primary sm:text-3xl"
+          key={lineIdx}
+          className="kai-line-pop font-display text-3xl font-medium leading-snug tracking-tight text-text-primary sm:text-4xl"
           aria-live="polite"
         >
-          {currentLine.slice(0, charIdx)}
-          {!currentLineDone && (
-            <span
-              className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[2px] bg-text-primary/60 animate-pulse"
-              aria-hidden="true"
-            />
-          )}
+          {currentLine}
         </p>
-        {lineIdx > 0 && (
-          <div className="mt-3 space-y-1.5">
-            {lines.slice(Math.max(0, lineIdx - 2), lineIdx).map((l, i) => (
-              <p
-                key={`${i}-${l}`}
-                className="text-sm leading-snug text-text-muted"
-                aria-hidden="true"
-              >
-                {l}
-              </p>
-            ))}
-          </div>
-        )}
       </div>
 
       {showTapPrompt && done && (
@@ -256,27 +202,30 @@ export function KaiSpeaks({
       )}
 
       <style>{`
-        @keyframes kai-orb-enter {
-          0%   { transform: translateY(48px) scale(0.7); opacity: 0; }
-          60%  { transform: translateY(-6px) scale(1.05); opacity: 1; }
-          100% { transform: translateY(0)    scale(1);    opacity: 1; }
+        @keyframes kai-character-enter {
+          0%   { transform: translateY(60px) scale(0.7); opacity: 0; filter: blur(8px); }
+          60%  { transform: translateY(-8px) scale(1.04); opacity: 1; filter: blur(0); }
+          100% { transform: translateY(0)    scale(1);    opacity: 1; filter: blur(0); }
         }
-        .kai-orb-enter {
-          animation: kai-orb-enter 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        .kai-character-enter {
+          animation: kai-character-enter 1300ms cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         @keyframes kai-halo-pulse {
-          0%, 100% { transform: scale(1);    opacity: 0.85; }
-          50%      { transform: scale(1.08); opacity: 1; }
+          0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.7; }
+          50%      { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
         }
         .kai-halo-pulse {
-          animation: kai-halo-pulse 1800ms ease-in-out infinite;
+          animation: kai-halo-pulse 2400ms ease-in-out infinite;
         }
-        @keyframes kai-orb-speak {
-          0%, 100% { transform: scale(1); }
-          50%      { transform: scale(1.025); }
+        /* Each line fades up + scales in slightly — no reading-along
+           typewriter feel, just a moment of words appearing as KAI
+           speaks them. */
+        @keyframes kai-line-pop {
+          0%   { transform: translateY(12px) scale(0.96); opacity: 0; filter: blur(4px); }
+          100% { transform: translateY(0)    scale(1);    opacity: 1; filter: blur(0); }
         }
-        .kai-orb-speak {
-          animation: kai-orb-speak 1800ms ease-in-out infinite;
+        .kai-line-pop {
+          animation: kai-line-pop 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
         }
       `}</style>
     </div>

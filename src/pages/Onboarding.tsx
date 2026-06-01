@@ -840,17 +840,65 @@ function Heading({
   title: string;
   blurb?: string;
 }) {
+  // KAI orb + typewriter on the title — makes every onboarding step
+  // feel like KAI is the one asking the question, continuing the
+  // "magical guide" thread established in the Welcome walkthrough.
+  // Re-keys on `title` so each step replays the typing animation.
+  // In test mode (vitest), we skip the animation so DOM assertions
+  // can find the full title immediately on render.
+  const isTest =
+    typeof import.meta !== "undefined" &&
+    // Vitest sets MODE = "test"; reduced-motion users also bypass animation.
+    (((import.meta as unknown as { env?: { MODE?: string } }).env?.MODE === "test") ||
+      (typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches));
+  const charsPerMs = 28;
+  const [charIdx, setCharIdx] = useState(isTest ? title.length : 0);
+  useEffect(() => {
+    setCharIdx(isTest ? title.length : 0);
+  }, [title, isTest]);
+  useEffect(() => {
+    if (isTest) return;
+    if (charIdx >= title.length) return;
+    const t = window.setTimeout(() => setCharIdx((c) => c + 1), charsPerMs);
+    return () => window.clearTimeout(t);
+  }, [charIdx, title, isTest]);
+  const done = charIdx >= title.length;
   return (
-    <div className="space-y-2">
-      <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
-        {eyebrow}
-      </p>
-      <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight">
-        {title}
+    <div className="space-y-3">
+      <div className="flex items-center gap-2.5">
+        <span className="kai-step-orb-enter inline-flex">
+          <KaiOrb size={36} face={false} />
+        </span>
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
+          {eyebrow}
+        </p>
+      </div>
+      <h1
+        className="font-display text-3xl font-semibold leading-tight tracking-tight"
+        aria-live="polite"
+      >
+        {title.slice(0, charIdx)}
+        {!done && (
+          <span
+            className="ml-0.5 inline-block h-[0.9em] w-[2px] translate-y-[2px] bg-text-primary/60 animate-pulse"
+            aria-hidden="true"
+          />
+        )}
       </h1>
       {blurb && (
         <p className="text-sm leading-relaxed text-text-secondary">{blurb}</p>
       )}
+      <style>{`
+        @keyframes kai-step-orb-enter {
+          0%   { transform: scale(0.6); opacity: 0; }
+          70%  { transform: scale(1.08); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .kai-step-orb-enter {
+          animation: kai-step-orb-enter 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,36 +1,42 @@
 // /welcome — first-run walkthrough that fires after onboarding completes.
 //
-// 5 swipeable slides explaining the core mechanics in 60 seconds:
-//   1. Meet KAI (orb intro)
-//   2. Daily Score (what it is, resets every morning)
-//   3. Three things in (Mind / Sleep / Mood)
-//   4. Streaks (show up, fresh start on breaks — no shame)
-//   5. Goals (identity-based, "who you want to be")
-//   6. Let's go (CTA to /home)
+// Rebuilt around the KaiSpeaks scene component to feel like a character
+// arrives and walks you through, not a tutorial. Inspired by Ticket to
+// Read — the buddy who shows up, greets you, narrates the world.
 //
-// Per Rawz vision doc: minimal text, mostly visuals, smooth, interactive.
-// Per D-021: streak slide uses "fresh start" framing not "lost."
+// Flow:
+//   1. Meet KAI — orb floats in, "Hey." beat "I'm KAI." beat "Welcome."
+//   2. Daily Score — KAI shows the ring while narrating
+//   3. Three things in — KAI walks through Mind/Sleep/Mood
+//   4. Streaks — show-up, fresh-start framing
+//   5. Goals — identity-based
+//   6. Tell KAI about you — handoff to onboarding
 //
 // One-time only — once the user finishes (or skips), `kai_walkthrough_seen_v1`
 // is set in localStorage and the page auto-redirects on subsequent visits.
 
-import { ArrowRight, Brain, Flame, Heart, Moon, Sparkles, Target } from "lucide-react";
+import { Brain, Flame, Heart, Moon, Sparkles, Target } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { KaiMessage } from "../components/KaiMessage";
-import { KaiOrb } from "../components/KaiOrb";
+import { KaiSpeaks } from "../components/KaiSpeaks";
 import { ScoreRing } from "../components/ScoreRing";
 import { useUserStore } from "../stores/userStore";
 
 const STORAGE_KEY = "kai_walkthrough_seen_v1";
 
-type Slide = {
+type Scene = {
   id: string;
-  visual: React.ReactNode;
-  eyebrow: string;
-  title: string;
-  body: string;
+  /** Optional visual element rendered above the speech (e.g. the
+   *  score ring on slide 2, the pillar chips on slide 3). Slide 1 has
+   *  no visual — KAI alone owns the screen. */
+  visual?: React.ReactNode;
+  /** The lines KAI speaks on this scene. One typewriter pass each, with
+   *  paced beats between. */
+  lines: string[];
+  /** Orb size for this scene. Slide 1 is hero-size; subsequent scenes
+   *  use a medium orb so the visual underneath gets room. */
+  orbSize: number;
 };
 
 export function Welcome() {
@@ -38,22 +44,14 @@ export function Welcome() {
   const { onboardingCompletedAt } = useUserStore();
   const [idx, setIdx] = useState(0);
 
-  // Only auto-skip Welcome for users who are FULLY onboarded — they
-  // don't need the intro again. Anyone else (new, mid-onboarding,
-  // explicitly clicked "Start with Kai") sees the walkthrough. They
-  // can hit "Skip" at the top right if they want to bail.
-  //
-  // (Previously we also auto-skipped users who had seen the slides
-  // once before — that ended up redirecting people away from the
-  // welcome they just clicked into. Cleaner to just always show it
-  // and let Skip be the escape hatch.)
+  // Fully-onboarded users skip the walkthrough.
   useEffect(() => {
     if (onboardingCompletedAt) {
       navigate("/home", { replace: true });
     }
   }, [navigate, onboardingCompletedAt]);
 
-  const slides: Slide[] = useMemo(() => buildSlides(), []);
+  const scenes = useMemo(() => buildScenes(), []);
 
   function finish() {
     try {
@@ -61,14 +59,11 @@ export function Welcome() {
     } catch {
       /* no-op */
     }
-    // Flow per Lev's call: Welcome → Onboarding → Home.
-    // If they've already finished onboarding (somehow back on /welcome
-    // manually), skip them to /home instead.
     navigate(onboardingCompletedAt ? "/home" : "/onboarding", { replace: true });
   }
 
-  function next() {
-    if (idx < slides.length - 1) setIdx(idx + 1);
+  function nextScene() {
+    if (idx < scenes.length - 1) setIdx(idx + 1);
     else finish();
   }
 
@@ -76,7 +71,7 @@ export function Welcome() {
     if (idx > 0) setIdx(idx - 1);
   }
 
-  // Touch swipe support for mobile.
+  // Touch swipe support for mobile (kept in case user wants to skim).
   const touchStart = { x: 0 };
   function onTouchStart(e: React.TouchEvent) {
     touchStart.x = e.touches[0].clientX;
@@ -84,12 +79,11 @@ export function Welcome() {
   function onTouchEnd(e: React.TouchEvent) {
     const dx = e.changedTouches[0].clientX - touchStart.x;
     if (Math.abs(dx) < 40) return;
-    if (dx < 0) next();
+    if (dx < 0) nextScene();
     else back();
   }
 
-  const slide = slides[idx];
-  const isLast = idx === slides.length - 1;
+  const scene = scenes[idx];
 
   return (
     <div
@@ -98,9 +92,9 @@ export function Welcome() {
       onTouchEnd={onTouchEnd}
     >
       {/* Header: skip + progress dots */}
-      <header className="flex items-center justify-between pb-4">
+      <header className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-1.5">
-          {slides.map((s, i) => (
+          {scenes.map((s, i) => (
             <span
               key={s.id}
               aria-hidden="true"
@@ -123,84 +117,69 @@ export function Welcome() {
         </button>
       </header>
 
-      {/* Slide content — big visual top, small text bottom */}
-      <div
-        key={slide.id /* re-render to retrigger animations */}
-        className="flex flex-1 flex-col items-center justify-center text-center animate-fade-slide-up"
-      >
-        <div className="flex flex-1 items-center justify-center">{slide.visual}</div>
-
-        <div className="pb-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
-            {slide.eyebrow}
-          </p>
-          <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight">
-            {slide.title}
-          </h1>
-          <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-text-secondary">
-            {slide.body}
-          </p>
-        </div>
+      {/* Optional visual area — sits above KaiSpeaks. Reserve vertical
+          space so layout doesn't bounce when the visual is missing. */}
+      <div className="flex h-32 items-center justify-center sm:h-36">
+        {scene.visual}
       </div>
 
-      {/* CTA */}
-      <button
-        type="button"
-        onClick={next}
-        className="
-          flex h-12 w-full items-center justify-center gap-2 rounded-full
-          bg-text-primary text-background font-medium
-          shadow-card transition active:scale-[0.99] focus-ring
-        "
-      >
-        {isLast ? "Get started" : "Next"}
-        <ArrowRight size={14} aria-hidden="true" />
-      </button>
+      {/* The "magic moment" — KAI's entrance + paced speech. Keyed by
+          scene id so React fully remounts the component each scene,
+          replaying the entrance animation and resetting the typewriter. */}
+      <div className="mt-4 flex flex-1 flex-col items-center justify-center">
+        <KaiSpeaks
+          key={scene.id}
+          lines={scene.lines}
+          orbSize={scene.orbSize}
+          // First scene gets the full float-up entrance. Subsequent
+          // scenes still scale-in (because of the key remount), just
+          // less dramatically.
+          animateEntrance
+          onDone={nextScene}
+        />
+      </div>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Slide visuals
+// Scenes — what KAI says + what's on screen during each beat
 // ─────────────────────────────────────────────────────────────────────
 
-function buildSlides(): Slide[] {
+function buildScenes(): Scene[] {
   return [
     {
       id: "meet",
-      eyebrow: "Welcome",
-      title: "Meet KAI",
-      body: "Your daily companion. Built around your life, not the other way around.",
-      visual: (
-        <div className="flex flex-col items-center gap-4">
-          <KaiOrb size={140} />
-        </div>
-      ),
+      orbSize: 140,
+      // First impression. Owned entirely by the orb + voice. No visual
+      // underneath — let KAI have the room.
+      lines: [
+        "Hey.",
+        "I'm KAI.",
+        "I'll walk you through how this works — takes a minute.",
+      ],
     },
     {
       id: "score",
-      eyebrow: "Daily Score",
-      title: "One read on your day",
-      body: "A simple 0–100 score that builds from check-ins, sleep, and mood. Resets every morning — fresh slate.",
+      orbSize: 96,
       visual: (
-        <div className="relative flex flex-col items-center gap-4">
-          <ScoreRing value={72} size={160} stroke={10} />
+        <div className="relative">
+          <ScoreRing value={72} size={120} stroke={9} />
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <p className="font-mono text-5xl font-bold leading-none tabular-nums text-text-primary">
+            <p className="font-mono text-3xl font-bold leading-none tabular-nums text-text-primary">
               72
-            </p>
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-              / 100
             </p>
           </div>
         </div>
       ),
+      lines: [
+        "This is your daily score.",
+        "One read on how today's going. Resets every morning — fresh slate.",
+      ],
     },
     {
       id: "inputs",
-      eyebrow: "Three things in",
-      title: "Mind · Sleep · Mood",
-      body: "Tap to check in, log your sleep, journal anything. KAI watches it all and gives you one read.",
+      orbSize: 96,
       visual: (
         <div className="flex items-center gap-3">
           <PillarChip icon={Brain} label="Mind" tint="bg-accent-cool-soft text-accent-cool" />
@@ -208,63 +187,55 @@ function buildSlides(): Slide[] {
           <PillarChip icon={Heart} label="Mood" tint="bg-accent-warm-soft text-accent-warm" />
         </div>
       ),
+      lines: [
+        "It builds from three things.",
+        "Check-ins, sleep, and how you're feeling. Log them, the score moves.",
+      ],
     },
     {
       id: "streak",
-      eyebrow: "Streaks",
-      title: "Show up. That's the whole game.",
-      // Per D-021 — "fresh start" not "lost it."
-      body: "Every day you check in, your streak grows. Skip a day and you start fresh — no penalty, no shame.",
+      orbSize: 96,
       visual: (
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-accent-warm/20 blur-2xl" aria-hidden="true" />
-            <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-accent-warm-soft">
-              <Flame size={56} className="text-accent-warm" aria-hidden="true" strokeWidth={1.5} />
-            </div>
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-accent-warm/20 blur-2xl" aria-hidden="true" />
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-accent-warm-soft">
+            <Flame size={42} className="text-accent-warm" aria-hidden="true" strokeWidth={1.5} />
           </div>
-          <p className="font-mono text-4xl font-bold leading-none tabular-nums text-text-primary">
-            12
-          </p>
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-            day streak (example)
-          </p>
         </div>
       ),
+      lines: [
+        "Show up. That's the whole game.",
+        "Miss a day, you start fresh. No penalty, no shame.",
+      ],
     },
     {
       id: "goals",
-      eyebrow: "Goals",
-      title: "Who you want to be",
-      body: "Not a checklist. Pick an identity (\"someone who reads,\" \"someone who moves daily\") and KAI helps you live it.",
+      orbSize: 96,
       visual: (
-        <div className="w-full max-w-xs space-y-2">
+        <div className="w-full max-w-xs space-y-1.5">
           <GoalCard icon={Target} text="Someone who moves daily" />
           <GoalCard icon={Sparkles} text="Someone who reads before bed" />
         </div>
       ),
+      lines: [
+        "And goals — but not a checklist.",
+        "Pick who you want to be. I'll help you live it.",
+      ],
     },
     {
       id: "go",
-      eyebrow: "Ready",
-      title: "Tell KAI about you",
-      body: "A few quick questions so KAI can meet you where you are. About 90 seconds.",
-      visual: (
-        <div className="flex flex-col items-center gap-5">
-          <KaiOrb size={120} />
-          <div className="max-w-xs">
-            <KaiMessage orbSize={28}>
-              Whenever you're ready. No rush — small steps count.
-            </KaiMessage>
-          </div>
-        </div>
-      ),
+      orbSize: 130,
+      lines: [
+        "Alright.",
+        "I'm gonna ask you a few quick things so I know who you are.",
+        "About 90 seconds. Whenever you're ready.",
+      ],
     },
   ];
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Reusable mini-components for the slides
+// Tiny visual helpers
 // ─────────────────────────────────────────────────────────────────────
 
 function PillarChip({
@@ -279,13 +250,13 @@ function PillarChip({
   return (
     <div
       className={`
-        flex h-24 w-24 flex-col items-center justify-center gap-1.5
+        flex h-20 w-20 flex-col items-center justify-center gap-1
         rounded-glass border border-glass-border shadow-card
         ${tint}
       `}
     >
-      <Icon size={28} aria-hidden="true" strokeWidth={1.5} />
-      <p className="text-xs font-medium">{label}</p>
+      <Icon size={22} aria-hidden="true" strokeWidth={1.5} />
+      <p className="text-[11px] font-medium">{label}</p>
     </div>
   );
 }
@@ -298,11 +269,11 @@ function GoalCard({
   text: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card">
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-cool-soft">
-        <Icon size={14} className="text-accent-cool" aria-hidden="true" />
+    <div className="flex items-center gap-3 rounded-lg border border-glass-border bg-surface px-3 py-2 shadow-card">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-cool-soft">
+        <Icon size={12} className="text-accent-cool" aria-hidden="true" />
       </span>
-      <p className="text-sm font-medium text-text-primary">{text}</p>
+      <p className="text-xs font-medium text-text-primary">{text}</p>
     </div>
   );
 }

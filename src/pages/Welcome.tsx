@@ -152,11 +152,13 @@ function buildScenes(): Scene[] {
       id: "meet",
       orbSize: 140,
       // First impression. Owned entirely by the orb + voice. No visual
-      // underneath — let KAI have the room.
+      // underneath — let KAI have the room. Opens with the tagline so
+      // the first thing the user hears is the mission.
       lines: [
-        "Hey.",
+        "Stop waiting.",
+        "Start becoming.",
         "I'm KAI.",
-        "I'll walk you through how this works — takes a minute.",
+        "I'll walk you through this — takes a minute.",
       ],
     },
     {

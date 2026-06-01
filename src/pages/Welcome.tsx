@@ -559,21 +559,23 @@ function buildBeats(): Beat[] {
       magic: "summon-right",
     },
 
-    // 7. Three pillars.
+    // 7. Three pillars — KAI smaller and more centered so the body wisp
+    //    doesn't reach the text below.
     {
       line: "Three things feed it: how you feel, sleep, and move.",
-      kaiOffsetX: 0, kaiTopPct: 0.60, kaiScale: 0.85, gesture: "talk",
-      visual: <PillarsVisual />, visualOffsetX: 0, visualTopPct: 0.28,
+      kaiOffsetX: 0, kaiTopPct: 0.50, kaiScale: 0.70, gesture: "talk",
+      visual: <PillarsVisual />, visualOffsetX: 0, visualTopPct: 0.22,
       hint: "tap",
       magic: "starBurst",
     },
 
-    // 8. Streak — KAI further right, flame further left. Plus KAI
-    //    scales down (0.75) so the body wisp doesn't reach the emblem.
+    // 8. Streak — new copy "Show up every day. That's the goal." Flame
+    //    pushed further left, KAI shifted left from the far right into
+    //    a more centered position (per tester).
     {
-      line: "Show up. Miss a day? Fresh start.",
-      kaiOffsetX: 140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "talk",
-      visual: <FlameVisual />, visualOffsetX: -140, visualTopPct: 0.42,
+      line: "Show up every day. That's the goal.",
+      kaiOffsetX: 60, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "talk",
+      visual: <FlameVisual />, visualOffsetX: -160, visualTopPct: 0.42,
       hint: "tap",
       magic: "summon-left",
     },
@@ -626,11 +628,34 @@ function PillarsVisual() {
 
 function FlameVisual() {
   return (
-    <div className="relative">
-      <div className="absolute inset-0 rounded-full bg-accent-warm/30 blur-2xl" aria-hidden="true" />
-      <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-accent-warm-soft">
-        <Flame size={28} className="text-accent-warm" aria-hidden="true" strokeWidth={1.6} />
+    <div className="relative flex flex-col items-center gap-2">
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full bg-accent-warm/30 blur-2xl" aria-hidden="true" />
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-accent-warm-soft">
+          <Flame size={28} className="text-accent-warm" aria-hidden="true" strokeWidth={1.6} />
+        </div>
+        {/* +1 counter pip — anchored top-right of the flame circle to
+            suggest "another day added to the streak." */}
+        <span
+          className="
+            absolute -right-2 -top-2 inline-flex h-7 min-w-[1.75rem] items-center justify-center
+            rounded-full bg-accent-warm px-1.5
+            font-mono text-[11px] font-bold text-background
+            shadow-card kai-pip-pop
+          "
+          aria-hidden="true"
+        >
+          +1
+        </span>
       </div>
+      <style>{`
+        @keyframes kai-pip-pop {
+          0%   { transform: scale(0.2) rotate(-20deg); opacity: 0; }
+          60%  { transform: scale(1.15) rotate(8deg);  opacity: 1; }
+          100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+        }
+        .kai-pip-pop { animation: kai-pip-pop 700ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both; }
+      `}</style>
     </div>
   );
 }

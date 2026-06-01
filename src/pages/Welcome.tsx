@@ -32,8 +32,12 @@ const STORAGE_KEY = "kai_walkthrough_seen_v1";
 type Gesture = "wave" | "point" | "reach" | "idle" | "talk";
 
 type Beat = {
-  /** What KAI says (or what shows on screen — beat 1 is the tagline). */
+  /** Single line. Mutually exclusive with `lines`. */
   line?: string;
+  /** Multi-line beat — each line stagger-fades in one after the other
+   *  and stays visible. Use for the combined "Hi I'm KAI / your buddy /
+   *  this is your space / let me show you around" intro. */
+  lines?: string[];
   /** Larger title shown above the line. Used for the opening tagline. */
   title?: string;
   /** Where KAI is on the canvas this beat (px offset from center). */
@@ -204,7 +208,9 @@ export function Welcome() {
           )}
         </div>
 
-        {/* Spoken line — pinned to the bottom third */}
+        {/* Spoken line(s) — pinned to the bottom third. Single line for
+            most beats; multi-line for the combined intro so each line
+            staggers in one after the other and stays visible. */}
         {beat.line && (
           <div className="absolute inset-x-0 bottom-[24%] flex justify-center px-4">
             <p
@@ -214,6 +220,23 @@ export function Welcome() {
             >
               {beat.line}
             </p>
+          </div>
+        )}
+        {beat.lines && (
+          <div className="absolute inset-x-0 bottom-[18%] flex flex-col items-center gap-2 px-4 text-center">
+            {beat.lines.map((l, i) => (
+              <p
+                key={`line-${idx}-${i}`}
+                className="
+                  kai-stagger-pop max-w-xs font-display text-2xl font-medium
+                  leading-snug tracking-tight text-text-primary sm:max-w-md sm:text-3xl
+                "
+                style={{ animationDelay: `${i * 450}ms` }}
+                aria-live="polite"
+              >
+                {l}
+              </p>
+            ))}
           </div>
         )}
 
@@ -289,6 +312,10 @@ export function Welcome() {
           100% { transform: translateY(0)    scale(1);    opacity: 1; filter: blur(0); }
         }
         .kai-line-pop { animation: kai-line-pop 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+        /* Staggered version — same keyframes, per-line animation-delay
+           controls the cascade so each line lands ~450ms after the last. */
+        .kai-stagger-pop { animation: kai-line-pop 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
         @keyframes kai-visual-pop {
           0%   { transform: translate(calc(-50% + var(--vx, 0)), -50%) scale(0.7); opacity: 0; filter: blur(6px); }
@@ -377,31 +404,18 @@ function buildBeats(): Beat[] {
       hint: "tap to meet KAI",
     },
 
-    // 2. KAI flies into the foreground and waves.
+    // 2. The combined intro — all four "Hi I'm KAI / your AI buddy /
+    //    this is your space / let me show you around" lines on one
+    //    slide. They stagger in 450ms apart and stay visible together
+    //    so the user reads it as one moment, not four taps.
     {
-      line: "Hi, I'm KAI.",
-      kaiOffsetX: 0, kaiTopPct: 0.42, kaiScale: 1.15, gesture: "wave",
-      hint: "tap to continue",
-    },
-
-    // 3. Sets the role — clear, teen-friendly framing.
-    {
-      line: "Your AI buddy.",
-      kaiOffsetX: 0, kaiTopPct: 0.42, kaiScale: 1.10, gesture: "talk",
-      hint: "tap to continue",
-    },
-
-    // 4. Welcome them in.
-    {
-      line: "Welcome to your space.",
-      kaiOffsetX: 0, kaiTopPct: 0.42, kaiScale: 1.10, gesture: "reach",
-      hint: "tap to continue",
-    },
-
-    // 5. Transition to the tour.
-    {
-      line: "Let me show you around.",
-      kaiOffsetX: 0, kaiTopPct: 0.42, kaiScale: 1.05, gesture: "point",
+      lines: [
+        "Hi, I'm KAI.",
+        "Your AI buddy.",
+        "This is your space.",
+        "Let me show you around.",
+      ],
+      kaiOffsetX: 0, kaiTopPct: 0.32, kaiScale: 1.10, gesture: "wave",
       hint: "tap to start the tour",
     },
 

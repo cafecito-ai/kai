@@ -18,6 +18,7 @@ import { GrowthPlanSuggestion } from "../components/GrowthPlanSuggestion";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { readCheckInChatHandoff } from "../lib/check-in-handoff";
 import { buildKaiClientContext } from "../lib/kai-client-context";
 import type { ChatMessage } from "../lib/types";
 
@@ -37,8 +38,18 @@ export function Chat() {
       try {
         const data = await api.getCurrentConversation("kai");
         if (cancelled) return;
+        const handoff = readCheckInChatHandoff();
+        const handoffMessage = handoff?.reflection
+          ? {
+              id: `checkin-handoff-${handoff.id}`,
+              role: "assistant" as const,
+              content: handoff.reflection,
+              createdAt: handoff.createdAt,
+            }
+          : null;
+        const serverMessages = data.messages ?? [];
         setConversationId(data.conversationId);
-        setMessages(data.messages ?? []);
+        setMessages(handoffMessage ? [...serverMessages, handoffMessage] : serverMessages);
       } catch {
         // Hydration failure is non-fatal — user can start a fresh thread.
       } finally {

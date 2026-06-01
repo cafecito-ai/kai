@@ -143,8 +143,20 @@ const kaiWorkflows: Workflow[] = [
     reply: greetingReply,
   },
   {
+    id: "lonely-open",
+    matches: (text) =>
+      /\b(lonely|alone|feel alone|so alone|no friends|dont have friends|don't have friends|no one cares|nobody cares)\b/.test(text),
+    reply: [
+      "Yeah. That feeling is heavier than people make it sound.",
+      "Lonely is not just “I need someone to text me.” A lot of the time it’s more like: I’m around people, but I don’t feel chosen. I don’t feel seen. I don’t know who I can be fully honest with.",
+      "First thing: don’t turn this into a verdict on you. Loneliness is a signal, not a sentence. It means your connection system is asking for something real.",
+      "For tonight, we make it small: pick one person who feels even 5% safe and send something low-pressure like “yo how’s your day been?” or “wanna do something this week?” Not a huge confession. Just a door cracked open.",
+      "And tell me the real version: are you lonely because you don’t have people, because your people don’t really get you, or because you got left out recently?",
+    ],
+  },
+  {
     id: "sad-vague",
-    matches: (text) => /\b(sad|depressed|delressed|lonely|empty|numb|down bad|rough day)\b/.test(text),
+    matches: (text) => /\b(sad|depressed|delressed|empty|numb|down bad|rough day)\b/.test(text),
     reply: [
       "Damn. I’m here with you.",
       "What made it hit today: people, pressure, sleep, or just one of those waves?",

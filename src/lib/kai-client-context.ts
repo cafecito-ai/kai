@@ -18,6 +18,7 @@ import { getActiveChallenges } from "./local-challenges";
 import { getCurrentLevel, labelForLevel } from "./local-xp";
 import { getRecentHydration, getTodayHydration } from "./local-hydration";
 import { readLocalGoals, goalStreak } from "./local-goals";
+import { readCheckInChatHandoff } from "./check-in-handoff";
 import {
   computeLocalScore,
   readLocalInputs,
@@ -48,6 +49,16 @@ export type KaiClientContext = {
   };
   /** Where they are in the XP system. */
   level: { current: number; label: string };
+  /** Short-lived bridge from /check-in into /chat so Kai can keep going. */
+  latestCheckIn: {
+    mood: number;
+    moodLabel: string;
+    mind: string;
+    better: string;
+    reflection: string;
+    window: "morning" | "evening" | "other";
+    createdAt: string;
+  } | null;
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -125,6 +136,7 @@ export function buildKaiClientContext(now: Date = new Date()): KaiClientContext 
   ).length;
 
   const levelInfo = getCurrentLevel();
+  const latestCheckIn = readCheckInChatHandoff(now);
 
   return {
     todayScore: {
@@ -146,6 +158,17 @@ export function buildKaiClientContext(now: Date = new Date()): KaiClientContext 
       current: levelInfo.level,
       label: labelForLevel(levelInfo.level),
     },
+    latestCheckIn: latestCheckIn
+      ? {
+          mood: latestCheckIn.mood,
+          moodLabel: latestCheckIn.moodLabel,
+          mind: latestCheckIn.mind,
+          better: latestCheckIn.better,
+          reflection: latestCheckIn.reflection,
+          window: latestCheckIn.window,
+          createdAt: latestCheckIn.createdAt,
+        }
+      : null,
   };
 }
 

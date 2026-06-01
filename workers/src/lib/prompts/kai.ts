@@ -113,6 +113,17 @@ function renderClientContextBlock(
     lines.push(`- Today's score: ${ctx.todayScore.final}/100 (${parts.join(", ")})`);
   }
 
+  if (ctx.latestCheckIn) {
+    const checkIn = ctx.latestCheckIn;
+    const checkInParts = [
+      `${checkIn.window} check-in mood ${checkIn.mood}/5${checkIn.moodLabel ? ` (${checkIn.moodLabel})` : ""}`,
+    ];
+    if (checkIn.mind) checkInParts.push(`on their mind: "${checkIn.mind}"`);
+    if (checkIn.better) checkInParts.push(`what would help: "${checkIn.better}"`);
+    if (checkIn.reflection) checkInParts.push(`Kai just reflected: "${checkIn.reflection}"`);
+    lines.push(`- Latest check-in to continue from: ${checkInParts.join("; ")}`);
+  }
+
   // Recent activity summary — the "you've been doing X" surface.
   if (ctx.recentActivity.length > 0) {
     const top = ctx.recentActivity

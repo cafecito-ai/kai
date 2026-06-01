@@ -39,6 +39,15 @@ export type KaiClientContext = {
   activeChallenges: { title: string; daysHit: number; target: number; daysRemaining: number }[];
   hydration: { todayGlasses: number; todayTarget: number; goalHitsLast7Days: number };
   level: { current: number; label: string };
+  latestCheckIn: {
+    mood: number;
+    moodLabel: string;
+    mind: string;
+    better: string;
+    reflection: string;
+    window: "morning" | "evening" | "other";
+    createdAt: string;
+  } | null;
 };
 
 const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {

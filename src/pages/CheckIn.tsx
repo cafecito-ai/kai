@@ -24,6 +24,7 @@ import { GrowthPlanSuggestion } from "../components/GrowthPlanSuggestion";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { saveCheckInChatHandoff } from "../lib/check-in-handoff";
 import { appendLocalInput, offlineReflection } from "../lib/local-score";
 import type { GrowthPlanSuggestion as GrowthPlanSuggestionType } from "../lib/types";
 
@@ -79,10 +80,16 @@ export function CheckIn() {
         mind: mind || undefined,
         better: better || undefined,
       });
-      setReflection(
-        res.reflection ||
-          offlineReflection(mood, mind, better),
-      );
+      const nextReflection = res.reflection || offlineReflection(mood, mind, better);
+      setReflection(nextReflection);
+      saveCheckInChatHandoff({
+        mood,
+        moodLabel: moodLabel(mood),
+        mind,
+        better,
+        reflection: nextReflection,
+        window: res.window ?? checkInWindowFromHeadline(headline.eyebrow),
+      });
       setGrowthPlanSuggestion(res.growthPlanSuggestion ?? null);
       setDuplicateInWindow(res.duplicateInWindow);
       setPhase("done");
@@ -90,7 +97,16 @@ export function CheckIn() {
       // Worker unreachable. The local store already has this check-in,
       // so /home updates correctly. Use a smart mood-keyed fallback so
       // the reflection is still meaningful.
-      setReflection(offlineReflection(mood, mind, better));
+      const nextReflection = offlineReflection(mood, mind, better);
+      setReflection(nextReflection);
+      saveCheckInChatHandoff({
+        mood,
+        moodLabel: moodLabel(mood),
+        mind,
+        better,
+        reflection: nextReflection,
+        window: checkInWindowFromHeadline(headline.eyebrow),
+      });
       setPhase("done");
     }
   }
@@ -390,4 +406,14 @@ function headlineForNow(now = new Date()): {
     return { eyebrow: "evening check-in", title: "Evening reflection" };
   }
   return { eyebrow: "check-in", title: "Quick read" };
+}
+
+function moodLabel(value: number): string {
+  return MOODS.find((mood) => mood.value === value)?.label ?? "Checked in";
+}
+
+function checkInWindowFromHeadline(eyebrow: string): "morning" | "evening" | "other" {
+  if (eyebrow.startsWith("morning")) return "morning";
+  if (eyebrow.startsWith("evening")) return "evening";
+  return "other";
 }

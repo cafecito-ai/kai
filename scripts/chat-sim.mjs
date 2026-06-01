@@ -54,6 +54,15 @@ const cases = [
     maxLatencyMs: 1800,
   },
   {
+    id: "lonely-open",
+    persona: "teen saying the plain thing",
+    message: "im lonely",
+    expect: [/heavier than people make it sound|chosen|seen|signal, not a sentence|5% safe|real version/i],
+    ban: [/988|911|Crisis Text Line|Damn. I.?m here with you/i],
+    expectWorkflow: "lonely-open",
+    maxLatencyMs: 2200,
+  },
+  {
     id: "sad-vague",
     persona: "sophomore, sad but not crisis",
     message: "idk i just feel sad today",

@@ -78,9 +78,12 @@ function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClient
   const score = (r.todayScore as Record<string, unknown>) ?? {};
   const hydration = (r.hydration as Record<string, unknown>) ?? {};
   const level = (r.level as Record<string, unknown>) ?? {};
+  const latestCheckIn = (r.latestCheckIn as Record<string, unknown>) ?? null;
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
   const str = (v: unknown, max = 120) =>
     typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "";
+  const checkInWindow = (v: unknown) =>
+    v === "morning" || v === "evening" || v === "other" ? v : "other";
   return {
     todayScore: {
       final: num(score.final),
@@ -130,6 +133,17 @@ function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClient
       current: Math.max(1, Math.floor(num(level.current) ?? 1)),
       label: str(level.label, 40),
     },
+    latestCheckIn: latestCheckIn
+      ? {
+          mood: Math.max(1, Math.min(5, Math.floor(num(latestCheckIn.mood) ?? 3))),
+          moodLabel: str(latestCheckIn.moodLabel, 40),
+          mind: str(latestCheckIn.mind, 220),
+          better: str(latestCheckIn.better, 180),
+          reflection: str(latestCheckIn.reflection, 260),
+          window: checkInWindow(latestCheckIn.window),
+          createdAt: str(latestCheckIn.createdAt, 40),
+        }
+      : null,
   };
 }
 

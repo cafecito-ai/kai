@@ -193,10 +193,11 @@ describe("chat routes", () => {
 
   it("understands common emotional typos before safety and routing", async () => {
     let capturedChatPrompt = "";
-    const aiReplies = [
-      '{"category":"none","severity":"low","explanation":"no safety signal"}',
-      "I read that as depressed. That is heavy. What has been driving it most lately?"
-    ];
+    // Match by prompt type, not a positional queue: the hardened safety classifier
+    // only calls the LLM when its gate fires, and ordinary "depressed" does not
+    // escalate — so the number of safety AI calls is no longer fixed at one.
+    const safetyJson = '{"category":"none","severity":"low","explanation":"no safety signal"}';
+    const chatReply = "I read that as depressed. That is heavy. What has been driving it most lately?";
     const res = await app.fetch(
       new Request("https://worker.test/api/kai/chat", {
         method: "POST",
@@ -207,8 +208,11 @@ describe("chat routes", () => {
         firstRows: [{}, {}, {}],
         aiRun: async (_model, input) => {
           const prompt = typeof input === "object" && input && "prompt" in input ? String((input as { prompt?: unknown }).prompt ?? "") : "";
-          if (prompt.includes("Conversation:")) capturedChatPrompt = prompt;
-          return { response: aiReplies.shift() ?? "" };
+          if (prompt.includes("Conversation:")) {
+            capturedChatPrompt = prompt;
+            return { response: chatReply };
+          }
+          return { response: safetyJson };
         }
       })
     );

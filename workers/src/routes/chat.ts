@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { callClaude } from "../lib/claude";
+import { callClaudeDetailed, selectChatModel } from "../lib/claude";
 import { buildKaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
@@ -80,10 +80,19 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const modelMessages = (recentMessages ?? [])
     .filter((item): item is typeof item & { role: "user" | "assistant" } => item.role === "user" || item.role === "assistant")
     .map((item) => ({ role: item.role, content: item.id === userMessage.id ? normalized.modelContent : item.content }));
-  const rawReply = await callClaude(env, systemWithGuideContext, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
-  const reply = tightenControlLayerReply(rawReply, nextAction);
-  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { nextAction } });
-  return Response.json({ conversationId: conversation, reply, nextAction });
+  // Our chat engine: depth turns run on the tiered model (Sonnet) with a real
+  // token/latency budget, and we record true provenance so a hardcoded fallback
+  // is never mislabeled "model". The coworker's nextAction layer is preserved.
+  const generated = await callClaudeDetailed(
+    env,
+    systemWithGuideContext,
+    modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }],
+    { model: selectChatModel(env, engine, normalized.text), maxTokens: 700 },
+  );
+  const responseSource = generated.source === "anthropic" ? "model" : generated.source === "workers-ai" ? "workers-ai" : "fallback";
+  const reply = tightenControlLayerReply(generated.text, nextAction);
+  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { nextAction, responseSource } });
+  return Response.json({ conversationId: conversation, reply, nextAction, responseSource });
 }
 
 function normalizeUserMessage(message: string) {

@@ -224,9 +224,9 @@ export function Home() {
         </span>
       </button>
 
-      <MissionsCard variant="hero" />
-
       <DailyScoreCard data={data} />
+
+      <MissionsCard variant="hero" />
 
       {levelUp && (
         <div className="rounded-glass border border-accent-soft bg-accent-soft px-4 py-3 shadow-card animate-fade-slide-up">

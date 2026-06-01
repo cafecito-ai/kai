@@ -546,13 +546,12 @@ function buildBeats(): Beat[] {
     },
 
     // ── TOUR ─────────────────────────────────────────────────────
-    // 6. Daily score — KAI well to the LEFT, ring well to the RIGHT.
-    //    Wider separation than the previous ±80 so KAI's wisp body
-    //    doesn't overlap the emblem.
+    // 6. Daily score — KAI further left, ring further right. KAI
+    //    scales down to 0.75 so the body wisp doesn't reach the emblem.
     {
       line: "Every day you open this, a score.",
-      kaiOffsetX: -110, kaiTopPct: 0.45, kaiScale: 0.85, gesture: "point",
-      visual: <ScoreVisual />, visualOffsetX: 110, visualTopPct: 0.40,
+      kaiOffsetX: -140, kaiTopPct: 0.45, kaiScale: 0.75, gesture: "point",
+      visual: <ScoreVisual />, visualOffsetX: 140, visualTopPct: 0.40,
       hint: "tap",
       magic: "summon-right",
     },
@@ -566,22 +565,21 @@ function buildBeats(): Beat[] {
       magic: "starBurst",
     },
 
-    // 8. Streak — KAI well to the RIGHT, flame well to the LEFT. The
-    //    flame was hiding under KAI's body wisp at ±70; ±115 gives the
-    //    emblem its own space.
+    // 8. Streak — KAI further right, flame further left. Plus KAI
+    //    scales down (0.75) so the body wisp doesn't reach the emblem.
     {
       line: "Show up. Miss a day? Fresh start.",
-      kaiOffsetX: 115, kaiTopPct: 0.42, kaiScale: 0.85, gesture: "talk",
-      visual: <FlameVisual />, visualOffsetX: -115, visualTopPct: 0.42,
+      kaiOffsetX: 140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "talk",
+      visual: <FlameVisual />, visualOffsetX: -140, visualTopPct: 0.42,
       hint: "tap",
       magic: "summon-left",
     },
 
-    // 9. Goals — KAI well to the LEFT, goal card well to the RIGHT.
-    //    Wider separation matches the rest of the tour beats.
+    // 9. Goals — KAI further left (per tester "little more left"), card
+    //    further right. KAI smaller so the wider goal card has room.
     {
       line: "Pick who you wanna be. I'll help you live it.",
-      kaiOffsetX: -110, kaiTopPct: 0.42, kaiScale: 0.85, gesture: "reach",
+      kaiOffsetX: -140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "reach",
       visual: <GoalVisual />, visualOffsetX: 110, visualTopPct: 0.42,
       hint: "tap",
       magic: "summon-right",

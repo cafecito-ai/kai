@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Brain, Flame, Heart, Moon, Target } from "lucide-react";
 
 import { KaiCharacter } from "../components/KaiCharacter";
+import { MagicEffect, type MagicKind } from "../components/MagicEffect";
 import { ScoreRing } from "../components/ScoreRing";
 import { useUserStore } from "../stores/userStore";
 
@@ -54,6 +55,9 @@ type Beat = {
   visualTopPct?: number;
   /** Hint shown at the bottom of the screen on this beat. */
   hint?: string;
+  /** Optional magic burst that plays when this beat appears. Each beat
+   *  gets its own kind so every slide has a distinct moment. */
+  magic?: MagicKind;
 };
 
 export function Welcome() {
@@ -215,6 +219,9 @@ export function Welcome() {
             </span>
           </div>
           <KaiCharacter size={220} face speaking gesture={beat.gesture} />
+
+          {/* Per-beat magic burst — replays each scene change. */}
+          {beat.magic && <MagicEffect kind={beat.magic} triggerKey={idx} />}
 
           {/* On beat 1 only — a "tap me" pulse ring around KAI so
               the user knows to interact. */}
@@ -528,6 +535,7 @@ function buildBeats(): Beat[] {
       title: "Stop waiting.\nStart becoming.",
       kaiOffsetX: 0, kaiTopPct: 0.65, kaiScale: 0.75, gesture: "idle",
       hint: "tap to meet KAI",
+      magic: "converge",
     },
 
     // 2. WHO — the introduction. KAI greets the user, sets the role.
@@ -535,6 +543,7 @@ function buildBeats(): Beat[] {
       lines: ["Hi, I'm KAI.", "Your AI buddy."],
       kaiOffsetX: 0, kaiTopPct: 0.32, kaiScale: 1.10, gesture: "wave",
       hint: "tap to continue",
+      magic: "burst",
     },
 
     // 3. WHY — the purpose. This is what makes KAI feel different from
@@ -548,6 +557,7 @@ function buildBeats(): Beat[] {
       ],
       kaiOffsetX: 0, kaiTopPct: 0.30, kaiScale: 1.05, gesture: "reach",
       hint: "tap to continue",
+      magic: "converge",
     },
 
     // 4. WELCOME — into their space, into the tour.
@@ -555,6 +565,7 @@ function buildBeats(): Beat[] {
       lines: ["This is your space.", "Let me show you around."],
       kaiOffsetX: 0, kaiTopPct: 0.32, kaiScale: 1.10, gesture: "point",
       hint: "tap to start the tour",
+      magic: "starBurst",
     },
 
     // ── TOUR ─────────────────────────────────────────────────────
@@ -564,6 +575,7 @@ function buildBeats(): Beat[] {
       kaiOffsetX: -80, kaiTopPct: 0.45, kaiScale: 0.9, gesture: "point",
       visual: <ScoreVisual />, visualOffsetX: 80, visualTopPct: 0.40,
       hint: "tap",
+      magic: "summon-right",
     },
 
     // 7. Three pillars.
@@ -572,6 +584,7 @@ function buildBeats(): Beat[] {
       kaiOffsetX: 0, kaiTopPct: 0.60, kaiScale: 0.85, gesture: "talk",
       visual: <PillarsVisual />, visualOffsetX: 0, visualTopPct: 0.28,
       hint: "tap",
+      magic: "starBurst",
     },
 
     // 8. Streak.
@@ -580,6 +593,7 @@ function buildBeats(): Beat[] {
       kaiOffsetX: 70, kaiTopPct: 0.42, kaiScale: 0.95, gesture: "talk",
       visual: <FlameVisual />, visualOffsetX: -70, visualTopPct: 0.42,
       hint: "tap",
+      magic: "summon-left",
     },
 
     // 9. Goals — identity-based.
@@ -588,12 +602,14 @@ function buildBeats(): Beat[] {
       kaiOffsetX: -70, kaiTopPct: 0.42, kaiScale: 0.9, gesture: "reach",
       visual: <GoalVisual />, visualOffsetX: 70, visualTopPct: 0.42,
       hint: "tap",
+      magic: "summon-right",
     },
 
     // 10. Handoff — big "Start" CTA appears.
     {
       line: "Now let me get to know you a little.",
       kaiOffsetX: 0, kaiTopPct: 0.38, kaiScale: 1.20, gesture: "reach",
+      magic: "heart",
     },
   ];
 }

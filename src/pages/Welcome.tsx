@@ -549,7 +549,10 @@ function buildBeats(): Beat[] {
     // 6. Daily score — KAI further left, ring further right. KAI
     //    scales down to 0.75 so the body wisp doesn't reach the emblem.
     {
-      line: "Every day you open this, a score.",
+      lines: [
+        "Keep track with your daily score.",
+        "Fresh slate every morning.",
+      ],
       kaiOffsetX: -140, kaiTopPct: 0.45, kaiScale: 0.75, gesture: "point",
       visual: <ScoreVisual />, visualOffsetX: 140, visualTopPct: 0.40,
       hint: "tap",

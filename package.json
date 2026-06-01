@@ -13,6 +13,7 @@
     "check": "npm run build && npm run worker:typecheck",
     "lint": "eslint .",
     "chat:sim": "node scripts/chat-sim.mjs",
+    "teen:sim": "node scripts/teen-sim.mjs",
     "smoke:api": "node scripts/smoke-api.mjs",
     "smoke:deploy": "node scripts/smoke-deploy.mjs",
     "worker:dev": "wrangler dev --config wrangler.worker.toml",

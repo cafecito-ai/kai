@@ -15,7 +15,7 @@ import {
   safePreSafetyFastReply,
   type WorkflowReply,
 } from "../lib/chat-workflows";
-import { callClaude } from "../lib/claude";
+import { callClaudeDetailed, selectChatModel, type ClaudeSource } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
 import { createMessage, deleteConversationForUser, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
@@ -27,7 +27,25 @@ import type { AppVariables, Env, EngineId } from "../types";
 
 const MAX_BODY_REGENERATIONS = 3;
 
+// Routed/engine chat turns are real coaching (greetings are served by the
+// fast-paths upstream), so give the model room for the "go deeper" replies
+// the prompts ask for. ~600–800 tokens ≈ a full, useful coaching answer.
+const DEPTH_MAX_TOKENS = 700;
+
+// Fast-path canned replies are tuned for brief messages. Longer openers carry
+// nuance the keyword matchers mangle, so they go to the model instead.
+const MAX_FASTPATH_LEN = 160;
+const MAX_CONTINUATION_LEN = 60;
+
 const CHAT_RATE_LIMIT = { route: "chat", limit: 30, periodSeconds: 60 } as const;
+
+/** Map LLM provenance to the responseSource we expose. A "fallback" reply is
+ *  the hardcoded rule table — never advertise it as "model". */
+function sourceLabel(source: ClaudeSource): string {
+  if (source === "anthropic") return "model";
+  if (source === "workers-ai") return "workers-ai";
+  return "fallback";
+}
 
 export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -174,10 +192,16 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   }
   const recentMessages = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
-  const rawReply = await callClaude(env, withReadableReplyInstructions(system), modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
-  const reply = repairComplexMessageReply(formatKaiReply(rawReply, engine === "physical" ? "body" : "general"), normalized.text);
-  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { growthPlanSuggestion } });
-  return chatJson({ conversationId: conversation, reply, growthPlanSuggestion });
+  const engineDecision = engine === "physical" ? "physical" : "mental";
+  const generated = await callClaudeDetailed(
+    env,
+    withReadableReplyInstructions(system),
+    modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }],
+    { model: selectChatModel(env, engineDecision, normalized.text), maxTokens: DEPTH_MAX_TOKENS },
+  );
+  const reply = repairComplexMessageReply(formatKaiReply(generated.text, engine === "physical" ? "body" : "general"), normalized.text);
+  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { responseSource: sourceLabel(generated.source), growthPlanSuggestion } });
+  return chatJson({ conversationId: conversation, reply, responseSource: sourceLabel(generated.source), growthPlanSuggestion });
 }
 
 /**
@@ -226,17 +250,36 @@ async function handleRoutedChat(
   }
 
   const recentMessagesForWorkflow = await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 8 });
-  const continuationReply = matchContinuationWorkflow(normalized.text, recentMessagesForWorkflow ?? []);
-  if (continuationReply) return persistWorkflowReply(env, conversation, continuationReply, {
-    routedTo: continuationReply.mode === "body" ? "physical" : "kai",
-    growthPlanSuggestion,
-  });
+  const priorAssistantCount = (recentMessagesForWorkflow ?? []).filter(
+    (m) => m.role === "assistant" && typeof m.content === "string" && m.content.trim().length > 0,
+  ).length;
 
-  const physicalWorkflowReply = matchPhysicalWorkflow(normalized.text);
-  if (physicalWorkflowReply) return persistWorkflowReply(env, conversation, physicalWorkflowReply, { routedTo: "physical", growthPlanSuggestion });
+  // Continuation workflows are keyword matchers designed for a SHORT follow-up
+  // right after the opening canned reply (e.g. "photos", "people", "shot reps").
+  // They self-loop if allowed to keep firing (their own reply contains the
+  // keyword they match on), so restrict them to the first follow-up (exactly one
+  // prior assistant turn) AND to short messages. Anything longer or later is a
+  // real conversation → the model handles it with full context.
+  if (priorAssistantCount === 1 && normalized.text.length <= MAX_CONTINUATION_LEN) {
+    const continuationReply = matchContinuationWorkflow(normalized.text, recentMessagesForWorkflow ?? []);
+    if (continuationReply) return persistWorkflowReply(env, conversation, continuationReply, {
+      routedTo: continuationReply.mode === "body" ? "physical" : "kai",
+      growthPlanSuggestion,
+    });
+  }
 
-  const instantReply = matchKaiWorkflow(normalized.text);
-  if (instantReply) return persistWorkflowReply(env, conversation, instantReply, { routedTo: "kai", growthPlanSuggestion });
+  // The stateless instant workflows match a single message with NO view of
+  // history. Let them answer only the OPENING turn, and only for SHORT messages
+  // (the canned replies are tuned for brief common openers like "im lonely";
+  // long, rich messages get greedily mis-matched, so send those to the model).
+  // Once a conversation is underway, every turn defers to the model.
+  if (priorAssistantCount === 0 && normalized.text.length <= MAX_FASTPATH_LEN) {
+    const physicalWorkflowReply = matchPhysicalWorkflow(normalized.text);
+    if (physicalWorkflowReply) return persistWorkflowReply(env, conversation, physicalWorkflowReply, { routedTo: "physical", growthPlanSuggestion });
+
+    const instantReply = matchKaiWorkflow(normalized.text);
+    if (instantReply) return persistWorkflowReply(env, conversation, instantReply, { routedTo: "kai", growthPlanSuggestion });
+  }
 
   const context = {
     ...(await buildKaiContext(env, userId)),
@@ -248,7 +291,13 @@ async function handleRoutedChat(
   const system = withReadableReplyInstructions(renderAgentPrompt(decision, context));
   const recentMessages = recentMessagesForWorkflow ?? await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 10 });
   const modelMessages = buildModelMessages(recentMessages ?? [], userMessage.id, normalized.modelContent);
-  let reply = await callClaude(env, system, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
+  const promptMessages = modelMessages.length ? modelMessages : [{ role: "user" as const, content: normalized.modelContent }];
+  // Depth turns: a stronger model with room to breathe (the workflow
+  // fast-paths already handled greetings, so anything here is real coaching).
+  const chatOpts = { model: selectChatModel(env, decision, normalized.text), maxTokens: DEPTH_MAX_TOKENS };
+  const generated = await callClaudeDetailed(env, system, promptMessages, chatOpts);
+  let reply = generated.text;
+  let source: ClaudeSource = generated.source;
 
   // Body responses get the post-generation forbidden-language guard.
   if (decision === "physical") {
@@ -256,21 +305,25 @@ async function handleRoutedChat(
     while (!passesBodyLanguageFilter(reply) && attempt < MAX_BODY_REGENERATIONS) {
       attempt += 1;
       const stricter = withReadableReplyInstructions(`${renderBodyPrompt(context)}\n\nIMPORTANT: A previous response was rejected by the post-generation filter for using forbidden body-language. Try again, focusing only on posture, mobility, recovery, and performance. Do not describe size, shape, or appearance.`);
-      reply = await callClaude(env, stricter, modelMessages.length ? modelMessages : [{ role: "user", content: normalized.modelContent }]);
+      const regen = await callClaudeDetailed(env, stricter, promptMessages, chatOpts);
+      reply = regen.text;
+      source = regen.source;
     }
     if (!passesBodyLanguageFilter(reply)) {
       reply = BODY_LANGUAGE_FALLBACK;
+      source = "fallback";
     }
   }
   const formattedReply = repairComplexMessageReply(formatKaiReply(reply, decision === "physical" ? "body" : "mind"), normalized.text);
+  const responseSource = sourceLabel(source);
 
   await createMessage(env.DB, {
     conversationId: conversation,
     role: "assistant",
     content: formattedReply,
-    metadata: { routedTo: decision, responseSource: "model", growthPlanSuggestion },
+    metadata: { routedTo: decision, responseSource, growthPlanSuggestion },
   });
-  return chatJson({ conversationId: conversation, reply: formattedReply, routedTo: decision, responseSource: "model", growthPlanSuggestion });
+  return chatJson({ conversationId: conversation, reply: formattedReply, routedTo: decision, responseSource, growthPlanSuggestion });
 }
 
 export { fastKaiReply, fastPhysicalReply };

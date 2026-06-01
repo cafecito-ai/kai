@@ -1,5 +1,5 @@
 import type { Env, SafetyClassification } from "../types";
-import { withTimeout } from "./claude";
+import { callClaudeDetailed, MODEL_FAST, withTimeout } from "./claude";
 import { ensureUser } from "./db";
 import { sendParentSafetyAlert } from "./email";
 import { extractJsonObject } from "./json-utils";
@@ -18,8 +18,8 @@ const PARENT_NOTIFY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const SAFETY_LLM_TIMEOUT_MS = 1_500;
 
 const rules: Array<{ category: NonNullable<SafetyClassification["category"]>; severity: NonNullable<SafetyClassification["severity"]>; pattern: RegExp }> = [
-  { category: "suicide_ideation", severity: "critical", pattern: /\b(kill myself|suicide|end my life|not want to live)\b/i },
-  { category: "self_harm", severity: "high", pattern: /\b(cut myself|self harm|hurt myself|burn myself)\b/i },
+  { category: "suicide_ideation", severity: "critical", pattern: /\b(kill myself|suicide|end my life|not want to live|don'?t want to (be alive|live)|do( not|n'?t) want to be (alive|here)|want to die|wanna die)\b/i },
+  { category: "self_harm", severity: "high", pattern: /\b(cut(ting)? myself|cut(ting)? my (arm|wrist|leg|skin|thigh)|self.?harm|hurt(ing)? myself|burn(ing)? myself)\b/i },
   { category: "eating_disorder", severity: "high", pattern: /\b(purge|starve myself|throw up after eating)\b/i },
   { category: "eating_disorder", severity: "medium", pattern: /\b(skip meals?|skipping meals?|afraid to eat|hate my body|too fat|calories? are scary|under ?500 calories|need to be skinny|lose weight fast without eating|without eating|don'?t eat|dont eat)\b/i },
   { category: "abuse_disclosure", severity: "high", pattern: /\b(abuse|molest|assaulted|hit me)\b/i },
@@ -47,7 +47,7 @@ const STANDARD_SAFETY_RESPONSE =
   "I'm really glad you said that out loud. This is bigger than a normal KAI coaching moment, and I want you with a real person right now. If you might hurt yourself or someone else, call emergency services now. In the U.S. or Canada, call or text 988. I can stay here while you reach out.";
 
 const EATING_DISORDER_RESPONSE =
-  "I can’t help you not eat or lose weight fast. Your body needs fuel, especially if you’re training, growing, or stressed.\n\nTell me what you ate today and what you’re trying to change, and I’ll help you make a safer plan.";
+  "I’m really glad you said that out loud. I’m not going to coach you through restricting food or losing weight fast — your body needs fuel, and what you’re carrying here is bigger than a coaching app should handle alone.\n\nPlease reach out to someone who can really be there: in the U.S. or Canada you can call or text 988 anytime — it’s free, confidential, and available 24/7. You can also text HOME to 741741 to reach the Crisis Text Line. I can stay right here with you while you do.";
 
 const ABUSE_RESPONSE =
   "I’m really glad you told me. If someone is hurting you or making you feel unsafe, this needs a real trusted adult involved now: a parent you trust, school counselor, coach, relative, or emergency services if you’re in immediate danger.\n\nYou don’t have to handle that alone.";
@@ -126,9 +126,10 @@ const SAFETY_CLASSIFIER_PROMPT = [
   "If nothing in the message rises to a safety concern, return:",
   '{"category":"none","severity":"low","explanation":"no safety signal"}',
   "",
-  "Do NOT flag ordinary sadness, depression, anxiety, loneliness, low motivation, school stress, social drama, or phrases like \"I can't keep going like this\" unless the message also includes explicit self-harm, suicide, death, abuse, overdose, severe restriction/purging, or violence-to-others language.",
-  "Only classify suicide_ideation when the teen explicitly mentions wanting to die, kill themselves, end their life, not be alive/not be here, suicide, or a specific plan/intent.",
-  "Do not flag normal teen frustration, body-image complaints, school stress, sadness, depression, or social drama unless they cross into the categories above.",
+  "Do NOT flag ordinary sadness, depression, anxiety, loneliness, low motivation, school stress, or social drama ON THEIR OWN. A teen can be very sad or say \"I can't keep going like this\" without it being a safety event — keep those in normal coaching.",
+  "Classify suicide_ideation when the teen mentions wanting to die, kill themselves, end their life, not be alive / not be here, suicide, or a plan/intent — OR clear PASSIVE ideation such as \"what's the point of living/existing/being here\", \"I don't want to be here\", \"I want to disappear\", or \"everyone would be better off without me\". Use severity high/critical for active intent or a plan, medium for passive ideation with no plan.",
+  "Classify eating_disorder when the teen describes restrictive or purging behavior to control weight or their body — skipping meals, not eating / eating as little as possible, purging, over-exercising while not eating — especially alongside distress or feeling it isn't working. A single body-image complaint with no behavior stays in normal coaching.",
+  "When passive ideation and restrictive eating appear together, treat it as the higher-severity concern (suicide_ideation) and flag it.",
   ""
 ].join("\n");
 
@@ -140,6 +141,27 @@ const SAFETY_CLASSIFIER_PROMPT = [
  * fast path first and only invoke this on misses.
  */
 export async function classifySafetyLLM(env: Env, text: string): Promise<SafetyClassification | null> {
+  // Prefer Anthropic Haiku for the safety read — it's far more reliable than
+  // Llama 8b at catching paraphrased/passive crisis, and this is the most
+  // safety-critical call in the app. Only trust a genuine Anthropic result;
+  // if the key/model is unavailable we fall through to the Workers-AI path.
+  if (env.ANTHROPIC_API_KEY) {
+    try {
+      const { text: raw, source } = await callClaudeDetailed(
+        env,
+        SAFETY_CLASSIFIER_PROMPT,
+        [{ role: "user", content: `Message: ${text}\n\nJSON:` }],
+        { model: env.ANTHROPIC_MODEL_FAST || MODEL_FAST, maxTokens: 200, timeoutMs: 4000 },
+      );
+      if (source === "anthropic") {
+        const parsed = parseSafetyResponse(raw);
+        if (parsed) return parsed;
+      }
+    } catch (err) {
+      console.warn("safety Anthropic classifier failed; trying Workers AI", err);
+    }
+  }
+
   if (!env.AI) return null;
   const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
   try {
@@ -178,7 +200,28 @@ export async function classifySafetyFull(env: Env, text: string): Promise<Safety
 }
 
 function needsLLMSafetyReview(text: string): boolean {
-  return /\b(kill|suicide|die|dead|death|end (it|my life)|make it end|not be (alive|here)|not being here|hurt myself|harm myself|scratch myself|cut myself|cut to feel|self harm|burn myself|burn my|overdose|pills|vodka|drunk and driving|huffing|using every day|purge|starve|haven't eaten|restricting|throw up after|punish myself for eating|don't have to eat|without eating|lose weight fast|abuse|molest|assault|hit me|violent with me|locks me|touched me|not to tell|hurt them|shoot|stab|knife to school|make him pay|hurt someone)\b/i.test(text);
+  // Explicit crisis language (the original, high-precision set).
+  if (
+    /\b(kill|suicide|die|dead|death|end (it|my life)|make it end|not be (alive|here)|not being here|hurt myself|harm myself|scratch myself|cut myself|cut to feel|self harm|burn myself|burn my|overdose|pills|vodka|drunk and driving|huffing|using every day|purge|starve|haven't eaten|restricting|throw up after|punish myself for eating|don't have to eat|without eating|lose weight fast|abuse|molest|assault|hit me|violent with me|locks me|touched me|not to tell|hurt them|shoot|stab|knife to school|make him pay|hurt someone)\b/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  // Paraphrased / emerging-crisis signals that the explicit set misses. These
+  // only ROUTE the message to the LLM classifier — the LLM still decides whether
+  // it's a real concern, so ordinary sadness here doesn't auto-flag. Catches the
+  // escalating cases (passive ideation, emerging restriction) the literal rules
+  // walked right past.
+  return (
+    /\b(what'?s the point|whats the point|no point|point of (it all|living|trying|anything|existing|being here))\b/i.test(text) ||
+    /\b(don'?t (want to|wanna) (be here|exist|live|wake up)|be here anymore|want to disappear|wanna disappear|better off without me|better off dead|tired of (living|being here|everything|trying))\b/i.test(text) ||
+    /\b(skip(ping)? (lunch|dinner|breakfast|meals?|food|eating)|didn'?t eat|didnt eat|stopped eating|not eating|barely eat(ing)?|hardly eat(ing)?|don'?t eat much|not eating much)\b/i.test(text) ||
+    /\b(hate myself|hate my life|want it (all )?to stop|can'?t do this anymore|cant do this anymore|can'?t keep going|cant keep going|give up on everything|done with everything)\b/i.test(text) ||
+    /\b(cut(ting|s)?|burn(ing|s)?|harm(ing)?|hurt(ing)?) (myself|my ?self|my (arm|wrist|leg|skin|thigh|body))\b/i.test(text) ||
+    /\b(drink(ing)? (alone|by myself|every ?day|every night)|getting drunk|high every|using (every ?day|to cope|to numb)|pills to)\b/i.test(text) ||
+    /\b(hits? me|hit me|hurts? me|scared to go home|touches me|touched me|not safe at home)\b/i.test(text)
+  );
 }
 /**
  * Build a privacy-preserving excerpt of a teen message for ops review.

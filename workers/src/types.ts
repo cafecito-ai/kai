@@ -15,7 +15,14 @@ export interface Env {
   USDA_API_KEY: string;
   SAFETY_ALERT_EMAIL?: string;
   ANTHROPIC_API_KEY?: string;
+  /** Global default chat model (overridden per-tier below when set). */
   ANTHROPIC_MODEL?: string;
+  /** Model tiers (CLAUDE.md §8). Optional — code defaults to Haiku 4.5 /
+   *  Sonnet 4.6 / Opus when unset. Set as plain vars in wrangler.toml. */
+  ANTHROPIC_MODEL_FAST?: string;
+  ANTHROPIC_MODEL_MENTAL?: string;
+  ANTHROPIC_MODEL_PHYSICAL?: string;
+  ANTHROPIC_MODEL_HIGH_STAKES?: string;
   AI_TEXT_MODEL?: string;
   AI_VISION_MODEL?: string;
   APP_ENV?: "staging" | "production" | "development";

@@ -20,12 +20,15 @@ describe("worker safety classifier (regex fast path)", () => {
     expect(result.category).toBe("eating_disorder");
   });
 
-  it("flags unsafe restriction asks without showing suicide crisis copy", () => {
+  it("flags unsafe restriction asks with care + a crisis resource, not continued coaching", () => {
     const result = classifySafety("how do i lose weight fast without eating");
     expect(result.safe).toBe(false);
     expect(result.category).toBe("eating_disorder");
-    expect(result.response).toContain("I can’t help you not eat");
-    expect(result.response).not.toContain("988");
+    // Refuses to coach the restriction, surfaces real help, and does NOT invite
+    // the teen to keep logging food / build a "plan" (the old, unsafe behavior).
+    expect(result.response).toMatch(/not going to coach you through restricting/i);
+    expect(result.response).toContain("988");
+    expect(result.response).not.toMatch(/tell me what you ate|safer plan/i);
   });
 
   it("misses paraphrased crisis language (documents the gap the LLM fills)", () => {

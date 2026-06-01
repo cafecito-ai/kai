@@ -1,30 +1,100 @@
-import type { Env } from "../types";
+import type { Env, EngineId } from "../types";
 
 interface ClaudeMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-const ANTHROPIC_TIMEOUT_MS = 1_800;
-const WORKERS_AI_TIMEOUT_MS = 1_800;
+/** Per-call overrides for the chat LLM. Lets the chat route pick a stronger
+ *  model (and a bigger token/latency budget) for depth turns while leaving
+ *  the lightweight callers (check-in, food/workout comments) on the default. */
+export interface CallClaudeOptions {
+  model?: string;
+  maxTokens?: number;
+  timeoutMs?: number;
+}
 
-export async function callClaude(env: Env, system: string, messages: ClaudeMessage[]): Promise<string> {
+/** Where a reply actually came from. "fallback" means BOTH the Anthropic and
+ *  Workers-AI paths failed and we served a hardcoded rule-table reply — the
+ *  caller must not advertise that as real model output. */
+export type ClaudeSource = "anthropic" | "workers-ai" | "fallback";
+
+export interface ClaudeResult {
+  text: string;
+  source: ClaudeSource;
+}
+
+// The old 1800ms cap was so tight that any real model call (especially the
+// stronger depth models) timed out and silently fell through to the rule
+// table. Default generously; fast greeting turns never reach the model anyway.
+const ANTHROPIC_TIMEOUT_MS = 12_000;
+const WORKERS_AI_TIMEOUT_MS = 6_000;
+const DEFAULT_MAX_TOKENS = 320;
+
+// Model tiers (CLAUDE.md §8). Each is env-overridable so ops can retune
+// without a code change. Running ALL chat turns on Sonnet for now (predictable
+// per-user cost for the free version). Opus is opt-in: set
+// ANTHROPIC_MODEL_HIGH_STAKES=claude-opus-4-8 to escalate the heaviest turns.
+const MODEL_FAST = "claude-haiku-4-5-20251001";
+const MODEL_DEPTH = "claude-sonnet-4-6";
+const MODEL_HIGH_STAKES = "claude-sonnet-4-6";
+
+/** Pick the chat model for a routed (post-workflow) turn. Both engines get a
+ *  depth-capable model by default; genuinely heavy/long messages escalate to
+ *  the high-stakes tier. Greeting/fast turns don't reach here — they're served
+ *  by the workflow fast-paths before any model call. */
+export function selectChatModel(env: Env, decision: EngineId | "kai" | "mental", message: string): string {
+  if (isHighStakes(message)) return env.ANTHROPIC_MODEL_HIGH_STAKES || MODEL_HIGH_STAKES;
+  if (decision === "physical") return env.ANTHROPIC_MODEL_PHYSICAL || env.ANTHROPIC_MODEL || MODEL_DEPTH;
+  return env.ANTHROPIC_MODEL_MENTAL || env.ANTHROPIC_MODEL || MODEL_DEPTH;
+}
+
+export { MODEL_FAST };
+
+function isHighStakes(message: string): boolean {
+  const text = message.toLowerCase();
+  // Long, layered messages and emotionally heavy (but non-crisis — crisis is
+  // handled upstream by the safety classifier) topics warrant the deepest model.
+  if (message.length > 420) return true;
+  return /\b(panic attack|panicking|hopeless|worthless|hate myself|can'?t cope|falling apart|breaking down|spiraling|overwhelmed|grief|grieving|trauma|assault|abuse)\b/.test(
+    text,
+  );
+}
+
+/** Backwards-compatible string API. Lightweight callers keep using this. */
+export async function callClaude(
+  env: Env,
+  system: string,
+  messages: ClaudeMessage[],
+  opts: CallClaudeOptions = {},
+): Promise<string> {
+  return (await callClaudeDetailed(env, system, messages, opts)).text;
+}
+
+/** Same as callClaude, but reports provenance so the chat route can label a
+ *  rule-table reply as "fallback" instead of pretending it was the model. */
+export async function callClaudeDetailed(
+  env: Env,
+  system: string,
+  messages: ClaudeMessage[],
+  opts: CallClaudeOptions = {},
+): Promise<ClaudeResult> {
   if (env.ANTHROPIC_API_KEY) {
-    const anthropicReply = await callAnthropic(env, system, messages);
-    if (anthropicReply) return anthropicReply;
+    const anthropicReply = await callAnthropic(env, system, messages, opts);
+    if (anthropicReply) return { text: anthropicReply, source: "anthropic" };
   }
 
   if (env.AI) {
-    const workersAiReply = await callWorkersAi(env.AI, env.AI_TEXT_MODEL, system, messages);
-    if (workersAiReply) return workersAiReply;
+    const workersAiReply = await callWorkersAi(env.AI, env.AI_TEXT_MODEL, system, messages, opts);
+    if (workersAiReply) return { text: workersAiReply, source: "workers-ai" };
   }
 
-  return fallbackReply(messages);
+  return { text: fallbackReply(messages), source: "fallback" };
 }
 
-async function callAnthropic(env: Env, system: string, messages: ClaudeMessage[]) {
+async function callAnthropic(env: Env, system: string, messages: ClaudeMessage[], opts: CallClaudeOptions) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), opts.timeoutMs ?? ANTHROPIC_TIMEOUT_MS);
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -35,10 +105,10 @@ async function callAnthropic(env: Env, system: string, messages: ClaudeMessage[]
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: env.ANTHROPIC_MODEL || "claude-3-5-haiku-20241022",
+        model: opts.model || env.ANTHROPIC_MODEL || MODEL_FAST,
         system,
         messages: normalizeAnthropicMessages(messages),
-        max_tokens: 320,
+        max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
         temperature: 0.45
       })
     });
@@ -56,17 +126,18 @@ async function callWorkersAi(
   ai: NonNullable<Env["AI"]>,
   model: string | undefined,
   system: string,
-  messages: ClaudeMessage[]
+  messages: ClaudeMessage[],
+  opts: CallClaudeOptions
 ) {
   try {
     const prompt = `${system}\n\nConversation:\n${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}\nassistant:`;
     const result = (await withTimeout(
       ai.run(model || "@cf/meta/llama-3.1-8b-instruct", {
         prompt,
-        max_tokens: 320,
+        max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
         temperature: 0.5
       }),
-      WORKERS_AI_TIMEOUT_MS,
+      opts.timeoutMs ?? WORKERS_AI_TIMEOUT_MS,
     )) as { response?: string; text?: string };
     return (result.response || result.text || "").trim() || null;
   } catch {

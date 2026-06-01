@@ -579,13 +579,14 @@ function buildBeats(): Beat[] {
       magic: "summon-right",
     },
 
-    // 9. Goals — KAI left, goal card right (the gold-standard layout).
+    // 9. Goals — goal card centered above, KAI under (same layout as
+    //    pillars). Per tester.
     {
       line: "Pick who you wanna be. I'll help you live it.",
-      kaiOffsetX: -140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "reach",
-      visual: <GoalVisual />, visualOffsetX: 110, visualTopPct: 0.42,
+      kaiOffsetX: 0, kaiTopPct: 0.55, kaiScale: 0.70, gesture: "reach",
+      visual: <GoalVisual />, visualOffsetX: 0, visualTopPct: 0.22,
       hint: "tap",
-      magic: "summon-right",
+      magic: "starBurst",
     },
 
     // 10. Handoff — big "Start" CTA appears.

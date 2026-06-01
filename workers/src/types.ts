@@ -14,6 +14,12 @@ export interface Env {
   EMAIL_FROM: string;
   USDA_API_KEY: string;
   SAFETY_ALERT_EMAIL?: string;
+  ANTHROPIC_API_KEY?: string;
+  ANTHROPIC_MODEL?: string;
+  ANTHROPIC_MODEL_FAST?: string;
+  ANTHROPIC_MODEL_MENTAL?: string;
+  ANTHROPIC_MODEL_PHYSICAL?: string;
+  ANTHROPIC_MODEL_HIGH_STAKES?: string;
   AI_TEXT_MODEL?: string;
   AI_VISION_MODEL?: string;
   APP_ENV?: "staging" | "production" | "development";

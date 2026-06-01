@@ -5,7 +5,7 @@ import {
   BODY_LANGUAGE_FALLBACK,
   passesBodyLanguageFilter,
 } from "../lib/body-language-filter";
-import { callClaude } from "../lib/claude";
+import { callClaudeDetailed, selectChatModel } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
@@ -132,9 +132,10 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
     await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: safety.response ?? "", metadata: { safetyEventId: event?.id } });
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
-  const reply = await callClaude(env, system, [{ role: "user", content: message }]);
-  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply });
-  return Response.json({ conversationId: conversation, reply });
+  const generated = await callClaudeDetailed(env, system, [{ role: "user", content: message }], { model: selectChatModel(env, engine, message), maxTokens: 700 });
+  const responseSource = generated.source === "anthropic" ? "model" : generated.source === "workers-ai" ? "workers-ai" : "fallback";
+  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: generated.text, metadata: { responseSource } });
+  return Response.json({ conversationId: conversation, reply: generated.text, responseSource });
 }
 
 /**
@@ -181,7 +182,13 @@ async function handleRoutedChat(
   const decision = await pickAgent(env, message);
   const system = renderAgentPrompt(decision, context);
 
-  let reply = await callClaude(env, system, [{ role: "user", content: message }]);
+  // Our chat engine: depth turns run on the tiered model (Sonnet) with a real
+  // token/latency budget, and we record provenance so a hardcoded fallback is
+  // never mislabeled "model".
+  const chatOpts = { model: selectChatModel(env, decision, message), maxTokens: 700 };
+  const generated = await callClaudeDetailed(env, system, [{ role: "user", content: message }], chatOpts);
+  let reply = generated.text;
+  let source = generated.source;
 
   // Body responses get the post-generation forbidden-language guard.
   if (decision === "physical") {
@@ -189,18 +196,22 @@ async function handleRoutedChat(
     while (!passesBodyLanguageFilter(reply) && attempt < MAX_BODY_REGENERATIONS) {
       attempt += 1;
       const stricter = `${renderBodyPrompt(context)}\n\nIMPORTANT: A previous response was rejected by the post-generation filter for using forbidden body-language. Try again, focusing only on posture, mobility, recovery, and performance. Do not describe size, shape, or appearance.`;
-      reply = await callClaude(env, stricter, [{ role: "user", content: message }]);
+      const regen = await callClaudeDetailed(env, stricter, [{ role: "user", content: message }], chatOpts);
+      reply = regen.text;
+      source = regen.source;
     }
     if (!passesBodyLanguageFilter(reply)) {
       reply = BODY_LANGUAGE_FALLBACK;
+      source = "fallback";
     }
   }
+  const responseSource = source === "anthropic" ? "model" : source === "workers-ai" ? "workers-ai" : "fallback";
 
   await createMessage(env.DB, {
     conversationId: conversation,
     role: "assistant",
     content: reply,
-    metadata: { routedTo: decision },
+    metadata: { routedTo: decision, responseSource },
   });
-  return Response.json({ conversationId: conversation, reply, routedTo: decision });
+  return Response.json({ conversationId: conversation, reply, routedTo: decision, responseSource });
 }

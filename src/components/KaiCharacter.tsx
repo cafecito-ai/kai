@@ -24,6 +24,13 @@ type KaiCharacterProps = {
   /** Pass-through to KaiOrb — disable the breathing animation if
    *  rendering in a static context (screenshot, accessibility-low-motion). */
   animate?: boolean;
+  /** Override the default hand motion with a specific story gesture:
+   *  - "wave"  — right hand sweeps up and back (greeting)
+   *  - "point" — right hand extends right (showing something off to the side)
+   *  - "reach" — both hands extend forward + outward (toward the viewer)
+   *  - "idle"  — gentle bobbing (default when speaking=false)
+   *  - "talk"  — both hands gesture in counter-rhythm (default when speaking) */
+  gesture?: "wave" | "point" | "reach" | "idle" | "talk";
   className?: string;
 };
 
@@ -32,8 +39,15 @@ export function KaiCharacter({
   face,
   speaking = false,
   animate = true,
+  gesture,
   className = "",
 }: KaiCharacterProps) {
+  // Resolve the gesture: explicit prop wins, otherwise fall back to
+  // idle/talk based on the speaking flag.
+  const resolvedGesture: NonNullable<KaiCharacterProps["gesture"]> =
+    gesture ?? (speaking ? "talk" : "idle");
+  const leftClass = animate ? `kai-hand-l-${resolvedGesture}` : "";
+  const rightClass = animate ? `kai-hand-r-${resolvedGesture}` : "";
   // The head takes ~55% of the character's vertical extent; the body
   // wisp takes the remaining ~70% (overlap with the head for natural blend).
   const headSize = Math.round(size * 0.55);
@@ -102,11 +116,10 @@ export function KaiCharacter({
         />
       </svg>
 
-      {/* HANDS — two small floating orbs, one on each side, at the
-          natural arm-end position relative to the body. Bob in place;
-          gesture more actively when speaking. */}
+      {/* HANDS — gesture-driven. See the <style> block below for the
+          full set of choreographed animations. */}
       <div
-        className={`absolute pointer-events-none ${animate ? (speaking ? "kai-hand-gesture-l" : "kai-hand-idle-l") : ""}`}
+        className={`absolute pointer-events-none ${leftClass}`}
         style={{
           left: size * 0.04,
           top: size * 0.78,
@@ -120,7 +133,7 @@ export function KaiCharacter({
         </svg>
       </div>
       <div
-        className={`absolute pointer-events-none ${animate ? (speaking ? "kai-hand-gesture-r" : "kai-hand-idle-r") : ""}`}
+        className={`absolute pointer-events-none ${rightClass}`}
         style={{
           right: size * 0.04,
           top: size * 0.78,
@@ -151,30 +164,53 @@ export function KaiCharacter({
           animation: kai-body-sway 5200ms ease-in-out infinite;
           transform-box: fill-box;
         }
-        /* Hands idle — slow vertical bob with a slight horizontal drift,
-           opposite phase between left/right so the character feels alive. */
-        @keyframes kai-hand-idle-l {
-          0%, 100% { transform: translate(0,    0); }
-          50%      { transform: translate(-2px, -8px); }
+
+        /* IDLE — gentle bob, opposite phase between L/R for life */
+        @keyframes kai-hand-idle-l { 0%,100% { transform: translate(0,0); }    50% { transform: translate(-2px,-8px); } }
+        @keyframes kai-hand-idle-r { 0%,100% { transform: translate(0,0); }    50% { transform: translate(2px,-8px); } }
+        .kai-hand-l-idle { animation: kai-hand-idle-l 3600ms ease-in-out infinite; }
+        .kai-hand-r-idle { animation: kai-hand-idle-r 3600ms ease-in-out infinite; }
+
+        /* TALK — both hands counter-rhythm sweep, "speaking with the
+           hands" energy. */
+        @keyframes kai-hand-talk-l { 0%,100% { transform: translate(-2px,-2px) rotate(-4deg); } 50% { transform: translate(-10px,-16px) rotate(6deg);  } }
+        @keyframes kai-hand-talk-r { 0%,100% { transform: translate(2px,-2px)  rotate(4deg);  } 50% { transform: translate(10px,-16px)  rotate(-6deg); } }
+        .kai-hand-l-talk { animation: kai-hand-talk-l 2200ms ease-in-out infinite; }
+        .kai-hand-r-talk { animation: kai-hand-talk-r 2200ms ease-in-out infinite; }
+
+        /* WAVE — right hand sweeps up and over, left hand stays subtle.
+           A real "hi nice to meet you" wave. */
+        @keyframes kai-hand-wave-r {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          15%      { transform: translate(8px, -30px) rotate(20deg); }
+          35%      { transform: translate(14px, -36px) rotate(-15deg); }
+          55%      { transform: translate(14px, -36px) rotate(20deg); }
+          75%      { transform: translate(10px, -28px) rotate(-10deg); }
         }
-        @keyframes kai-hand-idle-r {
-          0%, 100% { transform: translate(0,   0); }
-          50%      { transform: translate(2px, -8px); }
+        .kai-hand-r-wave { animation: kai-hand-wave-r 2400ms ease-in-out infinite; }
+        .kai-hand-l-wave { animation: kai-hand-idle-l 3600ms ease-in-out infinite; }
+
+        /* POINT — right hand extends out to the side, sustained. The
+           "look at this" gesture. Left hand keeps bobbing. */
+        @keyframes kai-hand-point-r {
+          0%, 100% { transform: translate(22px, -16px) rotate(-25deg); }
+          50%      { transform: translate(28px, -18px) rotate(-30deg); }
         }
-        .kai-hand-idle-l { animation: kai-hand-idle-l 3600ms ease-in-out infinite; }
-        .kai-hand-idle-r { animation: kai-hand-idle-r 3600ms ease-in-out infinite; }
-        /* Hands gesture — more active sweep when speaking, slight rotation
-           so it reads as "talking with my hands." */
-        @keyframes kai-hand-gesture-l {
-          0%, 100% { transform: translate(-2px,  -2px) rotate(-4deg); }
-          50%      { transform: translate(-10px, -16px) rotate(6deg); }
+        .kai-hand-r-point { animation: kai-hand-point-r 2800ms ease-in-out infinite; }
+        .kai-hand-l-point { animation: kai-hand-idle-l 3600ms ease-in-out infinite; }
+
+        /* REACH — both hands extend forward + outward, like KAI is
+           reaching toward the viewer. The "I'm here for you" gesture. */
+        @keyframes kai-hand-reach-l {
+          0%, 100% { transform: translate(-12px, -22px) scale(1);    }
+          50%      { transform: translate(-16px, -26px) scale(1.05); }
         }
-        @keyframes kai-hand-gesture-r {
-          0%, 100% { transform: translate(2px,  -2px) rotate(4deg); }
-          50%      { transform: translate(10px, -16px) rotate(-6deg); }
+        @keyframes kai-hand-reach-r {
+          0%, 100% { transform: translate(12px, -22px)  scale(1);    }
+          50%      { transform: translate(16px, -26px)  scale(1.05); }
         }
-        .kai-hand-gesture-l { animation: kai-hand-gesture-l 2200ms ease-in-out infinite; }
-        .kai-hand-gesture-r { animation: kai-hand-gesture-r 2200ms ease-in-out infinite; }
+        .kai-hand-l-reach { animation: kai-hand-reach-l 3000ms ease-in-out infinite; }
+        .kai-hand-r-reach { animation: kai-hand-reach-r 3000ms ease-in-out infinite; }
       `}</style>
     </div>
   );

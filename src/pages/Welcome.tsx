@@ -162,13 +162,13 @@ export function Welcome() {
           </div>
         )}
 
-        {/* Visual element next to KAI — wrapped in a flex centerer so
-            the inner content is always perfectly horizontally centered
-            regardless of its natural width. */}
+        {/* Visual element next to KAI — translate(-50%) on its own axis
+            centers it on its anchor point. The wrapper is sized to its
+            content, no extra flex needed. */}
         {beat.visual && (
           <div
             key={`visual-${idx}`}
-            className="kai-visual-pop absolute z-[5] flex justify-center"
+            className="kai-visual-pop absolute z-[5]"
             style={{
               left: "50%",
               top: `${(beat.visualTopPct ?? 0.40) * 100}%`,
@@ -569,13 +569,14 @@ function buildBeats(): Beat[] {
       magic: "starBurst",
     },
 
-    // 8. Streak — flame LEFT, KAI RIGHT (mirror of goals).
+    // 8. Streak — same layout as score + goals: KAI left, emblem right.
+    //    Uniform pattern across all side-by-side tour beats.
     {
       line: "Show up every day. That's the goal.",
-      kaiOffsetX: 140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "point",
-      visual: <FlameVisual />, visualOffsetX: -110, visualTopPct: 0.42,
+      kaiOffsetX: -140, kaiTopPct: 0.42, kaiScale: 0.75, gesture: "point",
+      visual: <FlameVisual />, visualOffsetX: 110, visualTopPct: 0.42,
       hint: "tap",
-      magic: "summon-left",
+      magic: "summon-right",
     },
 
     // 9. Goals — KAI left, goal card right (the gold-standard layout).

@@ -162,11 +162,13 @@ export function Welcome() {
           </div>
         )}
 
-        {/* Visual element next to KAI */}
+        {/* Visual element next to KAI — wrapped in a flex centerer so
+            the inner content is always perfectly horizontally centered
+            regardless of its natural width. */}
         {beat.visual && (
           <div
             key={`visual-${idx}`}
-            className="kai-visual-pop absolute z-[5]"
+            className="kai-visual-pop absolute z-[5] flex justify-center"
             style={{
               left: "50%",
               top: `${(beat.visualTopPct ?? 0.40) * 100}%`,
@@ -188,16 +190,9 @@ export function Welcome() {
             transition: "transform 1300ms cubic-bezier(0.16, 1, 0.3, 1), top 1300ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          {/* Halo — color-cycles slowly between accent / cool / warm
-              so it always feels alive. */}
-          <div
-            className="
-              pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2
-              h-[160%] w-[160%] rounded-full blur-3xl
-              kai-halo-cycle kai-halo-pulse
-            "
-            aria-hidden="true"
-          />
+          {/* Halo removed per tester — was a heavy color-cycling blur
+              behind KAI on every slide. The orbiting particles + KAI's
+              own gradient carry plenty of magical energy without it. */}
           {/* Orbiting particles — three small glow dots that circle
               KAI's head at different radii + speeds. Reads as a small
               magical aura around the character. */}

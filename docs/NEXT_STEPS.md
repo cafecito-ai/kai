@@ -12,6 +12,44 @@ Kai is live at `https://kai.boostaisearch.ai` with:
 
 Design is now parked as an external decision. Until a direction is chosen, keep UI changes minimal and focus on product infrastructure and real workflows.
 
+## 2026-06-01 — Chat engine hardening (shipped to prod)
+
+Branch `kai-pr143-chat-engine`, commit `0d47177`, deployed to production
+(`kai.boostaisearch.ai`) and staging. **This supersedes D2 and D3 below** —
+prod `/api/*` is live and Kai now runs on the Anthropic Claude API (Sonnet 4.6
+for chat depth, Haiku 4.5 for routing + the safety classifier), not Workers-AI
+Llama. `ANTHROPIC_API_KEY` is set on both prod and staging Worker secrets.
+
+Shipped + verified:
+- Fixed silent fallback: `callClaude` reported `responseSource:"model"` even when
+  it served the hardcoded rule table. Now reports true provenance; the worker
+  labels rule-table replies `"fallback"`.
+- Model tiering + budget (`claude.ts`): timeout 1.8s→12s, depth max_tokens
+  320→700; env-overridable tiers. All-Sonnet by default (Opus opt-in via
+  `ANTHROPIC_MODEL_HIGH_STAKES`).
+- Fixed the copy-paste loop: stateless fast-path workflows were re-firing the
+  same canned reply on every follow-up. Now gated to the opening/short turns;
+  follow-ups go to the context-aware model.
+- Safety: rewrote the eating-disorder response (care + 988 + Crisis Text Line,
+  no "tell me what you ate" coaching invite); broadened classifier recall
+  (cutting/burning stems, passive ideation, emerging restriction, substance/abuse
+  paraphrases); upgraded the LLM safety classifier from Llama-8b → Haiku.
+- New QA harness `scripts/teen-sim.mjs` (`npm run teen:sim`): 100-persona
+  LLM-as-judge simulation with a reactive teen actor, forced crisis reveal, an
+  8-dimension voice rubric, and a hard safety pass/fail axis. Smoke quality rose
+  42 → ~67/100 from the structural fixes alone. Cost model in `docs/KAI_COST_MODEL.md`.
+
+Fast-follow (NOT yet done — chosen to ship first):
+- **Session-sticky safety:** once a crisis fires in a conversation, stay in a
+  supportive check-in mode and do NOT resume normal coaching until the teen
+  signals safe. Today safety is per-message, so a deflection after a disclosure
+  (e.g. "can I talk about screen time instead?") resumes coaching. Spec §7 step 5
+  / CLAUDE.md "stay present" intent. Touches the safety flow → needs sign-off.
+- **Non-repetitive crisis copy:** the static 988 response repeats verbatim
+  turn-over-turn; vary/contextualize it (model-driven, still always surfaces help).
+- **Full 100-persona baseline:** run `teen:sim --count=100` for the committable
+  before/after number (deferred to save spend).
+
 ## Decisions Owed
 
 Several P-tasks are blocked on a decision that lives outside engineering. Surface here so we can chase them in parallel with the build. Cross-link from PR descriptions when a task waits on one.

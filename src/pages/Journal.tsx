@@ -16,6 +16,7 @@ import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
 import { appendLocalInput } from "../lib/local-score";
+import { useKaiStore } from "../stores/kaiStore";
 
 const MAX_CHARS = 5000;
 
@@ -23,6 +24,7 @@ type Phase = "compose" | "sending" | "done";
 
 export function Journal() {
   const navigate = useNavigate();
+  const setPendingSeed = useKaiStore((s) => s.setPendingSeed);
   const [draft, setDraft] = useState("");
   const [phase, setPhase] = useState<Phase>("compose");
   const [reflection, setReflection] = useState("");
@@ -70,6 +72,11 @@ export function Journal() {
         <DoneState
           reflection={reflection}
           onClose={() => navigate("/home")}
+          onTalk={() => {
+            // Privacy: seed a gentle opener, never the raw private entry.
+            setPendingSeed("i just wrote in my journal and want to keep talking about what's on my mind.");
+            navigate("/chat");
+          }}
         />
       ) : (
         <Composer
@@ -145,9 +152,11 @@ function Composer({
 function DoneState({
   reflection,
   onClose,
+  onTalk,
 }: {
   reflection: string;
   onClose: () => void;
+  onTalk: () => void;
 }) {
   return (
     <div className="flex flex-1 flex-col pb-6">
@@ -172,8 +181,9 @@ function DoneState({
         >
           Back to home
         </button>
-        <Link
-          to="/chat"
+        <button
+          type="button"
+          onClick={onTalk}
           className="
             flex h-12 w-full items-center justify-center rounded-full
             border border-glass-border bg-surface text-text-primary font-medium
@@ -182,7 +192,7 @@ function DoneState({
           "
         >
           Keep talking to KAI
-        </Link>
+        </button>
       </div>
     </div>
   );

@@ -24,8 +24,9 @@ const ctx: KaiContext = {
 describe("renderMindPrompt", () => {
   it("returns the Mind prompt with user-context fields plugged in", () => {
     const prompt = renderMindPrompt(ctx);
-    // Identifies the agent
-    expect(prompt).toContain("mental health and emotional growth side");
+    // Identifies the agent (emotional/life side) + carries the shared voice anchor
+    expect(prompt).toContain("emotional / life side");
+    expect(prompt).toContain("older brother");
     // Plugs the user's name
     expect(prompt).toContain("Lev");
     // Plugs KAI's name (custom or default)
@@ -50,7 +51,8 @@ describe("renderMindPrompt", () => {
 describe("renderBodyPrompt", () => {
   it("returns the Body prompt with user-context fields plugged in", () => {
     const prompt = renderBodyPrompt(ctx);
-    expect(prompt).toContain("physical health and performance side");
+    expect(prompt).toContain("body / training side");
+    expect(prompt).toContain("older brother");
     expect(prompt).toContain("Lev");
     expect(prompt).toContain("KAI");
     expect(prompt).toContain("Age: 16");
@@ -64,12 +66,12 @@ describe("renderBodyPrompt", () => {
 describe("renderAgentPrompt (dispatcher)", () => {
   it("returns the Mind prompt when decision is 'mental'", () => {
     const prompt = renderAgentPrompt("mental", ctx);
-    expect(prompt).toContain("mental health and emotional growth side");
+    expect(prompt).toContain("emotional / life side");
   });
 
   it("returns the Body prompt when decision is 'physical'", () => {
     const prompt = renderAgentPrompt("physical", ctx);
-    expect(prompt).toContain("physical health and performance side");
+    expect(prompt).toContain("body / training side");
   });
 
   it("tone preference flows through to both agents", () => {

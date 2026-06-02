@@ -10,19 +10,21 @@
 // left off. Send: POST via api.chat("kai", message, conversationId)
 // and append the reply when it lands.
 
-import { ArrowLeft, ArrowUp } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { suggestChatAction } from "../lib/chat-actions";
 import { buildKaiClientContext } from "../lib/kai-client-context";
 import { useKaiStore } from "../stores/kaiStore";
 import type { ChatMessage } from "../lib/types";
 
 export function Chat() {
   const location = useLocation();
+  const navigate = useNavigate();
   // Pre-fill the input from a tap-to-talk chip on Home. Cleared after
   // we read it so subsequent renders don't repopulate.
   const initialDraft =
@@ -108,6 +110,8 @@ export function Chat() {
           role: "assistant",
           content: data.reply,
           createdAt: new Date().toISOString(),
+          // Suppress deep-link chips on a crisis turn.
+          safety: Boolean(data.safetyEvent),
         },
       ]);
     } catch {
@@ -169,15 +173,23 @@ export function Chat() {
         ) : isEmpty ? (
           <EmptyState />
         ) : (
-          messages.map((m) =>
-            m.role === "user" ? (
-              <UserBubble key={m.id}>{m.content}</UserBubble>
-            ) : (
-              <KaiMessage key={m.id} orbSize={28}>
-                {m.content}
-              </KaiMessage>
-            ),
-          )
+          messages.map((m) => {
+            if (m.role === "user") {
+              return <UserBubble key={m.id}>{m.content}</UserBubble>;
+            }
+            const action = m.safety ? null : suggestChatAction(m.content);
+            return (
+              <div key={m.id} className="space-y-2">
+                <KaiMessage orbSize={28}>{m.content}</KaiMessage>
+                {action ? (
+                  <ActionChip
+                    label={action.label}
+                    onClick={() => navigate(action.route)}
+                  />
+                ) : null}
+              </div>
+            );
+          })
         )}
         {sending ? <TypingIndicator /> : null}
       </div>
@@ -230,6 +242,27 @@ function EmptyState() {
       <p className="px-1 text-center text-xs text-text-muted">
         This is private. Crisis support is always one tap away.
       </p>
+    </div>
+  );
+}
+
+function ActionChip({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div className="pl-9">
+      <button
+        type="button"
+        onClick={onClick}
+        className="
+          inline-flex items-center gap-1.5 rounded-full
+          border border-accent-cool/40 bg-accent-cool-soft/30
+          px-3.5 py-1.5 text-[13px] font-medium text-text-primary
+          shadow-card transition hover:bg-accent-cool-soft/50
+          active:scale-[0.98] focus-ring
+        "
+      >
+        {label}
+        <ArrowRight size={13} aria-hidden="true" />
+      </button>
     </div>
   );
 }

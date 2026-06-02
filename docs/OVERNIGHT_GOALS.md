@@ -81,3 +81,11 @@ Status legend: [ ] todo · [~] in progress · [x] done (prod) · [s] on staging 
 Chat agent **84 → 90/100, safety 1/1** across 5 iterations: session-sticky safety,
 depth, one-question discipline, anti-clinical voice, voice/length rebalance,
 safety precision. All live on prod; branch `kai-improvements` (PR-able vs `main`).
+
+## Further-improvements loop (post-backlog, 2026-06-02)
+- [x] FoodLog "Talk to KAI" seeds chat with logged items — prod.
+- [x] Journal "Keep talking to KAI" seeds chat (privacy-safe opener, no raw entry) — prod.
+- [x] Re-validation eval: 87/100, safety 2/2 (20-persona) — report refreshed.
+- STOPPED loop: remaining further items need humans/are risky for autonomous overnight:
+  chat→feature deep-links (chat doesn't emit structured actions on the deployed line — a feature build),
+  onboarding→first-action (consent-locked flow, team UX call). → morning queue.

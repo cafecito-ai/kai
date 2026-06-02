@@ -32,6 +32,31 @@ Status legend: [ ] todo · [~] in progress · [x] done (prod) · [s] on staging 
 
 **Morning flags (human):** body-scan→Claude-vision (Gate 5, clinician/Ratner); chat depth-tuning is Lev's voice call (live, measured-better, confirm/revert); wire real Clerk auth to replace the no-auth pilot (NEXT_STEPS P0); deep chat→feature deep-linking (bigger cohesion feature).
 
+## Morning queue run (2026-06-02)
+Worked the 5-item morning queue per "do 5 then work through 1-4":
+- **#5 PR kai-improvements→main** — DONE (PR #147 merged; main @ 27f32dd).
+- **#1 Clerk auth** — DEFERRED by Evan's call: keep the anonymous no-auth pilot
+  (Welcome homepage, no sign-in) for now. No publishable key exists in any
+  deployment (auth was never wired); flip later with a `pk_…` key + VITE_AUTH_REQUIRED=1.
+- **#2 Body scan → Claude vision** — DONE on **staging only** (Gate 5). Root cause:
+  `defaultVisionCall` hit the dead Workers-AI gateway id `@cf/anthropic/claude-sonnet-4`
+  → every scan fell to `vision_error`/retake. Now routes through the **direct Anthropic
+  API** (Sonnet), llava fallback. Staging verified: scan reaches Claude (returns a model
+  `[ERROR]` on a synthetic figure instead of `vision_error`). Privacy intact (no image
+  persist; Anthropic no-train-by-default + llava disable_training). **Needs clinician/Ratner
+  Gate-5 sign-off on a real-human-photo posture read before prod.**
+- **#3 Chat depth** — Lev's voice call, unchanged. The depth tuning is already live and
+  measured-better but reverses the logged 2-3-sentence rule. **Confirm or revert with Lev.**
+- **#4 Chat→feature deep-links** — DONE to **prod**. KAI replies that suggest an in-app
+  action now show one tappable chip → the feature route. Frontend-only; NEVER fires on a
+  crisis turn (safetyEvent flag + 988 text guard, unit-tested). Conservative matcher =
+  low trigger rate by design — **a tuning item for Lev** (which suggestions should chip).
+  The onboarding→first-action half is a consent-locked **team UX call**, not auto-changed.
+
+Pre-existing (not from this run): `scan-storage.test.ts` 3 failures — a SubtleCrypto/test-env
+quirk (encrypt arg type) in the body-scan encryption helper; AES-GCM works in the Workers
+runtime. Flagged, not touched (Gate-5 protected).
+
 ## Tier 1 — Make the core feature sets actually work
 - [ ] **G2. Food tracking, for real.** Upgrade food-photo analysis from Workers-AI
   llava to **Claude vision** (accurate item + macro + quality read), keep USDA

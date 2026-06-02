@@ -27,9 +27,15 @@ export async function requireAuth(c: AuthContext, next: Next) {
 
   const devUser = c.req.header("x-dev-user");
   const isNonProd = c.env.APP_ENV === "development" || c.env.APP_ENV === "staging";
-  if (devUser && isNonProd) {
+  // The product is launching as a no-auth pilot (Clerk not yet wired) — each
+  // browser is its own anonymous user via x-dev-user. Allow that on prod ONLY
+  // when ALLOW_DEV_USER=1 is explicitly set. Never grant ops/admin to an
+  // anonymous prod dev-user (that would expose the ops + safety dashboards) —
+  // ops stays dev/staging-only.
+  const allowDevUser = isNonProd || c.env.ALLOW_DEV_USER === "1";
+  if (devUser && allowDevUser) {
     c.set("userId", devUser);
-    c.set("isOps", true);
+    c.set("isOps", isNonProd);
     await next();
     return;
   }

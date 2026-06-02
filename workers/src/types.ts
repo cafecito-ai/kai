@@ -23,6 +23,10 @@ export interface Env {
   AI_TEXT_MODEL?: string;
   AI_VISION_MODEL?: string;
   APP_ENV?: "staging" | "production" | "development";
+  /** No-auth pilot toggle: when "1", the x-dev-user anonymous identity is
+   *  accepted even on production (never granted ops). Remove once Clerk auth is
+   *  wired (NEXT_STEPS P0). */
+  ALLOW_DEV_USER?: string;
   // T-032 — Bland AI voice integration. Set as Cloudflare secrets
   // (NOT committed to repo) once Ratner provisions a Bland account:
   //   wrangler secret put BLAND_API_KEY

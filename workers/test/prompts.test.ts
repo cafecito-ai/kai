@@ -12,8 +12,8 @@ function baseContext(overrides: Partial<KaiContext> = {}): KaiContext {
     kaiTone: "balanced",
     primaryEngine: "physical",
     intakeSummary: "Sam is a 16-year-old high school junior balancing varsity soccer and AP classes. They want to feel less anxious before games. They could use steady breath practice and sleep.",
-    memorySummary: "Sam usually responds to short practical options and has been working on pre-game nerves.",
     streakOverall: 4,
+    recentPatterns: [],
     ...overrides
   };
 }
@@ -25,8 +25,7 @@ describe("renderKaiSystemPrompt", () => {
     expect(result).toContain("The teen is 16 years old");
     expect(result).toContain('You are "Buddy"');
     expect(result).toContain("Tone preset: balanced");
-    expect(result).toContain("Internal route: physical");
-    expect(result).toContain("TOOL CARDS");
+    expect(result).toContain("Active engine: physical");
     expect(result).toContain("4 days");
   });
 
@@ -104,7 +103,7 @@ describe("renderEnginePrompt", () => {
 
   it("includes hard guardrails specific to each engine", () => {
     expect(renderEnginePrompt("physical", baseContext())).toContain("no pain no gain");
-    expect(renderEnginePrompt("superpower", baseContext({ primaryEngine: "superpower" }))).toContain("pleasing parents");
+    expect(renderEnginePrompt("potential", baseContext({ primaryEngine: "potential" }))).toContain("pleasing parents");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("Replace therapy");
     expect(renderEnginePrompt("mental", baseContext({ primaryEngine: "mental" }))).toContain("identity-based habits");
   });

@@ -55,8 +55,7 @@ export function ProgressSummary() {
           <p className="eyebrow">engine balance</p>
           <div className="mt-3 space-y-2">
             <EngineTotal icon={<Activity />} label="Body" value={totals.physical} tone="text-sage" />
-            <EngineTotal icon={<Brain />} label="Mental" value={totals.mental} tone="text-coral" />
-            <EngineTotal icon={<Brain />} label="Purpose" value={totals.superpower} tone="text-plum" />
+            <EngineTotal icon={<Brain />} label="Mental" value={totals.mental + totals.potential} tone="text-coral" />
           </div>
         </div>
       </div>

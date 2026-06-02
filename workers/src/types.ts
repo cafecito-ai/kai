@@ -14,14 +14,29 @@ export interface Env {
   EMAIL_FROM: string;
   USDA_API_KEY: string;
   SAFETY_ALERT_EMAIL?: string;
-  AI_TEXT_MODEL?: string;
-  AI_VISION_MODEL?: string;
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_MODEL?: string;
+  ANTHROPIC_MODEL_FAST?: string;
+  ANTHROPIC_MODEL_MENTAL?: string;
+  ANTHROPIC_MODEL_PHYSICAL?: string;
+  ANTHROPIC_MODEL_HIGH_STAKES?: string;
+  AI_TEXT_MODEL?: string;
+  AI_VISION_MODEL?: string;
   APP_ENV?: "staging" | "production" | "development";
+  // T-032 — Bland AI voice integration. Set as Cloudflare secrets
+  // (NOT committed to repo) once Ratner provisions a Bland account:
+  //   wrangler secret put BLAND_API_KEY
+  //   wrangler secret put BLAND_PHONE_NUMBER
+  // Webhook URL to register with Bland: <worker-origin>/api/voice/webhook
+  BLAND_API_KEY?: string;
+  BLAND_PHONE_NUMBER?: string;
+  /** Webhook signing secret Bland AI sends in the X-Bland-Signature header
+   *  so we can verify the request actually came from them. Optional in
+   *  dev; required in production. */
+  BLAND_WEBHOOK_SECRET?: string;
 }
 
-export type EngineId = "physical" | "superpower" | "mental";
+export type EngineId = "physical" | "potential" | "mental";
 export type AppVariables = { userId: string; isOps: boolean };
 
 export interface SafetyClassification {

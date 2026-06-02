@@ -56,7 +56,7 @@ export function MoneyPrimer({ onRead }: Props) {
       } else {
         addEvent(
           scrubProgressEvent({
-            engine: "mental" as const,
+            engine: "potential" as const,
             eventType: "money_primer_read",
             eventValue: 6,
             payload: { articleId: article.id }

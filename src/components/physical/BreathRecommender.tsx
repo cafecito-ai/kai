@@ -105,7 +105,7 @@ export function BreathRecommender({ onRecommendation }: Props) {
           <p className="mt-2 text-sm leading-6 text-muted">{recommendation.rationale}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
-              to={`/mental?breath=${encodeURIComponent(recommendation.pattern.id)}#breathing-player`}
+              to={`/engine/mental?breath=${encodeURIComponent(recommendation.pattern.id)}#breathing-player`}
               onClick={commit}
               className="focus-ring inline-flex min-h-11 items-center rounded-full bg-sage px-5 py-2 text-sm font-bold text-white hover:bg-sage/90"
             >

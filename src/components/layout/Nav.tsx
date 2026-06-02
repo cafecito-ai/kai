@@ -1,30 +1,18 @@
-import { HeartPulse, Home, Settings, ShieldAlert, UsersRound, UserRound } from "lucide-react";
+import { Activity, Brain, HeartPulse, Home, Settings, ShieldAlert } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { KaiMark } from "../ui/AppPrimitives";
 
 const links = [
   { to: "/home", label: "Home", icon: Home },
+  { to: "/engine/physical", label: "Body", icon: Activity },
+  { to: "/engine/mental", label: "Mind", icon: Brain },
   { to: "/progress", label: "Progress", icon: HeartPulse },
-  { to: "/groups", label: "Groups", icon: UsersRound },
-  { to: "/profile", label: "Profile", icon: UserRound }
-];
-
-const desktopLinks = [
-  ...links,
   { to: "/settings", label: "Settings", icon: Settings }
 ];
 
 export function Nav() {
   const { pathname } = useLocation();
-  const appRoute =
-    pathname.startsWith("/engine") ||
-    pathname === "/home" ||
-    pathname === "/health" ||
-    pathname === "/mental" ||
-    pathname === "/progress" ||
-    pathname === "/groups" ||
-    pathname === "/profile" ||
-    pathname === "/settings";
+  const appRoute = pathname.startsWith("/engine") || pathname === "/home" || pathname === "/progress" || pathname === "/settings";
 
   return (
     <>
@@ -35,7 +23,7 @@ export function Nav() {
             <span className="font-display text-xl">Kai</span>
           </NavLink>
           <nav className="hidden items-center gap-1 overflow-x-auto md:flex" aria-label="Main navigation">
-            {desktopLinks.map(({ to, label, icon: Icon }) => (
+            {links.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -65,7 +53,7 @@ export function Nav() {
           style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
           aria-label="Primary mobile navigation"
         >
-          {links.map(({ to, label, icon: Icon }) => (
+          {links.slice(0, 5).map(({ to, label, icon: Icon }) => (
             <NavLink
               key={`${to}-${label}`}
               to={to}

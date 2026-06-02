@@ -1,28 +1,20 @@
 import { Hono } from "hono";
-import { HAIKU_MODEL, OPUS_MODEL, callClaude } from "../lib/claude";
-import { buildKaiContext } from "../lib/context";
+import { renderAgentPrompt, renderBodyPrompt } from "../lib/agent-prompts";
+import { pickAgent } from "../lib/agent-router";
+import {
+  BODY_LANGUAGE_FALLBACK,
+  passesBodyLanguageFilter,
+} from "../lib/body-language-filter";
+import { callClaudeDetailed, selectChatModel } from "../lib/claude";
+import { buildKaiContext, type KaiContext } from "../lib/context";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
-import { refreshMemory, shouldRefreshMemory } from "../lib/memory";
 import { renderEnginePrompt } from "../lib/prompts/engines";
-import { renderKaiSystemPrompt } from "../lib/prompts/kai";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
 
-// Spec §6 model selection. Kai (general operator) is fast/cheap, Mental
-// gets the highest-quality model, Physical and Superpower
-// surface stay on Sonnet (callClaude's default).
-function modelForEngine(engine: EngineId | "kai"): string | undefined {
-  if (engine === "kai") return HAIKU_MODEL;
-  if (engine === "mental") return OPUS_MODEL;
-  return undefined; // sonnet via callClaude default
-}
-
-// How many prior turns to send back to the model on each chat request.
-// Cap kept small to bound Anthropic spend; the system prompt already
-// carries the durable context (intake summary, streak, etc.).
-const HISTORY_TURN_LIMIT = 12;
+const MAX_BODY_REGENERATIONS = 3;
 
 const CHAT_RATE_LIMIT = { route: "chat", limit: 30, periodSeconds: 60 } as const;
 
@@ -30,7 +22,7 @@ export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>()
 
 chatRoutes.get("/conversations/current", async (c) => {
   const engine = (c.req.query("engine") ?? "kai") as EngineId | "kai";
-  if (!["kai", "physical", "superpower", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
+  if (!["kai", "physical", "potential", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
   const conversation = await getLatestConversation(c.env.DB, { userId: c.get("userId"), engine });
   if (!conversation) return c.json({ conversationId: null, messages: [] });
   const messages = await getConversationMessages(c.env.DB, { conversationId: conversation.id, userId: c.get("userId") });
@@ -41,32 +33,106 @@ chatRoutes.post("/kai/chat", async (c) => {
   const userId = c.get("userId");
   const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
   if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
-  const body = await c.req.json<{ conversationId?: string; message: string }>();
+  const body = await c.req.json<{
+    conversationId?: string;
+    message: string;
+    // Rawz/8 — KAI memory payload from the client. Shape-validated by
+    // sanitizeClientContext to drop anything weird before it touches the prompt.
+    clientContext?: unknown;
+  }>();
   const context = await buildKaiContext(c.env, userId);
-  return handleChat(c.env, c.executionCtx, userId, body.conversationId, body.message, renderKaiSystemPrompt(context), "kai");
+  const merged = { ...context, clientContext: sanitizeClientContext(body.clientContext) };
+  return handleRoutedChat(c.env, userId, body.conversationId, body.message, merged);
 });
+
+/** Defensive shape check on the client-supplied context. Anything that
+ *  doesn't match the expected shape gets dropped silently. Caps array
+ *  sizes so a malicious client can't blow up our prompt budget. */
+function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClientContext | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const score = (r.todayScore as Record<string, unknown>) ?? {};
+  const hydration = (r.hydration as Record<string, unknown>) ?? {};
+  const level = (r.level as Record<string, unknown>) ?? {};
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const str = (v: unknown, max = 120) =>
+    typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "";
+  return {
+    todayScore: {
+      final: num(score.final),
+      mental: num(score.mental),
+      sleep: num(score.sleep),
+      mood: num(score.mood),
+    },
+    recentActivity: Array.isArray(r.recentActivity)
+      ? r.recentActivity
+          .slice(0, 10)
+          .map((a) => {
+            const o = (a as Record<string, unknown>) ?? {};
+            return { source: str(o.source, 32), count: Math.max(0, Math.floor(num(o.count) ?? 0)) };
+          })
+          .filter((a) => a.source.length > 0)
+      : [],
+    missingLogs: Array.isArray(r.missingLogs)
+      ? (r.missingLogs as unknown[]).slice(0, 6).map((m) => str(m, 60)).filter(Boolean)
+      : [],
+    activeGoals: Array.isArray(r.activeGoals)
+      ? (r.activeGoals as unknown[]).slice(0, 3).map((g) => {
+          const o = (g as Record<string, unknown>) ?? {};
+          return {
+            title: str(o.title, 80),
+            identityFrame: str(o.identityFrame, 100),
+            streakDays: Math.max(0, Math.floor(num(o.streakDays) ?? 0)),
+          };
+        })
+      : [],
+    activeChallenges: Array.isArray(r.activeChallenges)
+      ? (r.activeChallenges as unknown[]).slice(0, 3).map((c) => {
+          const o = (c as Record<string, unknown>) ?? {};
+          return {
+            title: str(o.title, 80),
+            daysHit: Math.max(0, Math.floor(num(o.daysHit) ?? 0)),
+            target: Math.max(1, Math.floor(num(o.target) ?? 1)),
+            daysRemaining: Math.max(0, Math.floor(num(o.daysRemaining) ?? 0)),
+          };
+        })
+      : [],
+    hydration: {
+      todayGlasses: Math.max(0, Math.floor(num(hydration.todayGlasses) ?? 0)),
+      todayTarget: Math.max(1, Math.floor(num(hydration.todayTarget) ?? 8)),
+      goalHitsLast7Days: Math.max(0, Math.min(7, Math.floor(num(hydration.goalHitsLast7Days) ?? 0))),
+    },
+    level: {
+      current: Math.max(1, Math.floor(num(level.current) ?? 1)),
+      label: str(level.label, 40),
+    },
+  };
+}
 
 chatRoutes.post("/engines/:engineId/chat", async (c) => {
   const engineId = c.req.param("engineId") as EngineId;
-  if (!["physical", "superpower", "mental"].includes(engineId)) return c.json({ error: "Unknown engine" }, 404);
+  if (!["physical", "potential", "mental"].includes(engineId)) return c.json({ error: "Unknown engine" }, 404);
   const userId = c.get("userId");
   const limit = await rateLimit(c.env, userId, CHAT_RATE_LIMIT);
   if (!limit.allowed) return rateLimitedResponse(limit, CHAT_RATE_LIMIT);
   const body = await c.req.json<{ conversationId?: string; message: string }>();
   const context = await buildKaiContext(c.env, userId);
-  return handleChat(c.env, c.executionCtx, userId, body.conversationId, body.message, renderEnginePrompt(engineId, context), engineId);
+  return handleChat(c.env, userId, body.conversationId, body.message, renderEnginePrompt(engineId, context), engineId);
 });
 
-async function handleChat(env: Env, ctx: ExecutionContext, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
+/** Load recent conversation turns (incl. the just-saved user message) so the
+ *  model has coaching continuity — follow-ups like "why?" / "what next?" need
+ *  the prior turns, not just the latest message. */
+async function buildHistory(env: Env, conversationId: string, userId: string, fallbackMessage: string) {
+  const recent = await getConversationMessages(env.DB, { conversationId, userId, limit: 10 });
+  const msgs = (recent ?? [])
+    .filter((m): m is typeof m & { role: "user" | "assistant" } => m.role === "user" || m.role === "assistant")
+    .map((m) => ({ role: m.role, content: m.content }));
+  return msgs.length ? msgs : [{ role: "user" as const, content: fallbackMessage }];
+}
+
+async function handleChat(env: Env, userId: string, conversationId: string | undefined, message: string, system: string, engine: EngineId | "kai") {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine });
-
-  // Load recent turns BEFORE the new user message is persisted so we
-  // don't double-include the current message in the Claude prompt.
-  // getConversationMessages returns oldest-first; we want the most
-  // recent N, so load up to 50 then slice the tail.
-  const allPrior = (await getConversationMessages(env.DB, { conversationId: conversation, userId, limit: 50 })) ?? [];
-  const prior = allPrior.slice(-HISTORY_TURN_LIMIT);
-
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
   const safety = await classifySafetyFull(env, message);
   if (!safety.safe) {
@@ -77,26 +143,88 @@ async function handleChat(env: Env, ctx: ExecutionContext, userId: string, conve
     await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: safety.response ?? "", metadata: { safetyEventId: event?.id } });
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
+  const history = await buildHistory(env, conversation, userId, message);
+  const generated = await callClaudeDetailed(env, system, history, { model: selectChatModel(env, engine, message), maxTokens: 700 });
+  const responseSource = generated.source === "anthropic" ? "model" : generated.source === "workers-ai" ? "workers-ai" : "fallback";
+  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: generated.text, metadata: { responseSource } });
+  return Response.json({ conversationId: conversation, reply: generated.text, responseSource });
+}
 
-  // Build the Anthropic messages array: prior user/assistant turns
-  // followed by the new user message. Claude requires the array start
-  // with a user role and forbids two consecutive turns from the same
-  // role, so we strip a leading assistant and drop the trailing turn
-  // if it's already a user (would collide with the new user message).
-  const history = prior
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
-  while (history.length > 0 && history[0].role !== "user") history.shift();
-  if (history.length > 0 && history[history.length - 1].role === "user") history.pop();
+/**
+ * v3 chat path. Per CLAUDE.md v2 §4 + CLAUDE_v3_PATCH:
+ *   1. Safety classifier runs first and always wins
+ *   2. If safe, the routing classifier picks Mind or Body (transparent to user)
+ *   3. Body responses run through the forbidden-language filter; up to 3
+ *      regenerations with a stricter prompt before falling back
+ *   4. User always sees "KAI" — the routing is invisible
+ */
+async function handleRoutedChat(
+  env: Env,
+  userId: string,
+  conversationId: string | undefined,
+  message: string,
+  context: KaiContext,
+) {
+  const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine: "kai" });
+  const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
 
-  const reply = await callClaude(env, system, [...history, { role: "user", content: message }], {
-    model: modelForEngine(engine)
+  // Safety wins. Always.
+  const safety = await classifySafetyFull(env, message);
+  if (!safety.safe) {
+    const event = await logSafetyEvent(env, {
+      userId,
+      conversationId: conversation,
+      messageId: userMessage.id,
+      rawText: message,
+      classification: safety,
+    });
+    if (event && safety.category && safety.severity) {
+      await sendSafetyAlert(env, { eventId: event.id, category: safety.category, severity: safety.severity });
+    }
+    await createMessage(env.DB, {
+      conversationId: conversation,
+      role: "assistant",
+      content: safety.response ?? "",
+      metadata: { safetyEventId: event?.id },
+    });
+    return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
+  }
+
+  // Route to Mind or Body. The pick is internal — user never sees it.
+  const decision = await pickAgent(env, message);
+  const system = renderAgentPrompt(decision, context);
+
+  // Our chat engine: depth turns run on the tiered model (Sonnet) with a real
+  // token/latency budget, and we record provenance so a hardcoded fallback is
+  // never mislabeled "model".
+  const chatOpts = { model: selectChatModel(env, decision, message), maxTokens: 700 };
+  const history = await buildHistory(env, conversation, userId, message);
+  const generated = await callClaudeDetailed(env, system, history, chatOpts);
+  let reply = generated.text;
+  let source = generated.source;
+
+  // Body responses get the post-generation forbidden-language guard.
+  if (decision === "physical") {
+    let attempt = 0;
+    while (!passesBodyLanguageFilter(reply) && attempt < MAX_BODY_REGENERATIONS) {
+      attempt += 1;
+      const stricter = `${renderBodyPrompt(context)}\n\nIMPORTANT: A previous response was rejected by the post-generation filter for using forbidden body-language. Try again, focusing only on posture, mobility, recovery, and performance. Do not describe size, shape, or appearance.`;
+      const regen = await callClaudeDetailed(env, stricter, history, chatOpts);
+      reply = regen.text;
+      source = regen.source;
+    }
+    if (!passesBodyLanguageFilter(reply)) {
+      reply = BODY_LANGUAGE_FALLBACK;
+      source = "fallback";
+    }
+  }
+  const responseSource = source === "anthropic" ? "model" : source === "workers-ai" ? "workers-ai" : "fallback";
+
+  await createMessage(env.DB, {
+    conversationId: conversation,
+    role: "assistant",
+    content: reply,
+    metadata: { routedTo: decision, responseSource },
   });
-  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply });
-  ctx.waitUntil(
-    shouldRefreshMemory(env, userId)
-      .then((shouldRefresh) => (shouldRefresh ? refreshMemory(env, userId) : null))
-      .catch((err) => console.warn("kai memory background refresh failed", err))
-  );
-  return Response.json({ conversationId: conversation, reply });
+  return Response.json({ conversationId: conversation, reply, routedTo: decision, responseSource });
 }

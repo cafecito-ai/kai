@@ -20,12 +20,6 @@ progressRoutes.get("/progress", async (c) => {
   }));
   const summary = await computeProgressSummary(c.env, userId);
   return c.json({
-    // Canonical name is `events` — flat array, not grouped by day.
-    // `eventsByDay` is the legacy alias and stays for one deploy
-    // cycle so cached SPAs reading the old key don't see an empty
-    // events list. Drop in a follow-up once we're confident no
-    // stale clients are calling.
-    events,
     eventsByDay: events,
     level: summary.level,
     totalScore: summary.totalScore,

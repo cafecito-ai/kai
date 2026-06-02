@@ -6,7 +6,7 @@ import type { AppVariables, Env } from "../types";
 
 export const strengthsRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
-strengthsRoutes.post("/engines/superpower/strengths", async (c) => {
+strengthsRoutes.post("/engines/potential/strengths", async (c) => {
   const userId = c.get("userId");
   const body = await c.req.json<{ responses: StrengthsResponses }>();
   if (!body.responses || typeof body.responses !== "object") {

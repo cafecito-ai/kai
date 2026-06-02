@@ -15,7 +15,11 @@ export async function requireAuth(c: AuthContext, next: Next) {
     c.req.path === "/api/demo-kai" ||
     c.req.path === "/api/demo-food-photo" ||
     c.req.path === "/api/demo-food-photo-upload" ||
-    c.req.path === "/api/demo-session"
+    c.req.path === "/api/demo-session" ||
+    // T-034 — Bland AI webhook is called by Bland's servers, not by an
+    // authenticated user. Authn is via BLAND_WEBHOOK_SECRET signature
+    // (X-Bland-Signature header, verified inside the route handler).
+    c.req.path === "/api/voice/webhook"
   ) {
     await next();
     return;

@@ -9,7 +9,7 @@ describe("guides-registry", () => {
 
   it("every registered guide has the required fields", () => {
     for (const guide of GUIDES) {
-      expect(["physical", "superpower", "mental"]).toContain(guide.engine);
+      expect(["physical", "potential", "mental"]).toContain(guide.engine);
       expect(typeof guide.slug).toBe("string");
       expect(guide.slug.length).toBeGreaterThan(0);
       expect(typeof guide.title).toBe("string");
@@ -37,7 +37,7 @@ describe("guides-registry", () => {
   });
 
   it("guidesForEngine returns only entries matching the requested engine", () => {
-    for (const engine of ["physical", "superpower", "mental"] as const) {
+    for (const engine of ["physical", "potential", "mental"] as const) {
       const guides = guidesForEngine(engine);
       for (const g of guides) {
         expect(g.engine).toBe(engine);

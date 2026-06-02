@@ -8,18 +8,19 @@
 //
 // Strategy:
 //   - /api/*           → bypass the SW entirely (always hit the network)
-//   - /crisis          → cache-first with network update (loads instantly
-//                        offline, fresh when online)
+//   - /crisis          → cache-first with network update (must load instantly,
+//                        even offline — it's the safety page)
 //   - /assets/*        → runtime cache (Vite ships content-hashed names
 //                        so we can cache them forever)
-//   - everything else  → network-first with cache fallback. This includes
-//                        / so product/home changes are visible immediately.
+//   - / and other nav  → network-first (so installed/mobile users get the fresh
+//                        app shell after a deploy), with offline cache fallback
+//   - everything else  → network-first with cache fallback
 
-const KAI_SW_VERSION = "v3";
+const KAI_SW_VERSION = "v2";
 const STATIC_CACHE = `kai-static-${KAI_SW_VERSION}`;
 const RUNTIME_CACHE = `kai-runtime-${KAI_SW_VERSION}`;
 
-const STATIC_URLS = ["/crisis", "/manifest.webmanifest"];
+const STATIC_URLS = ["/", "/crisis", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -50,7 +51,9 @@ function isApi(url) {
   return url.pathname.startsWith("/api/");
 }
 
-function isCrisisShell(url) {
+function isCrisis(url) {
+  // ONLY the crisis page is offline-first. The app shell ("/") must be
+  // network-first so a deploy isn't masked by a stale cached shell.
   return url.pathname === "/crisis";
 }
 
@@ -69,7 +72,7 @@ self.addEventListener("fetch", (event) => {
 
   if (isApi(url)) return; // bypass — never cache
 
-  if (isCrisisShell(url)) {
+  if (isCrisis(url)) {
     event.respondWith(cacheFirst(request, STATIC_CACHE));
     return;
   }
@@ -79,8 +82,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // For everything else (non-shell HTML, misc) prefer network with cache
-  // fallback so the SPA shell still works offline.
+  // "/" and every other navigation/HTML: network-first so installed/mobile
+  // users get the fresh shell after a deploy; fall back to cache (then the
+  // precached "/" shell) when offline.
   event.respondWith(networkFirst(request, RUNTIME_CACHE));
 });
 
@@ -119,6 +123,10 @@ async function networkFirst(request, cacheName) {
     const cache = await caches.open(cacheName);
     const cached = await cache.match(request);
     if (cached) return cached;
+    // Offline cold-start with no runtime entry: fall back to the precached
+    // app shell so navigations (incl. "/") still resolve.
+    const shell = await caches.match("/", { cacheName: STATIC_CACHE });
+    if (shell) return shell;
     throw err;
   }
 }

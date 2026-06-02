@@ -3,7 +3,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 /**
  * Single source of truth for the topic guides nested under each engine.
  *
- * Each engine page (Physical / Superpower / Mental) shows an
+ * Each engine page (Physical / Potential / Mental) shows an
  * `<EngineGuidesIndex engine="..." />` section that renders cards for
  * every entry whose engine matches. Clicking a card routes to
  * `/engine/<engine>/guides/<slug>`, which `GuidePage` resolves by
@@ -17,7 +17,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
  * navigation keeps the initial bundle small.
  */
 
-export type GuideEngine = "physical" | "superpower" | "mental";
+export type GuideEngine = "physical" | "potential" | "mental";
 
 export type GuideEntry = {
   engine: GuideEngine;
@@ -155,7 +155,7 @@ export const GUIDES: GuideEntry[] = [
     )
   },
   {
-    engine: "superpower",
+    engine: "potential",
     slug: "focus-and-study",
     title: "Focus + study",
     summary: "Multitasking myth, time blocks, study environment, retrieval practice + spaced repetition.",
@@ -164,7 +164,7 @@ export const GUIDES: GuideEntry[] = [
     )
   },
   {
-    engine: "superpower",
+    engine: "potential",
     slug: "money",
     title: "Money + financial pressure",
     summary: "Real money skills the school skipped — plus an honest look at family stress, college costs, and predatory products.",

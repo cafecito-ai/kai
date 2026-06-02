@@ -1,21 +1,26 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { bodyScanRoutes } from "./routes/body-scan";
 import { chatRoutes } from "./routes/chat";
-import { cueRoutes } from "./routes/cue";
+import { checkInRoutes } from "./routes/check-in";
 import { demoRoutes } from "./routes/demo";
+import { journalRoutes } from "./routes/journal";
+import { sleepRoutes } from "./routes/sleep";
 import { foodRoutes } from "./routes/food";
 import { entriesRoutes } from "./routes/entries";
 import { friendsRoutes } from "./routes/friends";
 import { goalsRoutes } from "./routes/goals";
-import { missionsRoutes } from "./routes/missions";
+import { groupsRoutes } from "./routes/groups";
 import { opsRoutes } from "./routes/ops";
 import { progressRoutes } from "./routes/progress";
+import { scanRoutes } from "./routes/scan";
+import { scoreRoutes } from "./routes/score";
 import { strengthsRoutes } from "./routes/strengths";
 import { userRoutes } from "./routes/user";
+import { voiceRoutes } from "./routes/voice";
+import { workoutsRoutes } from "./routes/workouts";
 import { requireAuth } from "./lib/auth";
 import { consumeConsentToken } from "./lib/consent";
-import { refreshMemoriesForActiveUsers } from "./lib/memory";
+import { recomputeAllUsersPatterns } from "./lib/patterns-store";
 import { recomputeAllProgressSummaries } from "./lib/progress";
 import type { AppVariables, Env } from "./types";
 
@@ -25,30 +30,25 @@ app.use("*", cors());
 app.use("/api/*", requireAuth);
 
 app.get("/health", (c) => c.json({ ok: true, service: "kai" }));
-app.get("/api/health", (c) =>
-  // Surface whether the Anthropic secret is bound so we can verify the
-  // chat path is using Claude without leaking the key. Boolean only —
-  // never the value, never a prefix.
-  c.json({
-    ok: true,
-    service: "kai-api",
-    anthropic: Boolean(c.env.ANTHROPIC_API_KEY),
-    workersAi: Boolean(c.env.AI)
-  })
-);
+app.get("/api/health", (c) => c.json({ ok: true, service: "kai-api" }));
 app.route("/api", chatRoutes);
-app.route("/api", cueRoutes);
+app.route("/api", checkInRoutes);
 app.route("/api", demoRoutes);
+app.route("/api", journalRoutes);
+app.route("/api", sleepRoutes);
 app.route("/api", userRoutes);
 app.route("/api", progressRoutes);
+app.route("/api", scoreRoutes);
 app.route("/api", goalsRoutes);
-app.route("/api", missionsRoutes);
+app.route("/api", groupsRoutes);
 app.route("/api", opsRoutes);
 app.route("/api", entriesRoutes);
 app.route("/api", foodRoutes);
-app.route("/api", bodyScanRoutes);
 app.route("/api", friendsRoutes);
 app.route("/api", strengthsRoutes);
+app.route("/api", workoutsRoutes);
+app.route("/api", scanRoutes);
+app.route("/api", voiceRoutes);
 app.post("/api/safety/log", async (c) => c.json({ event: await c.req.json() }));
 app.get("/api/parent/consent", async (c) => {
   const token = c.req.query("token");
@@ -114,16 +114,20 @@ export default {
           console.error("nightly progress recompute fatal", err);
         }
         try {
-          const memory = await refreshMemoriesForActiveUsers(env);
-          console.log("kai memory refresh", memory);
-        } catch (err) {
-          console.error("kai memory refresh fatal", err);
-        }
-        try {
           const cleanup = await cleanupDemoFoodPhotos(env);
           console.log("demo food photo cleanup", cleanup);
         } catch (err) {
           console.error("demo food photo cleanup fatal", err);
+        }
+        // T-021 — daily refresh of Mental Health pattern observations.
+        // Spec calls for "user's local 6am" but Cloudflare crons are
+        // single-region; one daily run at 07:00 UTC catches everyone
+        // before most US teens are awake. Patterns expire 14 days out.
+        try {
+          const patterns = await recomputeAllUsersPatterns(env.DB);
+          console.log("daily mental patterns recompute", patterns);
+        } catch (err) {
+          console.error("daily mental patterns recompute fatal", err);
         }
       })()
     );

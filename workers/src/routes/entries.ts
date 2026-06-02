@@ -7,7 +7,7 @@ export const entriesRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }
 
 entriesRoutes.get("/engines/:engineId/entries", async (c) => {
   const engine = c.req.param("engineId") as EngineId;
-  if (!["physical", "superpower", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
+  if (!["physical", "potential", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
   const { results } = await c.env.DB.prepare("SELECT * FROM engine_entries WHERE user_id = ? AND engine = ? ORDER BY created_at DESC LIMIT 100")
     .bind(c.get("userId"), engine)
     .all();
@@ -25,7 +25,7 @@ entriesRoutes.get("/engines/:engineId/entries", async (c) => {
 
 entriesRoutes.post("/engines/:engineId/entries", async (c) => {
   const engine = c.req.param("engineId") as EngineId;
-  if (!["physical", "superpower", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
+  if (!["physical", "potential", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
   const body = await c.req.json<{ entryType: string; title?: string; payload?: unknown; completed?: boolean }>();
   await ensureUser(c.env.DB, c.get("userId"));
   const id = crypto.randomUUID();

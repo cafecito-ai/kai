@@ -1,125 +1,217 @@
-import type { Env } from "../types";
+import type { Env, EngineId } from "../types";
 
 interface ClaudeMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-interface CallOptions {
+/** Per-call overrides for the chat LLM. Lets the chat route pick a stronger
+ *  model (and a bigger token/latency budget) for depth turns while leaving
+ *  the lightweight callers (check-in, food/workout comments) on the default. */
+export interface CallClaudeOptions {
   model?: string;
   maxTokens?: number;
-  temperature?: number;
+  timeoutMs?: number;
 }
 
-// Spec §6: default to Sonnet 4.6 for general Kai turns. Engine-specific
-// callers can override per request (Haiku for fast routing, Opus for the
-// Mental engine).
-const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
-// Cheap, fast model for one-shot tasks: safety classifier, intake summary,
-// engine routing, strengths summary, post-action cues.
-export const HAIKU_MODEL = "claude-haiku-4-5";
-// Highest-care model — reserved for Mental engine conversation turns (spec §6).
-export const OPUS_MODEL = "claude-opus-4-7";
-const FALLBACK_LINE = "I'm here. What's the smallest next step?";
+/** Where a reply actually came from. "fallback" means BOTH the Anthropic and
+ *  Workers-AI paths failed and we served a hardcoded rule-table reply — the
+ *  caller must not advertise that as real model output. */
+export type ClaudeSource = "anthropic" | "workers-ai" | "fallback";
 
-/**
- * One-shot Anthropic call. Returns the trimmed text on success, or `null`
- * if the key isn't configured or the API call fails. Callers use the
- * `null` return to fall back to Cloudflare Workers AI (Llama) so a single
- * Anthropic outage doesn't take chat or onboarding offline.
- *
- * This is the path every non-conversational AI helper (safety classifier,
- * intake summary, engine routing, strengths summary, event cues) routes
- * through so the ANTHROPIC_API_KEY secret is honored everywhere, not just
- * on the main chat turn.
- */
-export async function callAnthropic(
-  env: Env,
-  system: string,
-  userPrompt: string,
-  options: CallOptions = {}
-): Promise<string | null> {
-  if (!env.ANTHROPIC_API_KEY) return null;
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        model: options.model || env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL,
-        system,
-        messages: [{ role: "user", content: userPrompt }],
-        max_tokens: options.maxTokens ?? 400,
-        temperature: options.temperature ?? 0.5
-      })
-    });
-    if (!res.ok) {
-      console.warn("anthropic non-2xx", res.status);
-      return null;
-    }
-    const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-    const text = data.content?.find((block) => block.type === "text")?.text?.trim();
-    return text && text.length > 0 ? text : null;
-  } catch (err) {
-    console.warn("anthropic call failed", err);
-    return null;
-  }
+export interface ClaudeResult {
+  text: string;
+  source: ClaudeSource;
 }
 
+// The old 1800ms cap was so tight that any real model call (especially the
+// stronger depth models) timed out and silently fell through to the rule
+// table. Default generously; fast greeting turns never reach the model anyway.
+const ANTHROPIC_TIMEOUT_MS = 12_000;
+const WORKERS_AI_TIMEOUT_MS = 6_000;
+const DEFAULT_MAX_TOKENS = 320;
+
+// Model tiers (CLAUDE.md §8). Each is env-overridable so ops can retune
+// without a code change. Running ALL chat turns on Sonnet for now (predictable
+// per-user cost for the free version). Opus is opt-in: set
+// ANTHROPIC_MODEL_HIGH_STAKES=claude-opus-4-8 to escalate the heaviest turns.
+const MODEL_FAST = "claude-haiku-4-5-20251001";
+const MODEL_DEPTH = "claude-sonnet-4-6";
+const MODEL_HIGH_STAKES = "claude-sonnet-4-6";
+
+/** Pick the chat model for a routed (post-workflow) turn. Both engines get a
+ *  depth-capable model by default; genuinely heavy/long messages escalate to
+ *  the high-stakes tier. Greeting/fast turns don't reach here — they're served
+ *  by the workflow fast-paths before any model call. */
+export function selectChatModel(env: Env, decision: EngineId | "kai" | "mental", message: string): string {
+  // Depth tiers use their own env override or the code default — NOT the generic
+  // ANTHROPIC_MODEL var, which is the *fast* default for lightweight callers and
+  // may point at an older/cheaper (or stale) model. Letting it leak into the
+  // depth path silently downgrades chat (and a dead id sends it to the fallback).
+  if (isHighStakes(message)) return env.ANTHROPIC_MODEL_HIGH_STAKES || MODEL_HIGH_STAKES;
+  if (decision === "physical") return env.ANTHROPIC_MODEL_PHYSICAL || MODEL_DEPTH;
+  return env.ANTHROPIC_MODEL_MENTAL || MODEL_DEPTH;
+}
+
+export { MODEL_FAST };
+
+function isHighStakes(message: string): boolean {
+  const text = message.toLowerCase();
+  // Long, layered messages and emotionally heavy (but non-crisis — crisis is
+  // handled upstream by the safety classifier) topics warrant the deepest model.
+  if (message.length > 420) return true;
+  return /\b(panic attack|panicking|hopeless|worthless|hate myself|can'?t cope|falling apart|breaking down|spiraling|overwhelmed|grief|grieving|trauma|assault|abuse)\b/.test(
+    text,
+  );
+}
+
+/** Backwards-compatible string API. Lightweight callers keep using this. */
 export async function callClaude(
   env: Env,
   system: string,
   messages: ClaudeMessage[],
-  options: CallOptions = {}
+  opts: CallClaudeOptions = {},
 ): Promise<string> {
-  // Prefer the Anthropic API when a key is configured. Production must
-  // have ANTHROPIC_API_KEY set via `wrangler secret put`. Local dev and
-  // staging without the secret fall through to Cloudflare Workers AI
-  // (Llama) so the demo still functions, just at lower quality.
+  return (await callClaudeDetailed(env, system, messages, opts)).text;
+}
+
+/** Same as callClaude, but reports provenance so the chat route can label a
+ *  rule-table reply as "fallback" instead of pretending it was the model. */
+export async function callClaudeDetailed(
+  env: Env,
+  system: string,
+  messages: ClaudeMessage[],
+  opts: CallClaudeOptions = {},
+): Promise<ClaudeResult> {
   if (env.ANTHROPIC_API_KEY) {
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          model: options.model || env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL,
-          system,
-          messages,
-          max_tokens: options.maxTokens ?? 500,
-          temperature: options.temperature ?? 0.5
-        })
-      });
-      if (!res.ok) throw new Error(`anthropic ${res.status}`);
-      const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-      const text = data.content?.find((block) => block.type === "text")?.text?.trim();
-      if (text) return text;
-      // Empty/unexpected response shape — fall through to Workers AI rather
-      // than returning the empty string.
-    } catch {
-      // Any network or non-2xx error: degrade silently to Workers AI.
-    }
+    const anthropicReply = await callAnthropic(env, system, messages, opts);
+    if (anthropicReply) return { text: anthropicReply, source: "anthropic" };
   }
 
-  if (!env.AI) {
-    return "I can help with that. For now, pick one small step you can do in the next ten minutes.";
+  if (env.AI) {
+    const workersAiReply = await callWorkersAi(env.AI, env.AI_TEXT_MODEL, system, messages, opts);
+    if (workersAiReply) return { text: workersAiReply, source: "workers-ai" };
   }
 
+  return { text: fallbackReply(messages), source: "fallback" };
+}
+
+async function callAnthropic(env: Env, system: string, messages: ClaudeMessage[], opts: CallClaudeOptions) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), opts.timeoutMs ?? ANTHROPIC_TIMEOUT_MS);
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY ?? "",
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: opts.model || env.ANTHROPIC_MODEL || MODEL_FAST,
+        system,
+        messages: normalizeAnthropicMessages(messages),
+        max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+        temperature: 0.45
+      })
+    });
+    if (!response.ok) return null;
+    const json = (await response.json()) as { content?: Array<{ type?: string; text?: string }> };
+    return json.content?.find((item) => item.type === "text" && item.text)?.text?.trim() || null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function callWorkersAi(
+  ai: NonNullable<Env["AI"]>,
+  model: string | undefined,
+  system: string,
+  messages: ClaudeMessage[],
+  opts: CallClaudeOptions
+) {
   try {
     const prompt = `${system}\n\nConversation:\n${messages.map((message) => `${message.role}: ${message.content}`).join("\n")}\nassistant:`;
-    const result = (await env.AI.run(env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct", {
-      prompt,
-      max_tokens: 500,
-      temperature: 0.5
-    })) as { response?: string; text?: string };
-    return result.response || result.text || FALLBACK_LINE;
+    const result = (await withTimeout(
+      ai.run(model || "@cf/meta/llama-3.1-8b-instruct", {
+        prompt,
+        max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+        temperature: 0.5
+      }),
+      opts.timeoutMs ?? WORKERS_AI_TIMEOUT_MS,
+    )) as { response?: string; text?: string };
+    return (result.response || result.text || "").trim() || null;
   } catch {
-    return "I hit a snag, but the next move is still simple: pause, name what is happening, and choose one small action.";
+    return null;
   }
+}
+
+function normalizeAnthropicMessages(messages: ClaudeMessage[]) {
+  const normalized: ClaudeMessage[] = [];
+  for (const message of messages) {
+    const content = message.content.trim();
+    if (!content) continue;
+    const previous = normalized.at(-1);
+    if (previous?.role === message.role) {
+      previous.content = `${previous.content}\n\n${content}`;
+    } else {
+      normalized.push({ role: message.role, content });
+    }
+  }
+  return normalized.length ? normalized : [{ role: "user" as const, content: "Help me choose one small next move." }];
+}
+
+export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("AI request timed out")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+function fallbackReply(messages: ClaudeMessage[]) {
+  const last = [...messages].reverse().find((message) => message.role === "user")?.content.toLowerCase() ?? "";
+  if (/\b(yo|hey|hi|hello|sup|what'?s up|wassup)\b/.test(last)) {
+    return "I’m here. What’s the vibe today: mind, body, school, sleep, or confidence?";
+  }
+  if (/\b(friend|friends|group chat|left me out|lonely|crush|delivered|rejected|ignored|social)\b/.test(last)) {
+    return "Oof. That actually hurts. Was it clearly on purpose, or is the silence making your brain run?";
+  }
+  if (/\b(mad|angry|rage|yelled|fight|mom|dad|parent|parents)\b/.test(last)) {
+    return "Feeling bad after means you probably care more than you showed. Cool down first, then say one honest sentence.";
+  }
+  if (/\b(point of trying|always quit|why try|i always fail|nothing works|keep quitting|what's the point|whats the point)\b/.test(last)) {
+    return "Quitting before doesn’t mean you’re cooked forever. The plan was probably too big. What’s one tiny thing you could do for three days?";
+  }
+  if (/\b(protein|high protein|hungry|lunch|lunc|food|eat|make|cook)\b/.test(last)) {
+    return "I got you. Go protein + carb + something fresh: eggs and toast, a turkey/rice bowl, tuna sandwich, Greek yogurt with fruit, beans and rice, or leftovers with water. What do you have?";
+  }
+  if (/\b(test|quiz|exam|homework|study|studying|school|grades?|class|assignment|finals?)\b/.test(last)) {
+    return "Yeah, test stress can make your brain freeze. Do 12 minutes on one topic with your phone away, then check what still feels confusing.";
+  }
+  if (/\b(basketball|hoop|shooting|handles)\b/.test(last)) {
+    return "Keep it simple today: 5 minutes handles, 10 minutes form shots, 5 minutes stretching. Log it after so it counts.";
+  }
+  if (last.includes("sleep") || last.includes("tired")) {
+    return "No perfect routine needed tonight. Just make the next hour easier: dim the screen, plug the phone away from bed, and do one boring thing.";
+  }
+  if (last.includes("food") || last.includes("eat") || last.includes("practice")) {
+    return "Fuel should support the day, not turn into pressure. Tell me what you ate and what you’re trying to do, and I’ll keep it simple.";
+  }
+  if (last.includes("scroll") || last.includes("phone") || last.includes("tiktok") || last.includes("instagram")) {
+    return "Okay, the phone won that round. Day’s not over. Put it across the room for 15 minutes and pick one replacement.";
+  }
+  if (last.length > 220) {
+    return "That’s a lot to carry, but you don’t need to rewrite it for me. The next move is to separate it into three pieces: what happened, what hit you the hardest, and what you can control in the next 10 minutes. Start with the part that feels most urgent right now.";
+  }
+  return "I can work with that. The next move is to name the part that matters most right now, then take one small action instead of trying to solve the whole thing at once.";
 }

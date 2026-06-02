@@ -11,3 +11,13 @@ coverage/
 *.tsbuildinfo
 .gstack/
 docs/linear-import/
+KAI Intern Log.md
+
+# Private docs that should never be in the repo
+KAI Lev Feedback for Ratner.md
+KAI Lev Feedback for Ratner.html
+Lev Feedback for Ratner.pdf
+*.pdf
+
+# macOS
+.DS_Store

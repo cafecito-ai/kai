@@ -90,15 +90,15 @@ describe("summariseProgress", () => {
       { engine: "physical" as const, event_value: 80, occurred_at: "2026-05-12T08:00:00Z" },
       { engine: "physical" as const, event_value: 40, occurred_at: "2026-05-11T08:00:00Z" },
       { engine: "mental" as const, event_value: 60, occurred_at: "2026-05-11T19:00:00Z" },
-      { engine: "superpower" as const, event_value: 80, occurred_at: "2026-05-10T08:00:00Z" }
+      { engine: "potential" as const, event_value: 80, occurred_at: "2026-05-10T08:00:00Z" }
     ];
     const summary = summariseProgress(rows, { now });
     expect(summary.totalScore).toBe(260);
     expect(summary.level).toBe(3); // crosses the 250 threshold
     expect(summary.streaks.overall).toBe(3);
     expect(summary.streaks.physical).toBe(2);
-    expect(summary.streaks.superpower).toBe(0); // last superpower event was 2 days ago, no event today
-    expect(summary.eventCountsByEngine).toEqual({ physical: 2, superpower: 1, mental: 1, kai: 0 });
+    expect(summary.streaks.potential).toBe(0); // last potential event was 2 days ago, no event today
+    expect(summary.eventCountsByEngine).toEqual({ physical: 2, potential: 1, mental: 1, kai: 0 });
     expect(summary.belts.physical).toBe("none");
   });
 
@@ -106,8 +106,8 @@ describe("summariseProgress", () => {
     const summary = summariseProgress([], { now });
     expect(summary.level).toBe(1);
     expect(summary.totalScore).toBe(0);
-    expect(summary.streaks).toEqual({ overall: 0, physical: 0, superpower: 0, mental: 0 });
-    expect(summary.belts).toEqual({ physical: "none", superpower: "none", mental: "none" });
+    expect(summary.streaks).toEqual({ overall: 0, physical: 0, potential: 0, mental: 0 });
+    expect(summary.belts).toEqual({ physical: "none", potential: "none", mental: "none" });
   });
 
   it("treats negative or null event_value as 0", () => {

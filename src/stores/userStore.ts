@@ -2,6 +2,8 @@ import { create } from "zustand";
 import type { EngineId, KaiTone, UserProfile } from "../lib/types";
 
 interface UserState {
+  /** What KAI calls the user (first name from onboarding). */
+  displayName: string | null;
   kaiName: string;
   kaiTone: KaiTone;
   primaryEngine: EngineId;
@@ -10,35 +12,14 @@ interface UserState {
   onboardingCompletedAt: string | null;
   consentStatus: NonNullable<UserProfile["consentStatus"]>;
   parentConsentAt: string | null;
-  /**
-   * The teen's first name as known to Clerk. Synced into the store
-   * by `ApiAuthBridge` (which is provider-gated) so pages can read
-   * it without calling Clerk hooks directly — see
-   * `src/architecture.test.ts` rule 1 for the rationale.
-   *
-   * `null` is the correct empty value (not `""`): consumers check
-   * for nullish to decide whether to fall back to a non-personalized
-   * greeting.
-   */
-  firstName: string | null;
-  /**
-   * True once AppDataHydrator has completed its first GET /api/user/me
-   * (success OR failure). Lets RequireOnboarding wait for the single
-   * source-of-truth fetch instead of firing its own and racing with
-   * the hydrator. Bug being fixed: prior to this flag, both
-   * components called api.getUser() on mount and the last response
-   * to land won — sometimes flickering between states.
-   */
-  hydrated: boolean;
   hydrate: (profile: UserProfile) => void;
-  markHydrated: () => void;
   setKai: (kaiName: string, kaiTone: KaiTone) => void;
   setPrimaryEngine: (engine: EngineId) => void;
   setConsentPending: (parentEmail: string) => void;
-  setFirstName: (firstName: string | null) => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
+  displayName: null,
   kaiName: "Kai",
   kaiTone: "balanced",
   primaryEngine: "physical",
@@ -47,10 +28,17 @@ export const useUserStore = create<UserState>((set) => ({
   onboardingCompletedAt: null,
   consentStatus: "not_required",
   parentConsentAt: null,
-  firstName: null,
-  hydrated: false,
-  hydrate: (profile) =>
+  hydrate: (profile) => {
+    // displayName can arrive either at the top level (newer flows) or
+    // nested inside `user.display_name` (the raw API record). Normalise
+    // here so the rest of the app can read it from one place.
+    const nestedUser = (profile as unknown as { user?: { display_name?: string | null } }).user;
+    const dn =
+      (typeof profile.displayName === "string" && profile.displayName.trim()) ||
+      (typeof nestedUser?.display_name === "string" && nestedUser.display_name.trim()) ||
+      null;
     set({
+      displayName: dn || null,
       kaiName: profile.kaiName || "Kai",
       kaiTone: profile.kaiTone || "balanced",
       primaryEngine: profile.primaryEngine || "physical",
@@ -59,14 +47,9 @@ export const useUserStore = create<UserState>((set) => ({
       onboardingCompletedAt: profile.onboardingCompletedAt ?? null,
       consentStatus: profile.consentStatus ?? "not_required",
       parentConsentAt: profile.parentConsentAt ?? null,
-      hydrated: true
-      // firstName intentionally not hydrated from `profile` — it's
-      // pushed by ApiAuthBridge from Clerk's session, not stored
-      // server-side. The api.getUser() shape doesn't include it.
-    }),
-  markHydrated: () => set({ hydrated: true }),
+    });
+  },
   setKai: (kaiName, kaiTone) => set({ kaiName, kaiTone }),
   setPrimaryEngine: (primaryEngine) => set({ primaryEngine }),
-  setConsentPending: (parentEmail) => set({ parentEmail, consentStatus: "pending", parentConsentAt: null }),
-  setFirstName: (firstName) => set({ firstName })
+  setConsentPending: (parentEmail) => set({ parentEmail, consentStatus: "pending", parentConsentAt: null })
 }));

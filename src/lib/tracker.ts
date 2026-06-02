@@ -2,7 +2,7 @@ import type { ProgressEvent } from "./types";
 
 const ENGINE_LABELS: Record<ProgressEvent["engine"], string> = {
   physical: "Body",
-  superpower: "Purpose",
+  potential: "Mental",
   mental: "Mental",
   kai: "Kai"
 };
@@ -47,7 +47,7 @@ export function beltForLevel(level: number): string {
 export function engineTotals(events: ProgressEvent[]) {
   return {
     physical: sumByEngine(events, "physical"),
-    superpower: sumByEngine(events, "superpower"),
+    potential: sumByEngine(events, "potential"),
     mental: sumByEngine(events, "mental"),
     kai: sumByEngine(events, "kai")
   };

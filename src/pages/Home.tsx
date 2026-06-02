@@ -1,203 +1,639 @@
-import { ChevronDown, HeartPulse, Moon, ShieldAlert, Sparkles, Zap } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { KaiChat } from "../components/kai/KaiChat";
-import { KaiMark } from "../components/ui/AppPrimitives";
-import { useProgressStore } from "../stores/progressStore";
-import { useUserStore } from "../stores/userStore";
+// Home — v3 home screen.
+//
+// Replaces the v0 "engine + rep" home (KAI, start with Mental.,
+// right-rail belt/streak/today widgets) with the v3 layout: Daily Score
+// hero + horizontal-scroll sub-scores + a KAI reflection message + a
+// recent-activity feed + soft suggestions.
+//
+// Phase B (T-009 → T-014) replaces the static demo data here with live
+// data sources:
+//   - Daily Score → `daily_scores` D1 table (T-009 schema, T-010 calc)
+//   - Reflection → Mind agent response keyed off latest check-in
+//   - Activity feed → `score_inputs` rows ingested by T-013
+//
+// Today the page renders polished placeholder content shaped exactly like
+// the Phase B contract — swap statics for live data, no UI changes needed.
 
-/**
- * Home — Cal AI-style single widget.
- *
- * v3 redesign (Lev feedback, 2026-05-26): Home strips down to one
- * personalized chat widget. Resting state shows a Kai-flavored card
- * with a faux composer; tapping it expands KaiChat inline on the
- * same page. Lane entries (Physical / Mental) moved to the dock and
- * the global Quick (+) menu in AppShell so Home can be chat-first
- * and feel like Cal AI's single-action home.
- *
- * Greeting personalization stays on our own userStore (kaiName +
- * firstName) so this page renders without depending on Clerk's
- * useUser hook (which crashes when ClerkProvider isn't mounted —
- * see v2 hotfix #103).
- */
+import {
+  Activity as ActivityIcon,
+  ArrowUpRight,
+  Brain,
+  Flame,
+  Heart,
+  Moon,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { KaiGreeting } from "../components/KaiGreeting";
+import { MissionsCard } from "../components/MissionsCard";
+import { XpPill } from "../components/XpPill";
+import { ScoreRing } from "../components/ScoreRing";
+import { shouldSurfaceVaultOnHome } from "../lib/local-vault";
+import { api } from "../lib/api";
+import {
+  computeLocalScore,
+  readLocalInputs,
+  type LocalInput,
+} from "../lib/local-score";
+
+// ─────────────────────────────────────────────────────────────────────
+// Static demo data (Phase B replaces)
+// ─────────────────────────────────────────────────────────────────────
+
+type DailyScoreView = {
+  score: number;          // 0–100
+  bandLabel: string;      // "Strong start" / "Steady" / "Easy day"
+  trend: number;          // delta vs yesterday (e.g. +6)
+  streak: number;         // current daily streak in days
+  mind: { value: number; outOf: number };
+  sleep: { value: number; outOf: number; unit: string };
+  mood: { value: number; outOf: number };
+};
+
+type ActivityItem = {
+  icon: LucideIcon;
+  iconTint: string;
+  title: string;
+  meta: string;
+  chip?: { label: string; className: string };
+};
+
+const DEMO_SCORE: DailyScoreView = {
+  score: 82,
+  bandLabel: "Strong start",
+  trend: 6,
+  streak: 4,
+  mind: { value: 7, outOf: 10 },
+  sleep: { value: 6.4, outOf: 8, unit: "hrs" },
+  mood: { value: 68, outOf: 100 },
+};
+
+const DEMO_ACTIVITY: ActivityItem[] = [
+  {
+    icon: ActivityIcon,
+    iconTint: "text-accent-warm",
+    title: "Easy run · 32 min",
+    meta: "Yesterday",
+    chip: { label: "+5", className: "bg-success-soft text-success" },
+  },
+  {
+    icon: Moon,
+    iconTint: "text-accent",
+    title: "Slept 6h 24m",
+    meta: "Last night",
+    chip: { label: "−2", className: "bg-warning-soft text-warning" },
+  },
+  {
+    icon: Brain,
+    iconTint: "text-accent-cool",
+    title: "Evening reflection",
+    meta: "Yesterday",
+    chip: { label: "+3", className: "bg-success-soft text-success" },
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────
+
+// Empty-state score: shown for new users / fresh sessions before they've
+// logged anything. Previously we used DEMO_SCORE as the initial state
+// which made new users think they had a 4-day streak / 82 score on
+// signup — confusing and dishonest. Now we start empty and let the
+// data flow in as they log things.
+const EMPTY_SCORE: DailyScoreView = {
+  score: 0,
+  bandLabel: "No data yet",
+  trend: 0,
+  streak: 0,
+  mind: { value: 0, outOf: 10 },
+  sleep: { value: 0, outOf: 8, unit: "hrs" },
+  mood: { value: 0, outOf: 100 },
+};
+
 export function Home() {
-  const events = useProgressStore((state) => state.events);
-  const streak = useProgressStore((state) => state.streak());
-  const kaiName = useUserStore((state) => state.kaiName);
-  const firstName = useUserStore((state) => state.firstName);
-  const today = formatToday();
-  const isNew = events.length === 0;
-  const [chatExpanded, setChatExpanded] = useState(false);
-  const todayEvents = events.filter((event) => event.occurredAt.slice(0, 10) === new Date().toISOString().slice(0, 10));
-  const lastSignal = (todayEvents.length > 0 ? todayEvents[todayEvents.length - 1] : events[events.length - 1])?.eventType ?? "first check-in";
-  const promptChips = isNew
-    ? ["I don't know where to start", "Help me reset", "Build my first mission"]
-    : ["I need a reset", "What should I do next?", "Check my day"];
+  const greeting = greetingForNow();
+  const navigate = useNavigate();
+  // Live data from /api/score/today, then local input log, then a clean
+  // empty state for new users. The old DEMO_SCORE / DEMO_ACTIVITY are
+  // kept around for the marketing /demo route only.
+  const [data, setData] = useState<DailyScoreView>(EMPTY_SCORE);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  // Rawz/3 — level-up detection. Set once on mount if the user crossed
+  // into a new level since they last opened /home. Soft KaiMessage,
+  // dismissable, doesn't interrupt anything.
+  const [levelUp, setLevelUp] = useState<{ newLevel: number; message: string } | null>(null);
+
+  useEffect(() => {
+    // Rawz/3 — level-up moment + Rawz/7 — fan out to groups.
+    import("../lib/local-xp").then(({ checkAndConsumeLevelUp, levelUpMessage, labelForLevel }) => {
+      const r = checkAndConsumeLevelUp();
+      if (r.leveledUp) {
+        setLevelUp({
+          newLevel: r.newLevel,
+          message: levelUpMessage(r.newLevel),
+        });
+        // Fire-and-forget — if the user isn't in any groups it's a no-op
+        // server-side. Failures don't matter; the row dedupes on retry.
+        api
+          .postGroupActivity({
+            kind: "level_up",
+            refKey: String(r.newLevel),
+            hint: labelForLevel(r.newLevel),
+          })
+          .catch(() => {});
+      }
+    });
+    // Rawz/4 + Rawz/7 — also fan out any newly-earned badges. We call
+    // checkAndConsumeNewBadges() here (not where badges are rendered) so
+    // the fan-out fires exactly once per badge, on the first Home visit
+    // after earning. The badges page reads progress, never consumes.
+    import("../lib/local-badges").then(({ checkAndConsumeNewBadges }) => {
+      const earned = checkAndConsumeNewBadges();
+      for (const b of earned) {
+        api
+          .postGroupActivity({
+            kind: "badge",
+            refKey: b.badge.id,
+            hint: b.badge.title,
+          })
+          .catch(() => {});
+      }
+    });
+    // Rawz/7 — streak milestone fan-out. Detects 7 / 30 / 100-day
+    // crossings using local input history; fires once per milestone per
+    // streak run. Reset to 0 clears the announced set so the user gets
+    // the moment again if they come back after a break (D-021).
+    import("../lib/local-streak-milestones").then(
+      ({ checkAndConsumeStreakMilestones }) => {
+        const crossings = checkAndConsumeStreakMilestones();
+        for (const days of crossings) {
+          api
+            .postGroupActivity({
+              kind: "streak",
+              refKey: String(days),
+            })
+            .catch(() => {});
+        }
+      },
+    );
+  }, []);
+
+  // Bump this whenever a state-changed event fires (input logged or
+  // hydration bumped). It re-triggers the score-loading effect below so
+  // the user sees their score move in real time.
+  const [refreshKey, setRefreshKey] = useState(0);
+  // Vault auto-resurface: only true when fading signals fire (low
+  // activity, broken streak, low mood, etc). When false, the Vault tile
+  // stays hidden and the page stays minimal.
+  const [vaultSurfaced, setVaultSurfaced] = useState(false);
+  useEffect(() => {
+    setVaultSurfaced(shouldSurfaceVaultOnHome());
+  }, []);
+  useEffect(() => {
+    function onChange() {
+      setRefreshKey((k) => k + 1);
+    }
+    window.addEventListener("kai:input-appended", onChange);
+    window.addEventListener("kai:state-changed", onChange);
+    return () => {
+      window.removeEventListener("kai:input-appended", onChange);
+      window.removeEventListener("kai:state-changed", onChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // Tier 1 — try the live API.
+      try {
+        const res = await api.getDailyScoreToday();
+        if (cancelled) return;
+        if (res.score.final != null) {
+          setData(toDailyScoreView(res));
+        }
+        if (res.inputs.length > 0) {
+          setActivity(res.inputs.slice(0, 3).map(scoreInputToActivityItem));
+          return; // API had data — done
+        }
+      } catch {
+        /* fall through to local */
+      }
+
+      // Tier 2 — local-only inputs (check-ins logged before the Worker
+      // is wired). Mirrors the same calculator the Worker uses so the
+      // score the user sees is real, just computed in the browser.
+      if (cancelled) return;
+      const inputs = readLocalInputs();
+      if (inputs.length === 0) return; // Tier 3 — keep the EMPTY_SCORE (new-user clean slate)
+      const local = computeLocalScore(inputs);
+      const todayInputs = inputs.filter(
+        (i) => i.date === new Date().toISOString().slice(0, 10),
+      );
+      if (local.final != null) {
+        setData({
+          score: local.final,
+          bandLabel:
+            local.band === "high"
+              ? "Strong start"
+              : local.band === "mid"
+                ? "Steady"
+                : "Easy day",
+          trend: 0,
+          streak: local.streak,
+          mind: { value: local.mental ?? 0, outOf: 100 },
+          sleep: { value: local.sleep ?? 0, outOf: 100, unit: "" },
+          mood: { value: local.mood ?? 0, outOf: 100 },
+        });
+      }
+      const latestThree = [...todayInputs]
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .slice(0, 3);
+      if (latestThree.length > 0) {
+        setActivity(latestThree.map(localInputToActivityItem));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
 
   return (
-    <div className="mx-auto flex min-h-[calc(100svh-10rem)] w-full max-w-md flex-col pb-4 lg:max-w-2xl">
-      <header className="flex items-center justify-between gap-3">
-        <span className="rounded-full border border-line bg-paper/60 px-3 py-1.5 font-mono text-[11px] font-black uppercase tracking-[0.14em] text-muted">
-          {today}
-        </span>
-        {streak > 0 && (
-          <span className="rounded-full border border-line bg-white px-3 py-1.5 font-mono text-[11px] font-black uppercase tracking-[0.14em] text-ink">
-            {streak}-day streak
+    <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
+      {/* KAI greets you the moment you open the app — character +
+          contextual line + tap-to-talk. This is the surface that makes
+          the user WANT to come back and talk to their best friend. */}
+      <KaiGreeting />
+
+      {/* Small ambient context row — streak + level pill */}
+      <div className="flex items-center justify-center gap-2 px-1">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs">
+          <Flame size={12} className="text-accent-warm" />
+          <span className="font-medium text-text-primary">
+            {data.streak}-day streak
           </span>
-        )}
-      </header>
+        </span>
+        <XpPill />
+      </div>
 
-      <section className={chatExpanded ? "mt-5 mb-4" : "mt-6 mb-6"}>
-        <p className="eyebrow">{isNew ? "Welcome" : "Today"}</p>
-        {isNew ? (
-          <h1 className="mt-2 max-w-[14ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
-            Say hi to <span className="font-display font-normal italic text-plum">{kaiName}.</span>
-          </h1>
-        ) : firstName ? (
-          <h1 className="mt-2 max-w-[12ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
-            Hey {firstName}.
-            <br />
-            <span className="font-display font-normal italic text-plum">What's up?</span>
-          </h1>
-        ) : (
-          <h1 className="mt-2 max-w-[11ch] font-display text-[40px] font-black leading-[0.96] tracking-tight text-ink">
-            Today.
-            <br />
-            <span className="font-display font-normal italic text-plum">{kaiName}'s here.</span>
-          </h1>
-        )}
-      </section>
+      {/* Daily Score — hero metric */}
+      <DailyScoreCard data={data} />
 
-      {chatExpanded ? (
-        <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => setChatExpanded(false)}
-            className="focus-ring inline-flex w-fit items-center gap-1.5 self-end rounded-full border border-line bg-white px-3 py-1.5 text-xs font-black text-muted hover:text-ink"
-            aria-label="Collapse chat"
-          >
-            <ChevronDown size={14} aria-hidden="true" />
-            Collapse
-          </button>
-          <KaiChat embedded />
-        </div>
-      ) : (
-        <div className="flex flex-1 flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => setChatExpanded(true)}
-            className="focus-ring group relative flex min-h-[25rem] flex-1 flex-col overflow-hidden rounded-[34px] bg-inkDark p-5 text-left text-white shadow-[0_28px_90px_rgba(10,10,10,0.24)] sm:min-h-[30rem] sm:p-6"
-            aria-label={`Talk to ${kaiName}`}
-          >
-            <div className="absolute inset-0 opacity-90" aria-hidden="true">
-              <div className="absolute inset-x-0 top-0 h-40 bg-[linear-gradient(115deg,rgba(255,240,236,0.20),rgba(91,71,240,0.26)_46%,rgba(220,238,223,0.22))]" />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:26px_26px]" />
-              <div className="absolute bottom-0 left-0 right-0 h-44 bg-[linear-gradient(180deg,transparent,rgba(10,10,10,0.72))]" />
-            </div>
-
-            <div className="relative flex items-start justify-between gap-4">
-              <div>
-                <p className="font-mono text-[11px] font-black uppercase tracking-[0.18em] text-white/58">{kaiName}</p>
-                <p className="mt-2 max-w-[15rem] font-display text-[28px] font-black leading-[0.95] text-white sm:text-[34px]">
-                  {greetingLine(isNew, firstName, kaiName)}
-                </p>
-              </div>
-              <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-white/75">
-                live
-              </span>
-            </div>
-
-            <div className="relative my-7 grid flex-1 place-items-center">
-              <div className="absolute h-56 w-56 rounded-full border border-white/10" aria-hidden="true" />
-              <div className="absolute h-40 w-40 rounded-full border border-white/10" aria-hidden="true" />
-              <div className="relative grid size-36 place-items-center rounded-full border border-white/15 bg-white/8 shadow-[0_22px_80px_rgba(91,71,240,0.42)] backdrop-blur-sm sm:size-44">
-                <KaiMark size="lg" />
-              </div>
-            </div>
-
-            <div className="relative space-y-3">
-              <p className="max-w-[30ch] text-[15px] font-semibold leading-snug text-white/72">
-                {isNew
-                  ? "Drop in exactly as you are. Kai can turn the mess into the next move."
-                  : "Kai has your thread. Start with the messy version and let the next move show up."}
+      {/* Level-up moment lands here when it fires — kept on Home
+          because it's an event/celebration, not data. Dismissable. */}
+      {levelUp && (
+        <div className="rounded-glass border border-accent-soft bg-accent-soft px-4 py-3 shadow-card animate-fade-slide-up">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+                level {levelUp.newLevel}
               </p>
-
-              <div className="grid grid-cols-3 gap-2">
-                <SignalTile icon={Zap} label="Today" value={`${todayEvents.length} reps`} />
-                <SignalTile icon={HeartPulse} label="Streak" value={`${streak} day`} />
-                <SignalTile icon={Moon} label="Signal" value={formatSignal(lastSignal)} />
-              </div>
-
-              <div className="flex items-center justify-between rounded-full border border-white/12 bg-white px-4 py-3 text-ink">
-                <span className="text-sm font-black">say it messy</span>
-                <span
-                  className="grid size-9 place-items-center rounded-full bg-ink text-paper transition group-hover:bg-plum"
-                  aria-hidden="true"
-                >
-                  <Sparkles size={16} />
-                </span>
-              </div>
+              <p className="mt-1 text-sm leading-relaxed text-text-primary">
+                {levelUp.message}
+              </p>
             </div>
-          </button>
-
-          <div className="grid gap-2">
-            {promptChips.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => setChatExpanded(true)}
-                className="focus-ring flex min-h-12 items-center justify-between rounded-[20px] border border-line bg-white px-4 text-left text-sm font-black text-ink shadow-[0_10px_34px_rgba(10,10,10,0.05)]"
-              >
-                <span>{prompt}</span>
-                <Sparkles size={15} className="text-plum" aria-hidden="true" />
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setLevelUp(null)}
+              aria-label="Dismiss"
+              className="
+                shrink-0 rounded-full px-2 py-1
+                font-mono text-[10px] uppercase tracking-[0.14em]
+                text-accent transition hover:bg-accent-soft/60 focus-ring
+              "
+            >
+              got it
+            </button>
           </div>
         </div>
       )}
 
-      <footer className="mt-6 flex flex-col gap-3">
-        <Link
-          to="/crisis"
-          className="focus-ring inline-flex w-fit items-center gap-2 rounded-full border border-line bg-white px-3.5 py-2.5 text-[13px] font-black text-danger"
+      {/* Vault resurface — only visible when the user is showing
+          signs of fading (low activity, broken streak, low mood).
+          Gentle door, not a guilt trip. Stays hidden otherwise so the
+          emotional weight isn't worn down by daily presence. */}
+      {vaultSurfaced && (
+        <button
+          type="button"
+          onClick={() => navigate("/vault")}
+          className="
+            flex w-full items-center justify-between gap-3 rounded-glass
+            border border-accent-soft bg-accent-soft/40
+            px-4 py-3 shadow-card
+            transition active:scale-[0.99] hover:bg-accent-soft/60
+            focus-ring text-left
+          "
         >
-          <ShieldAlert size={15} aria-hidden="true" />
-          Crisis support
-        </Link>
-      </footer>
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-background">
+              <Sparkles size={14} aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+                vault
+              </span>
+              <span className="block text-sm font-medium text-text-primary">
+                Remember why you started
+              </span>
+            </span>
+          </span>
+          <ArrowUpRight size={16} className="text-accent" aria-hidden="true" />
+        </button>
+      )}
+
+      {/* Today's Goals (3 AI-selected actions for today, Rawz/2) */}
+      <MissionsCard />
     </div>
   );
 }
 
-function SignalTile({ icon: Icon, label, value }: { icon: typeof Zap; label: string; value: string }) {
+// ─────────────────────────────────────────────────────────────────────
+// Sections
+// ─────────────────────────────────────────────────────────────────────
+
+function DailyScoreCard({ data }: { data: DailyScoreView }) {
+  const trendPositive = data.trend >= 0;
+  const trendChip = trendPositive
+    ? "bg-success-soft text-success"
+    : "bg-warning-soft text-warning";
   return (
-    <span className="min-w-0 rounded-[18px] border border-white/10 bg-white/10 p-3 text-white backdrop-blur-sm">
-      <span className="flex items-center gap-1.5 font-mono text-[9px] font-black uppercase tracking-[0.14em] text-white/48">
-        <Icon size={12} aria-hidden="true" />
-        {label}
-      </span>
-      <span className="mt-1 block truncate text-sm font-black text-white">{value}</span>
-    </span>
+    <div className="relative overflow-hidden rounded-glass border border-glass-border bg-surface p-6 shadow-card-lg">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+            Today
+          </p>
+          <p className="mt-2 flex items-baseline gap-1">
+            <span className="font-mono text-6xl font-bold leading-none text-text-primary">
+              {data.score}
+            </span>
+            <span className="font-mono text-xl text-text-muted">/100</span>
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1 text-xs font-medium text-success">
+              <Sparkles size={12} aria-hidden="true" />
+              {data.bandLabel}
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[11px] ${trendChip}`}
+            >
+              <ArrowUpRight
+                size={11}
+                aria-hidden="true"
+                className={trendPositive ? "" : "rotate-90"}
+              />
+              {trendPositive ? "+" : ""}
+              {data.trend} vs yesterday
+            </span>
+          </div>
+        </div>
+        <ScoreRing value={data.score} size={104} />
+      </div>
+    </div>
   );
 }
 
-function greetingLine(isNew: boolean, firstName: string | null, kaiName: string) {
-  if (isNew) return `I'm ${kaiName}. What's going on?`;
-  if (firstName) return `What's on your mind?`;
-  return `Pick this up with ${kaiName}.`;
+
+function SubScoreCard({
+  icon,
+  label,
+  value,
+  unit,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  unit: string;
+  color: "cool" | "warm" | "violet";
+}) {
+  const tint = {
+    cool: "bg-accent-cool-soft text-accent-cool",
+    warm: "bg-accent-warm-soft text-accent-warm",
+    violet: "bg-accent-soft text-accent",
+  }[color];
+  return (
+    <div className="min-w-[120px] flex-1 rounded-lg border border-glass-border bg-surface p-4 shadow-card">
+      <div
+        className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${tint}`}
+      >
+        {icon}
+      </div>
+      <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+        {label}
+      </p>
+      <p className="mt-1 font-mono text-2xl font-semibold text-text-primary">
+        {value}
+        {unit && (
+          <span className="ml-0.5 text-xs font-medium text-text-muted">
+            {unit}
+          </span>
+        )}
+      </p>
+    </div>
+  );
 }
 
-function formatSignal(signal: string) {
-  return signal
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase())
-    .slice(0, 18);
+function RecentActivity({ items }: { items: ActivityItem[] }) {
+  return (
+    <div className="space-y-3">
+      <p className="px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+        Recent
+      </p>
+      <div className="rounded-glass border border-glass-border bg-surface p-5 shadow-card">
+        <div className="space-y-4">
+          {items.map((it, i) => {
+            const Icon = it.icon;
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted">
+                  <Icon size={16} className={it.iconTint} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-text-primary">
+                    {it.title}
+                  </p>
+                  <p className="text-xs text-text-muted">{it.meta}</p>
+                </div>
+                {it.chip && (
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 font-mono text-xs ${it.chip.className}`}
+                  >
+                    {it.chip.label}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function formatToday(date = new Date()) {
-  const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
-  const month = date.toLocaleDateString("en-US", { month: "short" });
-  const day = date.getDate();
-  return `${weekday} · ${month} ${day}`;
+// ─────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────
+
+// Adapt the /api/score/today response into the DailyScoreView the UI uses.
+// Live data only fills in what the API has; missing sub-scores fall back to
+// the demo values so the visual is never empty.
+function toDailyScoreView(
+  res: Awaited<ReturnType<typeof api.getDailyScoreToday>>,
+): DailyScoreView {
+  const { score } = res;
+  return {
+    score: score.final ?? DEMO_SCORE.score,
+    bandLabel: bandToLabel(score.band),
+    trend: 0,                              // Phase B follow-up: yesterday delta
+    streak: countConsecutiveDays(res.inputs),
+    mind: { value: score.mental ?? 0, outOf: 100 },
+    sleep: { value: score.sleep ?? 0, outOf: 100, unit: "" },
+    mood: { value: score.mood ?? 0, outOf: 100 },
+  };
+}
+
+function bandToLabel(b: "low" | "mid" | "high" | null): string {
+  if (b === "high") return "Strong start";
+  if (b === "mid") return "Steady";
+  if (b === "low") return "Easy day";
+  return "Getting started";
+}
+
+function countConsecutiveDays(_inputs: ActivityItem[] | unknown[]): number {
+  // Streak is a property of historical score_inputs, not today's set.
+  // T-013 follow-up will compute this from a dedicated query. For now,
+  // we surface a non-zero streak when there are inputs today so the UI
+  // doesn't render an awkward "0-day streak" beside good data.
+  return _inputs.length > 0 ? 1 : 0;
+}
+
+// Turn an API score-input row into something RecentActivity can render.
+function scoreInputToActivityItem(
+  row: { source: string; value: unknown; createdAt: string },
+): ActivityItem {
+  const map: Record<
+    string,
+    { icon: LucideIcon; iconTint: string; title: string }
+  > = {
+    check_in: {
+      icon: Brain,
+      iconTint: "text-accent-cool",
+      title: "Check-in",
+    },
+    journal: {
+      icon: Brain,
+      iconTint: "text-accent-cool",
+      title: "Journal entry",
+    },
+    sleep_log: {
+      icon: Moon,
+      iconTint: "text-accent",
+      title: "Sleep logged",
+    },
+    workout: {
+      icon: ActivityIcon,
+      iconTint: "text-accent-warm",
+      title: "Workout logged",
+    },
+    food_log: {
+      icon: ActivityIcon,
+      iconTint: "text-accent-warm",
+      title: "Food logged",
+    },
+    goal_progress: {
+      icon: Sparkles,
+      iconTint: "text-success",
+      title: "Goal progress",
+    },
+    energy_check_in: {
+      icon: Heart,
+      iconTint: "text-accent-warm",
+      title: "Energy check-in",
+    },
+  };
+  const m = map[row.source] ?? {
+    icon: Brain,
+    iconTint: "text-text-secondary",
+    title: row.source,
+  };
+  return {
+    icon: m.icon,
+    iconTint: m.iconTint,
+    title: m.title,
+    meta: relativeTime(row.createdAt),
+  };
+}
+
+function localInputToActivityItem(input: LocalInput): ActivityItem {
+  // Map local source → row. For check_in we surface the mood emoji so the
+  // user sees their own answer reflected back, not just "Check-in".
+  if (input.source === "check_in") {
+    const mood = (input.value as { mood?: number }).mood;
+    const labels: Record<number, string> = {
+      1: "Really rough",
+      2: "Off",
+      3: "Okay",
+      4: "Pretty good",
+      5: "Really good",
+    };
+    return {
+      icon: Brain,
+      iconTint: "text-accent-cool",
+      title: `Check-in · ${labels[mood ?? 3] ?? "logged"}`,
+      meta: relativeTime(input.createdAt),
+    };
+  }
+  return scoreInputToActivityItem({
+    source: input.source,
+    value: input.value,
+    createdAt: input.createdAt,
+  });
+}
+
+function relativeTime(iso: string): string {
+  const t = new Date(iso).getTime();
+  const diffMin = Math.round((Date.now() - t) / 60000);
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 60 * 24) return `${Math.round(diffMin / 60)}h ago`;
+  return "Yesterday";
+}
+
+function greetingForNow(now = new Date()): {
+  eyebrow: string;
+  headline: string;
+  timestampLabel: string;
+} {
+  const h = now.getHours();
+  const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
+  if (h >= 5 && h < 12) {
+    return {
+      eyebrow: `${weekday} morning`,
+      headline: "Morning",
+      timestampLabel: "this morning",
+    };
+  }
+  if (h >= 12 && h < 17) {
+    return {
+      eyebrow: weekday,
+      headline: "Afternoon",
+      timestampLabel: "this afternoon",
+    };
+  }
+  if (h >= 17 && h < 22) {
+    return {
+      eyebrow: `${weekday} evening`,
+      headline: "Evening",
+      timestampLabel: "this evening",
+    };
+  }
+  return {
+    eyebrow: weekday,
+    headline: "Late tonight",
+    timestampLabel: "tonight",
+  };
 }

@@ -1,4 +1,4 @@
-import { useId, type ElementType, type ReactNode } from "react";
+import type { ElementType, ReactNode } from "react";
 
 type Tone = "body" | "goals" | "reset" | "care" | "danger" | "neutral";
 
@@ -46,103 +46,32 @@ export function KaiMark({ size = "md", label = "Kai" }: { size?: "sm" | "md" | "
   );
 }
 
-/**
- * KaiAvatar — purple-nebula avatar. Design-pass v2 replaces the
- * earlier robot/face SVG with a cosmic gradient + aurora swoosh +
- * sparkles. Per Claude Design's handoff: "humanization of AI via
- * cosmic aesthetic — not glowing-bot, not corporate-mascot."
- *
- * `useId` keys every gradient/filter inside the SVG so multiple
- * KaiAvatars on the same screen don't share IDs (which would cause
- * cross-instance fill bleeding in some browsers).
- */
 export function KaiAvatar({ size = 44, label = "Kai", pulse = false, className = "" }: { size?: number; label?: string; pulse?: boolean; className?: string }) {
-  const uid = useId().replace(/:/g, "");
-  const nebulaId = `kai-n-${uid}`;
-  const auroraId = `kai-a-${uid}`;
-  const rimId = `kai-r-${uid}`;
-  const glowId = `kai-g-${uid}`;
-  const hazeId = `kai-h-${uid}`;
   return (
     <span className={`relative inline-grid shrink-0 place-items-center ${className}`} style={{ width: size, height: size }} aria-label={label} role="img">
-      {pulse && (
-        <span
-          className="absolute inset-0 rounded-full motion-safe:animate-pulse"
-          style={{ background: "rgba(143,92,255,0.18)", filter: "blur(4px)" }}
-        />
-      )}
-      <svg
-        viewBox="0 0 64 64"
-        width={size}
-        height={size}
-        aria-hidden="true"
-        className="relative"
-        style={{ filter: "drop-shadow(0 16px 34px rgba(38,20,74,0.34))" }}
-      >
+      {pulse && <span className="absolute inset-0 rounded-full bg-[#4FC3F7]/20 motion-safe:animate-pulse" />}
+      <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="relative drop-shadow-[0_10px_22px_rgba(15,23,42,0.18)]">
         <defs>
-          <radialGradient id={nebulaId} cx="38%" cy="28%" r="74%">
-            <stop offset="0%" stopColor="#F8F1FF" />
-            <stop offset="18%" stopColor="#B892FF" />
-            <stop offset="44%" stopColor="#5E34E8" />
-            <stop offset="72%" stopColor="#1B123A" />
-            <stop offset="100%" stopColor="#05050E" />
+          <radialGradient id="kai-face-glow" cx="33%" cy="24%" r="74%">
+            <stop offset="0%" stopColor="#E9FBFF" />
+            <stop offset="42%" stopColor="#4FC3F7" />
+            <stop offset="100%" stopColor="#2563EB" />
           </radialGradient>
-          <linearGradient id={auroraId} x1="13" y1="13" x2="52" y2="52" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#F4E8FF" />
-            <stop offset="35%" stopColor="#9A6BFF" />
-            <stop offset="68%" stopColor="#5B2FE5" />
-            <stop offset="100%" stopColor="#D9B8FF" />
+          <linearGradient id="kai-ear-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#A3FF12" />
+            <stop offset="100%" stopColor="#22D3EE" />
           </linearGradient>
-          <linearGradient id={rimId} x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.88" />
-            <stop offset="38%" stopColor="#A98CFF" stopOpacity="0.62" />
-            <stop offset="72%" stopColor="#6F46F5" stopOpacity="0.82" />
-            <stop offset="100%" stopColor="#F1E7FF" stopOpacity="0.52" />
-          </linearGradient>
-          <filter id={glowId} x="-35%" y="-35%" width="170%" height="170%">
-            <feGaussianBlur stdDeviation="1.9" result="blur" />
-            <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.53 0 0 0 0 0.32 0 0 0 0 1 0 0 0 0.78 0" />
-            <feBlend in="SourceGraphic" />
-          </filter>
-          <filter id={hazeId} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="0.55" />
-          </filter>
         </defs>
-        <circle cx="32" cy="32" r="30" fill="#CDBBFF" opacity="0.22" />
-        <circle cx="32" cy="32" r="27" fill={`url(#${nebulaId})`} stroke={`url(#${rimId})`} strokeWidth="2" />
-        <path
-          d="M16 36.8c5.7-12.6 26.5-16.4 34.2-6.7 4.9 6.2-2.4 15-14 16.8-10.7 1.7-21.6-2.7-19.4-9.1 1.9-5.4 13.8-6.6 24.4-2.5"
-          fill="none"
-          stroke={`url(#${auroraId})`}
-          strokeLinecap="round"
-          strokeWidth="4.35"
-          opacity="0.78"
-          filter={`url(#${glowId})`}
-        />
-        <path
-          d="M20.2 41.6c7.2 5 20.1 4.7 26.5-.7 4-3.4 2.2-8-3.5-10.1-7.1-2.7-17.8-.7-22 3.1"
-          fill="none"
-          stroke="#F8F1FF"
-          strokeLinecap="round"
-          strokeWidth="1.45"
-          opacity="0.86"
-        />
-        <path
-          d="M22.8 22.5c7-4.9 17.9-3.7 23.4 2.2"
-          fill="none"
-          stroke="#CDBBFF"
-          strokeLinecap="round"
-          strokeWidth="2"
-          opacity="0.46"
-          filter={`url(#${hazeId})`}
-        />
-        <circle cx="23.3" cy="21.4" r="1.45" fill="#FFFFFF" opacity="0.92" />
-        <circle cx="42.9" cy="24.1" r="1.1" fill="#F4E8FF" opacity="0.86" />
-        <circle cx="47.1" cy="38.3" r="1.25" fill="#D9B8FF" opacity="0.82" />
-        <circle cx="18.8" cy="34.2" r="0.9" fill="#FFFFFF" opacity="0.88" />
-        <circle cx="31.2" cy="15.8" r="0.75" fill="#FFFFFF" opacity="0.7" />
-        <circle cx="35" cy="49.2" r="0.8" fill="#F4E8FF" opacity="0.7" />
-        <path d="M30.5 25.5l1.45 2.9 3.05.75-2.88 1.45-.76 3.05-1.45-2.9-3.05-.75 2.88-1.45.76-3.05z" fill="#FFFFFF" opacity="0.9" />
+        <circle cx="32" cy="32" r="29" fill="#EAF8FF" opacity="0.72" />
+        <circle cx="32" cy="32" r="25" fill="url(#kai-face-glow)" stroke="rgba(255,255,255,0.72)" strokeWidth="2.4" />
+        <circle cx="23" cy="29" r="3.2" fill="#07111E" />
+        <circle cx="41" cy="29" r="3.2" fill="#07111E" />
+        <circle cx="22" cy="28" r="1" fill="#FFFFFF" />
+        <circle cx="40" cy="28" r="1" fill="#FFFFFF" />
+        <path d="M24 40c4.8 4.2 11.2 4.2 16 0" fill="none" stroke="#07111E" strokeLinecap="round" strokeWidth="3.2" />
+        <path d="M12 35c-4.2 2.2-6.5 5.1-6.8 8.8" fill="none" stroke="url(#kai-ear-gradient)" strokeLinecap="round" strokeWidth="4.4" />
+        <path d="M52 35c4.2 2.2 6.5 5.1 6.8 8.8" fill="none" stroke="url(#kai-ear-gradient)" strokeLinecap="round" strokeWidth="4.4" />
+        <path d="M20 18l2.1 4.1 4.4 1.1-4.1 2.1-1.1 4.4-2.1-4.1-4.4-1.1 4.1-2.1L20 18z" fill="#FFFFFF" opacity="0.9" />
       </svg>
     </span>
   );
@@ -267,59 +196,6 @@ export function MetricPill({ label, value, tone = "neutral" }: { label: string; 
     <div className="min-w-0 rounded-kai border border-line bg-white px-3 py-2 text-center">
       <p className="truncate text-[10px] font-black uppercase tracking-wider text-muted">{label}</p>
       <p className={`mt-1 truncate text-sm font-black capitalize ${valueColor}`}>{value}</p>
-    </div>
-  );
-}
-
-/**
- * Note — a small inline reassurance card. Used for safety messaging
- * that should stay visible across screens (e.g. "No body score here"
- * on the Body Scan, "Kai is not therapy" on chat surfaces).
- *
- * Three tones:
- *   - "sage" (default): bodyWash background. For positive safety
- *     reassurances tied to the Physical engine.
- *   - "warm": warmPaper background. For neutral disclosures.
- *   - "danger": dangerWash background. For crisis-related notes
- *     that must read as serious.
- */
-export function Note({
-  icon,
-  children,
-  tone = "sage",
-  className = ""
-}: {
-  icon?: ReactNode;
-  children: ReactNode;
-  tone?: "sage" | "warm" | "danger";
-  className?: string;
-}) {
-  const styles = {
-    sage: {
-      surface: "border-body/20 bg-bodyWash",
-      iconWrap: "bg-white text-body",
-      body: "text-body"
-    },
-    warm: {
-      surface: "border-line bg-warmPaper",
-      iconWrap: "bg-white text-ink",
-      body: "text-ink"
-    },
-    danger: {
-      surface: "border-danger/25 bg-dangerWash",
-      iconWrap: "bg-white text-danger",
-      body: "text-danger"
-    }
-  }[tone];
-
-  return (
-    <div className={`flex items-start gap-3 rounded-kai border p-3 ${styles.surface} ${className}`}>
-      {icon && (
-        <span className={`grid size-7 shrink-0 place-items-center rounded-full ${styles.iconWrap}`} aria-hidden="true">
-          {icon}
-        </span>
-      )}
-      <div className={`text-sm font-bold leading-snug ${styles.body}`}>{children}</div>
     </div>
   );
 }

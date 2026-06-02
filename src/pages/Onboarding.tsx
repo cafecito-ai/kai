@@ -1,46 +1,162 @@
+// Onboarding — KAI v3 §4 step order.
+//
+//   1. Name input          (user's first name)
+//   2. Age + parent email  (parent email required when under 18)
+//   3. Focus areas         (multi-select chips, what they want to work on)
+//   4. Hardest lately      (free text, optional, skippable)
+//   5. Meet KAI            (intro both agents: Mind + Body)
+//   6. Tone picker         (warm / balanced / direct)
+//   7. Confirm + consent   (parental consent fires automatically for under-18)
+//
+// Target: under 90 seconds, ≤7 steps. Existing API contracts preserved:
+// api.submitIntake, api.updateUser, api.sendParentConsent. The v0 three-engine
+// picker + 6-question intake battery are retired in favor of focus-area
+// multi-select + a single free-text question (covers v3 §4 step 4).
+//
+// requires_safety_review per AGENT_PLAN — touches the consent flow. Ratner
+// has authorized build-phase changes per DECISIONS.md D-007; production sign-
+// off still rests with Ratner per CLAUDE.md §9.
+
 import {
-  Activity,
+  ArrowLeft,
   ArrowRight,
   Brain,
-  Check,
-  ChevronLeft,
   Dumbbell,
-  Flame,
-  HeartPulse,
-  Loader2,
-  Mail,
-  Moon,
-  ShieldCheck,
+  ShieldAlert,
   Sparkles,
-  Target,
-  UsersRound,
-  Utensils,
-  Zap
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { KaiAvatar } from "../components/ui/AppPrimitives";
-import { Button } from "../components/ui/Button";
+
+import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import {
+  formatFollowUpsForIntake,
+  pickFollowUps,
+  type FollowUpResponse,
+} from "../lib/onboarding-followups";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
-const DEMO_STORAGE_KEY = "kai_demo_build_v1";
+// ─────────────────────────────────────────────────────────────────────
+// Step content
+// ─────────────────────────────────────────────────────────────────────
 
+// Focus areas grouped into three calm sections so the chip wall reads as
+// "scan a section" rather than "wall of 17". Group labels are intentionally
+// short and warm (not "categories").
+type FocusAreaId =
+  | "mental_clarity"
+  | "managing_stress"
+  | "anxiety"
+  | "mood"
+  | "confidence"
+  | "motivation"
+  | "focus"
+  | "finding_purpose"
+  | "school_pressure"
+  | "social_life"
+  | "friendships"
+  | "family_stuff"
+  | "better_sleep"
+  | "energy"
+  | "getting_stronger"
+  | "eating_better"
+  | "body_image";
+
+type FocusOption = { id: FocusAreaId; label: string };
+type FocusGroup = { label: string; options: FocusOption[] };
+
+const FOCUS_GROUPS: FocusGroup[] = [
+  {
+    label: "How you're feeling",
+    options: [
+      { id: "mental_clarity", label: "Mental clarity" },
+      { id: "managing_stress", label: "Managing stress" },
+      { id: "anxiety", label: "Anxiety" },
+      { id: "mood", label: "Mood" },
+      { id: "confidence", label: "Confidence" },
+    ],
+  },
+  {
+    label: "How you spend your days",
+    options: [
+      { id: "motivation", label: "Motivation" },
+      { id: "focus", label: "Focus" },
+      { id: "finding_purpose", label: "Finding purpose" },
+      { id: "school_pressure", label: "School pressure" },
+      { id: "social_life", label: "Social life" },
+      { id: "friendships", label: "Friendships" },
+      { id: "family_stuff", label: "Family stuff" },
+    ],
+  },
+  {
+    label: "How your body feels",
+    options: [
+      { id: "better_sleep", label: "Better sleep" },
+      { id: "energy", label: "Energy" },
+      { id: "getting_stronger", label: "Getting stronger" },
+      { id: "eating_better", label: "Eating better" },
+      { id: "body_image", label: "Body image" },
+    ],
+  },
+];
+
+// Map focus areas → suggested primary engine. Ties and ambiguity default to
+// "mental" per AGENT_PLAN T-006 §4 ("unclear → mental, more general-purpose
+// voice"). Body image is intentionally mental-leaning — it's an identity
+// conversation, not a physique conversation.
+const MENTAL_LEANING: FocusAreaId[] = [
+  "mental_clarity",
+  "managing_stress",
+  "anxiety",
+  "mood",
+  "confidence",
+  "finding_purpose",
+  "motivation",
+  "focus",
+  "social_life",
+  "friendships",
+  "family_stuff",
+  "school_pressure",
+  "body_image",
+];
+
+function suggestEngine(focusAreas: FocusAreaId[]): EngineId {
+  if (focusAreas.length === 0) return "mental";
+  const mentalCount = focusAreas.filter((a) =>
+    MENTAL_LEANING.includes(a),
+  ).length;
+  const physicalCount = focusAreas.length - mentalCount;
+  return physicalCount > mentalCount ? "physical" : "mental";
+}
+
+const TONES: Array<{ id: KaiTone; title: string; preview: string }> = [
+  {
+    id: "warm",
+    title: "Warm",
+    preview:
+      "That sounds like a lot. We can slow it down and start with what feels easiest.",
+  },
+  {
+    id: "balanced",
+    title: "Balanced",
+    preview:
+      "We can keep this small. Pick the easiest next move and build from there.",
+  },
+  {
+    id: "direct",
+    title: "Direct",
+    preview: "Two clean options. Pick one, give it ten minutes, reassess.",
+  },
+];
+
+const DEMO_STORAGE_KEY = "kai_demo_build_v1";
 type DemoBuildSlice = {
   firstName?: string;
-  vibes?: string[];
   kaiName?: string;
   kaiTone?: KaiTone;
-  tried?: string[];
-  goalText?: string;
-  feelingsSummary?: string;
-  mealSummary?: string;
 };
-
-type VibeId = "stressed" | "locked_in" | "tired" | "motivated" | "lonely" | "confident" | "chaotic" | "bored";
-type SignalId = "sleep" | "energy" | "confidence" | "movement" | "food" | "social";
-type MissionId = "mind" | "body" | "confidence" | "discipline" | "food" | "sleep" | "social" | "goals";
 
 function loadDemoBuild(): DemoBuildSlice | null {
   if (typeof window === "undefined") return null;
@@ -48,483 +164,585 @@ function loadDemoBuild(): DemoBuildSlice | null {
     const raw = localStorage.getItem(DEMO_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return null;
-    return parsed as DemoBuildSlice;
+    return parsed && typeof parsed === "object"
+      ? (parsed as DemoBuildSlice)
+      : null;
   } catch {
     return null;
   }
 }
 
-function isValidKaiTone(v: unknown): v is KaiTone {
+function isKaiTone(v: unknown): v is KaiTone {
   return v === "warm" || v === "balanced" || v === "direct";
 }
 
-const toneChoices: Array<{ id: KaiTone; label: string; copy: string; preview: string }> = [
-  { id: "balanced", label: "Real", copy: "Calm, honest, not corny.", preview: "We can keep this small. Pick the next rep and build from there." },
-  { id: "warm", label: "Soft", copy: "More patient and reflective.", preview: "That sounds like a lot to hold. Let's slow it down and choose one manageable move." },
-  { id: "direct", label: "Direct", copy: "Faster, practical, clearer.", preview: "Here are two clean options. Pick one, do it for ten minutes, then reassess." }
-];
+// ─────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────
 
-const vibeChoices: Array<{ id: VibeId; label: string; icon: typeof Brain }> = [
-  { id: "stressed", label: "Stressed", icon: Brain },
-  { id: "locked_in", label: "Locked in", icon: Zap },
-  { id: "tired", label: "Tired", icon: Moon },
-  { id: "motivated", label: "Motivated", icon: Flame },
-  { id: "lonely", label: "Lonely", icon: UsersRound },
-  { id: "confident", label: "Confident", icon: Sparkles },
-  { id: "chaotic", label: "Chaotic", icon: Activity },
-  { id: "bored", label: "Bored", icon: Target }
-];
-
-const signalCopy: Record<SignalId, { label: string; low: string; mid: string; high: string; icon: typeof Brain }> = {
-  sleep: { label: "Sleep", low: "Rough", mid: "Okay", high: "Solid", icon: Moon },
-  energy: { label: "Energy", low: "Low", mid: "Fine", high: "High", icon: Zap },
-  confidence: { label: "Confidence", low: "Quiet", mid: "Mixed", high: "Strong", icon: Sparkles },
-  movement: { label: "Movement", low: "None", mid: "Some", high: "Active", icon: Dumbbell },
-  food: { label: "Food/body", low: "Messy", mid: "Neutral", high: "Good", icon: Utensils },
-  social: { label: "Social", low: "Heavy", mid: "Normal", high: "Connected", icon: UsersRound }
-};
-
-const missionChoices: Array<{ id: MissionId; label: string; copy: string; icon: typeof Brain; engine: EngineId; route: string }> = [
-  { id: "mind", label: "Mind", copy: "Feel less overloaded.", icon: Brain, engine: "mental", route: "/mental?module=checkin" },
-  { id: "body", label: "Body", copy: "Move, recover, feel better.", icon: HeartPulse, engine: "physical", route: "/health?module=movement" },
-  { id: "confidence", label: "Confidence", copy: "Stop shrinking yourself.", icon: Sparkles, engine: "superpower", route: "/mental?module=purpose" },
-  { id: "discipline", label: "Discipline", copy: "Build systems, not hype.", icon: Target, engine: "superpower", route: "/mental?module=purpose" },
-  { id: "food", label: "Food", copy: "Log without shame.", icon: Utensils, engine: "physical", route: "/health?module=food" },
-  { id: "sleep", label: "Sleep", copy: "Reset the foundation.", icon: Moon, engine: "physical", route: "/health?module=movement" },
-  { id: "social", label: "Social", copy: "Handle pressure and loneliness.", icon: UsersRound, engine: "mental", route: "/mental?module=checkin" },
-  { id: "goals", label: "Goals", copy: "Make the next move real.", icon: Flame, engine: "superpower", route: "/mental?module=purpose" }
-];
-
-const steps = ["Gate", "Kai", "Vibe", "Signals", "Focus", "Context", "Reveal"];
-
-const CONSENT_POLL_MS = 5000;
+// Rawz/5 — 8 steps now (inserted adaptive follow-up between Hardest
+// and Meet KAI). Net flow stays under 90 seconds for most users since
+// the new step is at most 3 quick-tap questions, all skippable.
+const TOTAL_STEPS = 8;
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setKai, setPrimaryEngine, setConsentPending, hydrate } = useUserStore();
-  const storedConsentStatus = useUserStore((state) => state.consentStatus);
-  const storedParentEmail = useUserStore((state) => state.parentEmail);
-  const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
+  const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
+
   const [step, setStep] = useState(0);
-  const [age, setAge] = useState("16");
-  const [parentEmail, setParentEmail] = useState(storedParentEmail ?? "");
-  const [kaiName, setKaiName] = useState(() => {
-    const name = demoBuild?.kaiName?.trim();
-    return name && name.length > 0 ? name : "Kai";
-  });
-  const [kaiTone, setKaiTone] = useState<KaiTone>(() => (isValidKaiTone(demoBuild?.kaiTone) ? demoBuild.kaiTone : "balanced"));
-  const [vibes, setVibes] = useState<VibeId[]>(() => normalizeDemoVibes(demoBuild?.vibes));
-  const [signals, setSignals] = useState<Record<SignalId, number>>({
-    sleep: 1,
-    energy: 1,
-    confidence: 1,
-    movement: 1,
-    food: 1,
-    social: 1
-  });
-  const [mission, setMission] = useState<MissionId>(() => inferDemoMission(demoBuild));
-  const [context, setContext] = useState(() => {
-    const parts = [demoBuild?.goalText, demoBuild?.feelingsSummary, demoBuild?.mealSummary].filter(Boolean);
-    return parts.join(" ");
-  });
+  const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
+
+  const [firstName, setFirstName] = useState(demoBuild?.firstName ?? "");
+  const [age, setAge] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
+  const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([]);
+  const [hardestLately, setHardestLately] = useState("");
+  // Rawz/5 — adaptive follow-up responses keyed by question id.
+  const [followUps, setFollowUps] = useState<FollowUpResponse>({});
+  const [kaiName] = useState(demoBuild?.kaiName?.trim() || "KAI");
+  const [kaiTone, setKaiTone] = useState<KaiTone>(
+    isKaiTone(demoBuild?.kaiTone) ? demoBuild.kaiTone : "balanced",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [consentSending, setConsentSending] = useState(false);
-  const [consentMessage, setConsentMessage] = useState("");
 
-  const normalizedAge = Number(age) || undefined;
-  const isMinor = Boolean(normalizedAge && normalizedAge < 18);
-  const selectedMission = missionChoices.find((item) => item.id === mission) ?? missionChoices[0];
-  const selectedTone = toneChoices.find((tone) => tone.id === kaiTone) ?? toneChoices[0];
-  const primaryEngine: EngineId = selectedMission.engine;
-  const progress = ((step + 1) / steps.length) * 100;
-  const calibration = useMemo(() => calibrationScore({ vibes, signals, context }), [vibes, signals, context]);
+  const ageNum = Number(age) || undefined;
+  const isMinor = Boolean(ageNum && ageNum < 18);
+  const primaryEngine = useMemo(() => suggestEngine(focusAreas), [focusAreas]);
 
-  // Spec §8 Step 2: under-18 cannot proceed past the age gate until the
-  // parent has clicked the consent link. We treat consentStatus from the
-  // hydrated user profile as the source of truth.
-  const awaitingConsent = isMinor && step === 0 && storedConsentStatus === "pending";
-  const consentBlocked = isMinor && storedConsentStatus !== "complete" && storedConsentStatus !== "not_required";
-
-  // Poll the user profile while we wait for parent consent. Auto-advance
-  // when it lands. No-op for adults or once consent is complete.
-  useEffect(() => {
-    if (!awaitingConsent) return;
-    let cancelled = false;
-    const id = window.setInterval(() => {
-      void api
-        .getUser()
-        .then((profile) => {
-          if (cancelled) return;
-          hydrate(profile);
-          if (profile.consentStatus === "complete") {
-            setStep((value) => (value === 0 ? 1 : value));
-          }
-        })
-        .catch(() => undefined);
-    }, CONSENT_POLL_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [awaitingConsent, hydrate]);
-
-  async function requestConsent() {
-    const normalized = parentEmail.trim();
-    if (!normalized) {
-      setError("Add a parent email so we can send the consent link.");
-      return;
+  const canAdvance = useMemo(() => {
+    switch (step) {
+      case 0:
+        return firstName.trim().length > 0;
+      case 1:
+        if (!ageNum || ageNum < 13 || ageNum > 99) return false;
+        if (isMinor) return parentEmail.includes("@");
+        return true;
+      case 2:
+        return focusAreas.length > 0;
+      case 3: // hardest lately
+      case 4: // adaptive follow-ups (Rawz/5)
+      case 5: // meet KAI
+      case 6: // tone
+        return true;
+      case 7: // confirm + save
+        return !saving;
+      default:
+        return true;
     }
-    setConsentSending(true);
-    setError("");
-    setConsentMessage("");
-    try {
-      await api.sendParentConsent({ parentEmail: normalized, teenName: kaiName || "Kai user" });
-      setConsentPending(normalized);
-      setConsentMessage(`Consent link sent to ${normalized}. We will continue automatically once your parent confirms.`);
-    } catch {
-      setError("Could not send the consent email right now. Try again in a minute.");
-    } finally {
-      setConsentSending(false);
-    }
-  }
+  }, [step, firstName, ageNum, isMinor, parentEmail, focusAreas, saving]);
 
   function next() {
-    setError("");
-    if (step === 0 && isMinor) {
-      if (!parentEmail.trim()) {
-        setError("Parent email is required for teen accounts.");
-        return;
-      }
-      if (storedConsentStatus === "complete") {
-        setStep((value) => Math.min(steps.length - 1, value + 1));
-        return;
-      }
-      void requestConsent();
-      return;
-    }
-    setStep((value) => Math.min(steps.length - 1, value + 1));
+    if (!canAdvance) return;
+    if (step < TOTAL_STEPS - 1) setStep(step + 1);
+    else void finish();
   }
 
   function back() {
-    setError("");
-    setStep((value) => Math.max(0, value - 1));
-  }
-
-  function toggleVibe(id: VibeId) {
-    setVibes((items) => {
-      if (items.includes(id)) return items.filter((item) => item !== id);
-      return [...items, id].slice(-3);
-    });
+    if (step > 0) setStep(step - 1);
   }
 
   async function finish() {
     setSaving(true);
     setError("");
-    const normalizedParentEmail = parentEmail.trim();
-    if (isMinor && !normalizedParentEmail) {
-      setSaving(false);
-      setStep(0);
-      setError("Parent email is required for teen accounts.");
-      return;
-    }
-    if (consentBlocked) {
-      // Spec §8 Step 2: never write onboarding_completed without consent.
-      setSaving(false);
-      setStep(0);
-      setError("Waiting on parent consent before we can finish setup.");
-      return;
-    }
-
     try {
-      const intake = await api.submitIntake(buildIntakeAnswers({ vibes, signals, mission, context, kaiTone }));
-      const routedEngine = intake.suggestedEngine;
-      const engine = selectedMission.engine || routedEngine || primaryEngine;
+      const keyedResponses: Record<string, string> = {
+        focus_areas: focusAreas.join(","),
+        first_name: firstName.trim(),
+      };
+      if (hardestLately.trim()) {
+        keyedResponses.hardest_lately = hardestLately.trim();
+      }
+      // Rawz/5 — pack adaptive follow-up answers into the intake payload
+      // so the Mind + Body agents have richer day-one context.
+      const questions = pickFollowUps(focusAreas);
+      Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
+      await api.submitIntake(keyedResponses);
+      // displayName = the teen's name (what KAI calls them). kaiName = what
+      // they call KAI. Previously firstName only landed in user_intake.summary
+      // and never users.display_name, so the chat agent kept falling back to
+      // "friend" even after onboarding. Fix: write it through here.
       await api.updateUser({
-        kaiName: kaiName || "Kai",
+        displayName: firstName.trim() || undefined,
+        kaiName,
         kaiTone,
-        primaryEngine: engine,
-        age: normalizedAge,
-        parentEmail: normalizedParentEmail || undefined,
-        onboardingCompleted: true
+        primaryEngine,
+        age: ageNum,
+        parentEmail: isMinor ? parentEmail.trim() : undefined,
+        onboardingCompleted: true,
       });
-      setKai(kaiName || "Kai", kaiTone);
-      setPrimaryEngine(engine);
-      navigate(selectedMission.route);
-    } catch {
-      setError("Could not save onboarding yet. Kai saved the setup locally so you can keep moving.");
-      setKai(kaiName || "Kai", kaiTone);
+      if (isMinor && parentEmail.trim()) {
+        await api.sendParentConsent({
+          parentEmail: parentEmail.trim(),
+          teenName: firstName.trim(),
+        });
+        setConsentPending(parentEmail.trim());
+      }
+      setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
-      navigate(selectedMission.route);
+      // Flow: Welcome → Onboarding → Home. Welcome already happened
+      // before we got here; on finish we land on the live app.
+      navigate("/home");
+    } catch {
+      // Don't strand the user if the API hiccups — preserve in-memory state
+      // and let them into the app. Settings flow lets them retry.
+      setError(
+        "Couldn't save your answers just now. You can keep going — we'll retry.",
+      );
+      setKai(kaiName, kaiTone);
+      setPrimaryEngine(primaryEngine);
+      navigate("/home");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-5xl flex-col justify-center px-1 py-4 text-inkDeep">
-      <section className="overflow-hidden rounded-[34px] border border-[#0A0A0A0F] bg-paper shadow-[0_24px_90px_rgba(10,10,10,0.12)]">
-        <div className="grid min-h-[720px] lg:grid-cols-[0.78fr_1.22fr]">
-          <aside className="relative hidden bg-inkDeep p-7 text-white lg:flex lg:flex-col lg:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white/70">
-                <ShieldCheck size={14} aria-hidden="true" />
-                Private by default
-              </div>
-              <h1 className="mt-8 max-w-sm font-display text-5xl font-semibold leading-[0.94] tracking-normal">Build the Kai that actually fits you.</h1>
-              <p className="mt-4 max-w-sm text-sm font-semibold leading-6 text-white/62">
-                Fast setup. No diagnosis. No fake motivation. Kai learns your first pattern and gives you one useful rep.
-              </p>
-            </div>
-            <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-              <div className="flex items-center gap-3">
-                <KaiAvatar size={54} label={kaiName || "Kai"} pulse />
-                <div>
-                  <p className="text-sm font-black">{kaiName || "Kai"}</p>
-                  <p className="text-xs font-semibold capitalize text-white/55">{selectedTone.label} mode</p>
-                </div>
-              </div>
-              <div className="mt-5 grid grid-cols-3 gap-2">
-                <CalibrationPill label="Vibes" value={String(vibes.length)} />
-                <CalibrationPill label="Read" value={`${calibration}%`} />
-                <CalibrationPill label="Start" value={selectedMission.label} />
-              </div>
-            </div>
-          </aside>
+    <div className="min-h-screen bg-background text-text-primary">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-8 pt-6">
+        <Progress current={step + 1} total={TOTAL_STEPS} />
 
-          <div className="flex min-w-0 flex-col p-4 sm:p-6 lg:p-8">
-            <OnboardingHeader step={step} progress={progress} />
-            <div className="flex flex-1 flex-col justify-center py-6">
-              {error && <p className="mb-4 rounded-[18px] border border-[#E35D4F]/25 bg-[#FFF0EC] p-3 text-sm font-black text-[#C4473E]">{error}</p>}
-              {step === 0 && awaitingConsent && (
-                <WaitingForConsent
-                  parentEmail={parentEmail}
-                  consentSending={consentSending}
-                  consentMessage={consentMessage}
-                  onResend={() => void requestConsent()}
-                />
-              )}
-              {step === 0 && !awaitingConsent && <AgeGate age={age} setAge={setAge} isMinor={isMinor} parentEmail={parentEmail} setParentEmail={setParentEmail} fromDemo={Boolean(demoBuild)} consentStatus={storedConsentStatus} />}
-              {step === 1 && <KaiBuilder kaiName={kaiName} setKaiName={setKaiName} kaiTone={kaiTone} setKaiTone={setKaiTone} selectedTone={selectedTone} />}
-              {step === 2 && <VibeScan selected={vibes} onToggle={toggleVibe} />}
-              {step === 3 && <SignalScan signals={signals} setSignals={setSignals} />}
-              {step === 4 && <MissionPick mission={mission} setMission={setMission} />}
-              {step === 5 && <ContextDrop context={context} setContext={setContext} />}
-              {step === 6 && <Reveal kaiName={kaiName || "Kai"} tone={selectedTone} mission={selectedMission} calibration={calibration} isMinor={isMinor} parentEmail={parentEmail} />}
-            </div>
-            <footer className="grid gap-2 sm:grid-cols-[auto_1fr]">
-              {step > 0 && (
-                <Button type="button" variant="secondary" onClick={back} className="w-full sm:w-auto">
-                  <ChevronLeft size={18} aria-hidden="true" />
-                  Back
-                </Button>
-              )}
-              {step < steps.length - 1 ? (
-                <Button
-                  type="button"
-                  onClick={next}
-                  disabled={consentSending || awaitingConsent}
-                  className="min-h-12 w-full"
-                >
-                  {consentSending ? "Sending" : step === 0 && isMinor && storedConsentStatus !== "complete" ? "Send parent consent" : awaitingConsent ? "Waiting for parent" : step === 5 ? "Reveal Kai" : "Next"}
-                  {!awaitingConsent && <ArrowRight size={18} aria-hidden="true" />}
-                </Button>
-              ) : (
-                <Button type="button" onClick={() => void finish()} disabled={saving || consentBlocked} className="min-h-12 w-full">
-                  {saving ? "Saving" : consentBlocked ? "Waiting for parent" : "Start my first rep"}
-                  {!consentBlocked && <ArrowRight size={18} aria-hidden="true" />}
-                </Button>
-              )}
-            </footer>
-          </div>
-        </div>
-      </section>
-    </main>
+        <main className="mt-8 flex-1 animate-fade-slide-up" key={step}>
+          {step === 0 && (
+            <NameStep value={firstName} onChange={setFirstName} />
+          )}
+          {step === 1 && (
+            <AgeStep
+              age={age}
+              setAge={setAge}
+              parentEmail={parentEmail}
+              setParentEmail={setParentEmail}
+              isMinor={isMinor}
+            />
+          )}
+          {step === 2 && (
+            <FocusStep value={focusAreas} onChange={setFocusAreas} />
+          )}
+          {step === 3 && (
+            <HardestStep
+              value={hardestLately}
+              onChange={setHardestLately}
+              onSkip={next}
+            />
+          )}
+          {/* Rawz/5 — adaptive follow-ups based on the focus areas they
+              picked in step 2. Up to 3 quick-tap questions, all skippable. */}
+          {step === 4 && (
+            <FollowUpsStep
+              focusAreas={focusAreas}
+              responses={followUps}
+              onChange={setFollowUps}
+            />
+          )}
+          {step === 5 && <MeetKaiStep firstName={firstName} />}
+          {step === 6 && (
+            <ToneStep value={kaiTone} onChange={setKaiTone} />
+          )}
+          {step === 7 && (
+            <ConfirmStep
+              firstName={firstName}
+              isMinor={isMinor}
+              parentEmail={parentEmail}
+              focusAreas={focusAreas}
+              tone={kaiTone}
+              error={error}
+              saving={saving}
+            />
+          )}
+        </main>
+
+        <Footer
+          step={step}
+          onBack={back}
+          onNext={next}
+          canAdvance={canAdvance}
+          isLast={step === TOTAL_STEPS - 1}
+          saving={saving}
+        />
+      </div>
+    </div>
   );
 }
 
-function OnboardingHeader({ step, progress }: { step: number; progress: number }) {
-  return (
-    <header>
-      <div className="flex items-center justify-between gap-3">
-        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-inkMute">
-          {steps[step]} · {step + 1}/{steps.length}
-        </p>
-        <Link to="/crisis" className="text-xs font-black text-[#C4473E]">
-          Crisis
-        </Link>
-      </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#F0EFEC]">
-        <div className="h-full rounded-full bg-inkDeep transition-all duration-500" style={{ width: `${progress}%` }} />
-      </div>
-    </header>
-  );
-}
+// ─────────────────────────────────────────────────────────────────────
+// Steps
+// ─────────────────────────────────────────────────────────────────────
 
-function AgeGate({
-  age,
-  setAge,
-  isMinor,
-  parentEmail,
-  setParentEmail,
-  fromDemo,
-  consentStatus
+function NameStep({
+  value,
+  onChange,
 }: {
-  age: string;
-  setAge: (value: string) => void;
-  isMinor: boolean;
-  parentEmail: string;
-  setParentEmail: (value: string) => void;
-  fromDemo: boolean;
-  consentStatus: "not_required" | "pending" | "complete";
+  value: string;
+  onChange: (v: string) => void;
 }) {
   return (
-    <div>
-      <Eyebrow>Start clean</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">First, the safety stuff. Then the fun part.</h2>
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-inkSoft">
-        Kai needs age for teen safety rules. Private answers, meals, goals, and chats stay private.
-      </p>
-      {fromDemo && <p className="mt-4 rounded-[18px] border border-[#D6D0FF] bg-[#F8F6FF] p-3 text-sm font-black text-[#6C5CE7]">Picked up your demo choices. You can change anything.</p>}
-      <div className="mt-6 grid gap-3 sm:grid-cols-[9rem_1fr]">
-        <label className="block text-sm font-black">
-          Age
-          <input className="field mt-2 text-lg" inputMode="numeric" value={age} onChange={(event) => setAge(event.target.value)} />
-        </label>
-        <label className="block text-sm font-black">
-          Parent email {isMinor ? "(required)" : "(optional)"}
-          <input className="field mt-2 text-lg" type="email" value={parentEmail} onChange={(event) => setParentEmail(event.target.value)} placeholder="parent@example.com" />
-        </label>
-      </div>
-      {isMinor && consentStatus === "complete" && (
-        <div className="mt-4 rounded-[18px] border border-[#D7F0EA] bg-[#F4FFFC] p-4 text-sm font-semibold leading-6 text-[#218A7D]">
-          Parent already confirmed access. You can keep going.
-        </div>
-      )}
-      {isMinor && consentStatus !== "complete" && (
-        <div className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-inkSoft">
-          You can’t move on until your parent clicks the consent link. We will send it as soon as you continue.
+    <div className="space-y-6">
+      <Heading
+        eyebrow="welcome"
+        title="What should KAI call you?"
+        blurb="Your first name. KAI is your wellness companion — this is just so you're not 'user'."
+      />
+      <input
+        autoFocus
+        type="text"
+        value={value}
+        maxLength={30}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="First name"
+        className="
+          w-full rounded-lg border border-glass-border bg-surface
+          px-4 py-3.5 text-lg
+          text-text-primary placeholder:text-text-muted
+          shadow-card focus-ring
+        "
+      />
+    </div>
+  );
+}
+
+function AgeStep({
+  age,
+  setAge,
+  parentEmail,
+  setParentEmail,
+  isMinor,
+}: {
+  age: string;
+  setAge: (v: string) => void;
+  parentEmail: string;
+  setParentEmail: (v: string) => void;
+  isMinor: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 2"
+        title="How old are you?"
+        blurb="KAI is built for ages 13–18."
+      />
+      <input
+        autoFocus
+        type="number"
+        inputMode="numeric"
+        value={age}
+        onChange={(e) => setAge(e.target.value)}
+        placeholder="Age"
+        className="
+          w-full rounded-lg border border-glass-border bg-surface
+          px-4 py-3.5 text-lg
+          text-text-primary placeholder:text-text-muted
+          shadow-card focus-ring
+        "
+      />
+      {isMinor && (
+        <div className="space-y-3 rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
+          <p className="text-sm font-medium text-text-primary">
+            We need a parent or guardian's email
+          </p>
+          <p className="text-xs leading-relaxed text-text-secondary">
+            KAI sends them a quick consent email so they know you're using
+            the app. They won't see your reflections, chats, or scans —
+            only consent confirmation.
+          </p>
+          <input
+            type="email"
+            value={parentEmail}
+            onChange={(e) => setParentEmail(e.target.value)}
+            placeholder="parent@example.com"
+            className="
+              w-full rounded-md border border-glass-border bg-surface
+              px-3 py-2.5 text-sm
+              text-text-primary placeholder:text-text-muted
+              focus-ring
+            "
+          />
         </div>
       )}
     </div>
   );
 }
 
-function WaitingForConsent({
-  parentEmail,
-  consentSending,
-  consentMessage,
-  onResend
+function FocusStep({
+  value,
+  onChange,
 }: {
-  parentEmail: string;
-  consentSending: boolean;
-  consentMessage: string;
-  onResend: () => void;
+  value: FocusAreaId[];
+  onChange: (v: FocusAreaId[]) => void;
+}) {
+  function toggle(id: FocusAreaId) {
+    onChange(
+      value.includes(id) ? value.filter((v) => v !== id) : [...value, id],
+    );
+  }
+  return (
+    <div className="space-y-8">
+      <Heading
+        eyebrow="step 3"
+        title="What do you want to work on?"
+        blurb="Pick a few. You can change this later."
+      />
+      <div className="space-y-6">
+        {FOCUS_GROUPS.map((group) => (
+          <div key={group.label} className="space-y-2.5">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+              {group.label}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {group.options.map(({ id, label }) => {
+                const selected = value.includes(id);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => toggle(id)}
+                    className={`
+                      rounded-full border px-4 py-2 text-sm font-medium transition active:scale-[0.98]
+                      ${
+                        selected
+                          ? "border-text-primary bg-text-primary text-background"
+                          : "border-glass-border bg-surface text-text-primary hover:bg-surface-muted"
+                      }
+                    `}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HardestStep({
+  value,
+  onChange,
+  onSkip,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSkip: () => void;
 }) {
   return (
-    <div>
-      <Eyebrow>Hold here</Eyebrow>
-      <div className="mt-3 flex items-start gap-4">
-        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-warmPaper text-inkDeep">
-          <Mail size={22} aria-hidden="true" />
-        </span>
-        <div>
-          <h2 className="font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">
-            Waiting on your parent.
-          </h2>
-          <p className="mt-3 max-w-lg text-sm font-semibold leading-6 text-inkSoft">
-            We sent a consent link to <span className="font-black text-inkDeep">{parentEmail}</span>. We check every few seconds and move you forward the moment they confirm.
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 4 — optional"
+        title="What's been hardest lately?"
+        blurb="One sentence is enough. Or skip and tell KAI later."
+      />
+      <textarea
+        autoFocus
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="A messy sentence is enough."
+        rows={4}
+        className="
+          w-full rounded-lg border border-glass-border bg-surface
+          px-4 py-3.5 text-base
+          text-text-primary placeholder:text-text-muted
+          shadow-card focus-ring
+          resize-none
+        "
+      />
+      <button
+        type="button"
+        onClick={onSkip}
+        className="text-sm font-medium text-text-muted underline-offset-4 hover:underline"
+      >
+        Skip for now
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Rawz/5 — adaptive follow-up step
+// ─────────────────────────────────────────────────────────────────────
+
+function FollowUpsStep({
+  focusAreas,
+  responses,
+  onChange,
+}: {
+  focusAreas: FocusAreaId[];
+  responses: FollowUpResponse;
+  onChange: (next: FollowUpResponse) => void;
+}) {
+  const questions = useMemo(() => pickFollowUps(focusAreas), [focusAreas]);
+
+  function setAnswer(qid: string, value: string) {
+    onChange({ ...responses, [qid]: value });
+  }
+
+  // If for some reason no questions matched (e.g. user picked focus
+  // areas with no follow-ups defined), gracefully degrade to a simple
+  // pass-through.
+  if (questions.length === 0) {
+    return (
+      <div className="space-y-6">
+        <Heading
+          eyebrow="step 5"
+          title="A few quick reads."
+          blurb="Nothing to tune from what you picked — let's keep going."
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 5"
+        title="A few quick reads."
+        blurb={`${questions.length === 1 ? "One question" : `${questions.length} questions`} based on what you picked. Tap an option or skip — both fine.`}
+      />
+
+      <div className="space-y-5">
+        {questions.map((q, idx) => {
+          const value = responses[q.id] ?? "";
+          return (
+            <section key={q.id}>
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+                {idx + 1} of {questions.length}
+              </p>
+              <p className="mt-1 text-base font-medium text-text-primary leading-snug">
+                {q.prompt}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {q.options.map((opt) => {
+                  const selected = value === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setAnswer(q.id, selected ? "" : opt)}
+                      aria-pressed={selected}
+                      className={`
+                        rounded-full border px-3 py-1.5 text-xs font-medium transition
+                        ${
+                          selected
+                            ? "border-text-primary bg-text-primary text-background"
+                            : "border-glass-border bg-surface text-text-primary hover:bg-surface-muted"
+                        }
+                      `}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                value={
+                  value && !q.options.includes(value) ? value : ""
+                }
+                onChange={(e) => setAnswer(q.id, e.target.value)}
+                placeholder="Or type something else"
+                maxLength={120}
+                className="
+                  mt-2 w-full rounded-lg border border-glass-border bg-surface
+                  px-3 py-2 text-sm text-text-primary
+                  placeholder:text-text-muted shadow-card focus-ring
+                "
+              />
+            </section>
+          );
+        })}
+      </div>
+
+      <p className="text-center font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+        All skippable
+      </p>
+    </div>
+  );
+}
+
+function MeetKaiStep({ firstName }: { firstName: string }) {
+  return (
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 6"
+        title={`Hey ${firstName}, meet KAI.`}
+        blurb="KAI has two sides — both look out for you."
+      />
+      <div className="flex justify-center py-2">
+        <KaiOrb size={120} />
+      </div>
+      <div className="space-y-3">
+        <div className="rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4 shadow-card">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-cool/15 text-accent-cool">
+              <Brain size={18} />
+            </span>
+            <p className="font-display text-lg font-semibold">Mind</p>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+            For mood, stress, sleep, confidence, friendships, goals,
+            anything you're sorting out in your head.
+          </p>
+        </div>
+        <div className="rounded-lg border border-glass-border bg-accent-warm-soft/50 p-4 shadow-card">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-warm/15 text-accent-warm">
+              <Dumbbell size={18} />
+            </span>
+            <p className="font-display text-lg font-semibold">Body</p>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+            For training, food, recovery, sleep, posture — coaching that
+            actually knows the science.
           </p>
         </div>
       </div>
-
-      <div className="mt-6 rounded-[24px] border border-[#0A0A0A0F] bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-2">
-          <Loader2 className="motion-safe:animate-spin text-inkSoft" size={18} aria-hidden="true" />
-          <p className="text-sm font-black text-inkDeep">Listening for confirmation…</p>
-        </div>
-        {consentMessage && <p className="mt-3 text-sm font-semibold leading-6 text-inkSoft">{consentMessage}</p>}
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onResend}
-            disabled={consentSending}
-            className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full border border-[#0A0A0A0F] bg-warmPaper px-4 text-sm font-black text-inkDeep disabled:opacity-50"
-          >
-            {consentSending ? "Sending" : "Resend email"}
-          </button>
-          <Link
-            to="/crisis"
-            className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-full border border-[#C4473E]/30 bg-white px-4 text-sm font-black text-[#C4473E]"
-          >
-            Crisis support
-          </Link>
-        </div>
-      </div>
-
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-inkSoft">
-        If your parent didn’t get the email, double-check the address by going Back, then send again.
+      <p className="text-center text-xs leading-relaxed text-text-muted">
+        You always just talk to KAI. The right side answers based on what
+        you bring up.
       </p>
     </div>
   );
 }
 
-function KaiBuilder({
-  kaiName,
-  setKaiName,
-  kaiTone,
-  setKaiTone,
-  selectedTone
+function ToneStep({
+  value,
+  onChange,
 }: {
-  kaiName: string;
-  setKaiName: (value: string) => void;
-  kaiTone: KaiTone;
-  setKaiTone: (value: KaiTone) => void;
-  selectedTone: (typeof toneChoices)[number];
+  value: KaiTone;
+  onChange: (v: KaiTone) => void;
 }) {
   return (
-    <div>
-      <Eyebrow>Build Kai</Eyebrow>
-      <div className="mt-3 flex items-center gap-4">
-        <KaiAvatar size={72} label={kaiName || "Kai"} pulse />
-        <div>
-          <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">Choose the voice.</h2>
-          <p className="mt-2 text-sm font-semibold text-inkSoft">Not a therapist. Not a corporate assistant. A useful mentor.</p>
-        </div>
-      </div>
-      <label className="mt-6 block text-sm font-black">
-        Companion name
-        <input className="field mt-2 text-lg" value={kaiName} maxLength={20} onChange={(event) => setKaiName(event.target.value)} />
-      </label>
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        {toneChoices.map((tone) => (
-          <button key={tone.id} type="button" onClick={() => setKaiTone(tone.id)} className={`focus-ring min-h-32 rounded-[24px] border p-4 text-left transition ${kaiTone === tone.id ? "border-inkDeep bg-inkDeep text-white" : "border-[#0A0A0A0F] bg-white text-inkDeep"}`}>
-            <span className="text-lg font-black">{tone.label}</span>
-            <span className={`mt-2 block text-sm font-semibold leading-5 ${kaiTone === tone.id ? "text-white/62" : "text-inkMute"}`}>{tone.copy}</span>
-          </button>
-        ))}
-      </div>
-      <p className="mt-4 rounded-[18px] border border-[#0A0A0A0F] bg-white p-4 text-sm font-semibold leading-6 text-inkSoft">"{selectedTone.preview}"</p>
-    </div>
-  );
-}
-
-function VibeScan({ selected, onToggle }: { selected: VibeId[]; onToggle: (id: VibeId) => void }) {
-  return (
-    <div>
-      <Eyebrow>Vibe scan</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Pick the 3 that feel most true right now.</h2>
-      <p className="mt-4 text-sm font-semibold text-inkSoft">No perfect answer. Kai just needs the starting weather.</p>
-      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {vibeChoices.map((vibe) => {
-          const Icon = vibe.icon;
-          const active = selected.includes(vibe.id);
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 7"
+        title="How should KAI talk?"
+        blurb="You can change this any time in settings."
+      />
+      <div className="space-y-2">
+        {TONES.map((t) => {
+          const selected = value === t.id;
           return (
-            <button key={vibe.id} type="button" onClick={() => onToggle(vibe.id)} className={`focus-ring min-h-24 rounded-[24px] border p-4 text-left transition ${active ? "border-inkDeep bg-inkDeep text-white" : "border-[#0A0A0A0F] bg-white text-inkDeep"}`}>
-              <Icon size={20} aria-hidden="true" />
-              <span className="mt-3 block text-sm font-black">{vibe.label}</span>
-              {active && <Check className="mt-2 text-[#A3FF12]" size={16} aria-hidden="true" />}
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => onChange(t.id)}
+              className={`
+                w-full rounded-lg border p-4 text-left transition active:scale-[0.99]
+                ${
+                  selected
+                    ? "border-text-primary bg-text-primary text-background shadow-card-lg"
+                    : "border-glass-border bg-surface text-text-primary shadow-card hover:bg-surface-muted"
+                }
+              `}
+            >
+              <p className="font-display text-lg font-semibold">{t.title}</p>
+              <p
+                className={`mt-1.5 text-sm leading-snug ${
+                  selected ? "text-background/75" : "text-text-secondary"
+                }`}
+              >
+                "{t.preview}"
+              </p>
             </button>
           );
         })}
@@ -533,190 +751,258 @@ function VibeScan({ selected, onToggle }: { selected: VibeId[]; onToggle: (id: V
   );
 }
 
-function SignalScan({ signals, setSignals }: { signals: Record<SignalId, number>; setSignals: React.Dispatch<React.SetStateAction<Record<SignalId, number>>> }) {
-  return (
-    <div>
-      <Eyebrow>Life signals</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Give Kai the dashboard.</h2>
-      <div className="mt-6 grid gap-3">
-        {(Object.keys(signalCopy) as SignalId[]).map((id) => {
-          const signal = signalCopy[id];
-          const Icon = signal.icon;
-          return (
-            <div key={id} className="rounded-[24px] border border-[#0A0A0A0F] bg-white p-4">
-              <div className="flex items-center gap-2">
-                <Icon size={18} aria-hidden="true" />
-                <p className="text-sm font-black">{signal.label}</p>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {[signal.low, signal.mid, signal.high].map((label, index) => (
-                  <button key={label} type="button" onClick={() => setSignals((items) => ({ ...items, [id]: index }))} className={`focus-ring min-h-11 rounded-full text-sm font-black ${signals[id] === index ? "bg-inkDeep text-white" : "bg-warmPaper text-inkSoft"}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function MissionPick({ mission, setMission }: { mission: MissionId; setMission: (value: MissionId) => void }) {
-  return (
-    <div>
-      <Eyebrow>First focus</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">What is Kai helping with first?</h2>
-      <div className="mt-6 grid gap-2 sm:grid-cols-2">
-        {missionChoices.map((item) => {
-          const Icon = item.icon;
-          const active = mission === item.id;
-          return (
-            <button key={item.id} type="button" onClick={() => setMission(item.id)} className={`focus-ring flex min-h-24 items-center gap-3 rounded-[24px] border p-4 text-left transition ${active ? "border-inkDeep bg-inkDeep text-white" : "border-[#0A0A0A0F] bg-white text-inkDeep"}`}>
-              <span className={`grid size-11 shrink-0 place-items-center rounded-full ${active ? "bg-white/12" : "bg-warmPaper"}`}>
-                <Icon size={20} aria-hidden="true" />
-              </span>
-              <span>
-                <span className="block text-base font-black">{item.label}</span>
-                <span className={`mt-1 block text-sm font-semibold ${active ? "text-white/62" : "text-inkMute"}`}>{item.copy}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ContextDrop({ context, setContext }: { context: string; setContext: (value: string) => void }) {
-  return (
-    <div>
-      <Eyebrow>Optional context</Eyebrow>
-      <h2 className="mt-2 max-w-xl font-display text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl">Anything Kai needs to know?</h2>
-      <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-inkSoft">A messy sentence is enough. Or skip it and let Kai learn as you use the app.</p>
-      <textarea className="field mt-6 min-h-40 text-base" value={context} onChange={(event) => setContext(event.target.value)} placeholder="Example: school pressure has been loud, sleep is bad, and I want to feel more confident..." />
-    </div>
-  );
-}
-
-function Reveal({
-  kaiName,
-  tone,
-  mission,
-  calibration,
+function ConfirmStep({
+  firstName,
   isMinor,
-  parentEmail
+  parentEmail,
+  focusAreas,
+  tone,
+  error,
+  saving,
 }: {
-  kaiName: string;
-  tone: (typeof toneChoices)[number];
-  mission: (typeof missionChoices)[number];
-  calibration: number;
+  firstName: string;
   isMinor: boolean;
   parentEmail: string;
+  focusAreas: FocusAreaId[];
+  tone: KaiTone;
+  error: string;
+  saving: boolean;
 }) {
-  const MissionIcon = mission.icon;
+  const allOptions = FOCUS_GROUPS.flatMap((g) => g.options);
+  const focusLabels = allOptions
+    .filter((f) => focusAreas.includes(f.id))
+    .map((f) => f.label);
   return (
-    <div>
-      <Eyebrow>Kai is calibrated</Eyebrow>
-      <div className="mt-3 rounded-[30px] border border-[#0A0A0A0F] bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-4">
-          <KaiAvatar size={76} label={kaiName} pulse />
-          <div>
-            <h2 className="font-display text-4xl font-semibold leading-none tracking-normal">{kaiName} is ready.</h2>
-            <p className="mt-2 text-sm font-semibold text-inkSoft">Kai is tuned in for what you are carrying. One useful rep, then we build from there.</p>
-          </div>
-        </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <RevealStat label="Voice" value={tone.label} />
-          <RevealStat label="Read" value={`${calibration}%`} />
-          <RevealStat label="Start" value={mission.label} />
-        </div>
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 8"
+        title={`You're set, ${firstName}.`}
+        blurb={
+          isMinor
+            ? "KAI will send your parent a quick consent email and let you in."
+            : "Ready to meet your home screen?"
+        }
+      />
+      <div className="rounded-lg border border-glass-border bg-surface p-5 shadow-card">
+        <Row label="Focus">
+          {focusLabels.length ? focusLabels.join(", ") : "Open to anything"}
+        </Row>
+        <Row label="Tone">
+          {tone[0].toUpperCase() + tone.slice(1)}
+        </Row>
+        {isMinor && (
+          <Row label="Parent email">
+            <span className="font-mono">{parentEmail}</span>
+          </Row>
+        )}
       </div>
-      <div className="mt-4 rounded-[24px] border border-[#0A0A0A0F] bg-inkDeep p-5 text-white">
-        <div className="flex items-start gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white/12">
-            <MissionIcon size={20} aria-hidden="true" />
-          </span>
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">First rep</p>
-            <h3 className="mt-1 text-2xl font-black">{mission.label}</h3>
-            <p className="mt-2 text-sm font-semibold leading-6 text-white/62">{mission.copy}</p>
-          </div>
+      {isMinor && (
+        <div className="rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
+          <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
+            <Sparkles size={14} className="text-accent-cool" />
+            Parental consent is required and not skippable
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
+            Your reflections, chats, and any scans stay private to you.
+            Crisis resources are always available.
+          </p>
         </div>
-      </div>
-      {isMinor && parentEmail.trim() && (
-        <p className="mt-4 rounded-[18px] border border-[#D7F0EA] bg-[#F4FFFC] p-3 text-sm font-semibold leading-6 text-inkSoft">
-          Parent consent email will be sent to {parentEmail.trim()}. Private answers stay private.
+      )}
+      {error && (
+        <p className="rounded-lg border border-danger/30 bg-danger-soft p-3 text-sm font-medium text-danger">
+          {error}
         </p>
+      )}
+      <Link
+        to="/crisis"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-danger underline-offset-4 hover:underline"
+      >
+        <ShieldAlert size={14} aria-hidden="true" />
+        Open crisis resources
+      </Link>
+      {saving && (
+        <p className="text-xs text-text-muted">Saving and signing you in…</p>
       )}
     </div>
   );
 }
 
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-inkMute">{children}</p>;
-}
+// ─────────────────────────────────────────────────────────────────────
+// Layout helpers
+// ─────────────────────────────────────────────────────────────────────
 
-function CalibrationPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[18px] border border-white/10 bg-white/10 p-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">{label}</p>
-      <p className="mt-1 truncate text-sm font-black capitalize text-white">{value}</p>
-    </div>
-  );
-}
-
-function RevealStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[20px] bg-warmPaper p-4">
-      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.22em] text-inkMute">{label}</p>
-      <p className="mt-2 truncate text-lg font-black capitalize text-inkDeep">{value}</p>
-    </div>
-  );
-}
-
-function normalizeDemoVibes(vibes: string[] | undefined): VibeId[] {
-  if (!vibes) return [];
-  const ids = new Set(vibeChoices.map((item) => item.id));
-  return vibes.map((vibe) => vibe.toLowerCase().replace(/\s+/g, "_")).filter((vibe): vibe is VibeId => ids.has(vibe as VibeId)).slice(0, 3);
-}
-
-function inferDemoMission(build: DemoBuildSlice | null): MissionId {
-  const text = [build?.goalText, build?.feelingsSummary, build?.mealSummary, ...(build?.tried ?? [])].join(" ").toLowerCase();
-  if (/meal|food|fuel|camera/.test(text)) return "food";
-  if (/body|scan|workout|sport|sleep|recovery/.test(text)) return "body";
-  if (/confidence/.test(text)) return "confidence";
-  if (/goal|discipline|future/.test(text)) return "goals";
-  return "mind";
-}
-
-function calibrationScore({ vibes, signals, context }: { vibes: VibeId[]; signals: Record<SignalId, number>; context: string }) {
-  const answeredSignals = Object.values(signals).filter((value) => value !== 1).length;
-  return Math.min(96, 58 + vibes.length * 8 + answeredSignals * 3 + (context.trim().length > 12 ? 8 : 0));
-}
-
-function buildIntakeAnswers({
-  vibes,
-  signals,
-  mission,
-  context,
-  kaiTone
+function Heading({
+  eyebrow,
+  title,
+  blurb,
 }: {
-  vibes: VibeId[];
-  signals: Record<SignalId, number>;
-  mission: MissionId;
-  context: string;
-  kaiTone: KaiTone;
+  eyebrow: string;
+  title: string;
+  blurb?: string;
 }) {
-  const signalLines = (Object.keys(signals) as SignalId[]).map((id) => `${signalCopy[id].label}: ${["low", "medium", "high"][signals[id]]}`);
-  const missionChoice = missionChoices.find((item) => item.id === mission) ?? missionChoices[0];
-  return {
-    q1: `Current vibe: ${vibes.map((vibe) => vibe.replace(/_/g, " ")).join(", ") || "not sure yet"}. Signals: ${signalLines.join("; ")}.`,
-    q2: `Wants help first with ${missionChoice.label}: ${missionChoice.copy}`,
-    q3: `They chose ${kaiTone} tone because that is the support style they want from Kai.`,
-    q4: context.trim() || "No extra context yet. Learn from early app reps.",
-    q5: `First suggested route is ${missionChoice.route}.`,
-    q6: `Use a supportive, honest mentor style. Avoid shame, clinical diagnosis, toxic productivity, and body comparison.`
-  };
+  // KAI orb + typewriter on the title — makes every onboarding step
+  // feel like KAI is the one asking the question, continuing the
+  // "magical guide" thread established in the Welcome walkthrough.
+  // Re-keys on `title` so each step replays the typing animation.
+  // In test mode (vitest), we skip the animation so DOM assertions
+  // can find the full title immediately on render.
+  const isTest =
+    typeof import.meta !== "undefined" &&
+    // Vitest sets MODE = "test"; reduced-motion users also bypass animation.
+    (((import.meta as unknown as { env?: { MODE?: string } }).env?.MODE === "test") ||
+      (typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches));
+  const charsPerMs = 28;
+  const [charIdx, setCharIdx] = useState(isTest ? title.length : 0);
+  useEffect(() => {
+    setCharIdx(isTest ? title.length : 0);
+  }, [title, isTest]);
+  useEffect(() => {
+    if (isTest) return;
+    if (charIdx >= title.length) return;
+    const t = window.setTimeout(() => setCharIdx((c) => c + 1), charsPerMs);
+    return () => window.clearTimeout(t);
+  }, [charIdx, title, isTest]);
+  const done = charIdx >= title.length;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2.5">
+        <span className="kai-step-orb-enter inline-flex">
+          <KaiOrb size={36} face={false} />
+        </span>
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
+          {eyebrow}
+        </p>
+      </div>
+      <h1
+        className="font-display text-3xl font-semibold leading-tight tracking-tight"
+        aria-live="polite"
+      >
+        {title.slice(0, charIdx)}
+        {!done && (
+          <span
+            className="ml-0.5 inline-block h-[0.9em] w-[2px] translate-y-[2px] bg-text-primary/60 animate-pulse"
+            aria-hidden="true"
+          />
+        )}
+      </h1>
+      {blurb && (
+        <p className="text-sm leading-relaxed text-text-secondary">{blurb}</p>
+      )}
+      <style>{`
+        @keyframes kai-step-orb-enter {
+          0%   { transform: scale(0.6); opacity: 0; }
+          70%  { transform: scale(1.08); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .kai-step-orb-enter {
+          animation: kai-step-orb-enter 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function Progress({
+  current,
+  total,
+}: {
+  current: number;
+  total: number;
+}) {
+  const pct = (current / total) * 100;
+  return (
+    <div className="space-y-1.5">
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+        {current} of {total}
+      </p>
+      <div className="h-1 w-full overflow-hidden rounded-full bg-surface-muted">
+        <div
+          className="h-full rounded-full bg-text-primary transition-all duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function Row({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-border-line py-2 last:border-b-0 last:pb-0 first:pt-0">
+      <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+        {label}
+      </span>
+      <span className="text-right text-sm text-text-primary">{children}</span>
+    </div>
+  );
+}
+
+function Footer({
+  step,
+  onBack,
+  onNext,
+  canAdvance,
+  isLast,
+  saving,
+}: {
+  step: number;
+  onBack: () => void;
+  onNext: () => void;
+  canAdvance: boolean;
+  isLast: boolean;
+  saving: boolean;
+}) {
+  // Keep the same total time-on-page feel across steps — fade the footer in
+  // alongside the step content so the buttons don't pop.
+  useEffect(() => {
+    // intentionally empty — animation lives on `main` via `key={step}`
+  }, [step]);
+
+  return (
+    <div
+      className="mt-8 flex items-center gap-3"
+      style={{
+        paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+      }}
+    >
+      {step > 0 && (
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back"
+          className="
+            flex h-12 w-12 items-center justify-center rounded-full
+            border border-glass-border bg-surface
+            text-text-secondary shadow-card transition
+            hover:bg-surface-muted focus-ring
+          "
+        >
+          <ArrowLeft size={18} aria-hidden="true" />
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={!canAdvance || saving}
+        className="
+          flex h-12 flex-1 items-center justify-center gap-2 rounded-full
+          bg-text-primary text-background
+          font-medium
+          shadow-card transition
+          active:scale-[0.99]
+          disabled:cursor-not-allowed disabled:bg-text-soft
+          focus-ring
+        "
+      >
+        {isLast ? (saving ? "Signing you in…" : "Start") : "Continue"}
+        {!isLast && <ArrowRight size={18} aria-hidden="true" />}
+      </button>
+    </div>
+  );
 }

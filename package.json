@@ -12,6 +12,7 @@
     "worker:typecheck": "tsc -p tsconfig.worker.json --noEmit",
     "check": "npm run build && npm run worker:typecheck",
     "lint": "eslint .",
+    "teen:sim": "node scripts/teen-sim.mjs",
     "smoke:api": "node scripts/smoke-api.mjs",
     "smoke:deploy": "node scripts/smoke-deploy.mjs",
     "worker:dev": "wrangler dev --config wrangler.worker.toml",

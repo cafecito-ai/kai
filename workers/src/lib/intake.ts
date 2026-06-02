@@ -1,9 +1,8 @@
 import type { EngineId, Env } from "../types";
-import { HAIKU_MODEL, callAnthropic } from "./claude";
 import { extractJsonObject } from "./json-utils";
 import { ENGINE_ROUTING_PROMPT, INTAKE_SUMMARY_PROMPT } from "./prompts/intake";
 
-const VALID_ENGINES = new Set<EngineId>(["physical", "mental", "superpower"]);
+const VALID_ENGINES = new Set<EngineId>(["physical", "mental"]);
 
 export type EngineRouting = { engine: EngineId; reasoning: string };
 
@@ -38,7 +37,7 @@ export function parseEngineRouting(raw: string): EngineRouting | null {
 export function keywordRouteEngine(responses: Record<string, string>): EngineRouting {
   const text = Object.values(responses).join(" ").toLowerCase();
   if (/goal|school|sport|business|future|music|instrument|practice|build|learn|charity|confidence|discipline|purpose|habit/.test(text)) {
-    return { engine: "superpower", reasoning: "There's a goal or skill in here you're working toward — let's build the system around it." };
+    return { engine: "mental", reasoning: "There's a goal or skill in here you're working toward — let's build the system around it." };
   }
   if (/stress|sad|anxious|friend|social|identity|emotion|pressure|overwhelm|lonely|tired of/.test(text)) {
     return { engine: "mental", reasoning: "There's a lot going on emotionally — let's start with how you're feeling, then build out." };
@@ -62,21 +61,10 @@ function formatResponses(responses: Record<string, string>): string {
  * caller can fall back to a deterministic summary.
  */
 export async function summarizeIntake(env: Env, responses: Record<string, string>): Promise<string | null> {
-  // Spec §6: Anthropic Haiku is the canonical model for intake summary.
-  // Falls through to Workers AI (Llama) if Anthropic is unavailable so
-  // onboarding still produces a summary rather than a deterministic stub.
-  const userPrompt = `Intake answers:\n${formatResponses(responses)}\n\nSummary:`;
-  const anthropic = await callAnthropic(env, INTAKE_SUMMARY_PROMPT, userPrompt, {
-    model: HAIKU_MODEL,
-    maxTokens: 200,
-    temperature: 0.4
-  });
-  if (anthropic) return anthropic.slice(0, 800);
-
   if (!env.AI) return null;
   const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
   try {
-    const prompt = `${INTAKE_SUMMARY_PROMPT}\n\n${userPrompt}`;
+    const prompt = `${INTAKE_SUMMARY_PROMPT}\n\nIntake answers:\n${formatResponses(responses)}\n\nSummary:`;
     const result = (await env.AI.run(model, {
       prompt,
       max_tokens: 200,
@@ -97,23 +85,10 @@ export async function summarizeIntake(env: Env, responses: Record<string, string
  * null on LLM failure so the caller can fall back to keyword routing.
  */
 export async function routeEngineFromSummary(env: Env, summary: string): Promise<EngineRouting | null> {
-  // Anthropic Haiku first; fall through to Workers AI on failure so
-  // routing still happens (keyword router is a last resort).
-  const userPrompt = `Intake summary: ${summary}\n\nJSON:`;
-  const anthropic = await callAnthropic(env, ENGINE_ROUTING_PROMPT, userPrompt, {
-    model: HAIKU_MODEL,
-    maxTokens: 150,
-    temperature: 0.2
-  });
-  if (anthropic) {
-    const parsed = parseEngineRouting(anthropic);
-    if (parsed) return parsed;
-  }
-
   if (!env.AI) return null;
   const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
   try {
-    const prompt = `${ENGINE_ROUTING_PROMPT}\n\n${userPrompt}`;
+    const prompt = `${ENGINE_ROUTING_PROMPT}\n\nIntake summary: ${summary}\n\nJSON:`;
     const result = (await env.AI.run(model, {
       prompt,
       max_tokens: 150,

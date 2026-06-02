@@ -1,20 +1,12 @@
 import { Send, Sparkles } from "lucide-react";
-import { FormEvent, Fragment, useId, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useKaiStore } from "../../stores/kaiStore";
-import { useUserStore } from "../../stores/userStore";
-import { CrisisResourceCard } from "../safety/CrisisResourceCard";
-import { DisclosureBanner } from "../safety/DisclosureBanner";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
-import { parseToolCards } from "../../lib/kai-tools";
-import { KaiTypingIndicator } from "./KaiTypingIndicator";
-import { ToolCard } from "./ToolCard";
 
 export function KaiChat({ embedded = false }: { embedded?: boolean }) {
   const { messages, send, sending } = useKaiStore();
-  const kaiName = useUserStore((state) => state.kaiName);
   const [draft, setDraft] = useState("");
-  const inputId = useId();
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -24,52 +16,35 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
   }
 
   const shellClass = embedded ? "overflow-hidden rounded-[24px] border border-line bg-white" : "overflow-hidden rounded-calm border border-line bg-white shadow-calm";
-  const lowerKaiName = kaiName.toLowerCase();
 
   return (
     <section className={shellClass}>
       <div className="mb-4 flex items-center justify-between border-b border-line bg-warmPaper/70">
         <div className="p-5 pb-4">
-          <p className="eyebrow">{lowerKaiName} check-in</p>
+          <p className="eyebrow">kai check-in</p>
           <h2 className="mt-1 font-display text-3xl font-black tracking-normal">What is taking up space?</h2>
         </div>
         <div className="mr-5">
           <KaiMark size="md" />
         </div>
       </div>
-      <div className="mx-4 mb-3">
-        <DisclosureBanner />
-      </div>
       <div
         className="mx-4 mb-4 space-y-3"
         aria-live="polite"
         aria-relevant="additions"
-        aria-label={`Chat with ${kaiName}`}
+        aria-label="Chat with Kai"
       >
-        {messages.map((message) => {
-          const parsed = message.role === "assistant" ? parseToolCards(message.content) : { text: message.content, tools: [] };
-          return (
-            <Fragment key={message.id}>
-              <div
-                className={`max-w-[88%] rounded-[22px] px-4 py-3 text-sm font-medium leading-6 ${
-                  message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
-                }`}
-              >
-                <span className="sr-only">{message.role === "assistant" ? `${kaiName} said: ` : "You said: "}</span>
-                {parsed.text || (parsed.tools.length > 0 ? "I found a tool that fits." : message.content)}
-              </div>
-              {parsed.tools.length > 0 && (
-                <div className="flex max-w-[88%] flex-wrap gap-2" aria-label="Kai suggested tools">
-                  {parsed.tools.map((tool) => (
-                    <ToolCard key={`${message.id}-${tool.id}`} tool={tool} />
-                  ))}
-                </div>
-              )}
-              {message.safetyEvent && <CrisisResourceCard />}
-            </Fragment>
-          );
-        })}
-        {sending && <KaiTypingIndicator />}
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`max-w-[88%] rounded-[22px] px-4 py-3 text-sm font-medium leading-6 ${
+              message.role === "assistant" ? "bg-warmPaper text-ink" : "ml-auto bg-ink text-paper"
+            }`}
+          >
+            <span className="sr-only">{message.role === "assistant" ? "Kai said: " : "You said: "}</span>
+            {message.content}
+          </div>
+        ))}
       </div>
       <div className="mx-4 mb-3 flex flex-wrap gap-2" role="group" aria-label="Topic suggestions">
         {["school", "friends", "body", "sleep"].map((item) => (
@@ -85,15 +60,15 @@ export function KaiChat({ embedded = false }: { embedded?: boolean }) {
         ))}
       </div>
       <form onSubmit={onSubmit} className="flex gap-2 border-t border-line bg-paper p-3">
-        <label htmlFor={inputId} className="sr-only">
-          Message to {kaiName}
+        <label htmlFor="kai-chat-input" className="sr-only">
+          Message to Kai
         </label>
         <input
-          id={inputId}
+          id="kai-chat-input"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           className="field min-w-0 flex-1"
-          placeholder={sending ? `${lowerKaiName} is thinking` : "say it messy"}
+          placeholder={sending ? "kai is thinking" : "say it messy"}
           disabled={sending}
         />
         <Button aria-label="Send message" disabled={sending}>

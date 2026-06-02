@@ -1,5 +1,4 @@
 import type { Env } from "../types";
-import { HAIKU_MODEL, callAnthropic } from "./claude";
 import { STRENGTHS_DISCOVERY_QUESTIONS, STRENGTHS_SUMMARY_PROMPT } from "./prompts/strengths";
 
 export type StrengthsResponses = Record<string, string>;
@@ -23,21 +22,12 @@ function formatResponses(responses: StrengthsResponses): string {
  * so the caller can fall back to a deterministic summary.
  */
 export async function summarizeStrengths(env: Env, responses: StrengthsResponses): Promise<string | null> {
+  if (!env.AI) return null;
   const formatted = formatResponses(responses);
   if (!formatted) return null;
-
-  const userPrompt = `Answers:\n${formatted}\n\nSummary:`;
-  const anthropic = await callAnthropic(env, STRENGTHS_SUMMARY_PROMPT, userPrompt, {
-    model: HAIKU_MODEL,
-    maxTokens: 320,
-    temperature: 0.4
-  });
-  if (anthropic) return anthropic.slice(0, 1200);
-
-  if (!env.AI) return null;
   const model = env.AI_TEXT_MODEL || "@cf/meta/llama-3.1-8b-instruct";
   try {
-    const prompt = `${STRENGTHS_SUMMARY_PROMPT}\n\n${userPrompt}`;
+    const prompt = `${STRENGTHS_SUMMARY_PROMPT}\n\nAnswers:\n${formatted}\n\nSummary:`;
     const result = (await env.AI.run(model, {
       prompt,
       max_tokens: 320,

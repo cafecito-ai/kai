@@ -3,8 +3,13 @@
 @tailwind utilities;
 
 :root {
-  color: #0a0a0a;
+  /* KAI light mode (DECISIONS D-005 — override of v2 §7 dark-only).
+     Warm off-white background, near-black text, premium wellness-app aesthetic. */
+  color: #1a1a1f;
   background: #fafaf7;
+  color-scheme: light;
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -17,6 +22,7 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background: #fafaf7;
+  color: #1a1a1f;
 }
 
 button,
@@ -26,179 +32,24 @@ select {
   font: inherit;
 }
 
+/* Focus ring — accent violet on dark bg */
 .focus-ring {
-  @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-plum;
+  @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 }
 
-.noise {
-  background:
-    radial-gradient(circle at 18% 0%, rgba(123, 196, 245, 0.22), transparent 34rem),
-    radial-gradient(circle at 92% 8%, rgba(168, 220, 143, 0.18), transparent 30rem),
-    linear-gradient(180deg, rgba(250, 250, 247, 0.94), rgba(244, 241, 235, 0.72) 420px, rgba(250, 250, 247, 1)),
-    linear-gradient(90deg, rgba(229, 226, 217, 0.28) 1px, transparent 1px),
-    #fafaf7;
-  background-size: auto, 64px 64px, auto;
-}
-
-.app-panel {
-  @apply rounded-[28px] border border-white/65 bg-white/80 shadow-soft backdrop-blur-xl;
-}
-
-.app-page {
-  @apply mx-auto w-full max-w-6xl min-w-0 space-y-4 overflow-hidden text-ink sm:space-y-5;
-}
-
-.app-surface {
-  @apply min-w-0 overflow-hidden rounded-[30px] border border-white/65 bg-white/80 shadow-calm backdrop-blur-xl;
-}
-
-.app-title {
-  @apply max-w-[22rem] font-display text-4xl font-black leading-none tracking-normal text-ink sm:max-w-3xl sm:text-6xl lg:text-7xl;
-}
-
-.eyebrow {
-  @apply text-[11px] font-black uppercase tracking-[0.14em] text-muted;
-}
-
-.display-title {
-  @apply font-display font-black leading-none tracking-normal text-ink;
-}
-
-.field {
-  @apply focus-ring min-h-12 w-full rounded-kai border border-line bg-white px-4 py-3 text-base text-ink placeholder:text-muted/70;
-}
+/*
+ * v0 legacy utility classes (.app-panel, .app-surface, .app-page, .app-title,
+ * .display-title, .eyebrow, .field, .noise) used to live here but referenced
+ * removed tokens (shadow-soft, text-ink, rounded-kai, border-line as a color,
+ * etc.) and broke the PostCSS build. Stripped during T-003.
+ *
+ * Components that referenced them will render unstyled until rewritten in
+ * Phase A tasks T-004+. Per AGENT_PLAN T-003 guardrail: "existing routes
+ * still render (with visual regression — that's expected and intentional)."
+ */
 
 .mobile-safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 5.75rem);
-}
-
-/* ─── v2 design-pass primitives ──────────────────────────────────
- * Patterns from Claude Design's handoff. Used by the Sleep widget
- * (dark "asleep" state), the Physical Tracker (huge Fraunces timer
- * + italic cue line), and the Food camera CTA. Tokens-only — no
- * inline hex sneaks in via these classes. */
-
-/* Sleep "asleep" state: cosmic night radial. Applied to the
- * full-screen container so it bleeds edge to edge under the
- * widget content. Keep `position: relative` on the parent. */
-.sleep-bg {
-  background:
-    radial-gradient(ellipse at 50% 30%, #1F1644 0%, #0B0820 50%, #050310 100%);
-  color: var(--color-paper, #FAFAF7);
-}
-
-/* Big round tap target used on the Sleep widget (220px circle).
- * `.tap-sleep` (dark with subtle plum glow ring) for the "going to
- * bed" tap; `.tap-wake` (warm sunrise gradient) for the "tap to
- * wake" tap in the asleep state. */
-.tap-button {
-  width: 220px;
-  height: 220px;
-  border-radius: 9999px;
-  border: 0;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  font-family: 'Fraunces', Georgia, serif;
-  font-weight: 900;
-  font-size: 24px;
-  letter-spacing: -0.005em;
-  line-height: 1;
-}
-.tap-sleep {
-  background: #0A0A0A;
-  color: #FAFAF7;
-  box-shadow: 0 30px 70px rgba(91, 71, 240, 0.18), 0 0 0 8px rgba(91, 71, 240, 0.06);
-}
-.tap-wake {
-  background: linear-gradient(180deg, #FFE7C7 0%, #FFB078 100%);
-  color: #1A0B00;
-  box-shadow: 0 30px 70px rgba(255, 138, 87, 0.35);
-}
-.tap-button .label-mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-weight: 700;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-  margin-bottom: 6px;
-}
-.tap-wake .label-mono { color: rgba(26, 11, 0, 0.55); }
-
-/* Huge Fraunces countdown for the Physical Tracker in-session
- * screen. Mono numerals (tabular-nums) so digits don't jitter as
- * the timer ticks. */
-.timer-display {
-  font-family: 'Fraunces', Georgia, serif;
-  font-weight: 700;
-  font-size: 84px;
-  line-height: 0.96;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  color: #0A0A0A;
-}
-.timer-display.light { color: #FAFAF7; }
-
-/* Italic Fraunces cue line — Kai's current voice cue during a
- * tracker session. Reads at arm's length. */
-.cue-line {
-  font-family: 'Fraunces', Georgia, serif;
-  font-weight: 600;
-  font-style: italic;
-  font-size: 17px;
-  line-height: 1.45;
-  letter-spacing: -0.005em;
-  color: #0A0A0A;
-  text-align: center;
-  padding: 0 12px;
-}
-
-/* Dark "Snap a meal" CTA used by the Food card. Inky background
- * with a purple radial glow in the corner + a mini shutter circle
- * inside. The `.glow` child gets blurred via CSS. */
-.camera-cta {
-  position: relative;
-  border-radius: 28px;
-  padding: 28px;
-  background: #0A0A0A;
-  color: #FAFAF7;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-height: 160px;
-  cursor: pointer;
-  border: 0;
-  appearance: none;
-  font: inherit;
-  text-align: left;
-}
-.camera-cta .glow {
-  position: absolute;
-  width: 240px;
-  height: 240px;
-  border-radius: 9999px;
-  background: radial-gradient(circle, rgba(143, 92, 255, 0.45), transparent 60%);
-  right: -60px;
-  top: -60px;
-  filter: blur(10px);
-  pointer-events: none;
-}
-.camera-cta .shutter-mini {
-  width: 56px;
-  height: 56px;
-  border-radius: 9999px;
-  border: 2.5px solid #FAFAF7;
-  background: transparent;
-  display: grid;
-  place-items: center;
-}
-.camera-cta .shutter-mini > div {
-  width: 44px;
-  height: 44px;
-  border-radius: 9999px;
-  background: #FAFAF7;
 }
 
 /* Demo: HomeCard reveal */

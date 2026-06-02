@@ -3,12 +3,6 @@ import { api } from "../lib/api";
 import { localSafetyCheck } from "../lib/safety";
 import type { ChatMessage } from "../lib/types";
 
-const WELCOME_MESSAGE: ChatMessage = {
-  id: "welcome",
-  role: "assistant",
-  content: "Tell me the loud part. I’ll help you turn it into one small move."
-};
-
 interface KaiState {
   conversationId: string | null;
   messages: ChatMessage[];
@@ -20,14 +14,26 @@ interface KaiState {
 export const useKaiStore = create<KaiState>((set) => ({
   conversationId: null,
   sending: false,
-  messages: [WELCOME_MESSAGE],
+  messages: [
+    {
+      id: "welcome",
+      role: "assistant",
+      content: "Tell me the loud part. I’ll help you turn it into one small move."
+    }
+  ],
   hydrate: ({ conversationId, messages }) =>
     set({
       conversationId,
       messages:
         messages.length > 0
           ? messages.filter((message) => message.role === "user" || message.role === "assistant")
-          : [WELCOME_MESSAGE]
+          : [
+              {
+                id: "welcome",
+                role: "assistant",
+                content: "Tell me the loud part. I’ll help you turn it into one small move."
+              }
+            ]
     }),
   send: async (message) => {
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: "user", content: message };
@@ -38,12 +44,7 @@ export const useKaiStore = create<KaiState>((set) => ({
         sending: false,
         messages: [
           ...state.messages,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: safety.response ?? "Let's get you real support right now.",
-            safetyEvent: { category: safety.category, severity: safety.severity }
-          }
+          { id: crypto.randomUUID(), role: "assistant", content: safety.response ?? "Let's get you real support right now." }
         ]
       }));
       return;
@@ -53,19 +54,7 @@ export const useKaiStore = create<KaiState>((set) => ({
       set((state) => ({
         conversationId: result.conversationId,
         sending: false,
-        messages: [
-          ...state.messages,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: result.reply,
-            // Spec §7: server-side classifier may flag content the regex
-            // missed. When it does, render the crisis resource card.
-            safetyEvent: result.safetyEvent
-              ? { category: result.safetyEvent.category, severity: result.safetyEvent.severity }
-              : undefined
-          }
-        ]
+        messages: [...state.messages, { id: crypto.randomUUID(), role: "assistant", content: result.reply }]
       }));
     } catch {
       set((state) => ({

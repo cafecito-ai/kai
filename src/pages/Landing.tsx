@@ -1,12 +1,23 @@
 import { ArrowRight, ShieldAlert } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { AppPage, AppSurface, FlowList, KaiMark, SessionHero } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { useUserStore } from "../stores/userStore";
 
 export function Landing() {
   const { kaiName, onboardingCompletedAt } = useUserStore();
-  const startPath = onboardingCompletedAt ? "/home" : "/onboarding";
+
+  // Users who already onboarded go straight to /home. Landing is for
+  // first-time visitors only — the v0 "pick an engine" path is dead.
+  if (onboardingCompletedAt) {
+    return <Navigate to="/home" replace />;
+  }
+
+  // Flow: Landing → Welcome → Onboarding → Home. The Welcome page
+  // self-redirects to /onboarding for users who've seen it and to
+  // /home for fully-onboarded users, so this single entry point works
+  // for everyone.
+  const startPath = "/welcome";
 
   return (
     <AppPage className="max-w-5xl">
@@ -21,7 +32,7 @@ export function Landing() {
           <>
             <Link to={startPath}>
               <Button className="w-full sm:w-auto">
-                {onboardingCompletedAt ? `Talk to ${kaiName}` : "Start with Kai"}
+                Start with Kai
                 <ArrowRight size={18} />
               </Button>
             </Link>
@@ -40,15 +51,15 @@ export function Landing() {
             <FlowList
               items={[
                 { label: "Say the loud part", copy: "A messy sentence is enough." },
-                { label: "Kai picks the next move", copy: "A chat, a tool, or a tiny rep." },
-                { label: "Keep coming back", copy: "Kai remembers the pattern." }
+                { label: "Get a real read", copy: "KAI listens, you don't have to perform." },
+                { label: "Do one small thing", copy: "Small enough to finish today." }
               ]}
             />
           </div>
         }
       >
         <p>
-          Tell {kaiName} what is loud today. Kai turns it into the next useful move without making you choose the category first.
+            Tell Kai what is loud today. It helps you choose the right agent and turn it into one small move.
         </p>
       </SessionHero>
 

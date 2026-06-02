@@ -46,7 +46,7 @@ describe("tracker", () => {
         { id: "2", engine: "mental", eventType: "breath", eventValue: 15, occurredAt: "2026-05-11T00:00:00Z" },
         { id: "3", engine: "physical", eventType: "sleep", eventValue: 10, occurredAt: "2026-05-10T00:00:00Z" }
       ])
-    ).toEqual({ physical: 30, superpower: 0, mental: 15, kai: 0 });
+    ).toEqual({ physical: 30, potential: 0, mental: 15, kai: 0 });
   });
 
   it("rolls events into the last n days", () => {
@@ -65,6 +65,6 @@ describe("tracker", () => {
   });
 
   it("formats activity names for teens", () => {
-    expect(eventDisplayName({ id: "1", engine: "superpower", eventType: "goal_hit", eventValue: 40, occurredAt: "2026-05-11T00:00:00Z" })).toBe("Purpose: goal hit");
+    expect(eventDisplayName({ id: "1", engine: "potential", eventType: "goal_hit", eventValue: 40, occurredAt: "2026-05-11T00:00:00Z" })).toBe("Mental: goal hit");
   });
 });

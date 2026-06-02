@@ -1,4 +1,4 @@
-export type EngineId = "physical" | "superpower" | "mental";
+export type EngineId = "physical" | "potential" | "mental";
 export type KaiTone = "warm" | "balanced" | "direct";
 
 export interface ProgressEvent {
@@ -17,23 +17,6 @@ export interface Goal {
   description?: string;
   targetDate?: string;
   status: "active" | "achieved" | "paused" | "released";
-  missionId?: string | null;
-}
-
-export interface Mission {
-  id: string;
-  pillar: "body" | "mind" | "purpose" | "people";
-  statement: string;
-  why?: string | null;
-  status: "active" | "paused" | "achieved" | "released" | "archived";
-  createdAt?: string;
-  archivedAt?: string | null;
-}
-
-export interface MissionDraft {
-  pillar: Mission["pillar"];
-  statement: string;
-  why: string;
 }
 
 export interface UserProfile {
@@ -45,6 +28,10 @@ export interface UserProfile {
   onboardingCompletedAt?: string | null;
   consentStatus?: "not_required" | "pending" | "complete";
   parentConsentAt?: string | null;
+  /** The user's first name — what KAI calls them in conversation.
+   *  Surfaced from users.display_name. May arrive nested under
+   *  profile.user.display_name; userStore.hydrate normalises both. */
+  displayName?: string | null;
 }
 
 export interface EngineEntry {
@@ -64,17 +51,11 @@ export interface SafetyResult {
   response?: string;
 }
 
-export interface SafetyEventInfo {
-  category?: string;
-  severity?: "low" | "medium" | "high" | "critical";
-}
-
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
-  safetyEvent?: SafetyEventInfo;
 }
 
 /**
@@ -114,6 +95,10 @@ export interface FoodPhotoResult {
   totals: FoodNutrition | null;
   confidence: FoodPhotoConfidence;
   notes: string;
+  /** T-022 — Body agent's 1-2 sentence observational comment on this meal.
+   *  Always present (server falls back to a safe canned string if AI is
+   *  unavailable or the body-language filter rejects 3 regens in a row). */
+  bodyComment?: string;
 }
 
 /**
@@ -126,26 +111,6 @@ export interface DemoFoodPhotoResult {
   items: FoodPhotoItem[];
   totals: FoodNutrition | null;
   confidence: FoodPhotoConfidence;
-  notes: string;
-}
-
-export interface PostureCue {
-  focus: string;
-  suggestion: string;
-}
-
-/**
- * Response shape for /api/body-scan-upload. The teen sees `cues`
- * surfaced as supportive posture/alignment notes — never body
- * composition. Filter enforced server-side; UI doesn't need to
- * re-filter, but should still render the persistent "no body score"
- * Note for reassurance.
- */
-export interface BodyScanResult {
-  scanId: string;
-  r2Key?: string;
-  cues: PostureCue[];
-  confidence: "high" | "medium" | "low";
   notes: string;
 }
 

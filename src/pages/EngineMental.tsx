@@ -1,7 +1,7 @@
-import { BookOpen, Brain, CheckCircle2, History, RefreshCw, Target, Wind } from "lucide-react";
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { Brain, CheckCircle2, RefreshCw, Target } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { EngineGuidesIndex } from "../components/engines/EngineGuidesIndex";
-import { UnitWorkspace, type UnitModule } from "../components/engines/UnitWorkspace";
+import { EnginePanel } from "../components/engines/EnginePanel";
 import { BreathingPlayer } from "../components/mental/BreathingPlayer";
 import { ClinicalReviewBanner } from "../components/mental/ClinicalReviewBanner";
 import { FeelingsCheckIn } from "../components/mental/FeelingsCheckIn";
@@ -9,13 +9,13 @@ import { FutureSelfLetter } from "../components/mental/FutureSelfLetter";
 import { MeditationPlayer } from "../components/mental/MeditationPlayer";
 import { SocialMediaReset } from "../components/mental/SocialMediaReset";
 import { ThoughtReframe } from "../components/mental/ThoughtReframe";
-import { KaiCueNote } from "../components/kai/KaiCueNote";
 import { DisclosureBanner } from "../components/safety/DisclosureBanner";
-import { StrengthsDiscoveryCard } from "../components/strengths/StrengthsDiscoveryCard";
+import { SecondaryShelf } from "../components/ui/AppPrimitives";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import type { EngineEntry, Goal } from "../lib/types";
 import { useProgressStore } from "../stores/progressStore";
+import { StrengthsDiscoveryCard } from "./EnginePotential";
 
 const StressPrimer = lazy(() =>
   import("../components/physical/StressPrimer").then((module) => ({ default: module.StressPrimer }))
@@ -34,7 +34,6 @@ export function EngineMental() {
   const [goalTitle, setGoalTitle] = useState("");
   const [nextStep, setNextStep] = useState("Spend 10 minutes on the smallest useful version.");
   const [reframe, setReframe] = useState("This still matters. I can make the next move smaller without quitting.");
-  const [kaiCue, setKaiCue] = useState<string | null>(null);
   // All four flows (feelings, thought, social, letter) are now structured
   // components below. No remaining inline-action items.
 
@@ -65,16 +64,6 @@ export function EngineMental() {
     } catch {
       // Keep the optimistic entry in demo mode.
     }
-    // Same Kai-cue wiring as Physical: non-blocking fire-and-forget,
-    // worker handles fallback if model unavailable.
-    void api
-      .generateKaiCue({
-        eventType: input.eventType,
-        eventValue: input.eventValue,
-        payload: (input.payload as Record<string, unknown> | undefined) ?? undefined
-      })
-      .then(({ cue }) => setKaiCue(cue))
-      .catch(() => undefined);
   }
 
   async function createGoal() {
@@ -97,52 +86,45 @@ export function EngineMental() {
     });
   }
 
-  const modules: UnitModule[] = [
-    {
-      id: "checkin",
-      label: "Check-in",
-      summary: "Name it",
-      icon: Brain,
-      content: (
-        <div className="grid gap-4">
-          <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-            <FeelingsCheckIn
-              onComplete={(payload) => {
-                const peak = Math.max(...Object.values(payload.emotions));
-                void completeReset({
-                  eventType: "feelings_check_in",
-                  title: "Feelings check-in",
-                  payload,
-                  eventValue: 18 + (payload.bodyArea ? 4 : 0) + (payload.note.trim().length > 0 ? 4 : 0) + (peak > 0 ? 2 : 0)
-                });
-              }}
-            />
-            <ThoughtReframe
-              onComplete={(payload) =>
-                void completeReset({
-                  eventType: "thought_reframe",
-                  title: "Thought reframe",
-                  payload,
-                  eventValue: 22 + (payload.evidenceFor.trim() ? 4 : 0) + (payload.evidenceAgainst.trim() ? 4 : 0)
-                })
-              }
-            />
-          </div>
-        </div>
-      )
-    },
-    {
-      id: "reset",
-      label: "Reset",
-      summary: "Breathe + settle",
-      icon: Wind,
-      content: (
-        <ResetSwiper labels={["Breathing", "Meditation", "Social reset", "Letter"]}>
+  return (
+    <EnginePanel title="Mental" label="Mind" accent="text-coral" intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical.">
+      <ClinicalReviewBanner />
+      <DisclosureBanner />
+      <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+        <FeelingsCheckIn
+          onComplete={(payload) => {
+            const peak = Math.max(...Object.values(payload.emotions));
+            completeReset({
+              eventType: "feelings_check_in",
+              title: "Feelings check-in",
+              payload,
+              // Event value scales with engagement: a teen who moves sliders + picks
+              // a body area + leaves a note earns the full bonus.
+              eventValue: 18 + (payload.bodyArea ? 4 : 0) + (payload.note.trim().length > 0 ? 4 : 0) + (peak > 0 ? 2 : 0)
+            });
+          }}
+        />
+        <ThoughtReframe
+          onComplete={(payload) =>
+            completeReset({
+              eventType: "thought_reframe",
+              title: "Thought reframe",
+              payload,
+              // Bonus for completing both evidence sides — the contrast IS the
+              // work, so engagement there gets rewarded more than a one-step
+              // textarea would.
+              eventValue: 22 + (payload.evidenceFor.trim() ? 4 : 0) + (payload.evidenceAgainst.trim() ? 4 : 0)
+            })
+          }
+        />
+      </div>
+      <SecondaryShelf eyebrow="more reset tools" title="Breathing, meditation, social reset, letter." summary="Open these when the first check-in is not the right rep." count="4 tools">
+        <div className="mt-4 grid gap-4">
           <BreathingPlayer
             onSessionComplete={({ patternId, seconds }) =>
-              void completeReset({
+              completeReset({
                 eventType: "mental_breathing",
-                title: `Breathing - ${patternId}`,
+                title: `Breathing — ${patternId}`,
                 payload: { patternId, seconds },
                 eventValue: Math.min(40, 8 + Math.round(seconds / 10))
               })
@@ -150,9 +132,9 @@ export function EngineMental() {
           />
           <MeditationPlayer
             onSessionComplete={({ durationSeconds, elapsedSeconds, completed }) =>
-              void completeReset({
+              completeReset({
                 eventType: "meditation",
-                title: `Meditation - ${Math.round(durationSeconds / 60)} min`,
+                title: `Meditation — ${Math.round(durationSeconds / 60)} min`,
                 payload: { durationSeconds, elapsedSeconds, completed },
                 eventValue: Math.min(45, 10 + Math.round(elapsedSeconds / 12))
               })
@@ -160,231 +142,179 @@ export function EngineMental() {
           />
           <SocialMediaReset
             onComplete={(payload) =>
-              void completeReset({
+              completeReset({
                 eventType: "social_reset",
                 title: "Social media reset",
                 payload,
+                // Full three-step engagement gets the bonus; bailing after step 2
+                // still saves but earns the base.
                 eventValue: 18 + (payload.replacement.trim() ? 6 : 0)
               })
             }
           />
           <FutureSelfLetter
             onComplete={(payload) =>
-              void completeReset({
+              completeReset({
                 eventType: "letter_written",
                 title: `Letter to ${payload.direction} me`,
                 payload,
+                // Length-scaled event value: a teen who wrote >120 chars earns
+                // the full bonus over a one-line save.
                 eventValue: 18 + (payload.body.trim().length > 120 ? 8 : 4)
               })
             }
           />
-        </ResetSwiper>
-      )
-    },
-    {
-      id: "purpose",
-      label: "Purpose",
-      summary: "Goals + identity",
-      icon: Target,
-      content: (
-        <div className="grid gap-4">
-          <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-            <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
+        </div>
+      </SecondaryShelf>
+      <Suspense fallback={null}>
+        <StressPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "mental",
+              eventType: "stress_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+        <IdentityPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "mental",
+              eventType: "identity_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+        <RelationshipsPrimer
+          onRead={({ articleId }) =>
+            addEvent({
+              engine: "mental",
+              eventType: "relationships_primer_read",
+              eventValue: 6,
+              payload: { articleId }
+            })
+          }
+        />
+      </Suspense>
+      <SecondaryShelf eyebrow="purpose + confidence" title="Goals now live inside Mental." summary="Identity-based habits, strengths, discipline, confidence, and purpose belong with the mind, not in a separate lane." count="4 tools" defaultOpen>
+        <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+            <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset">
+              <Target />
+            </div>
+            <p className="eyebrow">identity habit</p>
+            <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make one next move visible.</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-muted">
+              Goals are treated as identity practice: small systems, honest effort, no fake hype.
+            </p>
+            <div className="mt-4 grid gap-2">
+              <input
+                className="field"
+                value={goalTitle}
+                onChange={(event) => setGoalTitle(event.target.value)}
+                placeholder="One thing I want to build, practice, repair, or try"
+              />
+              <Button onClick={() => void createGoal()} disabled={!goalTitle.trim()}>
+                Add goal
+              </Button>
+            </div>
+            <div className="mt-4 space-y-2">
+              {goals.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No goals yet. Add one tiny thing worth doing this week.</p>}
+              {goals.slice(0, 4).map((goal) => (
+                <button
+                  key={goal.id}
+                  type="button"
+                  className="focus-ring flex w-full items-center gap-3 rounded-kai border border-line bg-paper p-3 text-left transition hover:bg-white"
+                  onClick={() => {
+                    setGoals((items) => items.map((item) => (item.id === goal.id ? { ...item, status: "achieved" } : item)));
+                    void api.updateGoal(goal.id, { status: "achieved" }).catch(() => undefined);
+                    void completeReset({ eventType: "goal_completed", title: goal.title, payload: { goalId: goal.id }, eventValue: 40 });
+                  }}
+                >
+                  <CheckCircle2 className={goal.status === "achieved" ? "text-sage" : "text-soft"} />
+                  <span className="font-semibold">{goal.title}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <div className="grid gap-4">
+            <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
               <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset">
                 <Target />
               </div>
-              <p className="eyebrow">identity habit</p>
-              <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Make one next move visible.</h2>
-              <p className="mt-3 text-sm font-semibold leading-6 text-muted">Goals are treated as identity practice: small systems, honest effort, no fake hype.</p>
-              <div className="mt-4 grid gap-2">
-                <input className="field" value={goalTitle} onChange={(event) => setGoalTitle(event.target.value)} placeholder="One thing I want to build, practice, repair, or try" />
-                <Button onClick={() => void createGoal()} disabled={!goalTitle.trim()}>Add goal</Button>
-              </div>
-              <div className="mt-4 space-y-2">
-                {goals.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No goals yet. Add one tiny thing worth doing this week.</p>}
-                {goals.slice(0, 4).map((goal) => (
-                  <button
-                    key={goal.id}
-                    type="button"
-                    className="focus-ring flex w-full items-center gap-3 rounded-kai border border-line bg-paper p-3 text-left transition hover:bg-white"
-                    onClick={() => {
-                      setGoals((items) => items.map((item) => (item.id === goal.id ? { ...item, status: "achieved" } : item)));
-                      void api.updateGoal(goal.id, { status: "achieved" }).catch(() => undefined);
-                      void completeReset({ eventType: "goal_completed", title: goal.title, payload: { goalId: goal.id }, eventValue: 40 });
-                    }}
-                  >
-                    <CheckCircle2 className={goal.status === "achieved" ? "text-sage" : "text-soft"} />
-                    <span className="font-semibold">{goal.title}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-            <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-              <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset"><Target /></div>
-              <p className="eyebrow">next step + reframe</p>
-              <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Shrink it. Or reframe it.</h2>
-              <p className="mt-3 text-sm font-semibold leading-6 text-muted">A small next step makes work startable. A reframe makes a stuck goal honest again. Either is enough.</p>
-              <label className="mt-4 block">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Next step</span>
-                <textarea className="field mt-2 min-h-24" value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
-              </label>
-              <label className="mt-4 block">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted inline-flex items-center gap-1">Reframe <RefreshCw size={12} aria-hidden="true" /></span>
-                <textarea className="field mt-2 min-h-24" value={reframe} onChange={(event) => setReframe(event.target.value)} />
-              </label>
+              <p className="eyebrow">next step planner</p>
+              <h2 className="mt-2 font-display text-2xl font-black tracking-normal">Shrink it until it can start.</h2>
+              <textarea className="field mt-4 min-h-24" value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
               <Button
                 className="mt-4"
                 variant="secondary"
-                disabled={!nextStep.trim() && !reframe.trim()}
-                onClick={() => {
-                  if (nextStep.trim()) {
-                    void completeReset({ eventType: "next_step_planned", title: "Next step", payload: { nextStep }, eventValue: 22 });
-                  }
-                  if (reframe.trim()) {
-                    void completeReset({ eventType: "goal_reframed", title: "Goal reframe", payload: { reframe }, eventValue: 24 });
-                  }
-                }}
+                onClick={() => void completeReset({ eventType: "next_step_planned", title: "Next step", payload: { nextStep }, eventValue: 22 })}
               >
-                Save
+                Save next step
+              </Button>
+            </section>
+            <section className="rounded-kai border border-line bg-white p-5 shadow-sm">
+              <div className="mb-5 grid size-12 place-items-center rounded-full bg-resetWash text-reset">
+                <RefreshCw />
+              </div>
+              <p className="eyebrow">reframe</p>
+              <h2 className="mt-2 font-display text-2xl font-black tracking-normal">A goal can change without becoming a failure.</h2>
+              <textarea className="field mt-4 min-h-24" value={reframe} onChange={(event) => setReframe(event.target.value)} />
+              <Button
+                className="mt-4"
+                variant="secondary"
+                onClick={() => void completeReset({ eventType: "goal_reframed", title: "Goal reframe", payload: { reframe }, eventValue: 24 })}
+              >
+                Save reframe
               </Button>
             </section>
           </div>
-          <StrengthsDiscoveryCard onComplete={(summary) => void completeReset({ eventType: "strengths_discovery", title: "Strengths summary", payload: { summary, source: "mental_agent" }, eventValue: 60 })} />
         </div>
-      )
-    },
-    {
-      id: "guides",
-      label: "Guides",
-      summary: "Learn fast",
-      icon: BookOpen,
-      content: (
-        <Suspense fallback={null}>
-          <div className="grid gap-4">
-            <StressPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "stress_primer_read", eventValue: 6, payload: { articleId } })} />
-            <IdentityPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "identity_primer_read", eventValue: 6, payload: { articleId } })} />
-            <RelationshipsPrimer onRead={({ articleId }) => addEvent({ engine: "mental", eventType: "relationships_primer_read", eventValue: 6, payload: { articleId } })} />
-            <EngineGuidesIndex engine="mental" title="Mind + growth guides" intro="Emotion, identity, stress, confidence, relationships, purpose, and habits. Each is short. Kai links here in chat when topics come up." />
-            <EngineGuidesIndex engine="superpower" eyebrow="purpose guides" title="Purpose + doing guides" intro="Focus, motivation, money, decisions, and skill-building." />
-          </div>
-        </Suspense>
-      )
-    },
-    {
-      id: "history",
-      label: "History",
-      summary: `${entries.length} saved`,
-      icon: History,
-      content: (
-        <section className="rounded-[24px] border border-line bg-white p-5 shadow-sm">
-          <p className="eyebrow">reset history</p>
-          <h2 className="mt-2 font-display text-3xl font-black tracking-normal">Recent mental work</h2>
-          <div className="mt-4 space-y-2">
-            {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Reset entries yet. Complete one check-in, breathing session, or letter.</p>}
-            {entries.slice(0, 6).map((entry) => (
-              <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
-                <Brain className="text-coral" size={18} />
-                <div>
-                  <p className="text-sm font-black">{entry.title || labelForEntry(entry.entryType)}</p>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">{labelForEntry(entry.entryType)}</p>
-                </div>
+        <div className="mt-4">
+          <StrengthsDiscoveryCard
+            onComplete={(summary) =>
+              void completeReset({
+                eventType: "strengths_discovery",
+                title: "Strengths summary",
+                payload: { summary, source: "mental_agent" },
+                eventValue: 60
+              })
+            }
+          />
+        </div>
+      </SecondaryShelf>
+      <SecondaryShelf eyebrow="reset history" title="Recent reset work" count={`${entries.length} saved`}>
+        <div className="space-y-2">
+          {entries.length === 0 && <p className="rounded-kai border border-line bg-paper p-3 text-sm text-muted">No Reset entries yet. Complete one check-in, breathing session, or letter.</p>}
+          {entries.slice(0, 6).map((entry) => (
+            <div key={entry.id} className="flex items-center gap-3 rounded-kai border border-line bg-paper p-3">
+              <Brain className="text-coral" size={18} />
+              <div>
+                <p className="text-sm font-black">{entry.title || labelForEntry(entry.entryType)}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted">{labelForEntry(entry.entryType)}</p>
               </div>
-            ))}
-          </div>
-        </section>
-      )
-    }
-  ];
-
-  return (
-    <UnitWorkspace
-      title="Mental"
-      label="Mind"
-      tone="mental"
-      intro="Feelings, confidence, purpose, identity, discipline, habits, and social pressure. Supportive, honest, never clinical."
-      modules={modules}
-      banners={
-        <>
-          <ClinicalReviewBanner />
-          <DisclosureBanner />
-        </>
-      }
-      liveNote={kaiCue ? <KaiCueNote cue={kaiCue} onDismiss={() => setKaiCue(null)} /> : null}
-    />
+            </div>
+          ))}
+        </div>
+      </SecondaryShelf>
+      <EngineGuidesIndex
+        engine="mental"
+        title="Mind + growth guides"
+        intro="Emotion, identity, stress, confidence, relationships, purpose, and habits. Each is short. Kai links here in chat when topics come up."
+      />
+      <EngineGuidesIndex
+        engine="potential"
+        eyebrow="legacy goals guides"
+        title="Purpose + doing guides"
+        intro="The old Goals lane is now part of Mental: focus, motivation, money, decisions, and skill-building."
+      />
+    </EnginePanel>
   );
 }
 
 function labelForEntry(entryType: string) {
   return entryType.replace(/_/g, " ");
-}
-
-/**
- * Horizontal swipe pager for the Reset module — replaces the previous
- * vertical stack of four cards (Breathing / Meditation / Social reset /
- * Letter) so they read as one tool at a time on mobile.
- *
- * Uses CSS scroll-snap (no dependency) and a scrollLeft -> activeIndex
- * mapping on scroll to drive the dot row + label below.
- */
-function ResetSwiper({ children, labels }: { children: ReactNode[]; labels: string[] }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let raf = 0;
-    const handler = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        if (!el.clientWidth) return;
-        setActiveIndex(Math.round(el.scrollLeft / el.clientWidth));
-      });
-    };
-    el.addEventListener("scroll", handler, { passive: true });
-    return () => {
-      el.removeEventListener("scroll", handler);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  function jumpTo(index: number) {
-    const el = ref.current;
-    if (!el) return;
-    el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div
-        ref={ref}
-        className="flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-2 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        aria-roledescription="carousel"
-      >
-        {children.map((child, i) => (
-          <div key={i} className="w-full shrink-0 snap-center" aria-roledescription="slide" aria-label={`${i + 1} of ${children.length}: ${labels[i] ?? ""}`}>
-            {child}
-          </div>
-        ))}
-      </div>
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex justify-center gap-2" role="tablist" aria-label="Reset tools">
-          {children.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              role="tab"
-              aria-selected={i === activeIndex}
-              aria-label={`Go to ${labels[i] ?? `slide ${i + 1}`}`}
-              onClick={() => jumpTo(i)}
-              className={`focus-ring h-2 rounded-full transition-all ${i === activeIndex ? "w-8 bg-ink" : "w-2 bg-line"}`}
-            />
-          ))}
-        </div>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted" aria-live="polite">
-          {labels[activeIndex] ?? ""}
-        </p>
-      </div>
-    </div>
-  );
 }

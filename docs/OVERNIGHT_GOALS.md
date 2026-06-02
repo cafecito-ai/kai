@@ -20,6 +20,18 @@ Status legend: [ ] todo · [~] in progress · [x] done (prod) · [s] on staging 
   `<title>`/meta description. One consistent treatment. *Accept:* slogan visible
   (proper case) on `/`, and in the document title on prod.
 
+## Overnight run results (2026-06-02)
+- [x] **G1** slogan — prod.
+- [x] **G2** food tracking — Claude vision (Haiku, llava fallback) — prod.
+- [x] **G3** body scan — VERIFIED end-to-end + privacy intact (disable_training, no image bytes). Claude-vision upgrade = Gate-5 morning item.
+- [x] **G4** community — friend-compare enabled (aggregate-only backend), Groups verified — prod.
+- [x] **G5/G6** cohesion — check-in "keep talking" seeds Kai with mood+note (via Chat.tsx, safety path intact); chat already sends clientContext (recent activity/score/goals) so Kai references what you did — prod.
+- [x] **G8** chat agent — 84→90/100, safety 1/1 (5 prior iterations) — prod.
+- [x] **G9** QA sweep — pages render; **FOUND + FIXED a critical prod 401**: authed API was rejecting the no-auth pilot's x-dev-user on prod; now accepted via ALLOW_DEV_USER (no ops granted) — prod.
+- [~] **G10** full 100-persona teen-sim report — running.
+
+**Morning flags (human):** body-scan→Claude-vision (Gate 5, clinician/Ratner); chat depth-tuning is Lev's voice call (live, measured-better, confirm/revert); wire real Clerk auth to replace the no-auth pilot (NEXT_STEPS P0); deep chat→feature deep-linking (bigger cohesion feature).
+
 ## Tier 1 — Make the core feature sets actually work
 - [ ] **G2. Food tracking, for real.** Upgrade food-photo analysis from Workers-AI
   llava to **Claude vision** (accurate item + macro + quality read), keep USDA

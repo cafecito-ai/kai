@@ -1,25 +1,12 @@
 import { Send, Sparkles } from "lucide-react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useKaiStore } from "../../stores/kaiStore";
 import { Button } from "../ui/Button";
 import { KaiMark } from "../ui/AppPrimitives";
 
 export function KaiChat({ embedded = false }: { embedded?: boolean }) {
-  const { messages, send, sending, pendingSeed, setPendingSeed } = useKaiStore();
+  const { messages, send, sending } = useKaiStore();
   const [draft, setDraft] = useState("");
-
-  // Continuity handoff: if a check-in / log handed us an opening line, send it
-  // once on mount so Kai continues that thread (goes through the normal safety +
-  // model path). Guarded so React StrictMode's double-mount can't double-send.
-  const seedFired = useRef(false);
-  useEffect(() => {
-    if (pendingSeed && !seedFired.current) {
-      seedFired.current = true;
-      const seed = pendingSeed;
-      setPendingSeed(null);
-      void send(seed);
-    }
-  }, [pendingSeed, send, setPendingSeed]);
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();

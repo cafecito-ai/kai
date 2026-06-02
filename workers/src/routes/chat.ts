@@ -159,8 +159,9 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   const history = await buildHistory(env, conversation, userId, message);
   const generated = await callClaudeDetailed(env, system, history, { model: selectChatModel(env, engine, message), maxTokens: 700 });
   const responseSource = generated.source === "anthropic" ? "model" : generated.source === "workers-ai" ? "workers-ai" : "fallback";
-  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: generated.text, metadata: { responseSource } });
-  return Response.json({ conversationId: conversation, reply: generated.text, responseSource });
+  const reply = limitToOneQuestion(generated.text);
+  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { responseSource } });
+  return Response.json({ conversationId: conversation, reply, responseSource });
 }
 
 /**
@@ -250,6 +251,7 @@ async function handleRoutedChat(
     }
   }
   const responseSource = source === "anthropic" ? "model" : source === "workers-ai" ? "workers-ai" : "fallback";
+  reply = limitToOneQuestion(reply);
 
   await createMessage(env.DB, {
     conversationId: conversation,
@@ -258,4 +260,16 @@ async function handleRoutedChat(
     metadata: { routedTo: decision, responseSource },
   });
   return Response.json({ conversationId: conversation, reply, routedTo: decision, responseSource });
+}
+
+/** Enforce the one-follow-up-question rule deterministically (the prompt alone
+ *  doesn't hold — the eval showed back-to-back interrogation). If a reply has
+ *  more than one question sentence, drop all but the LAST (the intended
+ *  follow-up); statements are untouched. */
+function limitToOneQuestion(reply: string): string {
+  const parts = reply.split(/(?<=[.?!])\s+/);
+  const qIdx = parts.map((p, i) => (/\?\s*$/.test(p.trim()) ? i : -1)).filter((i) => i >= 0);
+  if (qIdx.length <= 1) return reply;
+  const keep = qIdx[qIdx.length - 1];
+  return parts.filter((_, i) => !qIdx.includes(i) || i === keep).join(" ").trim();
 }

@@ -39,7 +39,6 @@ import { Groups } from "./pages/Groups";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
-import { RootGate } from "./components/RootGate";
 import { Onboarding } from "./pages/Onboarding";
 import { PreviewFlower } from "./pages/PreviewFlower";
 import { Vault } from "./pages/Vault";
@@ -59,7 +58,10 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
   const routes = (
       <Routes>
         <Route element={<AppShell />}>
-          <Route path="/" element={authEnabled ? <Landing /> : <RootGate />} />
+          {/* In dev-user (no-auth) mode the homepage IS the welcome entry —
+              Welcome itself bounces already-onboarded users to /home. When real
+              Clerk auth is on, "/" stays the public marketing Landing. */}
+          <Route path="/" element={authEnabled ? <Landing /> : <Welcome />} />
           <Route
             path="/sign-in/*"
             element={

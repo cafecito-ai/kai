@@ -79,8 +79,8 @@ export const CHALLENGE_CATALOG: ReadonlyArray<Challenge> = [
   },
   {
     id: "show-up-30",
-    title: "30-day show-up",
-    blurb: "Log SOMETHING on 25 days out of the next month. Showing up = the whole thing.",
+    title: "Show up 25 days",
+    blurb: "Log something on 25 days out of the next month — you've got 30 days to do it. Showing up = the whole thing.",
     durationDays: 30,
     targetDays: 25,
     category: "anchor",

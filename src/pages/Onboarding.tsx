@@ -35,6 +35,7 @@ import {
   pickFollowUps,
   type FollowUpResponse,
 } from "../lib/onboarding-followups";
+import { seedNorthStarFromFocus } from "../lib/local-northstar";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -258,6 +259,9 @@ export function Onboarding() {
       const questions = pickFollowUps(focusAreas);
       Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
       await api.submitIntake(keyedResponses);
+      // Seed the long-term North Star goal from what they chose to work on.
+      // Shown next to the Daily Score on Home; editable there.
+      seedNorthStarFromFocus(focusAreas);
       // displayName = the teen's name (what KAI calls them). kaiName = what
       // they call KAI. Previously firstName only landed in user_intake.summary
       // and never users.display_name, so the chat agent kept falling back to

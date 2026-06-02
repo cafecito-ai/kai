@@ -14,9 +14,10 @@ export interface CallClaudeOptions {
   timeoutMs?: number;
 }
 
-/** Where a reply actually came from. "fallback" means BOTH the Anthropic and
- *  Workers-AI paths failed and we served a hardcoded rule-table reply — the
- *  caller must not advertise that as real model output. */
+/** Where a reply actually came from. "fallback" means the Anthropic call failed
+ *  and we served a hardcoded rule-table reply — the caller must not advertise
+ *  that as real model output. ("workers-ai" is retained for type compatibility
+ *  but is no longer produced; see callClaudeDetailed.) */
 export type ClaudeSource = "anthropic" | "workers-ai" | "fallback";
 
 export interface ClaudeResult {
@@ -24,10 +25,10 @@ export interface ClaudeResult {
   source: ClaudeSource;
 }
 
-// The old 1800ms cap was so tight that any real model call (especially the
-// stronger depth models) timed out and silently fell through to the rule
-// table. Default generously; fast greeting turns never reach the model anyway.
-const ANTHROPIC_TIMEOUT_MS = 12_000;
+// Sonnet depth replies can take 10-18s; the old 12s cap meant slower turns
+// timed out and fell through to the fallback. Give the model real room.
+const ANTHROPIC_TIMEOUT_MS = 18_000;
+const ANTHROPIC_MAX_ATTEMPTS = 2;
 const WORKERS_AI_TIMEOUT_MS = 6_000;
 const DEFAULT_MAX_TOKENS = 320;
 
@@ -88,6 +89,11 @@ export async function callClaudeDetailed(
     if (anthropicReply) return { text: anthropicReply, source: "anthropic" };
   }
 
+  // Workers-AI (Llama) is a LAST-RESORT secondary only. It refuses normal teen
+  // fitness questions and echoes the raw transcript, so the CHAT route discards
+  // any non-"anthropic" source and serves a clean in-voice line instead (see
+  // chat.ts). Lightweight callers (food/workout/sleep comments) keep it as a
+  // degraded-but-filtered fallback.
   if (env.AI) {
     const workersAiReply = await callWorkersAi(env.AI, env.AI_TEXT_MODEL, system, messages, opts);
     if (workersAiReply) return { text: workersAiReply, source: "workers-ai" };
@@ -97,33 +103,51 @@ export async function callClaudeDetailed(
 }
 
 async function callAnthropic(env: Env, system: string, messages: ClaudeMessage[], opts: CallClaudeOptions) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), opts.timeoutMs ?? ANTHROPIC_TIMEOUT_MS);
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": env.ANTHROPIC_API_KEY ?? "",
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: opts.model || env.ANTHROPIC_MODEL || MODEL_FAST,
-        system,
-        messages: normalizeAnthropicMessages(messages),
-        max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
-        temperature: 0.45
-      })
-    });
-    if (!response.ok) return null;
-    const json = (await response.json()) as { content?: Array<{ type?: string; text?: string }> };
-    return json.content?.find((item) => item.type === "text" && item.text)?.text?.trim() || null;
-  } catch {
-    return null;
-  } finally {
+  const timeoutMs = opts.timeoutMs ?? ANTHROPIC_TIMEOUT_MS;
+  const body = JSON.stringify({
+    model: opts.model || env.ANTHROPIC_MODEL || MODEL_FAST,
+    system,
+    messages: normalizeAnthropicMessages(messages),
+    max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+    temperature: 0.45,
+  });
+
+  for (let attempt = 1; attempt <= ANTHROPIC_MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": env.ANTHROPIC_API_KEY ?? "",
+          "anthropic-version": "2023-06-01",
+        },
+        body,
+      });
+      if (response.ok) {
+        const json = (await response.json()) as { content?: Array<{ type?: string; text?: string }> };
+        return json.content?.find((item) => item.type === "text" && item.text)?.text?.trim() || null;
+      }
+      // Non-OK. 429 (rate limit) / 529 (overloaded) / 5xx come back fast and
+      // are worth one retry — that's the blip that drops users to the fallback.
+      // 4xx (other than 429) won't fix on retry.
+      const transient = response.status === 429 || response.status === 529 || response.status >= 500;
+      console.warn(`anthropic status ${response.status}${transient && attempt < ANTHROPIC_MAX_ATTEMPTS ? " — retrying" : ""}`);
+      if (!transient || attempt === ANTHROPIC_MAX_ATTEMPTS) return null;
+    } catch (err) {
+      // Timeout / network. Don't burn another full timeout window making the
+      // teen wait twice — bail to the fallback now.
+      console.warn(`anthropic call failed: ${String(err).slice(0, 80)}`);
+      clearTimeout(timeoutId);
+      return null;
+    }
     clearTimeout(timeoutId);
+    // Brief backoff before the retry (transient HTTP errors only).
+    await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
   }
+  return null;
 }
 
 async function callWorkersAi(

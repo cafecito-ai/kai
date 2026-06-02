@@ -157,11 +157,27 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
   }
   const history = await buildHistory(env, conversation, userId, message);
-  const generated = await callClaudeDetailed(env, system, history, { model: selectChatModel(env, engine, message), maxTokens: 700 });
-  const responseSource = generated.source === "anthropic" ? "model" : generated.source === "workers-ai" ? "workers-ai" : "fallback";
-  const reply = limitToOneQuestion(generated.text);
+  const generated = await callClaudeDetailed(env, system, history, { model: selectChatModel(env, engine, message), maxTokens: 600 });
+  // CHAT only ever serves Claude. Any non-anthropic source (Llama secondary or
+  // the rule table) is discarded for a clean in-voice line — never the Llama
+  // refusal / transcript-echo the client hit.
+  const usable = generated.source === "anthropic";
+  const responseSource = usable ? "model" : "fallback";
+  const reply = usable ? limitToOneQuestion(generated.text) : chatFallback(message);
   await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { responseSource } });
   return Response.json({ conversationId: conversation, reply, responseSource });
+}
+
+// When the model call falls back (rate-limit blip, timeout, outage), CHAT shows
+// one of these instead of a Llama refusal or a generic canned coaching line.
+// On-voice (older brother), honest, and asks the teen to resend.
+const CHAT_FALLBACKS = [
+  "My head glitched for a sec there — say that again?",
+  "Hang on, that didn't load right on my end. Hit me with it one more time?",
+  "Ugh, lost the thread for a second. Run that by me again?",
+];
+function chatFallback(seed: string): string {
+  return CHAT_FALLBACKS[seed.length % CHAT_FALLBACKS.length];
 }
 
 /**
@@ -229,7 +245,7 @@ async function handleRoutedChat(
   // Our chat engine: depth turns run on the tiered model (Sonnet) with a real
   // token/latency budget, and we record provenance so a hardcoded fallback is
   // never mislabeled "model".
-  const chatOpts = { model: selectChatModel(env, decision, message), maxTokens: 700 };
+  const chatOpts = { model: selectChatModel(env, decision, message), maxTokens: 600 };
   const history = await buildHistory(env, conversation, userId, message);
   const generated = await callClaudeDetailed(env, system, history, chatOpts);
   let reply = generated.text;
@@ -250,8 +266,12 @@ async function handleRoutedChat(
       source = "fallback";
     }
   }
-  const responseSource = source === "anthropic" ? "model" : source === "workers-ai" ? "workers-ai" : "fallback";
-  reply = limitToOneQuestion(reply);
+  // CHAT only ever serves Claude. Discard any non-anthropic source (Llama
+  // secondary / rule table) for a clean in-voice line — never the Llama refusal
+  // or "user: ... assistant: ..." transcript echo the client hit.
+  const usable = source === "anthropic";
+  const responseSource = usable ? "model" : "fallback";
+  reply = usable ? limitToOneQuestion(reply) : chatFallback(message);
 
   await createMessage(env.DB, {
     conversationId: conversation,

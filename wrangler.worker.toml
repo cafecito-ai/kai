@@ -26,6 +26,9 @@ allowed_sender_addresses = ["hello@kai.boostaisearch.ai", "safety@kai.boostaisea
 
 [vars]
 APP_ENV = "production"
+# No-auth pilot: accept the x-dev-user anonymous identity on prod (Clerk not yet
+# wired — NEXT_STEPS P0). Ops/admin is NOT granted to prod dev-users.
+ALLOW_DEV_USER = "1"
 EMAIL_FROM = "hello@kai.boostaisearch.ai"
 AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
 AI_VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf"

@@ -18,6 +18,7 @@ import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
 import { buildKaiClientContext } from "../lib/kai-client-context";
+import { useKaiStore } from "../stores/kaiStore";
 import type { ChatMessage } from "../lib/types";
 
 export function Chat() {
@@ -34,6 +35,11 @@ export function Chat() {
   const [sending, setSending] = useState(false);
   const [hydrating, setHydrating] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  // Continuity handoff: a check-in / log can stash a first-person opener; once
+  // the thread hydrates we send it through the normal path so Kai continues it.
+  const pendingSeed = useKaiStore((s) => s.pendingSeed);
+  const setPendingSeed = useKaiStore((s) => s.setPendingSeed);
+  const seedFired = useRef(false);
 
   // Hydrate the latest conversation on mount.
   useEffect(() => {
@@ -55,6 +61,16 @@ export function Chat() {
     };
   }, []);
 
+  // Consume a handoff seed once the conversation has hydrated.
+  useEffect(() => {
+    if (hydrating || seedFired.current || !pendingSeed) return;
+    seedFired.current = true;
+    const seed = pendingSeed;
+    setPendingSeed(null);
+    void send(seed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrating, pendingSeed]);
+
   // Auto-scroll to the latest message whenever messages change.
   useEffect(() => {
     const node = scrollRef.current;
@@ -65,8 +81,8 @@ export function Chat() {
     });
   }, [messages, sending]);
 
-  async function send() {
-    const trimmed = draft.trim();
+  async function send(override?: string) {
+    const trimmed = (override ?? draft).trim();
     if (!trimmed || sending) return;
     const optimisticId = `local-${Date.now()}`;
     const userMsg: ChatMessage = {

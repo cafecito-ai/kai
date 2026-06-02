@@ -7,6 +7,12 @@ interface KaiState {
   conversationId: string | null;
   messages: ChatMessage[];
   sending: boolean;
+  // A handoff seed: when a teen taps "keep talking" from a check-in / food log /
+  // journal, we stash a first-person opening here so the chat continues that
+  // thread instead of starting cold. KaiChat consumes it on mount via send(),
+  // so it still flows through the normal safety + model path.
+  pendingSeed: string | null;
+  setPendingSeed: (text: string | null) => void;
   hydrate: (input: { conversationId: string | null; messages: ChatMessage[] }) => void;
   send: (message: string) => Promise<void>;
 }
@@ -14,6 +20,8 @@ interface KaiState {
 export const useKaiStore = create<KaiState>((set) => ({
   conversationId: null,
   sending: false,
+  pendingSeed: null,
+  setPendingSeed: (text) => set({ pendingSeed: text }),
   messages: [
     {
       id: "welcome",

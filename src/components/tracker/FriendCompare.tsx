@@ -15,7 +15,10 @@ type Friend = Awaited<ReturnType<typeof api.getFriendCompare>>["friends"][number
  * for internal previews.
  */
 export function FriendCompare() {
-  const enabled = import.meta.env.VITE_FRIEND_COMPARE_ENABLED === "1";
+  // Enabled by default — the /friends/compare backend is aggregate-only (level +
+  // streak + total score; never conversation/goal/reflection content). Set
+  // VITE_FRIEND_COMPARE_ENABLED=0 to hide it again.
+  const enabled = import.meta.env.VITE_FRIEND_COMPARE_ENABLED !== "0";
   const [state, setState] = useState<"loading" | "ok" | "error">("loading");
   const [friends, setFriends] = useState<Friend[]>([]);
 

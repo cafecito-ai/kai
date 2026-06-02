@@ -127,7 +127,8 @@ const SAFETY_CLASSIFIER_PROMPT = [
   '{"category":"none","severity":"low","explanation":"no safety signal"}',
   "",
   "Do NOT flag ordinary sadness, depression, anxiety, loneliness, low motivation, school stress, or social drama ON THEIR OWN. A teen can be very sad or say \"I can't keep going like this\" without it being a safety event — keep those in normal coaching.",
-  "Classify suicide_ideation when the teen mentions wanting to die, kill themselves, end their life, not be alive / not be here, suicide, or a plan/intent — OR clear PASSIVE ideation such as \"what's the point of living/existing/being here\", \"I don't want to be here\", \"I want to disappear\", or \"everyone would be better off without me\". Use severity high/critical for active intent or a plan, medium for passive ideation with no plan.",
+  "Classify suicide_ideation when the teen mentions wanting to die, kill themselves, end their life, not be alive / not be here, suicide, or a plan/intent — OR clear PASSIVE ideation directed at their EXISTENCE: \"what's the point of being alive/living anymore\", \"I don't want to be here\", \"I want to disappear\", \"everyone would be better off without me\". Use severity high/critical for active intent or a plan, medium for existence-directed passive ideation with no plan.",
+  "CRITICAL precision rule: generic frustration is NOT ideation. \"what's the point\", \"what's the point of this class / of trying / of studying / of any of this\", \"why do I even bother\", \"this is pointless\" said about school, effort, a task, or a situation is ordinary venting — category MUST be none, keep it in normal coaching. Only flag when the hopelessness is about being alive / existing / being here at all.",
   "Classify eating_disorder when the teen describes restrictive or purging behavior to control weight or their body — skipping meals, not eating / eating as little as possible, purging, over-exercising while not eating — especially alongside distress or feeling it isn't working. A single body-image complaint with no behavior stays in normal coaching.",
   "When passive ideation and restrictive eating appear together, treat it as the higher-severity concern (suicide_ideation) and flag it.",
   ""
@@ -355,4 +356,32 @@ async function maybeNotifyParent(
     // Don't fail the chat turn if parent email fails. Ops alert + DB row remain.
     return false;
   }
+}
+
+/**
+ * Session-sticky safety: has THIS conversation already produced a safety
+ * event? If so, a later benign message must not snap back to normal coaching —
+ * the spec ("stay present, don't resume normal conversation until the teen
+ * signals they're safe") requires staying in a supportive hold. We check the
+ * safety_events table directly (keyed by conversation_id) rather than threading
+ * metadata through the message history.
+ */
+export async function conversationHasSafetyEvent(db: D1Database, conversationId: string): Promise<boolean> {
+  try {
+    const row = await db
+      .prepare("SELECT 1 FROM safety_events WHERE conversation_id = ? LIMIT 1")
+      .bind(conversationId)
+      .first();
+    return Boolean(row);
+  } catch {
+    return false;
+  }
+}
+
+/** A teen explicitly signalling they're okay/safe — the cue to leave the hold
+ *  and resume normal coaching. Kept narrow on purpose. */
+export function signalsSafeNow(text: string): boolean {
+  return /\b(i'?m (ok|okay|fine|safe|good|better|alright)|feeling better|im (ok|okay|fine|good|better)|i am (ok|okay|safe|better)|all good now|im safe)\b/i.test(
+    text,
+  );
 }

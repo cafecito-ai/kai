@@ -24,6 +24,7 @@ import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
 import { appendLocalInput, offlineReflection } from "../lib/local-score";
+import { useKaiStore } from "../stores/kaiStore";
 
 type Phase = "form" | "submitting" | "done" | "error";
 
@@ -38,6 +39,7 @@ const MOODS: Array<{ value: 1 | 2 | 3 | 4 | 5; emoji: string; label: string }> =
 
 export function CheckIn() {
   const navigate = useNavigate();
+  const setPendingSeed = useKaiStore((s) => s.setPendingSeed);
   const [mood, setMood] = useState<number | null>(null);
   const [mind, setMind] = useState("");
   const [better, setBetter] = useState("");
@@ -112,6 +114,20 @@ export function CheckIn() {
           reflection={reflection}
           duplicate={duplicateInWindow}
           onClose={() => navigate("/home")}
+          onKeepTalking={() => {
+            const moodLabel = MOODS.find((m) => m.value === mood)?.label.toLowerCase();
+            const seed = [
+              "i just did my check-in.",
+              moodLabel ? `feeling ${moodLabel}.` : "",
+              mind.trim() ? `what's on my mind: ${mind.trim()}.` : "",
+              better.trim() ? `what might help: ${better.trim()}.` : "",
+              "can we keep talking about it?",
+            ]
+              .filter(Boolean)
+              .join(" ");
+            setPendingSeed(seed);
+            navigate("/chat");
+          }}
         />
       ) : (
         <FormState
@@ -308,10 +324,12 @@ function DoneState({
   reflection,
   duplicate,
   onClose,
+  onKeepTalking,
 }: {
   reflection: string;
   duplicate: boolean;
   onClose: () => void;
+  onKeepTalking: () => void;
 }) {
   return (
     <div className="flex flex-1 flex-col pb-6">
@@ -345,8 +363,9 @@ function DoneState({
         >
           Back to home
         </button>
-        <Link
-          to="/chat"
+        <button
+          type="button"
+          onClick={onKeepTalking}
           className="
             flex h-12 w-full items-center justify-center rounded-full
             border border-glass-border bg-surface text-text-primary font-medium
@@ -355,7 +374,7 @@ function DoneState({
           "
         >
           Keep talking to KAI
-        </Link>
+        </button>
       </div>
     </div>
   );

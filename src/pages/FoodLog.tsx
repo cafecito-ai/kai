@@ -18,6 +18,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { useKaiStore } from "../stores/kaiStore";
 import type { FoodPhotoResult } from "../lib/types";
 
 type Phase = "form" | "sending" | "done";
@@ -25,6 +26,7 @@ type Mode = "photo" | "note";
 
 export function FoodLog() {
   const navigate = useNavigate();
+  const setPendingSeed = useKaiStore((s) => s.setPendingSeed);
   const [mode, setMode] = useState<Mode>("photo");
   const [note, setNote] = useState("");
   const [phase, setPhase] = useState<Phase>("form");
@@ -60,7 +62,20 @@ export function FoodLog() {
   }
 
   if (phase === "done" && result) {
-    return <DoneState result={result} onClose={() => navigate("/home")} />;
+    return (
+      <DoneState
+        result={result}
+        onClose={() => navigate("/home")}
+        onTalk={() => {
+          const names = result.items.map((i) => i.name).filter(Boolean).slice(0, 5).join(", ");
+          const seed = names
+            ? `i just logged my food: ${names}. can we talk about it?`
+            : "i just logged a meal. can we talk about my food and energy?";
+          setPendingSeed(seed);
+          navigate("/chat");
+        }}
+      />
+    );
   }
 
   return (
@@ -225,9 +240,11 @@ export function FoodLog() {
 function DoneState({
   result,
   onClose,
+  onTalk,
 }: {
   result: FoodPhotoResult;
   onClose: () => void;
+  onTalk: () => void;
 }) {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-md flex-col px-5 pt-2 pb-6 sm:max-w-lg">
@@ -297,8 +314,9 @@ function DoneState({
         >
           Back to home
         </button>
-        <Link
-          to="/chat"
+        <button
+          type="button"
+          onClick={onTalk}
           className="
             flex h-12 w-full items-center justify-center rounded-full
             border border-glass-border bg-surface text-text-primary font-medium
@@ -306,7 +324,7 @@ function DoneState({
           "
         >
           Talk to KAI
-        </Link>
+        </button>
       </div>
     </div>
   );

@@ -504,7 +504,7 @@ function buildBeats(): Beat[] {
     // 1. Tagline screen — KAI small in the distance, big tagline up top.
     //    User taps to "meet" KAI.
     {
-      title: "Stop waiting.\nStart becoming.",
+      title: "Stop Waiting.\nStart Becoming.",
       kaiOffsetX: 0, kaiTopPct: 0.65, kaiScale: 0.75, gesture: "idle",
       hint: "tap to meet KAI",
       magic: "converge",

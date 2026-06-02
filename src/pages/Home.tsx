@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 
 import { KaiGreeting } from "../components/KaiGreeting";
 import { MissionsCard } from "../components/MissionsCard";
+import { NorthStarCard } from "../components/NorthStarCard";
 import { XpPill } from "../components/XpPill";
 import { ScoreRing } from "../components/ScoreRing";
 import { shouldSurfaceVaultOnHome } from "../lib/local-vault";
@@ -279,8 +280,13 @@ export function Home() {
         <XpPill />
       </div>
 
-      {/* Daily Score — hero metric */}
-      <DailyScoreCard data={data} />
+      {/* Daily Score + North Star goal, side by side. The score is today;
+          the North Star is the weeks/months goal whose ring fills as they
+          keep showing up. */}
+      <div className="grid grid-cols-2 gap-3">
+        <DailyScoreCard data={data} />
+        <NorthStarCard />
+      </div>
 
       {/* Level-up moment lands here when it fires — kept on Home
           because it's an event/celebration, not data. Dismissable. */}
@@ -355,43 +361,30 @@ export function Home() {
 // ─────────────────────────────────────────────────────────────────────
 
 function DailyScoreCard({ data }: { data: DailyScoreView }) {
-  const trendPositive = data.trend >= 0;
-  const trendChip = trendPositive
-    ? "bg-success-soft text-success"
-    : "bg-warning-soft text-warning";
   return (
-    <div className="relative overflow-hidden rounded-glass border border-glass-border bg-surface p-6 shadow-card-lg">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
-            Today
-          </p>
-          <p className="mt-2 flex items-baseline gap-1">
-            <span className="font-mono text-6xl font-bold leading-none text-text-primary">
+    <div className="relative flex flex-col overflow-hidden rounded-glass border border-glass-border bg-surface p-5 shadow-card-lg">
+      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+        Today
+      </p>
+
+      <div className="mt-3 flex justify-center">
+        <div className="relative inline-flex items-center justify-center">
+          <ScoreRing value={data.score} size={96} />
+          <span className="absolute inset-0 flex items-baseline justify-center gap-0.5">
+            <span className="font-mono text-3xl font-bold leading-none text-text-primary">
               {data.score}
             </span>
-            <span className="font-mono text-xl text-text-muted">/100</span>
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1 text-xs font-medium text-success">
-              <Sparkles size={12} aria-hidden="true" />
-              {data.bandLabel}
-            </span>
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[11px] ${trendChip}`}
-            >
-              <ArrowUpRight
-                size={11}
-                aria-hidden="true"
-                className={trendPositive ? "" : "rotate-90"}
-              />
-              {trendPositive ? "+" : ""}
-              {data.trend} vs yesterday
-            </span>
-          </div>
+            <span className="font-mono text-xs text-text-muted">/100</span>
+          </span>
         </div>
-        <ScoreRing value={data.score} size={104} />
       </div>
+
+      <p className="mt-3 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text-primary">
+        {data.bandLabel}
+      </p>
+      <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+        {data.trend > 0 ? `+${data.trend} vs yesterday` : data.streak > 0 ? `${data.streak}-day streak` : "Today's score"}
+      </p>
     </div>
   );
 }

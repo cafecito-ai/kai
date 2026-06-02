@@ -15,7 +15,7 @@ Status legend: [ ] todo · [~] in progress · [x] done (prod) · [s] on staging 
 ---
 
 ## Tier 0 — Brand
-- [ ] **G1. Canonical slogan "Stop Waiting. Start Becoming."** Proper case, as the
+- [x] **G1. Canonical slogan "Stop Waiting. Start Becoming."** (live on prod: title+meta, Welcome tagline, Landing eyebrow — proper case, verified.) Proper case, as the
   brand line: welcome tagline, Landing hero, Home header eyebrow, and the page
   `<title>`/meta description. One consistent treatment. *Accept:* slogan visible
   (proper case) on `/`, and in the document title on prod.

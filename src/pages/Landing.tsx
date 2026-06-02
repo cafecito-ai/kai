@@ -22,7 +22,7 @@ export function Landing() {
   return (
     <AppPage className="max-w-5xl">
       <SessionHero
-        eyebrow={onboardingCompletedAt ? `today with ${kaiName}` : "start here"}
+        eyebrow={onboardingCompletedAt ? `today with ${kaiName}` : "Stop Waiting. Start Becoming."}
         title={
           <>
             Start with what is <span className="font-serif font-normal italic text-plum">loud.</span>

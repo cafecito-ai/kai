@@ -11,10 +11,23 @@ import { createMessage, getConversationMessages, getLatestConversation, getOrCre
 import { sendSafetyAlert } from "../lib/email";
 import { renderEnginePrompt } from "../lib/prompts/engines";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
-import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
+import { classifySafetyFull, conversationHasSafetyEvent, logSafetyEvent, signalsSafeNow } from "../lib/safety";
 import type { AppVariables, Env, EngineId } from "../types";
 
 const MAX_BODY_REGENERATIONS = 3;
+
+// Session-sticky safety hold: once a conversation has had a crisis disclosure,
+// later benign turns get this instead of normal coaching — warm, present, and
+// keeping real help on the table, without lecturing or pivoting to other topics.
+const SAFETY_HOLD_PROMPT = [
+  "Earlier in THIS conversation the teen disclosed something serious and was already given crisis resources (988 / Crisis Text Line).",
+  "Their latest message is not itself a crisis, but you must NOT resume normal wellness coaching or pivot to other topics (school, fitness, goals, etc.).",
+  "Stay warm and present. In 2-3 short sentences: gently check how they're doing right now, let them know you're still here, and keep the door open to real support (988, or a trusted adult) without being pushy or repetitive.",
+  "Do not lecture. Do not diagnose. Do not start your reply with the word \"I\". Vary your wording naturally — don't sound like a canned script.",
+].join("\n");
+
+const SAFETY_HOLD_FALLBACK =
+  "Still right here with you. You don't have to have words for it — we can just sit with it. And that line is always open: call or text 988 anytime, or reach a trusted adult. How are you doing right now?";
 
 const CHAT_RATE_LIMIT = { route: "chat", limit: 30, periodSeconds: 60 } as const;
 
@@ -188,6 +201,24 @@ async function handleRoutedChat(
       metadata: { safetyEventId: event?.id },
     });
     return Response.json({ conversationId: conversation, reply: safety.response, safetyEvent: event });
+  }
+
+  // Session-sticky safety: if this conversation already had a crisis disclosure,
+  // a later benign message must NOT snap back to normal coaching. Stay in a warm
+  // hold (keep checking in, keep help on the table) until the teen signals safe.
+  if ((await conversationHasSafetyEvent(env.DB, conversation)) && !signalsSafeNow(message)) {
+    const held = await callClaudeDetailed(env, SAFETY_HOLD_PROMPT, await buildHistory(env, conversation, userId, message), {
+      model: selectChatModel(env, "mental", message),
+      maxTokens: 320,
+    });
+    const holdReply = held.source === "fallback" ? SAFETY_HOLD_FALLBACK : held.text;
+    await createMessage(env.DB, {
+      conversationId: conversation,
+      role: "assistant",
+      content: holdReply,
+      metadata: { safetyHold: true, responseSource: held.source === "anthropic" ? "model" : held.source },
+    });
+    return Response.json({ conversationId: conversation, reply: holdReply, safetyHold: true });
   }
 
   // Route to Mind or Body. The pick is internal — user never sees it.

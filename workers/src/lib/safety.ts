@@ -356,3 +356,31 @@ async function maybeNotifyParent(
     return false;
   }
 }
+
+/**
+ * Session-sticky safety: has THIS conversation already produced a safety
+ * event? If so, a later benign message must not snap back to normal coaching —
+ * the spec ("stay present, don't resume normal conversation until the teen
+ * signals they're safe") requires staying in a supportive hold. We check the
+ * safety_events table directly (keyed by conversation_id) rather than threading
+ * metadata through the message history.
+ */
+export async function conversationHasSafetyEvent(db: D1Database, conversationId: string): Promise<boolean> {
+  try {
+    const row = await db
+      .prepare("SELECT 1 FROM safety_events WHERE conversation_id = ? LIMIT 1")
+      .bind(conversationId)
+      .first();
+    return Boolean(row);
+  } catch {
+    return false;
+  }
+}
+
+/** A teen explicitly signalling they're okay/safe — the cue to leave the hold
+ *  and resume normal coaching. Kept narrow on purpose. */
+export function signalsSafeNow(text: string): boolean {
+  return /\b(i'?m (ok|okay|fine|safe|good|better|alright)|feeling better|im (ok|okay|fine|good|better)|i am (ok|okay|safe|better)|all good now|im safe)\b/i.test(
+    text,
+  );
+}

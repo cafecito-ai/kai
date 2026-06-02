@@ -36,8 +36,20 @@ export async function getConversationMessages(db: D1Database, input: { conversat
     .first<{ id: string }>();
   if (!conversation) return null;
 
+  // Return the MOST RECENT `limit` messages, in chronological order. The old
+  // `ORDER BY created_at ASC LIMIT ?` returned the OLDEST messages, so once a
+  // conversation passed the limit the current turn fell out of the window —
+  // the model answered stale messages and the array could start on an assistant
+  // turn (Anthropic 400 → fallback). Order by rowid (monotonic insertion order)
+  // because created_at is only second-granularity and ties are non-deterministic.
   const { results } = await db
-    .prepare("SELECT id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?")
+    .prepare(
+      `SELECT id, role, content, created_at FROM (
+         SELECT id, role, content, created_at, rowid AS rid
+         FROM messages WHERE conversation_id = ?
+         ORDER BY rid DESC LIMIT ?
+       ) ORDER BY rid ASC`,
+    )
     .bind(input.conversationId, input.limit ?? 50)
     .all();
 

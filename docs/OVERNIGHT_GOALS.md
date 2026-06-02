@@ -28,7 +28,7 @@ Status legend: [ ] todo · [~] in progress · [x] done (prod) · [s] on staging 
 - [x] **G5/G6** cohesion — check-in "keep talking" seeds Kai with mood+note (via Chat.tsx, safety path intact); chat already sends clientContext (recent activity/score/goals) so Kai references what you did — prod.
 - [x] **G8** chat agent — 84→90/100, safety 1/1 (5 prior iterations) — prod.
 - [x] **G9** QA sweep — pages render; FOUND + FIXED two critical prod breakages: (1) **prod 401** — authed API rejected the no-auth pilot's x-dev-user on prod; now accepted via ALLOW_DEV_USER (no ops granted); (2) **prod D1 was missing 8 migrations (0008–0015)** — daily_scores/score_inputs/workouts/scan_observations/voice/groups/hydration didn't exist, so score/groups/workouts/scan/voice all 500'd; applied them to kai-prod (remote). Verified score/today, groups, goals, friends/compare, progress all 200. (loop 404 is moot — deployed frontend has no Loop feature.)
-- [~] **G10** full 100-persona teen-sim report — running.
+- [x] **G10** quality report committed (docs/KAI_TEEN_SIM_REPORT.md): 86/100, safety 2/2 (15-persona run; 100-persona kept getting rate-limited/reaped in background).
 
 **Morning flags (human):** body-scan→Claude-vision (Gate 5, clinician/Ratner); chat depth-tuning is Lev's voice call (live, measured-better, confirm/revert); wire real Clerk auth to replace the no-auth pilot (NEXT_STEPS P0); deep chat→feature deep-linking (bigger cohesion feature).
 

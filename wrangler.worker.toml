@@ -32,6 +32,8 @@ ALLOW_DEV_USER = "1"
 EMAIL_FROM = "hello@kai.boostaisearch.ai"
 AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
 AI_VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf"
+# Body-scan vision model (direct Anthropic). Pinned, not relying on a fallback.
+ANTHROPIC_MODEL_PHYSICAL = "claude-sonnet-4-6"
 
 [[d1_databases]]
 binding = "DB"
@@ -62,6 +64,7 @@ APP_ENV = "staging"
 EMAIL_FROM = "hello@kai.boostaisearch.ai"
 AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
 AI_VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf"
+ANTHROPIC_MODEL_PHYSICAL = "claude-sonnet-4-6"
 
 [[env.staging.d1_databases]]
 binding = "DB"

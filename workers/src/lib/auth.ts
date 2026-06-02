@@ -1,8 +1,28 @@
 import { verifyToken } from "@clerk/backend";
 import type { Context, Next } from "hono";
+import { ensureUser } from "./db";
 import type { AppVariables, Env } from "../types";
 
 type AuthContext = Context<{ Bindings: Env; Variables: AppVariables }>;
+
+const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * Make sure a `users` row exists for this id before a write hits the DB.
+ * Several tables FK to users(id) (workouts, scan_observations, voice, groups,
+ * daily_scores, …); in the anonymous no-auth pilot a fresh x-dev-user has no
+ * users row, so those writes would fail a FOREIGN KEY constraint. We do this
+ * once per mutating request (cheap INSERT OR IGNORE), and fail open — the
+ * route's own write surfaces any real error.
+ */
+async function ensureUserForWrite(c: AuthContext, userId: string) {
+  if (!MUTATING.has(c.req.method)) return;
+  try {
+    await ensureUser(c.env.DB, userId);
+  } catch {
+    // fail open
+  }
+}
 
 export async function requireAuth(c: AuthContext, next: Next) {
   if (
@@ -36,6 +56,7 @@ export async function requireAuth(c: AuthContext, next: Next) {
   if (devUser && allowDevUser) {
     c.set("userId", devUser);
     c.set("isOps", isNonProd);
+    await ensureUserForWrite(c, devUser);
     await next();
     return;
   }
@@ -53,6 +74,7 @@ export async function requireAuth(c: AuthContext, next: Next) {
     const metadata = verified.metadata as { role?: string } | undefined;
     c.set("userId", verified.sub);
     c.set("isOps", Boolean(verified.org_role === "org:admin" || metadata?.role === "ops"));
+    await ensureUserForWrite(c, verified.sub);
   } catch {
     return c.json({ error: "Unauthorized" }, 401);
   }

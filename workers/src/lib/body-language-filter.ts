@@ -34,6 +34,14 @@ export const FORBIDDEN_BODY_LANGUAGE = [
   "ideal weight",
   "weight estimate",
   "bmi",
+  // Standalone weight/size language. For a teen body-image tool we block the
+  // word "weight" outright — posture findings should describe "pressure",
+  // "load", or "balance" instead (the vision prompt is steered to do so), and
+  // a stray "lose some weight" must never reach a teen. The regen loop rephrases
+  // any legit "weight shift" cue; worst case is a safe retake message, never a leak.
+  "weight",
+  "pounds",
+  "leaner",
   // Physique descriptors
   "ideal body",
   "perfect body",
@@ -53,6 +61,7 @@ export const FORBIDDEN_BODY_LANGUAGE = [
   "attractive",
   "ugly",
   "beautiful",
+  "gorgeous",
   "toned",
   "slim",
   "physique",
@@ -62,6 +71,13 @@ export const FORBIDDEN_BODY_LANGUAGE = [
   "swole",
   "lanky",
   "stocky",
+  "chunky",
+  "pudgy",
+  "curvy",
+  "belly",
+  "gut",
+  "pot belly",
+  "double chin",
   "dad bod",
   "beer belly",
   "love handles",

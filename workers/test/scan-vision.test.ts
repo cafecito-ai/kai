@@ -309,12 +309,12 @@ describe("defaultVisionCall", () => {
     expect(firstCall[1].disable_training).toBe(true);
   });
 
-  it("throws if AI binding missing", async () => {
+  it("throws if no vision backend configured (no Anthropic key, no AI binding)", async () => {
     const env = {} as unknown as Env;
     const call = defaultVisionCall(env);
     await expect(
       call({ systemPrompt: "x", images: [{ mime: "image/jpeg", bytesB64: "AAAA" }] }),
-    ).rejects.toThrow(/AI binding/);
+    ).rejects.toThrow(/no vision backend/);
   });
 });
 

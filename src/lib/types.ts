@@ -56,6 +56,10 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
+  /** True when this assistant turn was a safety/crisis response. Suppresses
+   *  feature deep-link chips so we never put a "log a workout" shortcut under
+   *  a crisis message. */
+  safety?: boolean;
 }
 
 /**

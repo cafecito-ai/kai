@@ -118,17 +118,36 @@ export type VisionCallFn = (input: {
   images: Array<{ mime: string; bytesB64: string }>;
 }) => Promise<string>;
 
+const SCAN_VISION_TIMEOUT_MS = 20_000;
+
 /**
- * Default vision call against Cloudflare Workers AI. Hits Claude vision
- * via the AI gateway with `disable_training: true` — Gate 5 must
- * verify this flag is set.
+ * Default vision call for the body scan.
+ *
+ * Prefers Claude vision via the **direct Anthropic API** (Sonnet tier —
+ * posture/alignment reads need the quality), exactly mirroring the food-photo
+ * path in vision.ts which moved off the Workers-AI gateway because the gateway
+ * Claude model ids are unreliable. Falls back to Workers-AI llava only if no
+ * Anthropic key is configured or the Anthropic call fails.
+ *
+ * PRIVACY (Gate 5 verifies):
+ *   - Anthropic path: Anthropic's API does NOT train on API inputs by default
+ *     (commercial terms) — this is the equivalent of `disable_training` for the
+ *     direct API. Image bytes are sent for inference only, never persisted.
+ *   - Workers-AI fallback: passes `disable_training: true` explicitly.
+ *   - Either way, bytes live only in Worker memory for the request.
  */
 export function defaultVisionCall(env: Env): VisionCallFn {
   return async ({ systemPrompt, images }) => {
-    if (!env.AI) throw new Error("AI binding not configured");
-    // Claude vision via Workers AI gateway. The exact model id can be
-    // adjusted by env var; default to a Sonnet 4.x vision-capable model.
-    const model = env.AI_VISION_MODEL || "@cf/anthropic/claude-sonnet-4";
+    // Preferred: direct Anthropic Claude vision.
+    if (env.ANTHROPIC_API_KEY) {
+      const text = await anthropicScanVision(env, systemPrompt, images);
+      if (text) return text;
+      // fall through to Workers-AI if Anthropic failed
+    }
+
+    if (!env.AI) throw new Error("no vision backend configured");
+    // Fallback: Workers AI gateway. Keep disable_training set per T-030.
+    const model = env.AI_VISION_MODEL || "@cf/llava-hf/llava-1.5-7b-hf";
     const content: Array<Record<string, unknown>> = [
       { type: "text", text: systemPrompt },
     ];
@@ -151,6 +170,70 @@ export function defaultVisionCall(env: Env): VisionCallFn {
     } as Record<string, unknown>)) as { response?: string; text?: string; content?: string };
     return result.response || result.text || result.content || "";
   };
+}
+
+/** Direct Anthropic Claude vision read for the body scan. Returns the raw
+ *  model text, or "" on any failure so the caller can fall back. */
+async function anthropicScanVision(
+  env: Env,
+  systemPrompt: string,
+  images: Array<{ mime: string; bytesB64: string }>,
+): Promise<string> {
+  // Sonnet for the quality read; the physical tier var points at Sonnet 4.6.
+  const model = env.ANTHROPIC_MODEL_PHYSICAL || env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+  const labels = ["front", "side", "back"];
+  const content: Array<Record<string, unknown>> = [];
+  images.forEach((img, i) => {
+    content.push({ type: "text", text: `Photo ${i + 1} (${labels[i] ?? "view"}):` });
+    content.push({
+      type: "image",
+      source: { type: "base64", media_type: img.mime, data: img.bytesB64 },
+    });
+  });
+  content.push({
+    type: "text",
+    text: "Analyze the three photos above (front, side, back) per your instructions. Return only the [OBSERVATION_N]/[ACTION_N]/[SUMMARY] format, or [ERROR] if the images are unusable.",
+  });
+
+  try {
+    const response = await withScanTimeout(
+      fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": env.ANTHROPIC_API_KEY ?? "",
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1000,
+          temperature: 0.2,
+          system: systemPrompt,
+          messages: [{ role: "user", content }],
+        }),
+      }),
+      SCAN_VISION_TIMEOUT_MS,
+    );
+    if (!response.ok) {
+      console.warn("scan-vision: Anthropic non-ok", response.status);
+      return "";
+    }
+    const json = (await response.json()) as { content?: Array<{ type?: string; text?: string }> };
+    return json.content?.find((b) => b.type === "text" && b.text)?.text ?? "";
+  } catch (err) {
+    console.warn("scan-vision: Anthropic call failed", err);
+    return "";
+  }
+}
+
+function withScanTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("scan vision timeout")), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────

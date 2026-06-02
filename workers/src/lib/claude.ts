@@ -185,6 +185,10 @@ function normalizeAnthropicMessages(messages: ClaudeMessage[]) {
       normalized.push({ role: message.role, content });
     }
   }
+  // Anthropic requires the first message to be from the user. A history window
+  // can start mid-conversation on an assistant turn — drop any leading assistant
+  // messages so we don't send a 400-triggering array.
+  while (normalized.length && normalized[0].role === "assistant") normalized.shift();
   return normalized.length ? normalized : [{ role: "user" as const, content: "Help me choose one small next move." }];
 }
 

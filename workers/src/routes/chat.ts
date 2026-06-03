@@ -137,7 +137,11 @@ chatRoutes.post("/engines/:engineId/chat", async (c) => {
  *  model has coaching continuity — follow-ups like "why?" / "what next?" need
  *  the prior turns, not just the latest message. */
 async function buildHistory(env: Env, conversationId: string, userId: string, fallbackMessage: string) {
-  const recent = await getConversationMessages(env.DB, { conversationId, userId, limit: 10 });
+  // Wide window so Kai actually remembers the ongoing thread (not just the last
+  // few turns). Sonnet's context easily holds this; the recent-tail query keeps
+  // it to the latest messages. Durable cross-conversation memory rides on top via
+  // the user_patterns summary injected into the system prompt.
+  const recent = await getConversationMessages(env.DB, { conversationId, userId, limit: 30 });
   const msgs = (recent ?? [])
     .filter((m): m is typeof m & { role: "user" | "assistant" } => m.role === "user" || m.role === "assistant")
     .map((m) => ({ role: m.role, content: m.content }));

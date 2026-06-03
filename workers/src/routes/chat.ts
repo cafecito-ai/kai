@@ -7,6 +7,7 @@ import {
 } from "../lib/body-language-filter";
 import { callClaudeDetailed, selectChatModel } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
+import { loadUserMemory, renderMemoryBlock, updateUserMemory } from "../lib/memory";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
 import { renderEnginePrompt } from "../lib/prompts/engines";
@@ -55,7 +56,8 @@ chatRoutes.post("/kai/chat", async (c) => {
   }>();
   const context = await buildKaiContext(c.env, userId);
   const merged = { ...context, clientContext: sanitizeClientContext(body.clientContext) };
-  return handleRoutedChat(c.env, userId, body.conversationId, body.message, merged);
+  const waitUntil = c.executionCtx?.waitUntil?.bind(c.executionCtx);
+  return handleRoutedChat(c.env, userId, body.conversationId, body.message, merged, waitUntil);
 });
 
 /** Defensive shape check on the client-supplied context. Anything that
@@ -198,6 +200,7 @@ async function handleRoutedChat(
   conversationId: string | undefined,
   message: string,
   context: KaiContext,
+  waitUntil?: (p: Promise<unknown>) => void,
 ) {
   const conversation = await getOrCreateConversation(env.DB, { id: conversationId, userId, engine: "kai" });
   const userMessage = await createMessage(env.DB, { conversationId: conversation, role: "user", content: message });
@@ -244,7 +247,10 @@ async function handleRoutedChat(
 
   // Route to Mind or Body. The pick is internal — user never sees it.
   const decision = await pickAgent(env, message);
-  const system = renderAgentPrompt(decision, context);
+  // Durable cross-conversation memory: inject what KAI already knows about them
+  // so it picks up where you left off, not from scratch.
+  const memory = await loadUserMemory(env, userId);
+  const system = renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
 
   // Our chat engine: depth turns run on the tiered model (Sonnet) with a real
   // token/latency budget, and we record provenance so a hardcoded fallback is
@@ -283,6 +289,14 @@ async function handleRoutedChat(
     content: reply,
     metadata: { routedTo: decision, responseSource },
   });
+
+  // Update durable memory from this exchange — only real model replies, and only
+  // on this normal path (crisis turns returned earlier and never reach here, so
+  // crisis content never lands in casual memory). Fire-and-forget: no latency.
+  if (usable && waitUntil) {
+    waitUntil(updateUserMemory(env, userId, message, reply, memory));
+  }
+
   return Response.json({ conversationId: conversation, reply, routedTo: decision, responseSource });
 }
 

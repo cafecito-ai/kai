@@ -1,32 +1,33 @@
-// North Star goal (client request, 2026-06-02).
+// North Star goal + goal-aligned moves (client design, 2026-06-04).
 //
-// A single long-term goal shown next to the Daily Score on Home. Unlike the
-// daily score (resets each day) or the challenges (weeks), the North Star is
-// THE big one — the weeks-to-months thing the teen is really working toward.
-// Its ring fills from cumulative engagement (total XP), so "the more you do,
-// the more it fills." Reaching the fill takes ~2-3 months of showing up, which
-// is the point: it's the long game.
-//
-// Source: derived from the focus areas they pick in onboarding (a real
-// onboarding answer), and editable on Home so it can become truly theirs.
+// THE big goal shown next to the Daily Score. Its ring fills ONLY from actions
+// that actually move you toward THIS goal — concrete "moves" KAI generates for
+// the specific goal — not from generic logging (water, sleep). Progress is
+// earned by goal-aligned action; the alignment is guaranteed because the moves
+// are generated for that exact goal. (Per client: "progress is only earned when
+// your daily actions have a clear connection to the larger goal.")
 
-import { getCurrentLevel, thresholdForLevel } from "./local-xp";
+const GOAL_KEY = "kai_northstar_v1";
+const MOVES_KEY = "kai_northstar_moves_v1";
+const PROGRESS_KEY = "kai_northstar_progress_v1";
 
-const STORAGE_KEY = "kai_northstar_v1";
-
-// Full fill = the Level 10 threshold (~2-3 months of consistent engagement per
-// the XP tuning). Sized so the ring is a genuine long-term arc, not a quick win.
-export const NORTH_STAR_TARGET_XP = thresholdForLevel(10); // 2250
+// Completed goal-aligned moves to fill the ring — a weeks-to-months arc.
+export const NORTH_STAR_TARGET_MOVES = 30;
 
 export type NorthStar = {
   goal: string;
-  /** "derived" = seeded from onboarding focus areas; "custom" = the teen set it. */
   source: "derived" | "custom";
   createdAt: string;
 };
 
-// Focus area → a long-term goal phrased as something to become / build. Keep
-// these aspirational and weeks-to-months in scope, never a daily task.
+export type GoalMoves = {
+  goal: string;
+  date: string; // YYYY-MM-DD the moves were generated for
+  moves: string[];
+  done: number[]; // indices completed today
+};
+
+// Focus area → a long-term goal phrased as something to become / build.
 const GOAL_BY_FOCUS: Record<string, string> = {
   getting_stronger: "Get genuinely stronger",
   eating_better: "Build eating habits that actually last",
@@ -47,84 +48,122 @@ const GOAL_BY_FOCUS: Record<string, string> = {
   family_stuff: "Find more peace at home",
 };
 
-// Priority when several focus areas are picked — lead with the most concrete,
-// motivating long-term goal.
 const FOCUS_PRIORITY: string[] = [
-  "getting_stronger",
-  "finding_purpose",
-  "confidence",
-  "school_pressure",
-  "anxiety",
-  "better_sleep",
-  "eating_better",
-  "energy",
-  "friendships",
-  "social_life",
-  "motivation",
-  "focus",
-  "mood",
-  "managing_stress",
-  "mental_clarity",
-  "body_image",
-  "family_stuff",
+  "getting_stronger", "finding_purpose", "confidence", "school_pressure",
+  "anxiety", "better_sleep", "eating_better", "energy", "friendships",
+  "social_life", "motivation", "focus", "mood", "managing_stress",
+  "mental_clarity", "body_image", "family_stuff",
 ];
 
-/** Turn the picked focus areas into one long-term goal phrase. */
 export function deriveNorthStar(focusAreas: string[]): string {
   for (const id of FOCUS_PRIORITY) {
     if (focusAreas.includes(id) && GOAL_BY_FOCUS[id]) return GOAL_BY_FOCUS[id];
   }
-  // Any focus area we have a phrase for, else a warm default.
-  for (const id of focusAreas) {
-    if (GOAL_BY_FOCUS[id]) return GOAL_BY_FOCUS[id];
-  }
+  for (const id of focusAreas) if (GOAL_BY_FOCUS[id]) return GOAL_BY_FOCUS[id];
   return "Become who I'm working toward";
 }
 
-export function getNorthStar(): NorthStar | null {
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function read<T>(key: string): T | null {
   if (typeof localStorage === "undefined") return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<NorthStar>;
-    if (!parsed || typeof parsed.goal !== "string" || !parsed.goal.trim()) return null;
-    return {
-      goal: parsed.goal.trim().slice(0, 80),
-      source: parsed.source === "custom" ? "custom" : "derived",
-      createdAt: typeof parsed.createdAt === "string" ? parsed.createdAt : new Date().toISOString(),
-    };
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
 }
-
-export function setNorthStar(goal: string, source: NorthStar["source"]): void {
+function write(key: string, value: unknown): void {
   if (typeof localStorage === "undefined") return;
-  const clean = goal.trim().slice(0, 80);
-  if (!clean) return;
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ goal: clean, source, createdAt: new Date().toISOString() }),
-    );
+    localStorage.setItem(key, JSON.stringify(value));
     window.dispatchEvent(new Event("kai:state-changed"));
   } catch {
     /* ignore */
   }
 }
 
-/** Seed the North Star from onboarding focus areas, but never overwrite a goal
- *  the teen set themselves. */
+// ── Goal ────────────────────────────────────────────────────────────
+
+export function getNorthStar(): NorthStar | null {
+  const parsed = read<Partial<NorthStar>>(GOAL_KEY);
+  if (!parsed || typeof parsed.goal !== "string" || !parsed.goal.trim()) return null;
+  return {
+    goal: parsed.goal.trim().slice(0, 80),
+    source: parsed.source === "custom" ? "custom" : "derived",
+    createdAt: typeof parsed.createdAt === "string" ? parsed.createdAt : new Date().toISOString(),
+  };
+}
+
+export function setNorthStar(goal: string, source: NorthStar["source"]): void {
+  const clean = goal.trim().slice(0, 80);
+  if (!clean) return;
+  const prev = getNorthStar();
+  write(GOAL_KEY, { goal: clean, source, createdAt: new Date().toISOString() });
+  // Changing the goal starts a fresh journey — clear moves + progress so the
+  // ring reflects progress toward THIS goal, not the old one.
+  if (!prev || prev.goal !== clean) {
+    if (typeof localStorage !== "undefined") {
+      try {
+        localStorage.removeItem(MOVES_KEY);
+        localStorage.removeItem(PROGRESS_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+}
+
 export function seedNorthStarFromFocus(focusAreas: string[]): void {
   const existing = getNorthStar();
   if (existing && existing.source === "custom") return;
   setNorthStar(deriveNorthStar(focusAreas), "derived");
 }
 
-/** Cumulative progress toward the North Star, 0–100. "The more you do, the more
- *  it fills." Driven by total XP (every logged action), so it only ever grows. */
-export function northStarProgress(): { pct: number; totalXp: number; target: number } {
-  const totalXp = getCurrentLevel().totalXp;
-  const pct = Math.max(0, Math.min(100, Math.round((totalXp / NORTH_STAR_TARGET_XP) * 100)));
-  return { pct, totalXp, target: NORTH_STAR_TARGET_XP };
+// ── Moves ───────────────────────────────────────────────────────────
+
+/** Today's goal-aligned moves, if they exist for the current goal + date. */
+export function getMovesForToday(): GoalMoves | null {
+  const ns = getNorthStar();
+  if (!ns) return null;
+  const stored = read<GoalMoves>(MOVES_KEY);
+  if (!stored || stored.goal !== ns.goal || stored.date !== todayKey()) return null;
+  if (!Array.isArray(stored.moves) || stored.moves.length === 0) return null;
+  return { ...stored, done: Array.isArray(stored.done) ? stored.done : [] };
+}
+
+/** Store a freshly generated set of moves for today's goal. */
+export function setMovesForToday(moves: string[]): void {
+  const ns = getNorthStar();
+  if (!ns) return;
+  const clean = moves.map((m) => m.trim().slice(0, 80)).filter(Boolean).slice(0, 3);
+  if (clean.length === 0) return;
+  write(MOVES_KEY, { goal: ns.goal, date: todayKey(), moves: clean, done: [] });
+}
+
+/** Mark a move done (once). Increments cumulative progress toward this goal. */
+export function completeMove(index: number): void {
+  const stored = getMovesForToday();
+  if (!stored) return;
+  if (stored.done.includes(index)) return;
+  const done = [...stored.done, index];
+  write(MOVES_KEY, { goal: stored.goal, date: stored.date, moves: stored.moves, done });
+  // Cumulative count toward this goal (only grows; resets when the goal changes).
+  const prog = read<{ goal: string; count: number }>(PROGRESS_KEY);
+  const count = prog && prog.goal === stored.goal ? prog.count + 1 : 1;
+  write(PROGRESS_KEY, { goal: stored.goal, count });
+}
+
+// ── Progress ────────────────────────────────────────────────────────
+
+/** Ring fill 0–100, earned ONLY from completed goal-aligned moves. */
+export function northStarProgress(): { pct: number; count: number; target: number } {
+  const ns = getNorthStar();
+  const prog = read<{ goal: string; count: number }>(PROGRESS_KEY);
+  const count = ns && prog && prog.goal === ns.goal ? Math.max(0, prog.count) : 0;
+  const pct = Math.max(0, Math.min(100, Math.round((count / NORTH_STAR_TARGET_MOVES) * 100)));
+  return { pct, count, target: NORTH_STAR_TARGET_MOVES };
 }

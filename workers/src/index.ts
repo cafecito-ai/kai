@@ -11,6 +11,7 @@ import { friendsRoutes } from "./routes/friends";
 import { goalsRoutes } from "./routes/goals";
 import { groupsRoutes } from "./routes/groups";
 import { opsRoutes } from "./routes/ops";
+import { northStarRoutes } from "./routes/northstar";
 import { progressRoutes } from "./routes/progress";
 import { scanRoutes } from "./routes/scan";
 import { scoreRoutes } from "./routes/score";
@@ -49,6 +50,7 @@ app.route("/api", strengthsRoutes);
 app.route("/api", workoutsRoutes);
 app.route("/api", scanRoutes);
 app.route("/api", voiceRoutes);
+app.route("/api", northStarRoutes);
 app.post("/api/safety/log", async (c) => c.json({ event: await c.req.json() }));
 app.get("/api/parent/consent", async (c) => {
   const token = c.req.query("token");

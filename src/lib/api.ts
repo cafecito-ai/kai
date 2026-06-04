@@ -92,6 +92,12 @@ export const api = {
     }),
   getCurrentConversation: (engine: EngineId | "kai" = "kai") =>
     request<{ conversationId: string | null; messages: ChatMessage[] }>(`/api/conversations/current?engine=${engine}`),
+  // North Star: 3 concrete today-doable moves toward a specific long-term goal.
+  northStarMoves: (goal: string) =>
+    request<{ moves: string[] }>("/api/north-star/moves", {
+      method: "POST",
+      body: JSON.stringify({ goal }),
+    }),
   getDailyScoreToday: () =>
     request<{
       date: string;

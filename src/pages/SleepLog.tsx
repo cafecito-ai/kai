@@ -16,11 +16,13 @@ import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
 import { appendLocalInput, readLocalInputs } from "../lib/local-score";
+import { useKaiStore } from "../stores/kaiStore";
 
 type Phase = "form" | "sending" | "done";
 
 export function SleepLog() {
   const navigate = useNavigate();
+  const setPendingSeed = useKaiStore((s) => s.setPendingSeed);
   const [hours, setHours] = useState<number>(7);
   const [quality, setQuality] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
@@ -81,6 +83,14 @@ export function SleepLog() {
           reflection={reflection}
           bodyComment={bodyComment}
           onClose={() => navigate("/home")}
+          onTalk={() => {
+            const q = quality != null ? `, felt like ${quality}/5` : "";
+            const n = notes.trim() ? `. notes: ${notes.trim()}` : "";
+            setPendingSeed(
+              `i just logged my sleep — ${formatHours(hours)} hours${q}${n}. what can i actually do to sleep better and feel more rested?`,
+            );
+            navigate("/chat");
+          }}
         />
       ) : (
         <Form
@@ -246,6 +256,7 @@ function DoneState({
   reflection,
   bodyComment,
   onClose,
+  onTalk,
 }: {
   reflection: string;
   /** T-024 — optional Body recovery comment. Renders below the reflection
@@ -253,6 +264,7 @@ function DoneState({
    *  this is the same KAI speaking in their physical-coach voice. */
   bodyComment?: string;
   onClose: () => void;
+  onTalk: () => void;
 }) {
   return (
     <div className="flex flex-1 flex-col pb-6">
@@ -270,14 +282,25 @@ function DoneState({
           <KaiMessage orbSize={32}>{bodyComment}</KaiMessage>
         </div>
       )}
-      <div className="mt-auto pb-2">
+      <div className="mt-auto space-y-2 pb-2">
+        <button
+          type="button"
+          onClick={onTalk}
+          className="
+            flex h-12 w-full items-center justify-center rounded-full
+            bg-text-primary text-background font-medium
+            shadow-card transition active:scale-[0.99] focus-ring
+          "
+        >
+          Talk to KAI about it
+        </button>
         <button
           type="button"
           onClick={onClose}
           className="
             flex h-12 w-full items-center justify-center rounded-full
-            bg-text-primary text-background font-medium
-            shadow-card transition active:scale-[0.99] focus-ring
+            border border-glass-border bg-surface text-text-primary font-medium
+            shadow-card transition hover:bg-surface-muted active:scale-[0.99] focus-ring
           "
         >
           Back to home

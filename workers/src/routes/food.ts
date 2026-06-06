@@ -7,6 +7,7 @@ import {
   type MealAnalysis
 } from "../lib/food-analysis";
 import { generateFoodComment } from "../lib/food-comment";
+import { recordScoreInput } from "../lib/score-store";
 import type { Env } from "../types";
 
 export const foodRoutes = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
@@ -85,6 +86,18 @@ async function analyzeAndSaveMeal(
       )
       .run()
   ]);
+
+  // Feed the daily score — logging a meal should move it (mood/nutrition).
+  // Was missing, so meals never counted toward today's score.
+  await recordScoreInput(env.DB, {
+    userId,
+    source: "food_log",
+    value: {
+      items: (analysis.items as AnalyzedItem[]).map((i) => i.name).slice(0, 8),
+      calories: analysis.totals?.calories ?? null,
+      protein: analysis.totals?.protein ?? null,
+    },
+  }).catch(() => {});
 
   return {
     mealId: id,

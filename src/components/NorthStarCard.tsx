@@ -1,23 +1,20 @@
 // NorthStarCard — the long-term goal tile next to the Daily Score.
 //
-// The ring fills ONLY from completing goal-aligned "moves" KAI generates for the
-// specific goal (per client: progress is earned by actions that actually move
-// you toward the goal, not generic logging). Tap the tile -> a sheet with the
-// goal, the ring, and today's 3 checkable moves.
+// The ring fills AUTOMATICALLY from the daily things the user logs, weighted by
+// how much each correlates with this goal (see local-northstar). No tapping to
+// score progress. Tap the tile -> a sheet with the goal (editable), the ring,
+// and the aligned daily actions that build it (quick links to log them).
 
-import { Target, Pencil, Check, RefreshCw } from "lucide-react";
+import { Target, Pencil, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { ScoreRing } from "./ScoreRing";
-import { api } from "../lib/api";
 import {
-  completeMove,
-  getMovesForToday,
   getNorthStar,
   northStarProgress,
-  setMovesForToday,
   setNorthStar,
-  type GoalMoves,
+  whatBuildsGoal,
 } from "../lib/local-northstar";
 
 export function NorthStarCard() {
@@ -34,7 +31,11 @@ export function NorthStarCard() {
     refresh();
     const on = () => refresh();
     window.addEventListener("kai:state-changed", on);
-    return () => window.removeEventListener("kai:state-changed", on);
+    window.addEventListener("kai:input-appended", on);
+    return () => {
+      window.removeEventListener("kai:state-changed", on);
+      window.removeEventListener("kai:input-appended", on);
+    };
   }, []);
 
   return (
@@ -79,7 +80,7 @@ export function NorthStarCard() {
           {goal ?? "Set your big goal"}
         </p>
         <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-          {goal ? (pct > 0 ? `${pct}% there` : "Make a move ↗") : "Tap to set"}
+          {goal ? (pct > 0 ? `${pct}% there` : "Log to build it") : "Tap to set"}
         </p>
       </button>
 
@@ -92,7 +93,6 @@ export function NorthStarCard() {
             setNorthStar(g, "custom");
             refresh();
           }}
-          onChanged={refresh}
         />
       )}
     </>
@@ -104,50 +104,16 @@ function GoalSheet({
   pct,
   onClose,
   onSaveGoal,
-  onChanged,
 }: {
   goal: string | null;
   pct: number;
   onClose: () => void;
   onSaveGoal: (goal: string) => void;
-  onChanged: () => void;
 }) {
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(!goal);
   const [text, setText] = useState(goal ?? "");
-  const [moves, setMoves] = useState<GoalMoves | null>(() => getMovesForToday());
-  const [loading, setLoading] = useState(false);
-
-  // Fetch today's moves if we don't have them yet for the current goal.
-  useEffect(() => {
-    if (!goal || editing) return;
-    if (getMovesForToday()) {
-      setMoves(getMovesForToday());
-      return;
-    }
-    void loadMoves(goal);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [goal, editing]);
-
-  async function loadMoves(g: string) {
-    setLoading(true);
-    try {
-      const res = await api.northStarMoves(g);
-      if (res.moves.length > 0) {
-        setMovesForToday(res.moves);
-        setMoves(getMovesForToday());
-      }
-    } catch {
-      /* leave moves null — show retry */
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function tick(i: number) {
-    completeMove(i);
-    setMoves(getMovesForToday());
-    onChanged();
-  }
+  const builds = whatBuildsGoal();
 
   return (
     <div
@@ -164,8 +130,8 @@ function GoalSheet({
               What's the one big thing?
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-              The goal that takes weeks or months. KAI will give you real moves
-              toward it — the ring fills as you actually do them.
+              The goal that takes weeks or months. KAI fills this ring
+              automatically as you log the things that move you toward it.
             </p>
             <textarea
               autoFocus
@@ -173,7 +139,7 @@ function GoalSheet({
               maxLength={80}
               rows={2}
               onChange={(e) => setText(e.target.value)}
-              placeholder="e.g. Make the varsity team. Get a girlfriend. Get genuinely stronger."
+              placeholder="e.g. Build muscle. Improve at boxing. Fix my sleep. Gain confidence."
               className="
                 mt-4 w-full resize-none rounded-lg border border-glass-border bg-background
                 px-4 py-3 text-base text-text-primary placeholder:text-text-muted
@@ -194,8 +160,6 @@ function GoalSheet({
                   if (!text.trim()) return;
                   onSaveGoal(text);
                   setEditing(false);
-                  setMoves(null);
-                  void loadMoves(text.trim());
                 }}
                 disabled={!text.trim()}
                 className="flex h-11 flex-1 items-center justify-center rounded-full bg-text-primary text-sm font-medium text-background transition active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-text-soft focus-ring"
@@ -229,79 +193,34 @@ function GoalSheet({
             </div>
 
             <div className="mt-4 flex items-center gap-4 rounded-lg border border-glass-border bg-background p-4">
-              <div className="relative inline-flex items-center justify-center">
+              <div className="relative inline-flex shrink-0 items-center justify-center">
                 <ScoreRing value={pct} size={72} />
                 <span className="absolute inset-0 flex items-center justify-center font-mono text-base font-bold text-text-primary">
                   {pct}%
                 </span>
               </div>
               <p className="text-sm leading-snug text-text-secondary">
-                Your ring fills as you do things that actually move you toward
-                this — not from generic logging.
+                This fills on its own as you do the things that move you toward
+                it — no extra taps.
               </p>
             </div>
 
             <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
-              Moves toward it — today
+              What builds this goal
             </p>
-
-            {loading && !moves ? (
-              <p className="mt-3 text-sm text-text-muted">KAI is thinking of your moves…</p>
-            ) : moves && moves.moves.length > 0 ? (
-              <div className="mt-3 space-y-2">
-                {moves.moves.map((m, i) => {
-                  const done = moves.done.includes(i);
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => !done && tick(i)}
-                      disabled={done}
-                      className={`
-                        flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition
-                        ${
-                          done
-                            ? "border-success-soft bg-success-soft/40"
-                            : "border-glass-border bg-surface hover:bg-surface-muted active:scale-[0.99]"
-                        }
-                      `}
-                    >
-                      <span
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                          done
-                            ? "border-success bg-success text-background"
-                            : "border-glass-border"
-                        }`}
-                      >
-                        {done && <Check size={14} aria-hidden="true" />}
-                      </span>
-                      <span
-                        className={`text-sm font-medium ${
-                          done ? "text-text-secondary line-through" : "text-text-primary"
-                        }`}
-                      >
-                        {m}
-                      </span>
-                    </button>
-                  );
-                })}
+            <div className="mt-3 space-y-2">
+              {builds.map((b) => (
                 <button
+                  key={b.to}
                   type="button"
-                  onClick={() => goal && loadMoves(goal)}
-                  className="mt-1 inline-flex items-center gap-1.5 px-1 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted transition hover:text-text-primary"
+                  onClick={() => navigate(b.to)}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 text-left transition hover:bg-surface-muted active:scale-[0.99] focus-ring"
                 >
-                  <RefreshCw size={11} aria-hidden="true" /> New moves
+                  <span className="text-sm font-medium text-text-primary">{b.label}</span>
+                  <ArrowRight size={15} className="text-text-muted" aria-hidden="true" />
                 </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => goal && loadMoves(goal)}
-                className="mt-3 text-sm font-medium text-accent underline-offset-4 hover:underline"
-              >
-                Get today's moves
-              </button>
-            )}
+              ))}
+            </div>
 
             <button
               type="button"

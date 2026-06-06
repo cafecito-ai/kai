@@ -18,8 +18,23 @@ import { Link, useNavigate } from "react-router-dom";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { appendLocalInput } from "../lib/local-score";
 import { useKaiStore } from "../stores/kaiStore";
 import type { FoodPhotoResult } from "../lib/types";
+
+// Mirror the API write into the local input log so the daily score, XP, missions
+// and the goal ring all reflect the meal even in local/offline mode (matches
+// how check-in / sleep / journal log locally).
+function recordFoodLocally(result: FoodPhotoResult, note: string) {
+  appendLocalInput({
+    date: new Date().toISOString().slice(0, 10),
+    source: "food_log",
+    value: {
+      items: result.items.map((i) => i.name).filter(Boolean).slice(0, 8),
+      note: note.trim() || undefined,
+    },
+  });
+}
 
 type Phase = "form" | "sending" | "done";
 type Mode = "photo" | "note";
@@ -39,6 +54,7 @@ export function FoodLog() {
     setError(null);
     try {
       const r = await api.uploadFoodPhoto(file, note.trim() || undefined);
+      recordFoodLocally(r, note);
       setResult(r);
       setPhase("done");
     } catch {
@@ -53,6 +69,7 @@ export function FoodLog() {
     setError(null);
     try {
       const r = await api.analyzeFoodPhoto({ note: note.trim() });
+      recordFoodLocally(r, note);
       setResult(r);
       setPhase("done");
     } catch {

@@ -97,13 +97,15 @@ export function deriveNorthStar(focusAreas: string[]): { goal: string; theme: Go
 
 /** Classify a free-text goal into a theme (for custom goals). */
 export function classifyTheme(text: string): GoalTheme {
+  // Leading \b, NO trailing \b — so word STEMS match their inflections
+  // ("confiden" → "confidence", "grade" → "grades", "motivat" → "motivation").
   const t = text.toLowerCase();
-  if (/\b(muscle|stronger|strength|gym|lift|bulk|gains|jacked|build)\b/.test(t)) return "strength";
-  if (/\b(box|boxing|run|running|sport|soccer|basketball|football|cardio|fit|fitness|athlet|team|tryout|train)\b/.test(t)) return "fitness";
-  if (/\b(sleep|rest|insomnia|tired|bed)\b/.test(t)) return "sleep";
-  if (/\b(eat|eating|food|diet|nutrition|meal|weight|leaner)\b/.test(t)) return "nutrition";
-  if (/\b(school|grade|gpa|study|exam|college|class|homework)\b/.test(t)) return "school";
-  if (/\b(confiden|anx|stress|mood|happy|purpose|focus|motivat|friend|social|girl|relationship|mental|calm|depress|self)\b/.test(t)) return "mind";
+  if (/\b(muscle|strong|strength|gym|lift|bulk|gains|jacked|swole|ripped)/.test(t)) return "strength";
+  if (/\b(box|run|sport|soccer|basketball|football|cardio|fit|athlet|team|tryout|train|practice)/.test(t)) return "fitness";
+  if (/\b(sleep|insomnia|tired|rested|bedtime)/.test(t)) return "sleep";
+  if (/\b(eat|food|diet|nutrition|meal|leaner|protein)/.test(t)) return "nutrition";
+  if (/\b(school|grade|gpa|stud|exam|college|class|homework)/.test(t)) return "school";
+  if (/\b(confiden|anx|stress|mood|happy|purpose|focus|motivat|friend|social|girl|relationship|mental|calm|depress|self-)/.test(t)) return "mind";
   return "general";
 }
 

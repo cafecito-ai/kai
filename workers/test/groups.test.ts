@@ -89,8 +89,8 @@ describe("canJoinTeenGroup", () => {
       expect(canJoinTeenGroup(age)).toBe(false);
     }
   });
-  it("null age fail-closed (treated as adult)", () => {
-    expect(canJoinTeenGroup(null)).toBe(false);
+  it("null age is allowed (teen-first app — unknown age must not block groups)", () => {
+    expect(canJoinTeenGroup(null)).toBe(true);
   });
 });
 

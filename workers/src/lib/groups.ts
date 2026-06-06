@@ -144,10 +144,12 @@ export function getTemplate(id: string): EncouragementTemplate | null {
 // ─────────────────────────────────────────────────────────────────────
 
 /** Per CLAUDE.md §5: "Adults (18+) cannot join teen groups." Our app is
- *  teen-focused — every group is a teen group. So any user age ≥ 18 is
- *  blocked. null age = treated as adult (fail closed). */
+ *  teen-focused — every group is a teen group, so any user age ≥ 18 is blocked.
+ *  Unknown age (null) is ALLOWED: users consent as 13–18 at onboarding, and a
+ *  missing age must not block group creation (that was the "won't let me create
+ *  a group" bug — anonymous/incomplete-profile users have no age on file). */
 export function canJoinTeenGroup(age: number | null): boolean {
-  if (age === null) return false;
+  if (age === null) return true;
   return age < 18;
 }
 

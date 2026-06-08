@@ -45,7 +45,7 @@ export function NorthStarCard() {
         onClick={() => setOpen(true)}
         className="
           group relative flex flex-col rounded-glass border border-glass-border
-          bg-surface p-5 text-left shadow-card-lg transition
+          bg-surface p-5 text-center shadow-card-lg transition
           active:scale-[0.99] hover:bg-surface-muted focus-ring
         "
       >

@@ -362,7 +362,7 @@ export function Home() {
 
 function DailyScoreCard({ data }: { data: DailyScoreView }) {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-glass border border-glass-border bg-surface p-5 shadow-card-lg">
+    <div className="relative flex flex-col overflow-hidden rounded-glass border border-glass-border bg-surface p-5 text-center shadow-card-lg">
       <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
         Today
       </p>
@@ -370,11 +370,13 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
       <div className="mt-3 flex justify-center">
         <div className="relative inline-flex items-center justify-center">
           <ScoreRing value={data.score} size={96} />
-          <span className="absolute inset-0 flex items-baseline justify-center gap-0.5">
-            <span className="font-mono text-3xl font-bold leading-none text-text-primary">
-              {data.score}
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="flex items-baseline gap-0.5">
+              <span className="font-mono text-3xl font-bold leading-none text-text-primary">
+                {data.score}
+              </span>
+              <span className="font-mono text-xs text-text-muted">/100</span>
             </span>
-            <span className="font-mono text-xs text-text-muted">/100</span>
           </span>
         </div>
       </div>

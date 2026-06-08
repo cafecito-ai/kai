@@ -49,16 +49,14 @@ export function NorthStarCard() {
           active:scale-[0.99] hover:bg-surface-muted focus-ring
         "
       >
-        <div className="flex items-center justify-between">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
-            Your goal
-          </p>
-          <Pencil
-            size={12}
-            className="text-text-muted opacity-0 transition group-hover:opacity-100"
-            aria-hidden="true"
-          />
-        </div>
+        <Pencil
+          size={12}
+          className="absolute right-4 top-4 text-text-muted opacity-0 transition group-hover:opacity-100"
+          aria-hidden="true"
+        />
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+          Your goal
+        </p>
 
         <div className="mt-3 flex justify-center">
           <div className="relative inline-flex items-center justify-center">
@@ -66,8 +64,7 @@ export function NorthStarCard() {
             <span className="absolute inset-0 flex items-center justify-center">
               {goal ? (
                 <span className="font-mono text-xl font-bold leading-none text-text-primary">
-                  {pct}
-                  <span className="text-xs text-text-muted">%</span>
+                  {pct}%
                 </span>
               ) : (
                 <Target size={22} className="text-text-muted" aria-hidden="true" />

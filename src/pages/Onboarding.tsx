@@ -33,7 +33,7 @@ import {
   pickFollowUps,
   type FollowUpResponse,
 } from "../lib/onboarding-followups";
-import { seedNorthStarFromFocus } from "../lib/local-northstar";
+import { seedNorthStarFromFocus, setNorthStar } from "../lib/local-northstar";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -182,7 +182,7 @@ function isKaiTone(v: unknown): v is KaiTone {
 // Rawz/5 — 8 steps now (inserted adaptive follow-up between Hardest
 // and Meet KAI). Net flow stays under 90 seconds for most users since
 // the new step is at most 3 quick-tap questions, all skippable.
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -195,6 +195,8 @@ export function Onboarding() {
   const [age, setAge] = useState("");
   const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([]);
   const [hardestLately, setHardestLately] = useState("");
+  // The user's one big goal — becomes the North Star title on Home.
+  const [bigGoal, setBigGoal] = useState("");
   // Rawz/5 — adaptive follow-up responses keyed by question id.
   const [followUps, setFollowUps] = useState<FollowUpResponse>({});
   const [kaiName] = useState(demoBuild?.kaiName?.trim() || "KAI");
@@ -221,8 +223,9 @@ export function Onboarding() {
       case 4: // adaptive follow-ups (Rawz/5)
       case 5: // meet KAI
       case 6: // tone
+      case 7: // big goal (optional, skippable)
         return true;
-      case 7: // confirm + save
+      case 8: // confirm + save
         return !saving;
       default:
         return true;
@@ -257,7 +260,13 @@ export function Onboarding() {
       await api.submitIntake(keyedResponses);
       // Seed the long-term North Star goal from what they chose to work on.
       // Shown next to the Daily Score on Home; editable there.
-      seedNorthStarFromFocus(focusAreas);
+      // The big goal they typed becomes the North Star title; if they
+      // skipped it, fall back to seeding from their focus areas.
+      if (bigGoal.trim()) {
+        setNorthStar(bigGoal.trim(), "custom");
+      } else {
+        seedNorthStarFromFocus(focusAreas);
+      }
       // displayName = the teen's name (what KAI calls them). kaiName = what
       // they call KAI. Previously firstName only landed in user_intake.summary
       // and never users.display_name, so the chat agent kept falling back to
@@ -328,6 +337,14 @@ export function Onboarding() {
             <ToneStep value={kaiTone} onChange={setKaiTone} />
           )}
           {step === 7 && (
+            <GoalStep
+              firstName={firstName}
+              value={bigGoal}
+              onChange={setBigGoal}
+              onSkip={next}
+            />
+          )}
+          {step === 8 && (
             <ConfirmStep
               firstName={firstName}
               focusAreas={focusAreas}
@@ -495,6 +512,56 @@ function HardestStep({
         onChange={(e) => onChange(e.target.value)}
         placeholder="A messy sentence is enough."
         rows={4}
+        className="
+          w-full rounded-lg border border-glass-border bg-surface
+          px-4 py-3.5 text-base
+          text-text-primary placeholder:text-text-muted
+          shadow-card focus-ring
+          resize-none
+        "
+      />
+      <button
+        type="button"
+        onClick={onSkip}
+        className="text-sm font-medium text-text-muted underline-offset-4 hover:underline"
+      >
+        Skip for now
+      </button>
+    </div>
+  );
+}
+
+// The one big goal — its answer becomes the North Star title on Home,
+// shown next to the Daily Score and editable there. Optional/skippable.
+function GoalStep({
+  firstName,
+  value,
+  onChange,
+  onSkip,
+}: {
+  firstName: string;
+  value: string;
+  onChange: (v: string) => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 8 — optional"
+        title={
+          firstName
+            ? `What are you working toward, ${firstName}?`
+            : "What are you working toward?"
+        }
+        blurb="Your one big goal. KAI keeps it on your home screen and fills the ring as you show up. Change it anytime."
+      />
+      <textarea
+        autoFocus
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="e.g. Make the team. Get genuinely stronger. Feel less anxious."
+        rows={3}
+        maxLength={80}
         className="
           w-full rounded-lg border border-glass-border bg-surface
           px-4 py-3.5 text-base
@@ -728,7 +795,7 @@ function ConfirmStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 8"
+        eyebrow="step 9"
         title={`You're set, ${firstName}.`}
         blurb="Ready to meet your home screen?"
       />

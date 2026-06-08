@@ -8,7 +8,7 @@
 //
 // Goal: make the user want to talk to KAI every time they open the app.
 
-import { ArrowUpRight, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -74,23 +74,6 @@ export function KaiGreeting() {
             <MessageCircle size={11} aria-hidden="true" />
             tap to talk
           </span>
-        </button>
-
-        {/* Single-tap reply chip — sends the chip text straight into
-            chat as a draft. Lets the user "answer" KAI with one finger. */}
-        <button
-          type="button"
-          onClick={() => openChat(greeting.replyChip)}
-          className="
-            inline-flex items-center gap-1.5 rounded-full
-            border border-accent-soft bg-accent-soft/40
-            px-4 py-2 text-sm font-medium text-accent
-            shadow-card transition active:scale-95 hover:bg-accent-soft/60
-            focus-ring
-          "
-        >
-          {greeting.replyChip}
-          <ArrowUpRight size={14} aria-hidden="true" />
         </button>
       </div>
 

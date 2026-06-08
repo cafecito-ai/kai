@@ -1,17 +1,17 @@
 // Onboarding — KAI v3 §4 step order.
 //
 //   1. Name input          (user's first name)
-//   2. Age + parent email  (parent email required when under 18)
+//   2. Age                 (optional, non-gating)
 //   3. Focus areas         (multi-select chips, what they want to work on)
 //   4. Hardest lately      (free text, optional, skippable)
 //   5. Meet KAI            (intro both agents: Mind + Body)
 //   6. Tone picker         (warm / balanced / direct)
-//   7. Confirm + consent   (parental consent fires automatically for under-18)
+//   7. Goal                (optional North Star seed)
+//   8. Confirm             (save and enter the app)
 //
-// Target: under 90 seconds, ≤7 steps. Existing API contracts preserved:
-// api.submitIntake, api.updateUser, api.sendParentConsent. The v0 three-engine
-// picker + 6-question intake battery are retired in favor of focus-area
-// multi-select + a single free-text question (covers v3 §4 step 4).
+// Existing API contracts preserved: api.submitIntake and api.updateUser.
+// The v0 three-engine picker + 6-question intake battery are retired in favor
+// of focus-area multi-select + a single free-text question (covers v3 §4 step 4).
 //
 // requires_safety_review per AGENT_PLAN — touches the consent flow. Ratner
 // has authorized build-phase changes per DECISIONS.md D-007; production sign-

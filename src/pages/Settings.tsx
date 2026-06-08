@@ -1,4 +1,4 @@
-// /settings — KAI personalization + parent consent.
+// /settings — KAI personalization.
 //
 // Rebuilt to match the rest of the app's design language (surface +
 // glass-border + KaiOrb tints + Fraunces display headings). Previously
@@ -7,10 +7,9 @@
 //
 // Sections:
 //   1. KAI identity — kaiName + tone (3-card picker, not a dropdown)
-//   2. Parent consent — status, parent email, resend button
-//   3. Privacy + danger zone — link to delete-my-data, sign out
+//   2. Privacy + danger zone — link to delete-my-data, sign out
 
-import { ArrowLeft, Check, Heart, Mail, Scale, ShieldCheck, Zap } from "lucide-react";
+import { ArrowLeft, Check, Heart, Scale, Zap } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
@@ -54,21 +53,14 @@ export function Settings() {
   const {
     kaiName,
     kaiTone,
-    parentEmail,
-    consentStatus,
-    parentConsentAt,
     setKai,
-    setConsentPending,
   } = useUserStore();
 
   const [name, setName] = useState(kaiName);
   const [tone, setTone] = useState<KaiTone>(kaiTone);
-  const [consentEmail, setConsentEmail] = useState(parentEmail ?? "");
   const [saving, setSaving] = useState(false);
-  const [sendingConsent, setSendingConsent] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [consentMessage, setConsentMessage] = useState("");
 
   async function save() {
     setSaving(true);
@@ -85,32 +77,6 @@ export function Settings() {
       setSaving(false);
       // Auto-clear the "Saved" pill after a few seconds.
       setTimeout(() => setSaved(false), 3000);
-    }
-  }
-
-  async function resendConsent() {
-    if (!consentEmail.trim()) {
-      setConsentMessage("Add a parent email first.");
-      return;
-    }
-    setSendingConsent(true);
-    setConsentMessage("");
-    try {
-      await api.updateUser({ parentEmail: consentEmail.trim() });
-      const result = await api.sendParentConsent({
-        parentEmail: consentEmail.trim(),
-        teenName: name || "Kai user",
-      });
-      setConsentPending(consentEmail.trim());
-      setConsentMessage(
-        result.emailSent
-          ? "Consent email sent."
-          : "Consent link created. Email sender isn't configured here yet.",
-      );
-    } catch {
-      setConsentMessage("Couldn't send right now — try again in a minute.");
-    } finally {
-      setSendingConsent(false);
     }
   }
 
@@ -244,72 +210,6 @@ export function Settings() {
         <p className="mb-5 text-center text-xs text-text-secondary">{error}</p>
       )}
 
-      {/* ─── Parent consent ───────────────────────────────────────── */}
-      <section className="mb-5 rounded-glass border border-glass-border bg-surface p-5 shadow-card">
-        <div className="flex items-center gap-2">
-          <ShieldCheck size={16} className="text-accent-cool" aria-hidden="true" />
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
-            parent consent
-          </p>
-        </div>
-
-        <ConsentStatusPill status={consentStatus} completedAt={parentConsentAt} />
-
-        <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-          Parent consent confirms beta access for teen accounts. It never exposes
-          your private answers, goals, meals, or chats.
-        </p>
-
-        <div className="mt-4 space-y-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-            parent email
-          </p>
-          <div className="relative">
-            <Mail
-              size={14}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
-              aria-hidden="true"
-            />
-            <input
-              type="email"
-              value={consentEmail}
-              onChange={(e) => setConsentEmail(e.target.value)}
-              placeholder="parent@example.com"
-              className="
-                w-full rounded-lg border border-glass-border bg-surface
-                py-3 pl-10 pr-4 text-base text-text-primary
-                placeholder:text-text-muted shadow-card focus-ring
-              "
-            />
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={resendConsent}
-          disabled={sendingConsent}
-          className="
-            mt-4 flex h-11 w-full items-center justify-center rounded-full
-            border border-glass-border bg-surface text-text-primary font-medium
-            shadow-card transition hover:bg-surface-muted active:scale-[0.99]
-            disabled:cursor-not-allowed disabled:opacity-50
-            focus-ring
-          "
-        >
-          {sendingConsent
-            ? "Sending…"
-            : consentStatus === "pending"
-              ? "Resend consent email"
-              : "Send consent email"}
-        </button>
-
-        {consentMessage && (
-          <p className="mt-2 text-center text-xs text-text-secondary">
-            {consentMessage}
-          </p>
-        )}
-      </section>
-
       {/* ─── Privacy / danger zone ─────────────────────────────────── */}
       <section className="rounded-glass border border-glass-border bg-surface p-5 shadow-card">
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
@@ -333,49 +233,6 @@ export function Settings() {
           </Link>
         </div>
       </section>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Pieces
-// ─────────────────────────────────────────────────────────────────────
-
-function ConsentStatusPill({
-  status,
-  completedAt,
-}: {
-  status: string;
-  completedAt: string | null | undefined;
-}) {
-  if (status === "complete") {
-    return (
-      <div className="mt-3">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1 text-xs font-medium text-success">
-          <Check size={12} aria-hidden="true" /> Complete
-        </span>
-        {completedAt && (
-          <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-            {new Date(completedAt).toLocaleDateString()}
-          </p>
-        )}
-      </div>
-    );
-  }
-  if (status === "pending") {
-    return (
-      <div className="mt-3">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-soft px-3 py-1 text-xs font-medium text-warning">
-          Waiting for parent
-        </span>
-      </div>
-    );
-  }
-  return (
-    <div className="mt-3">
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-text-secondary">
-        Not required yet
-      </span>
     </div>
   );
 }

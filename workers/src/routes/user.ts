@@ -32,7 +32,7 @@ userRoutes.patch("/user/me", async (c) => {
   const body = await c.req.json<{ kaiName?: string; kaiTone?: string; primaryEngine?: string; age?: number; parentEmail?: string; email?: string; displayName?: string; onboardingCompleted?: boolean; designPreference?: string }>();
   await c.env.DB.prepare(
     `INSERT INTO users (id, email, display_name, age, parent_email, kai_name, kai_tone, primary_engine, onboarding_completed_at, consent_status, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END, CASE WHEN ? < 18 THEN 'pending' ELSE 'not_required' END, CURRENT_TIMESTAMP)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END, 'not_required', CURRENT_TIMESTAMP)
      ON CONFLICT(id) DO UPDATE SET
        email = COALESCE(excluded.email, users.email),
        display_name = COALESCE(excluded.display_name, users.display_name),
@@ -42,11 +42,7 @@ userRoutes.patch("/user/me", async (c) => {
        kai_tone = COALESCE(excluded.kai_tone, users.kai_tone),
        primary_engine = COALESCE(excluded.primary_engine, users.primary_engine),
        onboarding_completed_at = CASE WHEN ? THEN COALESCE(users.onboarding_completed_at, CURRENT_TIMESTAMP) ELSE users.onboarding_completed_at END,
-       consent_status = CASE
-         WHEN excluded.age IS NULL THEN COALESCE(users.consent_status, 'not_required')
-         WHEN excluded.age < 18 THEN COALESCE(users.consent_status, 'pending')
-         ELSE 'not_required'
-       END,
+       consent_status = COALESCE(users.consent_status, 'not_required'),
        updated_at = CURRENT_TIMESTAMP`
   )
     .bind(
@@ -59,7 +55,6 @@ userRoutes.patch("/user/me", async (c) => {
       body.kaiTone ?? null,
       body.primaryEngine ?? null,
       body.onboardingCompleted ? 1 : 0,
-      body.age ?? null,
       body.onboardingCompleted ? 1 : 0
     )
     .run();

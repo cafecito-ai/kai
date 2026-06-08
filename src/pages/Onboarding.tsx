@@ -22,9 +22,11 @@ import {
   ArrowRight,
   Brain,
   Dumbbell,
+  ShieldAlert,
+  Sparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
@@ -33,7 +35,7 @@ import {
   pickFollowUps,
   type FollowUpResponse,
 } from "../lib/onboarding-followups";
-import { seedNorthStarFromFocus, setNorthStar } from "../lib/local-northstar";
+import { seedNorthStarFromFocus } from "../lib/local-northstar";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -186,16 +188,16 @@ const TOTAL_STEPS = 8;
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setKai, setPrimaryEngine } = useUserStore();
+  const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
 
   const [step, setStep] = useState(0);
   const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
 
   const [firstName, setFirstName] = useState(demoBuild?.firstName ?? "");
   const [age, setAge] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
   const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([]);
-  // The teen's own big goal — becomes their North Star (the right-side goal).
-  const [goalText, setGoalText] = useState("");
+  const [hardestLately, setHardestLately] = useState("");
   // Rawz/5 — adaptive follow-up responses keyed by question id.
   const [followUps, setFollowUps] = useState<FollowUpResponse>({});
   const [kaiName] = useState(demoBuild?.kaiName?.trim() || "KAI");
@@ -206,17 +208,20 @@ export function Onboarding() {
   const [error, setError] = useState("");
 
   const ageNum = Number(age) || undefined;
+  const isMinor = Boolean(ageNum && ageNum < 18);
   const primaryEngine = useMemo(() => suggestEngine(focusAreas), [focusAreas]);
 
   const canAdvance = useMemo(() => {
     switch (step) {
       case 0:
         return firstName.trim().length > 0;
-      case 1: // age — optional, no parent verification (any age can continue)
+      case 1:
+        if (!ageNum || ageNum < 13 || ageNum > 99) return false;
+        if (isMinor) return parentEmail.includes("@");
         return true;
       case 2:
         return focusAreas.length > 0;
-      case 3: // goal — optional, can skip
+      case 3: // hardest lately
       case 4: // adaptive follow-ups (Rawz/5)
       case 5: // meet KAI
       case 6: // tone
@@ -226,7 +231,7 @@ export function Onboarding() {
       default:
         return true;
     }
-  }, [step, firstName, focusAreas, saving]);
+  }, [step, firstName, ageNum, isMinor, parentEmail, focusAreas, saving]);
 
   function next() {
     if (!canAdvance) return;
@@ -246,21 +251,17 @@ export function Onboarding() {
         focus_areas: focusAreas.join(","),
         first_name: firstName.trim(),
       };
-      if (goalText.trim()) {
-        keyedResponses.goal = goalText.trim();
+      if (hardestLately.trim()) {
+        keyedResponses.hardest_lately = hardestLately.trim();
       }
       // Rawz/5 — pack adaptive follow-up answers into the intake payload
       // so the Mind + Body agents have richer day-one context.
       const questions = pickFollowUps(focusAreas);
       Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
       await api.submitIntake(keyedResponses);
-      // The teen's own goal becomes the North Star (the right-side goal title).
-      // If they skipped it, fall back to deriving one from their focus areas.
-      if (goalText.trim()) {
-        setNorthStar(goalText.trim(), "custom");
-      } else {
-        seedNorthStarFromFocus(focusAreas);
-      }
+      // Seed the long-term North Star goal from what they chose to work on.
+      // Shown next to the Daily Score on Home; editable there.
+      seedNorthStarFromFocus(focusAreas);
       // displayName = the teen's name (what KAI calls them). kaiName = what
       // they call KAI. Previously firstName only landed in user_intake.summary
       // and never users.display_name, so the chat agent kept falling back to
@@ -271,8 +272,16 @@ export function Onboarding() {
         kaiTone,
         primaryEngine,
         age: ageNum,
+        parentEmail: isMinor ? parentEmail.trim() : undefined,
         onboardingCompleted: true,
       });
+      if (isMinor && parentEmail.trim()) {
+        await api.sendParentConsent({
+          parentEmail: parentEmail.trim(),
+          teenName: firstName.trim(),
+        });
+        setConsentPending(parentEmail.trim());
+      }
       setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
       // Flow: Welcome → Onboarding → Home. Welcome already happened
@@ -301,15 +310,22 @@ export function Onboarding() {
           {step === 0 && (
             <NameStep value={firstName} onChange={setFirstName} />
           )}
-          {step === 1 && <AgeStep age={age} setAge={setAge} />}
+          {step === 1 && (
+            <AgeStep
+              age={age}
+              setAge={setAge}
+              parentEmail={parentEmail}
+              setParentEmail={setParentEmail}
+              isMinor={isMinor}
+            />
+          )}
           {step === 2 && (
             <FocusStep value={focusAreas} onChange={setFocusAreas} />
           )}
           {step === 3 && (
-            <GoalStep
-              firstName={firstName}
-              value={goalText}
-              onChange={setGoalText}
+            <HardestStep
+              value={hardestLately}
+              onChange={setHardestLately}
               onSkip={next}
             />
           )}
@@ -329,7 +345,8 @@ export function Onboarding() {
           {step === 7 && (
             <ConfirmStep
               firstName={firstName}
-              goalText={goalText}
+              isMinor={isMinor}
+              parentEmail={parentEmail}
               focusAreas={focusAreas}
               tone={kaiTone}
               error={error}
@@ -390,16 +407,22 @@ function NameStep({
 function AgeStep({
   age,
   setAge,
+  parentEmail,
+  setParentEmail,
+  isMinor,
 }: {
   age: string;
   setAge: (v: string) => void;
+  parentEmail: string;
+  setParentEmail: (v: string) => void;
+  isMinor: boolean;
 }) {
   return (
     <div className="space-y-6">
       <Heading
         eyebrow="step 2"
         title="How old are you?"
-        blurb="KAI is built for you. This just helps it fit the experience to you — optional."
+        blurb="KAI is built for ages 13–18."
       />
       <input
         autoFocus
@@ -407,7 +430,7 @@ function AgeStep({
         inputMode="numeric"
         value={age}
         onChange={(e) => setAge(e.target.value)}
-        placeholder="Age (optional)"
+        placeholder="Age"
         className="
           w-full rounded-lg border border-glass-border bg-surface
           px-4 py-3.5 text-lg
@@ -415,6 +438,30 @@ function AgeStep({
           shadow-card focus-ring
         "
       />
+      {isMinor && (
+        <div className="space-y-3 rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
+          <p className="text-sm font-medium text-text-primary">
+            We need a parent or guardian's email
+          </p>
+          <p className="text-xs leading-relaxed text-text-secondary">
+            KAI sends them a quick consent email so they know you're using
+            the app. They won't see your reflections, chats, or scans —
+            only consent confirmation.
+          </p>
+          <input
+            type="email"
+            value={parentEmail}
+            onChange={(e) => setParentEmail(e.target.value)}
+            placeholder="parent@example.com"
+            className="
+              w-full rounded-md border border-glass-border bg-surface
+              px-3 py-2.5 text-sm
+              text-text-primary placeholder:text-text-muted
+              focus-ring
+            "
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -473,32 +520,28 @@ function FocusStep({
   );
 }
 
-function GoalStep({
-  firstName,
+function HardestStep({
   value,
   onChange,
   onSkip,
 }: {
-  firstName: string;
   value: string;
   onChange: (v: string) => void;
   onSkip: () => void;
 }) {
-  const name = firstName.trim();
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 4"
-        title={name ? `What are you working toward, ${name}?` : "What are you working toward?"}
-        blurb="Your big goal — the thing that takes weeks or months. It becomes your goal on the home screen, and KAI helps you build toward it."
+        eyebrow="step 4 — optional"
+        title="What's been hardest lately?"
+        blurb="One sentence is enough. Or skip and tell KAI later."
       />
       <textarea
         autoFocus
         value={value}
-        onChange={(e) => onChange(e.target.value.slice(0, 80))}
-        placeholder="e.g. Build muscle. Make the team. Get my grades up. Gain confidence."
-        rows={3}
-        maxLength={80}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="A messy sentence is enough."
+        rows={4}
         className="
           w-full rounded-lg border border-glass-border bg-surface
           px-4 py-3.5 text-base
@@ -512,7 +555,7 @@ function GoalStep({
         onClick={onSkip}
         className="text-sm font-medium text-text-muted underline-offset-4 hover:underline"
       >
-        Skip — I'll set it later
+        Skip for now
       </button>
     </div>
   );
@@ -714,14 +757,16 @@ function ToneStep({
 
 function ConfirmStep({
   firstName,
-  goalText,
+  isMinor,
+  parentEmail,
   focusAreas,
   tone,
   error,
   saving,
 }: {
   firstName: string;
-  goalText: string;
+  isMinor: boolean;
+  parentEmail: string;
   focusAreas: FocusAreaId[];
   tone: KaiTone;
   error: string;
@@ -736,24 +781,49 @@ function ConfirmStep({
       <Heading
         eyebrow="step 8"
         title={`You're set, ${firstName}.`}
-        blurb="Ready to meet your home screen?"
+        blurb={
+          isMinor
+            ? "KAI will send your parent a quick consent email and let you in."
+            : "Ready to meet your home screen?"
+        }
       />
       <div className="rounded-lg border border-glass-border bg-surface p-5 shadow-card">
-        {goalText.trim() && (
-          <Row label="Your goal">{goalText.trim()}</Row>
-        )}
         <Row label="Focus">
           {focusLabels.length ? focusLabels.join(", ") : "Open to anything"}
         </Row>
         <Row label="Tone">
           {tone[0].toUpperCase() + tone.slice(1)}
         </Row>
+        {isMinor && (
+          <Row label="Parent email">
+            <span className="font-mono">{parentEmail}</span>
+          </Row>
+        )}
       </div>
+      {isMinor && (
+        <div className="rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
+          <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
+            <Sparkles size={14} className="text-accent-cool" />
+            Parental consent is required and not skippable
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
+            Your reflections, chats, and any scans stay private to you.
+            Crisis resources are always available.
+          </p>
+        </div>
+      )}
       {error && (
         <p className="rounded-lg border border-danger/30 bg-danger-soft p-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}
+      <Link
+        to="/crisis"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-danger underline-offset-4 hover:underline"
+      >
+        <ShieldAlert size={14} aria-hidden="true" />
+        Open crisis resources
+      </Link>
       {saving && (
         <p className="text-xs text-text-muted">Saving and signing you in…</p>
       )}

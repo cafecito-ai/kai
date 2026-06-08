@@ -101,9 +101,7 @@ export function Chat() {
       // hydration, score, missing logs, etc. The rollup is cheap (pure
       // localStorage reads) — well under 50ms.
       const clientContext = buildKaiClientContext();
-      // Retry transient network failures silently — KAI must never tell the
-      // user it's "thinking slow." A blip should be invisible.
-      const data = await sendWithRetry(trimmed, conversationId, clientContext);
+      const data = await api.chat("kai", trimmed, conversationId, clientContext);
       setConversationId(data.conversationId);
       setMessages((prev) => [
         ...prev,
@@ -117,34 +115,20 @@ export function Chat() {
         },
       ]);
     } catch {
-      // All retries failed (rare: offline / sustained outage). Don't break
-      // immersion with an error message — quietly pull the message back so
-      // they can resend, as if it never went through.
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-      setDraft(trimmed);
+      // Show a soft inline failure as a KAI message — no stack traces, no
+      // status codes (v3 §9 error copy rules).
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "assistant",
+          content: "KAI's thinking slow today — tap to try again.",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     } finally {
       setSending(false);
     }
-  }
-
-  async function sendWithRetry(
-    message: string,
-    convId: string | null,
-    clientContext: unknown,
-    attempts = 3,
-  ): Promise<Awaited<ReturnType<typeof api.chat>>> {
-    let lastErr: unknown;
-    for (let i = 0; i < attempts; i++) {
-      try {
-        return await api.chat("kai", message, convId, clientContext);
-      } catch (e) {
-        lastErr = e;
-        if (i < attempts - 1) {
-          await new Promise((r) => setTimeout(r, 600 * (i + 1)));
-        }
-      }
-    }
-    throw lastErr;
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {

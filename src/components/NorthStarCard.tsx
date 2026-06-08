@@ -44,37 +44,40 @@ export function NorthStarCard() {
         type="button"
         onClick={() => setOpen(true)}
         className="
-          group relative flex flex-col items-center rounded-glass border border-glass-border
-          bg-surface p-5 text-center shadow-card-lg transition
+          group relative flex flex-col rounded-glass border border-glass-border
+          bg-surface p-5 text-left shadow-card-lg transition
           active:scale-[0.99] hover:bg-surface-muted focus-ring
         "
       >
-        {/* The goal name IS the title (per client — not the generic 'Your Goal'). */}
-        <p className="line-clamp-1 max-w-full text-sm font-semibold text-text-primary">
-          {goal ?? "Set your goal"}
-        </p>
-        <Pencil
-          size={12}
-          className="absolute right-3 top-3 text-text-muted opacity-0 transition group-hover:opacity-100"
-          aria-hidden="true"
-        />
-
-        <div className="relative mt-4 inline-flex items-center justify-center">
-          <ScoreRing value={pct} size={104} />
-          <span className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-            {goal ? (
-              <>
-                <span className="font-mono text-[2rem] font-bold text-text-primary">{pct}</span>
-                <span className="mt-0.5 font-mono text-[10px] tracking-wide text-text-muted">%</span>
-              </>
-            ) : (
-              <Target size={24} className="text-text-muted" aria-hidden="true" />
-            )}
-          </span>
+        <div className="flex items-center justify-between">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+            Your goal
+          </p>
+          <Pencil
+            size={12}
+            className="text-text-muted opacity-0 transition group-hover:opacity-100"
+            aria-hidden="true"
+          />
         </div>
 
-        <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
-          {goal ? "Your goal" : "Set a goal"}
+        <div className="mt-3 flex justify-center">
+          <div className="relative inline-flex items-center justify-center">
+            <ScoreRing value={pct} size={96} />
+            <span className="absolute inset-0 flex items-center justify-center">
+              {goal ? (
+                <span className="font-mono text-xl font-bold leading-none text-text-primary">
+                  {pct}
+                  <span className="text-xs text-text-muted">%</span>
+                </span>
+              ) : (
+                <Target size={22} className="text-text-muted" aria-hidden="true" />
+              )}
+            </span>
+          </div>
+        </div>
+
+        <p className="mt-3 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text-primary">
+          {goal ?? "Set your big goal"}
         </p>
         <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
           {goal ? (pct > 0 ? `${pct}% there` : "Log to build it") : "Tap to set"}

@@ -68,7 +68,7 @@ describe("Onboarding (v3 §4)", () => {
     expect(continueBtn).not.toBeDisabled();
   });
 
-  it("walks through step order: name → age → focus → goal → follow-ups → meet → tone → confirm", async () => {
+  it("walks through step order: name → age → focus → hardest → meet → tone → confirm", async () => {
     renderOnboarding();
 
     // Step 1: name
@@ -77,12 +77,15 @@ describe("Onboarding (v3 §4)", () => {
     });
     await clickContinue();
 
-    // Step 2: age — optional, NO parent email (any age continues)
+    // Step 2: age (16 → minor, requires parent email)
     expect(await screen.findByText("2 of 8")).toBeInTheDocument();
-    expect(screen.getByText(/built for you/i)).toBeInTheDocument();
-    expect(
-      screen.queryByPlaceholderText(/parent@example\.com/i),
-    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
+      target: { value: "16" },
+    });
+    fireEvent.change(
+      await screen.findByPlaceholderText(/parent@example\.com/i),
+      { target: { value: "p@example.com" } },
+    );
     await clickContinue();
 
     // Step 3: focus areas — multi-select, must pick at least one
@@ -91,9 +94,9 @@ describe("Onboarding (v3 §4)", () => {
     fireEvent.click(screen.getByRole("button", { name: /better sleep/i }));
     await clickContinue();
 
-    // Step 4: goal — the user's big goal, optional
+    // Step 4: hardest lately — optional, can skip
     expect(await screen.findByText("4 of 8")).toBeInTheDocument();
-    expect(screen.getByText(/working toward, Lev/i)).toBeInTheDocument();
+    expect(screen.getByText(/hardest lately/i)).toBeInTheDocument();
     await clickContinue();
 
     // Step 5: Rawz/5 adaptive follow-ups — skippable, all answers optional
@@ -109,6 +112,8 @@ describe("Onboarding (v3 §4)", () => {
     // Step 7: tone
     expect(await screen.findByText("7 of 8")).toBeInTheDocument();
     expect(screen.getByText("Warm")).toBeInTheDocument();
+    expect(screen.getByText("Balanced")).toBeInTheDocument();
+    expect(screen.getByText("Direct")).toBeInTheDocument();
     await clickContinue();
 
     // Step 8: confirm — final, button reads "Start"
@@ -119,16 +124,25 @@ describe("Onboarding (v3 §4)", () => {
     ).toBeInTheDocument();
   });
 
-  it("any age can continue without a parent email", async () => {
+  it("requires parent email when under 18, allows skip when adult", async () => {
     renderOnboarding();
     fireEvent.change(screen.getByPlaceholderText(/first name/i), {
       target: { value: "A" },
     });
     await clickContinue();
 
-    // A young age does NOT surface a parent-email field and does NOT block.
-    fireEvent.change(screen.getByPlaceholderText(/age/i), {
-      target: { value: "12" },
+    // Under-18 path
+    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
+      target: { value: "15" },
+    });
+    expect(
+      await screen.findByPlaceholderText(/parent@example\.com/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
+
+    // Switch to adult age — parent email field disappears
+    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
+      target: { value: "19" },
     });
     expect(
       screen.queryByPlaceholderText(/parent@example\.com/i),
@@ -138,20 +152,23 @@ describe("Onboarding (v3 §4)", () => {
     ).not.toBeDisabled();
   });
 
-  it("saves the typed goal as the North Star and never calls sendParentConsent", async () => {
-    const { getNorthStar } = await import("../lib/local-northstar");
+  it("sends parental consent on finish for minors", async () => {
     renderOnboarding();
     fireEvent.change(screen.getByPlaceholderText(/first name/i), {
       target: { value: "Lev" },
     });
     await clickContinue();
-    await clickContinue(); // age (skipped)
-    fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
-    await clickContinue(); // focus → goal
-    fireEvent.change(await screen.findByPlaceholderText(/build muscle/i), {
-      target: { value: "Make the varsity team" },
+    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
+      target: { value: "16" },
     });
-    await clickContinue(); // goal → follow-ups
+    fireEvent.change(
+      await screen.findByPlaceholderText(/parent@example\.com/i),
+      { target: { value: "p@example.com" } },
+    );
+    await clickContinue();
+    fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
+    await clickContinue(); // focus → hardest
+    await clickContinue(); // hardest → follow-ups (Rawz/5)
     await clickContinue(); // follow-ups → meet
     await clickContinue(); // meet → tone
     await clickContinue(); // tone → confirm
@@ -161,8 +178,34 @@ describe("Onboarding (v3 §4)", () => {
     await waitFor(() => {
       expect(api.submitIntake).toHaveBeenCalledOnce();
       expect(api.updateUser).toHaveBeenCalledOnce();
+      expect(api.sendParentConsent).toHaveBeenCalledWith({
+        parentEmail: "p@example.com",
+        teenName: "Lev",
+      });
+    });
+  });
+
+  it("does NOT call sendParentConsent for adults", async () => {
+    renderOnboarding();
+    fireEvent.change(screen.getByPlaceholderText(/first name/i), {
+      target: { value: "A" },
+    });
+    await clickContinue();
+    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
+      target: { value: "21" },
+    });
+    await clickContinue();
+    fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
+    await clickContinue(); // focus → hardest
+    await clickContinue(); // hardest → follow-ups (Rawz/5)
+    await clickContinue(); // follow-ups → meet
+    await clickContinue(); // meet → tone
+    await clickContinue(); // tone → confirm
+    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
+    await waitFor(() => {
+      expect(api.submitIntake).toHaveBeenCalledOnce();
+      expect(api.updateUser).toHaveBeenCalledOnce();
     });
     expect(api.sendParentConsent).not.toHaveBeenCalled();
-    expect(getNorthStar()?.goal).toBe("Make the varsity team");
   });
 });

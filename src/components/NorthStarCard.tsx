@@ -63,7 +63,7 @@ export function NorthStarCard() {
             <ScoreRing value={pct} size={96} />
             <span className="absolute inset-0 flex items-center justify-center">
               {goal ? (
-                <span className="font-mono text-xl font-bold leading-none text-text-primary">
+                <span className="font-mono text-3xl font-bold leading-none text-text-primary">
                   {pct}%
                 </span>
               ) : (

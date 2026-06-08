@@ -48,6 +48,9 @@ export type KaiClientContext = {
   };
   /** Where they are in the XP system. */
   level: { current: number; label: string };
+  /** The user's LOCAL hour (0-23). The worker runs in UTC, so without this
+   *  KAI guesses the wrong time of day ("what's going on tonight?" at 3pm). */
+  localHour: number;
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -146,6 +149,7 @@ export function buildKaiClientContext(now: Date = new Date()): KaiClientContext 
       current: levelInfo.level,
       label: labelForLevel(levelInfo.level),
     },
+    localHour: now.getHours(),
   };
 }
 

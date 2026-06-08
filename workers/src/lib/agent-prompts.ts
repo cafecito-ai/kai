@@ -11,12 +11,20 @@ import { buildPhysicalHealthPrompt } from "./prompts/physical-health-prompt";
 import type { AgentDecision } from "./agent-router";
 import type { KaiContext } from "./context";
 
-function timeOfDay(date = new Date()): "morning" | "afternoon" | "evening" | "night" {
-  const h = date.getHours();
+function timeOfDayFromHour(h: number): "morning" | "afternoon" | "evening" | "night" {
   if (h >= 5 && h < 12) return "morning";
   if (h >= 12 && h < 17) return "afternoon";
   if (h >= 17 && h < 22) return "evening";
   return "night";
+}
+
+/** Time of day for the user. PREFER the user's local hour (sent via
+ *  clientContext) — the worker runs in UTC, so a US afternoon would otherwise
+ *  read as evening/night and KAI would say "tonight" at 3pm. */
+function timeOfDay(context?: KaiContext): "morning" | "afternoon" | "evening" | "night" {
+  const localHour = context?.clientContext?.localHour;
+  if (typeof localHour === "number") return timeOfDayFromHour(localHour);
+  return timeOfDayFromHour(new Date().getHours());
 }
 
 function dayOfWeek(date = new Date()): string {
@@ -42,7 +50,7 @@ export function renderMindPrompt(context: KaiContext): string {
     recentPatterns: context.recentPatterns ?? [],
     activeGoals: [],
     conversationHistory: [],
-    timeOfDay: timeOfDay(),
+    timeOfDay: timeOfDay(context),
     dayOfWeek: dayOfWeek(),
   });
 }
@@ -65,7 +73,7 @@ export function renderBodyPrompt(context: KaiContext): string {
     recentFoodLogs: [],
     lastBodyScanSummary: null,
     energyTrend: [],
-    timeOfDay: timeOfDay(),
+    timeOfDay: timeOfDay(context),
     dayOfWeek: dayOfWeek(),
   });
 }

@@ -362,28 +362,32 @@ export function Home() {
 
 function DailyScoreCard({ data }: { data: DailyScoreView }) {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-glass border border-glass-border bg-surface p-5 shadow-card-lg">
+    <div className="flex flex-col items-center rounded-glass border border-glass-border bg-surface p-5 text-center shadow-card-lg">
       <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
         Today
       </p>
 
-      <div className="mt-3 flex justify-center">
-        <div className="relative inline-flex items-center justify-center">
-          <ScoreRing value={data.score} size={96} />
-          <span className="absolute inset-0 flex items-baseline justify-center gap-0.5">
-            <span className="font-mono text-3xl font-bold leading-none text-text-primary">
-              {data.score}
-            </span>
-            <span className="font-mono text-xs text-text-muted">/100</span>
+      <div className="relative mt-4 inline-flex items-center justify-center">
+        <ScoreRing value={data.score} size={104} />
+        <span className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+          <span className="font-mono text-[2rem] font-bold text-text-primary">
+            {data.score}
           </span>
-        </div>
+          <span className="mt-0.5 font-mono text-[10px] tracking-wide text-text-muted">
+            / 100
+          </span>
+        </span>
       </div>
 
-      <p className="mt-3 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text-primary">
+      <p className="mt-4 line-clamp-1 text-sm font-semibold text-text-primary">
         {data.bandLabel}
       </p>
       <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-        {data.trend > 0 ? `+${data.trend} vs yesterday` : data.streak > 0 ? `${data.streak}-day streak` : "Today's score"}
+        {data.trend > 0
+          ? `+${data.trend} vs yesterday`
+          : data.streak > 0
+            ? `${data.streak}-day streak`
+            : "Today's score"}
       </p>
     </div>
   );

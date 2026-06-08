@@ -121,6 +121,10 @@ function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClient
       current: Math.max(1, Math.floor(num(level.current) ?? 1)),
       label: str(level.label, 40),
     },
+    localHour: (() => {
+      const h = num(r.localHour);
+      return h != null && h >= 0 && h <= 23 ? Math.floor(h) : undefined;
+    })(),
   };
 }
 

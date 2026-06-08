@@ -22,11 +22,9 @@ import {
   ArrowRight,
   Brain,
   Dumbbell,
-  ShieldAlert,
-  Sparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
@@ -188,14 +186,13 @@ const TOTAL_STEPS = 8;
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { setKai, setPrimaryEngine, setConsentPending } = useUserStore();
+  const { setKai, setPrimaryEngine } = useUserStore();
 
   const [step, setStep] = useState(0);
   const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
 
   const [firstName, setFirstName] = useState(demoBuild?.firstName ?? "");
   const [age, setAge] = useState("");
-  const [parentEmail, setParentEmail] = useState("");
   const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([]);
   const [hardestLately, setHardestLately] = useState("");
   // Rawz/5 — adaptive follow-up responses keyed by question id.
@@ -208,7 +205,6 @@ export function Onboarding() {
   const [error, setError] = useState("");
 
   const ageNum = Number(age) || undefined;
-  const isMinor = Boolean(ageNum && ageNum < 18);
   const primaryEngine = useMemo(() => suggestEngine(focusAreas), [focusAreas]);
 
   const canAdvance = useMemo(() => {
@@ -216,9 +212,9 @@ export function Onboarding() {
       case 0:
         return firstName.trim().length > 0;
       case 1:
-        if (!ageNum || ageNum < 13 || ageNum > 99) return false;
-        if (isMinor) return parentEmail.includes("@");
-        return true;
+        // Age is optional and never gated — any age can continue, no parent
+        // verification (per Ratner + Lev approval, 2026-06-08).
+        return age.trim() === "" || (ageNum !== undefined && ageNum >= 1 && ageNum <= 120);
       case 2:
         return focusAreas.length > 0;
       case 3: // hardest lately
@@ -231,7 +227,7 @@ export function Onboarding() {
       default:
         return true;
     }
-  }, [step, firstName, ageNum, isMinor, parentEmail, focusAreas, saving]);
+  }, [step, firstName, age, ageNum, focusAreas, saving]);
 
   function next() {
     if (!canAdvance) return;
@@ -272,16 +268,8 @@ export function Onboarding() {
         kaiTone,
         primaryEngine,
         age: ageNum,
-        parentEmail: isMinor ? parentEmail.trim() : undefined,
         onboardingCompleted: true,
       });
-      if (isMinor && parentEmail.trim()) {
-        await api.sendParentConsent({
-          parentEmail: parentEmail.trim(),
-          teenName: firstName.trim(),
-        });
-        setConsentPending(parentEmail.trim());
-      }
       setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
       // Flow: Welcome → Onboarding → Home. Welcome already happened
@@ -314,9 +302,6 @@ export function Onboarding() {
             <AgeStep
               age={age}
               setAge={setAge}
-              parentEmail={parentEmail}
-              setParentEmail={setParentEmail}
-              isMinor={isMinor}
             />
           )}
           {step === 2 && (
@@ -345,8 +330,6 @@ export function Onboarding() {
           {step === 7 && (
             <ConfirmStep
               firstName={firstName}
-              isMinor={isMinor}
-              parentEmail={parentEmail}
               focusAreas={focusAreas}
               tone={kaiTone}
               error={error}
@@ -407,22 +390,16 @@ function NameStep({
 function AgeStep({
   age,
   setAge,
-  parentEmail,
-  setParentEmail,
-  isMinor,
 }: {
   age: string;
   setAge: (v: string) => void;
-  parentEmail: string;
-  setParentEmail: (v: string) => void;
-  isMinor: boolean;
 }) {
   return (
     <div className="space-y-6">
       <Heading
         eyebrow="step 2"
         title="How old are you?"
-        blurb="KAI is built for ages 13–18."
+        blurb="KAI is built for you."
       />
       <input
         autoFocus
@@ -438,30 +415,6 @@ function AgeStep({
           shadow-card focus-ring
         "
       />
-      {isMinor && (
-        <div className="space-y-3 rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
-          <p className="text-sm font-medium text-text-primary">
-            We need a parent or guardian's email
-          </p>
-          <p className="text-xs leading-relaxed text-text-secondary">
-            KAI sends them a quick consent email so they know you're using
-            the app. They won't see your reflections, chats, or scans —
-            only consent confirmation.
-          </p>
-          <input
-            type="email"
-            value={parentEmail}
-            onChange={(e) => setParentEmail(e.target.value)}
-            placeholder="parent@example.com"
-            className="
-              w-full rounded-md border border-glass-border bg-surface
-              px-3 py-2.5 text-sm
-              text-text-primary placeholder:text-text-muted
-              focus-ring
-            "
-          />
-        </div>
-      )}
     </div>
   );
 }
@@ -757,16 +710,12 @@ function ToneStep({
 
 function ConfirmStep({
   firstName,
-  isMinor,
-  parentEmail,
   focusAreas,
   tone,
   error,
   saving,
 }: {
   firstName: string;
-  isMinor: boolean;
-  parentEmail: string;
   focusAreas: FocusAreaId[];
   tone: KaiTone;
   error: string;
@@ -781,11 +730,7 @@ function ConfirmStep({
       <Heading
         eyebrow="step 8"
         title={`You're set, ${firstName}.`}
-        blurb={
-          isMinor
-            ? "KAI will send your parent a quick consent email and let you in."
-            : "Ready to meet your home screen?"
-        }
+        blurb="Ready to meet your home screen?"
       />
       <div className="rounded-lg border border-glass-border bg-surface p-5 shadow-card">
         <Row label="Focus">
@@ -794,36 +739,12 @@ function ConfirmStep({
         <Row label="Tone">
           {tone[0].toUpperCase() + tone.slice(1)}
         </Row>
-        {isMinor && (
-          <Row label="Parent email">
-            <span className="font-mono">{parentEmail}</span>
-          </Row>
-        )}
       </div>
-      {isMinor && (
-        <div className="rounded-lg border border-glass-border bg-accent-cool-soft/40 p-4">
-          <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
-            <Sparkles size={14} className="text-accent-cool" />
-            Parental consent is required and not skippable
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
-            Your reflections, chats, and any scans stay private to you.
-            Crisis resources are always available.
-          </p>
-        </div>
-      )}
       {error && (
         <p className="rounded-lg border border-danger/30 bg-danger-soft p-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}
-      <Link
-        to="/crisis"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-danger underline-offset-4 hover:underline"
-      >
-        <ShieldAlert size={14} aria-hidden="true" />
-        Open crisis resources
-      </Link>
       {saving && (
         <p className="text-xs text-text-muted">Saving and signing you in…</p>
       )}

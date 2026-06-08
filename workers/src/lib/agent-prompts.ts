@@ -27,7 +27,9 @@ function timeOfDay(context?: KaiContext): "morning" | "afternoon" | "evening" | 
   return timeOfDayFromHour(new Date().getHours());
 }
 
-function dayOfWeek(date = new Date()): string {
+function dayOfWeek(context?: KaiContext, date = new Date()): string {
+  const localWeekday = context?.clientContext?.localWeekday;
+  if (localWeekday) return localWeekday;
   return date.toLocaleDateString("en-US", { weekday: "long" });
 }
 
@@ -51,7 +53,7 @@ export function renderMindPrompt(context: KaiContext): string {
     activeGoals: [],
     conversationHistory: [],
     timeOfDay: timeOfDay(context),
-    dayOfWeek: dayOfWeek(),
+    dayOfWeek: dayOfWeek(context),
   });
 }
 
@@ -74,7 +76,7 @@ export function renderBodyPrompt(context: KaiContext): string {
     lastBodyScanSummary: null,
     energyTrend: [],
     timeOfDay: timeOfDay(context),
-    dayOfWeek: dayOfWeek(),
+    dayOfWeek: dayOfWeek(context),
   });
 }
 

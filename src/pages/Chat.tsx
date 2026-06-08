@@ -101,7 +101,23 @@ export function Chat() {
       // hydration, score, missing logs, etc. The rollup is cheap (pure
       // localStorage reads) — well under 50ms.
       const clientContext = buildKaiClientContext();
-      const data = await api.chat("kai", trimmed, conversationId, clientContext);
+      // Silent auto-retry on transient failures. A hiccup should never
+      // surface as an error/CTA (breaks immersion) — the user just sees KAI
+      // "thinking" a beat longer while we quietly retry with backoff.
+      let data: Awaited<ReturnType<typeof api.chat>> | null = null;
+      let lastErr: unknown;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          data = await api.chat("kai", trimmed, conversationId, clientContext);
+          break;
+        } catch (e) {
+          lastErr = e;
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+          }
+        }
+      }
+      if (!data) throw lastErr;
       setConversationId(data.conversationId);
       setMessages((prev) => [
         ...prev,
@@ -115,14 +131,14 @@ export function Chat() {
         },
       ]);
     } catch {
-      // Show a soft inline failure as a KAI message — no stack traces, no
-      // status codes (v3 §9 error copy rules).
+      // Last resort, only after retries: a soft, in-voice line — never an
+      // error or a "try again" button, so it stays human and immersive.
       setMessages((prev) => [
         ...prev,
         {
           id: `err-${Date.now()}`,
           role: "assistant",
-          content: "KAI's thinking slow today — tap to try again.",
+          content: "Mind saying that again? I lost the thread for a second.",
           createdAt: new Date().toISOString(),
         },
       ]);

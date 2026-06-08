@@ -34,7 +34,7 @@ const TYPES: Array<{ id: WorkoutType; label: string; sub: string; emoji: string 
   { id: "other", label: "Other", sub: "Anything else", emoji: "✨" },
 ];
 
-const INTENSITY_LABELS = ["Easy", "Comfortable", "Moderate", "Hard", "Max"];
+const INTENSITY_LABELS = ["Easy", "Light", "Moderate", "Hard", "Max"];
 
 export function WorkoutLog() {
   const navigate = useNavigate();

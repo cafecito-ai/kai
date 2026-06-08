@@ -134,10 +134,13 @@ function ThisWeekCard({
   streak: number;
 }) {
   const tiles: Array<{ icon: LucideIcon; label: string; value: number; tint: string }> = [
+    // "­" = soft hyphen: gives these single long words a break point so
+    // they wrap to two lines with a dash (WORK-/OUTS, JOUR-/NALS) instead of
+    // overflowing the tile — matching how "Check-ins" / "Sleep logs" wrap.
     { icon: Heart, label: "Check-ins", value: tallies.checkIns, tint: "text-accent-cool" },
     { icon: Moon, label: "Sleep logs", value: tallies.sleepLogs, tint: "text-accent" },
-    { icon: Dumbbell, label: "Workouts", value: tallies.workouts, tint: "text-accent-warm" },
-    { icon: NotebookPen, label: "Journals", value: tallies.journals, tint: "text-accent-cool" },
+    { icon: Dumbbell, label: "Work­outs", value: tallies.workouts, tint: "text-accent-warm" },
+    { icon: NotebookPen, label: "Jour­nals", value: tallies.journals, tint: "text-accent-cool" },
   ];
   return (
     <section className="mb-5 rounded-glass border border-glass-border bg-surface p-5 shadow-card-lg">

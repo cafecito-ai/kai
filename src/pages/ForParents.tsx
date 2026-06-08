@@ -12,7 +12,7 @@ export function ForParents() {
       </AppSurface>
       <AppSurface className="p-4 sm:p-6">
         <h2 className="font-display text-2xl font-black tracking-normal">Consent and safety</h2>
-        <p className="mt-2 leading-7 text-muted">Under-18 onboarding includes a parental consent path. Severe safety categories are logged for operations review and can trigger parent-notification workflows when configured.</p>
+        <p className="mt-2 leading-7 text-muted">Kai asks for age to tune language and safety defaults. Severe safety categories are logged for operations review and can trigger parent-notification workflows when configured.</p>
       </AppSurface>
     </AppPage>
   );

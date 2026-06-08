@@ -52,7 +52,7 @@ afterEach(() => {
 describe("Onboarding (v3 §4)", () => {
   it("shows step 1 (name) on first render", () => {
     renderOnboarding();
-    expect(screen.getByText("1 of 8")).toBeInTheDocument();
+    expect(screen.getByText("1 of 9")).toBeInTheDocument();
     expect(
       screen.getByText(/what should kai call you/i),
     ).toBeInTheDocument();
@@ -77,30 +77,26 @@ describe("Onboarding (v3 §4)", () => {
     });
     await clickContinue();
 
-    // Step 2: age (16 → minor, requires parent email)
-    expect(await screen.findByText("2 of 8")).toBeInTheDocument();
+    // Step 2: age — optional, no parent verification
+    expect(await screen.findByText("2 of 9")).toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
       target: { value: "16" },
     });
-    fireEvent.change(
-      await screen.findByPlaceholderText(/parent@example\.com/i),
-      { target: { value: "p@example.com" } },
-    );
     await clickContinue();
 
     // Step 3: focus areas — multi-select, must pick at least one
-    expect(await screen.findByText("3 of 8")).toBeInTheDocument();
+    expect(await screen.findByText("3 of 9")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
     fireEvent.click(screen.getByRole("button", { name: /better sleep/i }));
     await clickContinue();
 
     // Step 4: hardest lately — optional, can skip
-    expect(await screen.findByText("4 of 8")).toBeInTheDocument();
+    expect(await screen.findByText("4 of 9")).toBeInTheDocument();
     expect(screen.getByText(/hardest lately/i)).toBeInTheDocument();
     await clickContinue();
 
     // Step 5: Rawz/5 adaptive follow-ups — skippable, all answers optional
-    expect(await screen.findByText("5 of 8")).toBeInTheDocument();
+    expect(await screen.findByText("5 of 9")).toBeInTheDocument();
     await clickContinue();
 
     // Step 6: meet KAI — informational
@@ -110,39 +106,37 @@ describe("Onboarding (v3 §4)", () => {
     await clickContinue();
 
     // Step 7: tone
-    expect(await screen.findByText("7 of 8")).toBeInTheDocument();
+    expect(await screen.findByText("7 of 9")).toBeInTheDocument();
     expect(screen.getByText("Warm")).toBeInTheDocument();
     expect(screen.getByText("Balanced")).toBeInTheDocument();
     expect(screen.getByText("Direct")).toBeInTheDocument();
     await clickContinue();
 
-    // Step 8: confirm — final, button reads "Start"
-    expect(await screen.findByText("8 of 8")).toBeInTheDocument();
+    // Step 8: big goal — optional, skippable
+    expect(await screen.findByText("8 of 9")).toBeInTheDocument();
+    expect(
+      screen.getByText(/what are you working toward/i),
+    ).toBeInTheDocument();
+    await clickContinue();
+
+    // Step 9: confirm — final, button reads "Start"
+    expect(await screen.findByText("9 of 9")).toBeInTheDocument();
     expect(screen.getByText(/you're set/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /^start$/i }),
     ).toBeInTheDocument();
   });
 
-  it("requires parent email when under 18, allows skip when adult", async () => {
+  it("no longer asks for a parent email, and never gates the age step", async () => {
     renderOnboarding();
     fireEvent.change(screen.getByPlaceholderText(/first name/i), {
       target: { value: "A" },
     });
     await clickContinue();
 
-    // Under-18 path
+    // Any age can continue — no parent-email field, no verification gate.
     fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
       target: { value: "15" },
-    });
-    expect(
-      await screen.findByPlaceholderText(/parent@example\.com/i),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
-
-    // Switch to adult age — parent email field disappears
-    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
-      target: { value: "19" },
     });
     expect(
       screen.queryByPlaceholderText(/parent@example\.com/i),
@@ -152,7 +146,7 @@ describe("Onboarding (v3 §4)", () => {
     ).not.toBeDisabled();
   });
 
-  it("sends parental consent on finish for minors", async () => {
+  it("never sends parental consent (consent flow removed)", async () => {
     renderOnboarding();
     fireEvent.change(screen.getByPlaceholderText(/first name/i), {
       target: { value: "Lev" },
@@ -161,46 +155,14 @@ describe("Onboarding (v3 §4)", () => {
     fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
       target: { value: "16" },
     });
-    fireEvent.change(
-      await screen.findByPlaceholderText(/parent@example\.com/i),
-      { target: { value: "p@example.com" } },
-    );
     await clickContinue();
     fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
     await clickContinue(); // focus → hardest
     await clickContinue(); // hardest → follow-ups (Rawz/5)
     await clickContinue(); // follow-ups → meet
     await clickContinue(); // meet → tone
-    await clickContinue(); // tone → confirm
-
-    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
-
-    await waitFor(() => {
-      expect(api.submitIntake).toHaveBeenCalledOnce();
-      expect(api.updateUser).toHaveBeenCalledOnce();
-      expect(api.sendParentConsent).toHaveBeenCalledWith({
-        parentEmail: "p@example.com",
-        teenName: "Lev",
-      });
-    });
-  });
-
-  it("does NOT call sendParentConsent for adults", async () => {
-    renderOnboarding();
-    fireEvent.change(screen.getByPlaceholderText(/first name/i), {
-      target: { value: "A" },
-    });
-    await clickContinue();
-    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
-      target: { value: "21" },
-    });
-    await clickContinue();
-    fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
-    await clickContinue(); // focus → hardest
-    await clickContinue(); // hardest → follow-ups (Rawz/5)
-    await clickContinue(); // follow-ups → meet
-    await clickContinue(); // meet → tone
-    await clickContinue(); // tone → confirm
+    await clickContinue(); // tone → big goal
+    await clickContinue(); // big goal → confirm
     fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
     await waitFor(() => {
       expect(api.submitIntake).toHaveBeenCalledOnce();

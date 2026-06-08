@@ -372,7 +372,7 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
           <ScoreRing value={data.score} size={96} />
           <span className="absolute inset-0 flex items-center justify-center">
             <span className="flex items-baseline gap-0.5">
-              <span className="font-mono text-3xl font-bold leading-none text-text-primary">
+              <span className="font-mono text-2xl font-bold leading-none text-text-primary">
                 {data.score}
               </span>
               <span className="font-mono text-xs text-text-muted">/100</span>

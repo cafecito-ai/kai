@@ -162,13 +162,13 @@ function ThisWeekCard({
         {tiles.map((t) => (
           <div
             key={t.label}
-            className="rounded-lg border border-glass-border bg-surface-muted/40 p-2.5 text-center"
+            className="rounded-lg border border-glass-border bg-surface-muted/40 px-1.5 py-2.5 text-center"
           >
             <t.icon size={14} className={`mx-auto ${t.tint}`} aria-hidden="true" />
             <p className="mt-1.5 font-mono text-xl font-bold leading-none text-text-primary">
               {t.value}
             </p>
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted">
+            <p className="mt-1 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.02em] leading-tight text-text-muted">
               {t.label}
             </p>
           </div>

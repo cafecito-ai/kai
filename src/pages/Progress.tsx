@@ -328,15 +328,22 @@ function SubScoreTrends({ days }: { days: DayBucket[] }) {
                   {latest != null ? `${latest}/100` : "—"}
                 </span>
               </div>
-              <div className="flex items-end gap-1" style={{ height: 36 }}>
+              <div className="flex items-end gap-1.5" style={{ height: 36 }}>
                 {series.map((v, idx) => {
-                  const pct = v != null ? (v / 100) * 100 : 4;
+                  const isToday = idx === series.length - 1;
+                  const h = v != null ? Math.max(8, v) : 5;
                   return (
                     <div
                       key={idx}
-                      className={`flex-1 rounded-t ${v != null ? track.bar : "bg-surface-muted"}`}
-                      style={{ height: `${Math.max(4, pct)}%` }}
-                    />
+                      className="flex h-full flex-1 flex-col items-center justify-end"
+                    >
+                      <div
+                        className={`w-2/3 rounded-t-md ${
+                          v != null ? track.bar : "bg-surface-muted"
+                        } ${isToday ? "ring-1 ring-text-primary/15" : ""}`}
+                        style={{ height: `${h}%` }}
+                      />
+                    </div>
                   );
                 })}
               </div>

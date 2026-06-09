@@ -271,7 +271,13 @@ async function handleRoutedChat(
   const memory = await loadUserMemory(env, userId);
   let system = renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
   if (scheduleUpdate) {
-    system += `\n\nSCHEDULE UPDATE: The teen just asked to ${scheduleUpdate.action === "replace" ? "set up a new routine" : "add to their schedule"} — it's being saved to their Schedule right now (${scheduleUpdate.items.length} item${scheduleUpdate.items.length === 1 ? "" : "s"}). In ONE warm, natural line, confirm it's in their Schedule and they can follow it there. Don't list every item back at them.`;
+    const what =
+      scheduleUpdate.action === "replace"
+        ? "set up a new system"
+        : scheduleUpdate.action === "remove"
+          ? `drop "${scheduleUpdate.removeQuery ?? "that"}" from their system`
+          : "add to their system";
+    system += `\n\nSYSTEM UPDATE: The teen just asked to ${what} — it's being saved to their System (in the Schedule section) right now. In ONE warm, natural line, confirm it's done and they can see it in their System. Don't list every item back at them.`;
   }
 
   // Our chat engine: depth turns run on the tiered model (Sonnet) with a real

@@ -87,8 +87,9 @@ export const api = {
       reply: string;
       safetyEvent?: unknown;
       scheduleUpdate?: {
-        action: "add" | "replace";
-        items: Array<{ title: string; days: number[]; time: string | null; category: "fitness" | "study" | "mind" | "routine" | "other" }>;
+        action: "add" | "replace" | "remove";
+        items: Array<{ section?: string; title: string; detail?: string; days: number[]; time: string | null }>;
+        removeQuery?: string;
         summary: string;
       };
     }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
@@ -107,11 +108,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ goal }),
     }),
-  // Schedule: turn a free-text routine request into structured weekly items.
-  scheduleGenerate: (req: string) =>
+  // Schedule/system: turn the goal (+ optional free-text) into a full lifestyle
+  // system — daily habits, workouts, sleep, routines, mindset, things to avoid.
+  scheduleGenerate: (req: string, goal?: string) =>
     request<{
-      items: Array<{ title: string; days: number[]; time: string | null; category: "fitness" | "study" | "mind" | "routine" | "other" }>;
-    }>("/api/schedule/generate", { method: "POST", body: JSON.stringify({ request: req }) }),
+      items: Array<{ section: string; title: string; detail?: string; days: number[]; time: string | null }>;
+    }>("/api/schedule/generate", { method: "POST", body: JSON.stringify({ request: req, goal }) }),
   getDailyScoreToday: () =>
     request<{
       date: string;

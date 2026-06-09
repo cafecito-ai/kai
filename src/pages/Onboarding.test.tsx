@@ -114,7 +114,7 @@ describe("Onboarding (v3 §4)", () => {
 
     // Step 9: schedule — optional yes/no
     expect(await screen.findByText("9 of 10")).toBeInTheDocument();
-    expect(screen.getByText(/build you a schedule/i)).toBeInTheDocument();
+    expect(screen.getByText(/build you a system/i)).toBeInTheDocument();
     await clickContinue();
 
     // Step 10: confirm — final, button reads "Start"

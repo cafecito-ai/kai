@@ -395,6 +395,7 @@ function DoneState({
             {result.items.map((item, i) => (
               <li key={`${item.name}-${i}`} className="text-sm text-text-primary">
                 · {item.name}
+                {item.estimatedGrams ? ` · ~${Math.round(item.estimatedGrams)}g` : ""}
               </li>
             ))}
           </ul>

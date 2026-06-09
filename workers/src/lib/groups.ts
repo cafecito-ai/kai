@@ -143,14 +143,16 @@ export function getTemplate(id: string): EncouragementTemplate | null {
 // Adult/teen gating (T-036)
 // ─────────────────────────────────────────────────────────────────────
 
-/** Per CLAUDE.md §5: "Adults (18+) cannot join teen groups." Our app is
- *  teen-focused — every group is a teen group, so any user age ≥ 18 is blocked.
- *  Unknown age (null) is ALLOWED: users consent as 13–18 at onboarding, and a
- *  missing age must not block group creation (that was the "won't let me create
- *  a group" bug — anonymous/incomplete-profile users have no age on file). */
-export function canJoinTeenGroup(age: number | null): boolean {
-  if (age === null) return true;
-  return age < 18;
+/** Group eligibility. The app is now open to ALL ages (the 13–18 gate and
+ *  parental-consent requirement were removed per product direction, 2026-06-08),
+ *  so groups must not block by age either — an age ≥ 18 was the "groups still
+ *  don't work" bug for adult testers. Any user can create/join a group.
+ *
+ *  NOTE (child-safety): this lets adults and minors share a social group. If the
+ *  product later wants age-segregated groups, reintroduce a gate here — this is
+ *  the single chokepoint both create and join run through. */
+export function canJoinTeenGroup(_age: number | null): boolean {
+  return true;
 }
 
 // ─────────────────────────────────────────────────────────────────────

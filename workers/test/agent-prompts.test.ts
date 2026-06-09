@@ -46,6 +46,25 @@ describe("renderMindPrompt", () => {
     const prompt = renderMindPrompt({ ...ctx, age: null });
     expect(prompt).toContain("Age: 16");
   });
+
+  it("uses the client-local weekday with the client-local hour", () => {
+    const prompt = renderMindPrompt({
+      ...ctx,
+      clientContext: {
+        todayScore: { final: null, mental: null, sleep: null, mood: null },
+        recentActivity: [],
+        missingLogs: [],
+        activeGoals: [],
+        activeChallenges: [],
+        hydration: { todayGlasses: 0, todayTarget: 8, goalHitsLast7Days: 0 },
+        level: { current: 1, label: "Starting out" },
+        localHour: 20,
+        localWeekday: "Sunday",
+      },
+    });
+
+    expect(prompt).toContain("Time: evening on Sunday");
+  });
 });
 
 describe("renderBodyPrompt", () => {

@@ -82,7 +82,18 @@ export const api = {
   getUser: () =>
     request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
   chat: (engine: EngineId | "kai", message: string, conversationId?: string | null, clientContext?: unknown) =>
-    request<{ conversationId: string; reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
+    request<{
+      conversationId: string;
+      reply: string;
+      safetyEvent?: unknown;
+      scheduleUpdate?: {
+        action: "add" | "replace" | "remove";
+        items: Array<{ section?: string; title: string; detail?: string; days: number[]; time: string | null }>;
+        removeIds?: string[];
+        removeQuery?: string;
+        summary: string;
+      };
+    }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
       method: "POST",
       // clientContext (Rawz/8 — KAI memory): a roll-up of the user's
       // recent activity so KAI can speak to what they've been DOING.
@@ -98,6 +109,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ goal }),
     }),
+  // Schedule/system: turn the goal (+ optional free-text) into a full lifestyle
+  // system — daily habits, workouts, sleep, routines, mindset, things to avoid.
+  scheduleGenerate: (req: string, goal?: string) =>
+    request<{
+      items: Array<{ section: string; title: string; detail?: string; days: number[]; time: string | null }>;
+    }>("/api/schedule/generate", { method: "POST", body: JSON.stringify({ request: req, goal }) }),
   getDailyScoreToday: () =>
     request<{
       date: string;

@@ -36,6 +36,7 @@ import { DesignTokens } from "./pages/DesignTokens";
 import { ForParents } from "./pages/ForParents";
 import { Goals } from "./pages/Goals";
 import { Groups } from "./pages/Groups";
+import { Schedule } from "./pages/Schedule";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
@@ -100,8 +101,11 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/chat" element={protectedOnboarding(<Chat />)} />
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />
+          <Route path="/sleep" element={<Navigate to="/sleep/log" replace />} />
           <Route path="/sleep/log" element={protectedOnboarding(<SleepLog />)} />
+          <Route path="/workout" element={<Navigate to="/workout/log" replace />} />
           <Route path="/workout/log" element={protectedOnboarding(<WorkoutLog />)} />
+          <Route path="/food" element={<Navigate to="/food/log" replace />} />
           <Route path="/food/log" element={protectedOnboarding(<FoodLog />)} />
           <Route path="/mobility" element={protectedOnboarding(<Mobility />)} />
           <Route path="/mobility/:id" element={protectedOnboarding(<MobilityPlayer />)} />
@@ -125,6 +129,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
           <Route path="/groups" element={protectedOnboarding(<Groups />)} />
+          <Route path="/schedule" element={protectedOnboarding(<Schedule />)} />
           <Route path="/groups/inbox" element={protectedOnboarding(<GroupInbox />)} />
           <Route path="/groups/:id" element={protectedOnboarding(<GroupDetail />)} />
           <Route path="/groups/:id/leaderboard" element={protectedOnboarding(<GroupLeaderboard />)} />

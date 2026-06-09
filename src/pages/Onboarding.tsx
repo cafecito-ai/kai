@@ -1,17 +1,17 @@
 // Onboarding — KAI v3 §4 step order.
 //
 //   1. Name input          (user's first name)
-//   2. Age + parent email  (parent email required when under 18)
+//   2. Age                 (optional, non-gating)
 //   3. Focus areas         (multi-select chips, what they want to work on)
 //   4. Hardest lately      (free text, optional, skippable)
 //   5. Meet KAI            (intro both agents: Mind + Body)
 //   6. Tone picker         (warm / balanced / direct)
-//   7. Confirm + consent   (parental consent fires automatically for under-18)
+//   7. Goal                (optional North Star seed)
+//   8. Confirm             (save and enter the app)
 //
-// Target: under 90 seconds, ≤7 steps. Existing API contracts preserved:
-// api.submitIntake, api.updateUser, api.sendParentConsent. The v0 three-engine
-// picker + 6-question intake battery are retired in favor of focus-area
-// multi-select + a single free-text question (covers v3 §4 step 4).
+// Existing API contracts preserved: api.submitIntake and api.updateUser.
+// The v0 three-engine picker + 6-question intake battery are retired in favor
+// of focus-area multi-select + a single free-text question (covers v3 §4 step 4).
 //
 // requires_safety_review per AGENT_PLAN — touches the consent flow. Ratner
 // has authorized build-phase changes per DECISIONS.md D-007; production sign-
@@ -34,6 +34,7 @@ import {
   type FollowUpResponse,
 } from "../lib/onboarding-followups";
 import { seedNorthStarFromFocus, setNorthStar } from "../lib/local-northstar";
+import { setSchedule } from "../lib/local-schedule";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -182,7 +183,7 @@ function isKaiTone(v: unknown): v is KaiTone {
 // Rawz/5 — 8 steps now (inserted adaptive follow-up between Hardest
 // and Meet KAI). Net flow stays under 90 seconds for most users since
 // the new step is at most 3 quick-tap questions, all skippable.
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -197,6 +198,9 @@ export function Onboarding() {
   const [hardestLately, setHardestLately] = useState("");
   // The user's one big goal — becomes the North Star title on Home.
   const [bigGoal, setBigGoal] = useState("");
+  // Optional custom schedule KAI builds from a free-text request.
+  const [wantSchedule, setWantSchedule] = useState<"yes" | "no" | null>(null);
+  const [scheduleText, setScheduleText] = useState("");
   // Rawz/5 — adaptive follow-up responses keyed by question id.
   const [followUps, setFollowUps] = useState<FollowUpResponse>({});
   const [kaiName] = useState(demoBuild?.kaiName?.trim() || "KAI");
@@ -224,8 +228,9 @@ export function Onboarding() {
       case 5: // meet KAI
       case 6: // tone
       case 7: // big goal (optional, skippable)
+      case 8: // schedule (optional — yes/no)
         return true;
-      case 8: // confirm + save
+      case 9: // confirm + save
         return !saving;
       default:
         return true;
@@ -257,7 +262,6 @@ export function Onboarding() {
       // so the Mind + Body agents have richer day-one context.
       const questions = pickFollowUps(focusAreas);
       Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
-      await api.submitIntake(keyedResponses);
       // Seed the long-term North Star goal from what they chose to work on.
       // Shown next to the Daily Score on Home; editable there.
       // The big goal they typed becomes the North Star title; if they
@@ -266,6 +270,18 @@ export function Onboarding() {
         setNorthStar(bigGoal.trim(), "custom");
       } else {
         seedNorthStarFromFocus(focusAreas);
+      }
+      // Optional custom system — generate it from their description + goal.
+      // NON-blocking: a full system is a bigger model call, so we don't make
+      // onboarding hang on it. It fills into their System section once it lands.
+      if (wantSchedule === "yes" && scheduleText.trim()) {
+        const g = bigGoal.trim() || undefined;
+        void api
+          .scheduleGenerate(scheduleText.trim(), g)
+          .then((res) => {
+            if (res.items.length > 0) setSchedule(res.items);
+          })
+          .catch(() => {});
       }
       // displayName = the teen's name (what KAI calls them). kaiName = what
       // they call KAI. Previously firstName only landed in user_intake.summary
@@ -279,6 +295,10 @@ export function Onboarding() {
         age: ageNum,
         onboardingCompleted: true,
       });
+      // Intake summarization can take a few seconds because it may call the
+      // model. Do not hold the teen on the final screen after the required
+      // onboarding-complete write has succeeded.
+      void api.submitIntake(keyedResponses).catch(() => {});
       setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
       // Flow: Welcome → Onboarding → Home. Welcome already happened
@@ -345,6 +365,18 @@ export function Onboarding() {
             />
           )}
           {step === 8 && (
+            <ScheduleStep
+              choice={wantSchedule}
+              setChoice={setWantSchedule}
+              text={scheduleText}
+              onChangeText={setScheduleText}
+              onSkip={() => {
+                setWantSchedule("no");
+                next();
+              }}
+            />
+          )}
+          {step === 9 && (
             <ConfirmStep
               firstName={firstName}
               focusAreas={focusAreas}
@@ -527,6 +559,75 @@ function HardestStep({
       >
         Skip for now
       </button>
+    </div>
+  );
+}
+
+function ScheduleStep({
+  choice,
+  setChoice,
+  text,
+  onChangeText,
+  onSkip,
+}: {
+  choice: "yes" | "no" | null;
+  setChoice: (c: "yes" | "no") => void;
+  text: string;
+  onChangeText: (v: string) => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 9 — optional"
+        title="Want KAI to build your system?"
+        blurb="A full lifestyle system around your goal — habits, workouts, sleep, routines, mindset, and what to avoid. Totally optional, and you can change any part of it later."
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setChoice("yes")}
+          aria-pressed={choice === "yes"}
+          className={`flex h-12 flex-1 items-center justify-center rounded-full border text-sm font-semibold transition ${
+            choice === "yes"
+              ? "border-text-primary bg-text-primary text-background shadow-card-lg"
+              : "border-glass-border bg-surface text-text-primary shadow-card hover:bg-surface-muted"
+          }`}
+        >
+          Yes, build one
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          aria-pressed={choice === "no"}
+          className="flex h-12 flex-1 items-center justify-center rounded-full border border-glass-border bg-surface text-sm font-semibold text-text-secondary shadow-card transition hover:bg-surface-muted"
+        >
+          No schedule
+        </button>
+      </div>
+
+      {choice === "yes" && (
+        <div className="space-y-2 animate-fade-slide-up">
+          <p className="text-sm text-text-secondary">
+            Describe what you're going for in a sentence — KAI builds the whole system.
+          </p>
+          <textarea
+            autoFocus
+            value={text}
+            onChange={(e) => onChangeText(e.target.value.slice(0, 200))}
+            rows={3}
+            placeholder='e.g. "Build my whole system around getting stronger and disciplined"'
+            className="
+              w-full resize-none rounded-lg border border-glass-border bg-surface
+              px-4 py-3.5 text-base text-text-primary placeholder:text-text-muted
+              shadow-card focus-ring
+            "
+          />
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            Anything works — a workout split, a study routine, a morning routine.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -795,7 +896,7 @@ function ConfirmStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 9"
+        eyebrow="step 10"
         title={`You're set, ${firstName}.`}
         blurb="Ready to meet your home screen?"
       />
@@ -812,9 +913,7 @@ function ConfirmStep({
           {error}
         </p>
       )}
-      {saving && (
-        <p className="text-xs text-text-muted">Saving and signing you in…</p>
-      )}
+      {saving && <p className="text-xs text-text-muted">Finishing setup…</p>}
     </div>
   );
 }
@@ -992,7 +1091,7 @@ function Footer({
           focus-ring
         "
       >
-        {isLast ? (saving ? "Signing you in…" : "Start") : "Continue"}
+        {isLast ? (saving ? "Finishing…" : "Start") : "Continue"}
         {!isLast && <ArrowRight size={18} aria-hidden="true" />}
       </button>
     </div>

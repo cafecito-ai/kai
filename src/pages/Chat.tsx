@@ -19,6 +19,7 @@ import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
 import { suggestChatAction } from "../lib/chat-actions";
 import { buildKaiClientContext } from "../lib/kai-client-context";
+import { applyScheduleUpdate } from "../lib/local-schedule";
 import { useKaiStore } from "../stores/kaiStore";
 import type { ChatMessage } from "../lib/types";
 
@@ -119,6 +120,9 @@ export function Chat() {
       }
       if (!data) throw lastErr;
       setConversationId(data.conversationId);
+      // Schedule edits made by talking to KAI ("add gym every Monday at 6")
+      // land in the Schedule section automatically.
+      if (data.scheduleUpdate) applyScheduleUpdate(data.scheduleUpdate);
       setMessages((prev) => [
         ...prev,
         {

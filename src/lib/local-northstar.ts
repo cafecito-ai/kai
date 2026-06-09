@@ -109,6 +109,69 @@ export function classifyTheme(text: string): GoalTheme {
   return "general";
 }
 
+// ── Short label ─────────────────────────────────────────────────────
+// The right-side goal card should stay glanceable: a one-word identity/theme
+// ("Bulk", "Confidence", "Faith", "Relationships", "Discipline") even when the
+// user wrote a whole sentence/paragraph. The FULL text still lives in the goal
+// sheet (the deeper explanation). This derivation is deterministic — no LLM,
+// instant, works offline.
+
+const LABEL_STOPWORDS = new Set([
+  "i", "im", "want", "wanna", "to", "be", "being", "become", "becoming", "get",
+  "getting", "more", "my", "a", "an", "the", "and", "of", "for", "on", "in", "at",
+  "with", "feel", "feeling", "myself", "some", "really", "just", "work", "working",
+  "toward", "towards", "better", "good", "make", "making", "do", "doing", "have",
+  "having", "stop", "start", "go", "up", "that", "this", "like", "would", "could",
+  "able", "back", "into", "about", "than", "then",
+]);
+
+const LABEL_RULES: Array<[RegExp, string]> = [
+  [/\b(faith|god|pray|spiritual|religio|church|jesus|christ|islam|muslim|quran|bible|worship)/i, "Faith"],
+  [/\b(disciplin|consisten|self.?control|will.?power|procrastinat|wasting time|lock in)/i, "Discipline"],
+  [/\b(confiden|self.?esteem|self.?worth|believe in myself|insecur)/i, "Confidence"],
+  [/\b(relationship|girlfriend|boyfriend|dating|crush|ask .*out|social life|make friends|friendship|lonel|love life)/i, "Relationships"],
+  [/\b(bulk|muscle|stronger|strength|gym|lift|gains|jacked|swole|ripped|bigger|put on (size|mass)|gain (weight|mass)|\bmass\b)/i, "Bulk"],
+  [/\b(lose weight|leaner|\bcut\b|shred|slim down|\btone\b|six.?pack)/i, "Get Lean"],
+  [/\b(box|boxing|sport|soccer|basketball|football|\brun|track|cardio|athlet|team|tryout|fitness|endurance|condition)/i, "Fitness"],
+  [/\b(sleep|insomnia|\brest\b|bedtime|tired)/i, "Sleep"],
+  [/\b(eat|diet|nutrition|\bfood|meal|protein)/i, "Nutrition"],
+  [/\b(school|grade|gpa|stud(y|ies|ying)|exam|college|\bclass|homework|academ|honor roll)/i, "Grades"],
+  [/\b(anx|stress|\bcalm|panic|worry|overwhelm|\bpeace)/i, "Calm"],
+  [/\b(depress|\bmood|happ|\bjoy)/i, "Mood"],
+  [/\b(money|saving|business|entrepreneur|\bjob\b|career|hustle|\brich\b|financ)/i, "Money"],
+  [/\b(focus|concentrat|attention|distract|productiv)/i, "Focus"],
+  [/\b(motivat|\bdrive\b|ambition|grind|\blazy)/i, "Drive"],
+  [/\b(purpose|meaning|identity|who i am|figure .*out|direction)/i, "Purpose"],
+  [/\b(art\b|music|draw|paint|creativ|writ(e|ing)|guitar|piano|sing|danc)/i, "Creativity"],
+  [/\b(anger|temper|patien|frustrat)/i, "Patience"],
+  [/\b(read(ing)?|\bbook|learn|knowledge)/i, "Learning"],
+  [/\b(screen time|phone|tiktok|instagram|social media|scroll)/i, "Less Screen"],
+];
+
+function titleCase(s: string): string {
+  return s
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(" ");
+}
+
+/** A short identity/theme word for the goal card. Full text stays in the sheet. */
+export function shortLabelFor(goal: string): string {
+  const t = goal.trim().replace(/[.?!,;:]+$/g, "");
+  if (!t) return "";
+  const words = t.split(/\s+/);
+  // Already short — they typed a theme. Use it as-is (title-cased).
+  if (words.length <= 2 && t.length <= 18) return titleCase(t);
+  // Keyword rules — the common teen goals map to a clean identity word.
+  for (const [re, label] of LABEL_RULES) if (re.test(t)) return label;
+  // Fallback — first meaningful word, capped.
+  for (const raw of words) {
+    const w = raw.toLowerCase().replace(/[^a-z']/g, "");
+    if (w.length >= 3 && !LABEL_STOPWORDS.has(w)) return titleCase(w).slice(0, 16);
+  }
+  return "My Goal";
+}
+
 function read(): NorthStar | null {
   if (typeof localStorage === "undefined") return null;
   try {

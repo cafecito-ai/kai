@@ -15,6 +15,7 @@
 //   - Total payload capped under ~2KB to keep prompts fast.
 
 import { getActiveChallenges } from "./local-challenges";
+import { getSchedule } from "./local-schedule";
 import { getCurrentLevel, labelForLevel } from "./local-xp";
 import { getRecentHydration, getTodayHydration } from "./local-hydration";
 import { readLocalGoals, goalStreak } from "./local-goals";
@@ -48,6 +49,15 @@ export type KaiClientContext = {
   };
   /** Where they are in the XP system. */
   level: { current: number; label: string };
+  /** The user's LOCAL hour (0-23). The worker runs in UTC, so without this
+   *  KAI guesses the wrong time of day ("what's going on tonight?" at 3pm). */
+  localHour: number;
+  /** The user's LOCAL weekday, paired with localHour so the prompt does not
+   *  mix client-local time with the worker's UTC calendar day. */
+  localWeekday: string;
+  /** The user's current system items (id + title) so chat removal/swap is exact,
+   *  not an inferred fuzzy match. Only used by the schedule-intent extractor. */
+  scheduleItems: { id: string; title: string; section: string }[];
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -146,6 +156,11 @@ export function buildKaiClientContext(now: Date = new Date()): KaiClientContext 
       current: levelInfo.level,
       label: labelForLevel(levelInfo.level),
     },
+    localHour: now.getHours(),
+    localWeekday: now.toLocaleDateString("en-US", { weekday: "long" }),
+    scheduleItems: getSchedule()
+      .slice(0, 30)
+      .map((i) => ({ id: i.id, title: i.title.slice(0, 60), section: i.section })),
   };
 }
 

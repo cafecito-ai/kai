@@ -38,4 +38,58 @@ describe("worker auth routing", () => {
     } as never);
     expect(res.status).toBe(404);
   });
+
+  it("does not mark under-18 profile updates as pending consent", async () => {
+    const statements: Array<{ sql: string; values: unknown[] }> = [];
+    const res = await app.fetch(
+      new Request("https://worker.test/api/user/me", {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          "x-dev-user": "demo-teen"
+        },
+        body: JSON.stringify({ age: 15, onboardingCompleted: true })
+      }),
+      makeEnv({ statements })
+    );
+
+    expect(res.status).toBe(200);
+    const update = statements.find((statement) =>
+      statement.sql.includes("INSERT INTO users")
+    );
+    expect(update?.sql).toContain("'not_required'");
+    expect(update?.sql).not.toContain("THEN 'pending'");
+    expect(update?.values).toEqual([
+      "demo-teen",
+      null,
+      null,
+      15,
+      null,
+      null,
+      null,
+      null,
+      1,
+      1
+    ]);
+  });
 });
+
+function makeEnv(opts: { statements?: Array<{ sql: string; values: unknown[] }> } = {}) {
+  return {
+    APP_ENV: "staging",
+    DB: {
+      prepare(sql: string) {
+        return {
+          bind(...values: unknown[]) {
+            return {
+              async run() {
+                opts.statements?.push({ sql, values });
+                return {};
+              }
+            };
+          }
+        };
+      }
+    }
+  } as never;
+}

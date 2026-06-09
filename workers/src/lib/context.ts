@@ -39,6 +39,14 @@ export type KaiClientContext = {
   activeChallenges: { title: string; daysHit: number; target: number; daysRemaining: number }[];
   hydration: { todayGlasses: number; todayTarget: number; goalHitsLast7Days: number };
   level: { current: number; label: string };
+  /** User's local hour (0-23) — the worker runs in UTC, so we trust the client
+   *  for time-of-day so KAI doesn't say "tonight" in the afternoon. */
+  localHour?: number;
+  /** User's local weekday, paired with localHour to avoid UTC-midnight drift. */
+  localWeekday?: string;
+  /** The user's current system items (id + title), so chat removal/swap resolves
+   *  to exact ids instead of an inferred fuzzy phrase. */
+  scheduleItems?: { id: string; title: string; section?: string }[];
 };
 
 const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {

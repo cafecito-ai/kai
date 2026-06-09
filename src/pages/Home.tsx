@@ -17,6 +17,7 @@
 import {
   Activity as ActivityIcon,
   ArrowUpRight,
+  CalendarDays,
   Brain,
   Flame,
   Heart,
@@ -352,7 +353,60 @@ export function Home() {
 
       {/* Today's Goals (3 AI-selected actions for today, Rawz/2) */}
       <MissionsCard />
+
+      {/* Custom schedule KAI built (or a prompt to make one) */}
+      <ScheduleHomeCard />
     </div>
+  );
+}
+
+function ScheduleHomeCard() {
+  const navigate = useNavigate();
+  const [today, setToday] = useState<{ count: number; next: string | null }>({ count: 0, next: null });
+  useEffect(() => {
+    let off = () => {};
+    import("../lib/local-schedule").then(({ itemsForToday }) => {
+      const read = () => {
+        const items = itemsForToday();
+        setToday({ count: items.length, next: items[0]?.title ?? null });
+      };
+      read();
+      const on = () => read();
+      window.addEventListener("kai:state-changed", on);
+      off = () => window.removeEventListener("kai:state-changed", on);
+    });
+    return () => off();
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onClick={() => navigate("/schedule")}
+      className="
+        flex w-full items-center justify-between gap-3 rounded-glass
+        border border-glass-border bg-surface px-4 py-3.5 text-left shadow-card
+        transition active:scale-[0.99] hover:bg-surface-muted focus-ring
+      "
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-cool-soft text-accent-cool">
+          <CalendarDays size={16} aria-hidden="true" />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+            your system
+          </span>
+          <span className="block truncate text-sm font-medium text-text-primary">
+            {today.count > 0
+              ? today.next
+                ? `Today: ${today.next}${today.count > 1 ? ` +${today.count - 1} more` : ""}`
+                : `${today.count} things today`
+              : "Build your system with KAI"}
+          </span>
+        </span>
+      </span>
+      <ArrowUpRight size={16} className="shrink-0 text-text-muted" aria-hidden="true" />
+    </button>
   );
 }
 

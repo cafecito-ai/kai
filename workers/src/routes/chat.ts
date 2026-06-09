@@ -8,6 +8,7 @@ import {
 import { callClaudeDetailed, selectChatModel } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
 import { loadUserMemory, renderMemoryBlock, updateUserMemory } from "../lib/memory";
+import { extractScheduleIntent, looksLikeScheduleRequest, type ScheduleIntent } from "../lib/schedule-gen";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
 import { renderEnginePrompt } from "../lib/prompts/engines";
@@ -121,6 +122,25 @@ function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClient
       current: Math.max(1, Math.floor(num(level.current) ?? 1)),
       label: str(level.label, 40),
     },
+    localHour: (() => {
+      const h = num(r.localHour);
+      return h != null && h >= 0 && h <= 23 ? Math.floor(h) : undefined;
+    })(),
+    localWeekday: (() => {
+      const weekday = str(r.localWeekday, 12);
+      return /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(weekday)
+        ? weekday
+        : undefined;
+    })(),
+    scheduleItems: Array.isArray(r.scheduleItems)
+      ? (r.scheduleItems as unknown[])
+          .slice(0, 30)
+          .map((it) => {
+            const o = (it as Record<string, unknown>) ?? {};
+            return { id: str(o.id, 40), title: str(o.title, 60), section: str(o.section, 16) };
+          })
+          .filter((it) => it.id.length > 0 && it.title.length > 0)
+      : undefined,
   };
 }
 
@@ -245,12 +265,31 @@ async function handleRoutedChat(
     return Response.json({ conversationId: conversation, reply: holdReply, safetyHold: true });
   }
 
+  // Schedule intent: "add gym every Monday at 6" / "make me a productivity
+  // routine" updates the teen's Schedule. Cheap regex pre-filter first, then a
+  // single extraction call only when the message actually looks schedule-y.
+  let scheduleUpdate: ScheduleIntent | null = null;
+  if (looksLikeScheduleRequest(message)) {
+    // Pass the user's REAL current items (sent in clientContext) so removal/swap
+    // resolves to exact ids instead of an inferred fuzzy phrase.
+    scheduleUpdate = await extractScheduleIntent(env, message, undefined, context.clientContext?.scheduleItems);
+  }
+
   // Route to Mind or Body. The pick is internal — user never sees it.
   const decision = await pickAgent(env, message);
   // Durable cross-conversation memory: inject what KAI already knows about them
   // so it picks up where you left off, not from scratch.
   const memory = await loadUserMemory(env, userId);
-  const system = renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
+  let system = renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
+  if (scheduleUpdate) {
+    const what =
+      scheduleUpdate.action === "replace"
+        ? "set up a new system"
+        : scheduleUpdate.action === "remove"
+          ? `drop "${scheduleUpdate.removeQuery ?? "that"}" from their system`
+          : "add to their system";
+    system += `\n\nSYSTEM UPDATE: The teen just asked to ${what} — it's being saved to their System (in the Schedule section) right now. In ONE warm, natural line, confirm it's done and they can see it in their System. Don't list every item back at them.`;
+  }
 
   // Our chat engine: depth turns run on the tiered model (Sonnet) with a real
   // token/latency budget, and we record provenance so a hardcoded fallback is
@@ -297,7 +336,13 @@ async function handleRoutedChat(
     waitUntil(updateUserMemory(env, userId, message, reply, memory));
   }
 
-  return Response.json({ conversationId: conversation, reply, routedTo: decision, responseSource });
+  return Response.json({
+    conversationId: conversation,
+    reply,
+    routedTo: decision,
+    responseSource,
+    scheduleUpdate: scheduleUpdate ?? undefined,
+  });
 }
 
 /** Enforce the one-follow-up-question rule deterministically (the prompt alone

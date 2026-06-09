@@ -34,6 +34,7 @@ import {
   type FollowUpResponse,
 } from "../lib/onboarding-followups";
 import { seedNorthStarFromFocus, setNorthStar } from "../lib/local-northstar";
+import { setSchedule } from "../lib/local-schedule";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -182,7 +183,7 @@ function isKaiTone(v: unknown): v is KaiTone {
 // Rawz/5 — 8 steps now (inserted adaptive follow-up between Hardest
 // and Meet KAI). Net flow stays under 90 seconds for most users since
 // the new step is at most 3 quick-tap questions, all skippable.
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -197,6 +198,9 @@ export function Onboarding() {
   const [hardestLately, setHardestLately] = useState("");
   // The user's one big goal — becomes the North Star title on Home.
   const [bigGoal, setBigGoal] = useState("");
+  // Optional custom schedule KAI builds from a free-text request.
+  const [wantSchedule, setWantSchedule] = useState<"yes" | "no" | null>(null);
+  const [scheduleText, setScheduleText] = useState("");
   // Rawz/5 — adaptive follow-up responses keyed by question id.
   const [followUps, setFollowUps] = useState<FollowUpResponse>({});
   const [kaiName] = useState(demoBuild?.kaiName?.trim() || "KAI");
@@ -224,8 +228,9 @@ export function Onboarding() {
       case 5: // meet KAI
       case 6: // tone
       case 7: // big goal (optional, skippable)
+      case 8: // schedule (optional — yes/no)
         return true;
-      case 8: // confirm + save
+      case 9: // confirm + save
         return !saving;
       default:
         return true;
@@ -266,6 +271,16 @@ export function Onboarding() {
         setNorthStar(bigGoal.trim(), "custom");
       } else {
         seedNorthStarFromFocus(focusAreas);
+      }
+      // Optional custom schedule — generate it from their description. Best
+      // effort: if it fails, they can build one any time on the Schedule page.
+      if (wantSchedule === "yes" && scheduleText.trim()) {
+        try {
+          const res = await api.scheduleGenerate(scheduleText.trim());
+          if (res.items.length > 0) setSchedule(res.items);
+        } catch {
+          /* non-blocking */
+        }
       }
       // displayName = the teen's name (what KAI calls them). kaiName = what
       // they call KAI. Previously firstName only landed in user_intake.summary
@@ -345,6 +360,18 @@ export function Onboarding() {
             />
           )}
           {step === 8 && (
+            <ScheduleStep
+              choice={wantSchedule}
+              setChoice={setWantSchedule}
+              text={scheduleText}
+              onChangeText={setScheduleText}
+              onSkip={() => {
+                setWantSchedule("no");
+                next();
+              }}
+            />
+          )}
+          {step === 9 && (
             <ConfirmStep
               firstName={firstName}
               focusAreas={focusAreas}
@@ -533,6 +560,75 @@ function HardestStep({
 
 // The one big goal — its answer becomes the North Star title on Home,
 // shown next to the Daily Score and editable there. Optional/skippable.
+function ScheduleStep({
+  choice,
+  setChoice,
+  text,
+  onChangeText,
+  onSkip,
+}: {
+  choice: "yes" | "no" | null;
+  setChoice: (c: "yes" | "no") => void;
+  text: string;
+  onChangeText: (v: string) => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <Heading
+        eyebrow="step 9 — optional"
+        title="Want KAI to build you a schedule?"
+        blurb="A daily routine you can follow — totally optional. You can always make or change one later."
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setChoice("yes")}
+          aria-pressed={choice === "yes"}
+          className={`flex h-12 flex-1 items-center justify-center rounded-full border text-sm font-semibold transition ${
+            choice === "yes"
+              ? "border-text-primary bg-text-primary text-background shadow-card-lg"
+              : "border-glass-border bg-surface text-text-primary shadow-card hover:bg-surface-muted"
+          }`}
+        >
+          Yes, build one
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          aria-pressed={choice === "no"}
+          className="flex h-12 flex-1 items-center justify-center rounded-full border border-glass-border bg-surface text-sm font-semibold text-text-secondary shadow-card transition hover:bg-surface-muted"
+        >
+          No schedule
+        </button>
+      </div>
+
+      {choice === "yes" && (
+        <div className="space-y-2 animate-fade-slide-up">
+          <p className="text-sm text-text-secondary">
+            Describe it in a sentence — KAI will build the whole thing.
+          </p>
+          <textarea
+            autoFocus
+            value={text}
+            onChange={(e) => onChangeText(e.target.value.slice(0, 200))}
+            rows={3}
+            placeholder='e.g. "Make me a full running and ab schedule every day for the next month"'
+            className="
+              w-full resize-none rounded-lg border border-glass-border bg-surface
+              px-4 py-3.5 text-base text-text-primary placeholder:text-text-muted
+              shadow-card focus-ring
+            "
+          />
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            Anything works — a workout split, a study routine, a morning routine.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GoalStep({
   firstName,
   value,

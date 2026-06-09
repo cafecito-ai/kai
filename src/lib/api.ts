@@ -82,7 +82,16 @@ export const api = {
   getUser: () =>
     request<{ user: unknown; intake: unknown } & UserProfile>("/api/user/me"),
   chat: (engine: EngineId | "kai", message: string, conversationId?: string | null, clientContext?: unknown) =>
-    request<{ conversationId: string; reply: string; safetyEvent?: unknown }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
+    request<{
+      conversationId: string;
+      reply: string;
+      safetyEvent?: unknown;
+      scheduleUpdate?: {
+        action: "add" | "replace";
+        items: Array<{ title: string; days: number[]; time: string | null; category: "fitness" | "study" | "mind" | "routine" | "other" }>;
+        summary: string;
+      };
+    }>(engine === "kai" ? "/api/kai/chat" : `/api/engines/${engine}/chat`, {
       method: "POST",
       // clientContext (Rawz/8 — KAI memory): a roll-up of the user's
       // recent activity so KAI can speak to what they've been DOING.
@@ -98,6 +107,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ goal }),
     }),
+  // Schedule: turn a free-text routine request into structured weekly items.
+  scheduleGenerate: (req: string) =>
+    request<{
+      items: Array<{ title: string; days: number[]; time: string | null; category: "fitness" | "study" | "mind" | "routine" | "other" }>;
+    }>("/api/schedule/generate", { method: "POST", body: JSON.stringify({ request: req }) }),
   getDailyScoreToday: () =>
     request<{
       date: string;

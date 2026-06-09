@@ -8,6 +8,7 @@ import {
 import { callClaudeDetailed, selectChatModel } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
 import { loadUserMemory, renderMemoryBlock, updateUserMemory } from "../lib/memory";
+import { extractScheduleIntent, looksLikeScheduleRequest, type ScheduleIntent } from "../lib/schedule-gen";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
 import { renderEnginePrompt } from "../lib/prompts/engines";
@@ -255,12 +256,23 @@ async function handleRoutedChat(
     return Response.json({ conversationId: conversation, reply: holdReply, safetyHold: true });
   }
 
+  // Schedule intent: "add gym every Monday at 6" / "make me a productivity
+  // routine" updates the teen's Schedule. Cheap regex pre-filter first, then a
+  // single extraction call only when the message actually looks schedule-y.
+  let scheduleUpdate: ScheduleIntent | null = null;
+  if (looksLikeScheduleRequest(message)) {
+    scheduleUpdate = await extractScheduleIntent(env, message);
+  }
+
   // Route to Mind or Body. The pick is internal — user never sees it.
   const decision = await pickAgent(env, message);
   // Durable cross-conversation memory: inject what KAI already knows about them
   // so it picks up where you left off, not from scratch.
   const memory = await loadUserMemory(env, userId);
-  const system = renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
+  let system = renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
+  if (scheduleUpdate) {
+    system += `\n\nSCHEDULE UPDATE: The teen just asked to ${scheduleUpdate.action === "replace" ? "set up a new routine" : "add to their schedule"} — it's being saved to their Schedule right now (${scheduleUpdate.items.length} item${scheduleUpdate.items.length === 1 ? "" : "s"}). In ONE warm, natural line, confirm it's in their Schedule and they can follow it there. Don't list every item back at them.`;
+  }
 
   // Our chat engine: depth turns run on the tiered model (Sonnet) with a real
   // token/latency budget, and we record provenance so a hardcoded fallback is
@@ -307,7 +319,13 @@ async function handleRoutedChat(
     waitUntil(updateUserMemory(env, userId, message, reply, memory));
   }
 
-  return Response.json({ conversationId: conversation, reply, routedTo: decision, responseSource });
+  return Response.json({
+    conversationId: conversation,
+    reply,
+    routedTo: decision,
+    responseSource,
+    scheduleUpdate: scheduleUpdate ?? undefined,
+  });
 }
 
 /** Enforce the one-follow-up-question rule deterministically (the prompt alone

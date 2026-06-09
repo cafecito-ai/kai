@@ -220,14 +220,33 @@ function DailyScoreChart({ days }: { days: DayBucket[] }) {
         )}
       </div>
 
-      <div className="mt-5 flex items-end gap-2" style={{ height: 120 }}>
-        {days.map((d) => {
-          const pct = d.final != null ? (d.final / maxScore) * 100 : 4;
+      {/* Bars scaled to ~85% so each one has room for its score label on
+          top — otherwise similar-height days are indistinguishable. */}
+      <div className="mt-6 flex items-end gap-2" style={{ height: 132 }}>
+        {days.map((d, i) => {
+          const isToday = i === days.length - 1;
+          const h = d.final != null ? Math.max(8, (d.final / maxScore) * 85) : 5;
           return (
-            <div key={d.date} className="flex h-full flex-1 flex-col justify-end">
+            <div
+              key={d.date}
+              className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+            >
+              {d.final != null && (
+                <span
+                  className={`font-mono text-[11px] leading-none ${
+                    isToday
+                      ? "font-bold text-text-primary"
+                      : "font-semibold text-text-secondary"
+                  }`}
+                >
+                  {d.final}
+                </span>
+              )}
               <div
-                className={`w-full rounded-t-md transition-all ${barClassFor(d.final)}`}
-                style={{ height: `${Math.max(4, pct)}%` }}
+                className={`w-full rounded-t-md transition-all ${barClassFor(d.final)} ${
+                  isToday ? "ring-2 ring-text-primary/20" : ""
+                }`}
+                style={{ height: `${h}%` }}
                 title={d.final != null ? `${d.label}: ${d.final}` : `${d.label}: no data`}
                 aria-label={d.final != null ? `${d.label}: ${d.final}` : `${d.label}: no data`}
               />
@@ -236,14 +255,19 @@ function DailyScoreChart({ days }: { days: DayBucket[] }) {
         })}
       </div>
       <div className="mt-2 flex items-center gap-2">
-        {days.map((d) => (
-          <p
-            key={d.date}
-            className="flex-1 text-center font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted"
-          >
-            {d.weekday}
-          </p>
-        ))}
+        {days.map((d, i) => {
+          const isToday = i === days.length - 1;
+          return (
+            <p
+              key={d.date}
+              className={`flex-1 text-center font-mono text-[10px] uppercase tracking-[0.1em] ${
+                isToday ? "font-bold text-text-primary" : "text-text-muted"
+              }`}
+            >
+              {d.weekday}
+            </p>
+          );
+        })}
       </div>
     </section>
   );

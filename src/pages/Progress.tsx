@@ -316,27 +316,30 @@ function SubScoreTrends({ days }: { days: DayBucket[] }) {
       <div className="mt-4 space-y-4">
         {tracks.map((track) => {
           const series = days.map((d) => d[track.key]);
-          const latest = series[series.length - 1];
           return (
             <div key={track.key}>
-              <div className="mb-1.5 flex items-center justify-between gap-2">
+              <div className="mb-1.5 flex items-center gap-2">
                 <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${track.tint}`}>
                   <track.icon size={12} aria-hidden="true" />
                   {track.label}
                 </span>
-                <span className="font-mono text-xs text-text-muted">
-                  {latest != null ? `${latest}/100` : "—"}
-                </span>
               </div>
-              <div className="flex items-end gap-1.5" style={{ height: 36 }}>
+              {/* Bars scaled to leave headroom for today's value label on top,
+                  same pattern as the daily-score chart — just shorter. */}
+              <div className="flex items-end gap-1.5" style={{ height: 52 }}>
                 {series.map((v, idx) => {
                   const isToday = idx === series.length - 1;
-                  const h = v != null ? Math.max(8, v) : 5;
+                  const h = v != null ? Math.max(10, v * 0.72) : 6;
                   return (
                     <div
                       key={idx}
-                      className="flex h-full flex-1 flex-col items-center justify-end"
+                      className="flex h-full flex-1 flex-col items-center justify-end gap-0.5"
                     >
+                      {isToday && (
+                        <span className="font-mono text-[11px] font-bold leading-none text-text-primary">
+                          {v != null ? v : "—"}
+                        </span>
+                      )}
                       <div
                         className={`w-2/3 rounded-t-md ${
                           v != null ? track.bar : "bg-surface-muted"

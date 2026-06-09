@@ -37,6 +37,17 @@ export function daysBetween(earlier: Date, later: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
 
+/** How many days are in the given month (monthIndex is 0=Jan .. 11=Dec). */
+export function daysInMonth(year: number, monthIndex: number): number {
+  // Day 0 of the next month is the last day of this month.
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+/** Weekday index (0=Sun .. 6=Sat) that the 1st of the month falls on. */
+export function firstWeekdayOfMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex, 1).getDay();
+}
+
 /** Parses a `YYYY-MM-DD` string as a Date at LOCAL midnight (not UTC). */
 export function parseLocalDate(key: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);

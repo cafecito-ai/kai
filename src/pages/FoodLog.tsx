@@ -11,13 +11,14 @@
 // Submit → server returns items + nutrition + KAI's 1-2 sentence
 // observational comment (filtered for forbidden body-language).
 
-import { ArrowLeft, Camera, Pencil, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Clock, Pencil, Sparkles } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { fileToThumbnailDataUrl, saveFoodEntry } from "../lib/food-history";
 import { appendLocalInput } from "../lib/local-score";
 import { useKaiStore } from "../stores/kaiStore";
 import type { FoodPhotoResult } from "../lib/types";
@@ -37,17 +38,52 @@ function recordFoodLocally(result: FoodPhotoResult, note: string) {
 }
 
 type Phase = "form" | "sending" | "done";
-type Mode = "photo" | "note";
+// choose = pick a photo or go describe; confirm = preview the photo + optional
+// note before submitting; describe = no photo, just type what you ate.
+type View = "choose" | "confirm" | "describe";
 
 export function FoodLog() {
   const navigate = useNavigate();
   const setPendingSeed = useKaiStore((s) => s.setPendingSeed);
-  const [mode, setMode] = useState<Mode>("photo");
+  const [view, setView] = useState<View>("choose");
   const [note, setNote] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("form");
   const [result, setResult] = useState<FoodPhotoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Picking a photo doesn't submit — it moves to the confirm step so the user
+  // can add a note (or not) before logging it.
+  function choosePhoto(file: File) {
+    setError(null);
+    setPendingFile(file);
+    setPendingPreview(URL.createObjectURL(file));
+    setView("confirm");
+  }
+
+  function clearPending() {
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview);
+    setPendingFile(null);
+    setPendingPreview(null);
+    setView("choose");
+  }
+
+  // Save the meal to the on-device history (photo + timestamp + what KAI saw).
+  // No macros here — that side is owned by the backend.
+  function recordFoodHistory(
+    result: FoodPhotoResult,
+    noteText: string,
+    photoDataUrl?: string,
+  ) {
+    saveFoodEntry({
+      loggedAt: new Date().toISOString(),
+      photoDataUrl,
+      items: result.items.map((i) => i.name).filter(Boolean).slice(0, 8),
+      note: noteText.trim() || undefined,
+    });
+  }
 
   async function submitPhoto(file: File) {
     setPhase("sending");
@@ -55,21 +91,33 @@ export function FoodLog() {
     try {
       const r = await api.uploadFoodPhoto(file, note.trim() || undefined);
       recordFoodLocally(r, note);
+      const thumb = await fileToThumbnailDataUrl(file);
+      recordFoodHistory(r, note, thumb);
+      if (pendingPreview) URL.revokeObjectURL(pendingPreview);
       setResult(r);
       setPhase("done");
     } catch {
-      setError("Couldn't upload that photo — try again or use a quick note.");
+      setError("Couldn't upload that photo — try again or describe it instead.");
       setPhase("form");
     }
   }
 
   async function submitNote() {
-    if (!note.trim()) return;
+    const description = note.trim();
+    if (!description) return;
     setPhase("sending");
     setError(null);
     try {
-      const r = await api.analyzeFoodPhoto({ note: note.trim() });
-      recordFoodLocally(r, note);
+      const r = await api.analyzeFoodPhoto({ note: description });
+      recordFoodLocally(r, description);
+      // Described meal (no photo): the typed text IS the meal, so store it as
+      // the items — fall back to the raw text if KAI didn't parse any. No
+      // separate note line (it would just repeat the description).
+      const names = r.items.map((i) => i.name).filter(Boolean).slice(0, 8);
+      saveFoodEntry({
+        loggedAt: new Date().toISOString(),
+        items: names.length > 0 ? names : [description],
+      });
       setResult(r);
       setPhase("done");
     } catch {
@@ -108,7 +156,13 @@ export function FoodLog() {
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
           food log
         </p>
-        <div className="h-10 w-10" aria-hidden="true" />
+        <Link
+          to="/food/history"
+          aria-label="Food history"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface-muted focus-ring"
+        >
+          <Clock size={18} aria-hidden="true" />
+        </Link>
       </header>
 
       <div className="pb-5">
@@ -116,45 +170,9 @@ export function FoodLog() {
           Log a meal
         </h1>
         <p className="mt-2 text-sm text-text-secondary">
-          A photo or a one-liner — KAI gives you a 1-2 sentence read. Never a
-          calorie target. Never about how you look.
+          Snap your meal, then add a note if you want. KAI gives you a 1-2
+          sentence read. Never a calorie target. Never about how you look.
         </p>
-      </div>
-
-      {/* Mode tabs */}
-      <div className="mb-5 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setMode("photo")}
-          aria-pressed={mode === "photo"}
-          className={`
-            flex flex-1 items-center justify-center gap-1.5 rounded-full
-            border px-3 py-2 text-xs font-medium shadow-card transition
-            ${
-              mode === "photo"
-                ? "border-text-primary bg-text-primary text-background"
-                : "border-glass-border bg-surface text-text-primary hover:bg-surface-muted"
-            }
-          `}
-        >
-          <Camera size={12} aria-hidden="true" /> Photo
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("note")}
-          aria-pressed={mode === "note"}
-          className={`
-            flex flex-1 items-center justify-center gap-1.5 rounded-full
-            border px-3 py-2 text-xs font-medium shadow-card transition
-            ${
-              mode === "note"
-                ? "border-text-primary bg-text-primary text-background"
-                : "border-glass-border bg-surface text-text-primary hover:bg-surface-muted"
-            }
-          `}
-        >
-          <Pencil size={12} aria-hidden="true" /> Quick note
-        </button>
       </div>
 
       {error && (
@@ -163,29 +181,31 @@ export function FoodLog() {
         </p>
       )}
 
-      {mode === "photo" ? (
-        <div className="flex flex-1 flex-col gap-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) submitPhoto(f);
-            }}
-          />
+      {/* Shared hidden file input — picking a photo goes to the confirm step. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) choosePhoto(f);
+          e.target.value = "";
+        }}
+      />
+
+      {/* Step 1 — choose a photo, or fall back to describing the meal. */}
+      {view === "choose" && (
+        <div className="flex flex-1 flex-col gap-3">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={phase === "sending"}
             className="
               flex flex-1 flex-col items-center justify-center gap-3 rounded-glass
               border border-dashed border-glass-border bg-surface px-6 py-12
               text-center shadow-card transition active:scale-[0.99]
               hover:bg-surface-muted focus-ring
-              disabled:cursor-not-allowed disabled:opacity-50
             "
           >
             <Camera size={32} className="text-text-secondary" aria-hidden="true" />
@@ -193,9 +213,39 @@ export function FoodLog() {
               Take or choose a meal photo
             </span>
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-              {phase === "sending" ? "uploading…" : "tap to start"}
+              tap to start
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setNote("");
+              setView("describe");
+            }}
+            className="
+              flex items-center justify-center gap-1.5 rounded-full border
+              border-glass-border bg-surface px-4 py-3 text-sm font-medium
+              text-text-secondary shadow-card transition hover:bg-surface-muted focus-ring
+            "
+          >
+            <Pencil size={14} aria-hidden="true" /> No photo? Describe your meal
+          </button>
+        </div>
+      )}
+
+      {/* Step 2a — confirm the photo, add a note (or not), then log it. */}
+      {view === "confirm" && (
+        <div className="flex flex-1 flex-col gap-4">
+          <div className="flex-1 overflow-hidden rounded-glass border border-glass-border bg-surface-muted shadow-card">
+            {pendingPreview && (
+              <img
+                src={pendingPreview}
+                alt="Your meal"
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
           <div>
             <p className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
               add a note (optional)
@@ -213,10 +263,41 @@ export function FoodLog() {
               "
             />
           </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={clearPending}
+              disabled={phase === "sending"}
+              className="
+                flex h-12 flex-1 items-center justify-center rounded-full border
+                border-glass-border bg-surface text-sm font-medium text-text-primary
+                shadow-card transition hover:bg-surface-muted focus-ring
+                disabled:cursor-not-allowed disabled:opacity-50
+              "
+            >
+              Retake
+            </button>
+            <button
+              type="button"
+              onClick={() => pendingFile && submitPhoto(pendingFile)}
+              disabled={phase === "sending"}
+              className="
+                flex h-12 flex-[2] items-center justify-center rounded-full
+                bg-text-primary font-medium text-background shadow-card transition
+                active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-text-soft focus-ring
+              "
+            >
+              {phase === "sending" ? "Sending to KAI…" : "Log it"}
+            </button>
+          </div>
         </div>
-      ) : (
+      )}
+
+      {/* Step 2b — no photo: describe the meal. Shows as a dark card on the calendar. */}
+      {view === "describe" && (
         <div className="flex flex-1 flex-col gap-4">
           <textarea
+            autoFocus
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Turkey sandwich, apple, water"
@@ -228,22 +309,39 @@ export function FoodLog() {
               placeholder:text-text-muted shadow-card focus-ring
             "
           />
-          <button
-            type="button"
-            onClick={submitNote}
-            disabled={!note.trim() || phase === "sending"}
-            className="
-              flex h-12 w-full items-center justify-center gap-2 rounded-full
-              bg-text-primary text-background font-medium
-              shadow-card transition active:scale-[0.99]
-              disabled:cursor-not-allowed disabled:bg-text-soft focus-ring
-            "
-          >
-            {phase === "sending" ? "Sending to KAI…" : "Log it"}
-          </button>
-          <p className="text-center font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-            Descriptive notes are fine — "felt heavy" / "energized after"
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            No photo needed. This still shows up on your calendar.
           </p>
+          <div className="mt-auto flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setNote("");
+                setView("choose");
+              }}
+              disabled={phase === "sending"}
+              className="
+                flex h-12 flex-1 items-center justify-center rounded-full border
+                border-glass-border bg-surface text-sm font-medium text-text-primary
+                shadow-card transition hover:bg-surface-muted focus-ring
+                disabled:cursor-not-allowed disabled:opacity-50
+              "
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={submitNote}
+              disabled={!note.trim() || phase === "sending"}
+              className="
+                flex h-12 flex-[2] items-center justify-center rounded-full
+                bg-text-primary font-medium text-background shadow-card transition
+                active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-text-soft focus-ring
+              "
+            >
+              {phase === "sending" ? "Sending to KAI…" : "Log it"}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -297,7 +395,6 @@ function DoneState({
             {result.items.map((item, i) => (
               <li key={`${item.name}-${i}`} className="text-sm text-text-primary">
                 · {item.name}
-                {item.estimatedGrams ? ` · ~${Math.round(item.estimatedGrams)}g` : ""}
               </li>
             ))}
           </ul>

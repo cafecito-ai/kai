@@ -44,6 +44,9 @@ export type KaiClientContext = {
   localHour?: number;
   /** User's local weekday, paired with localHour to avoid UTC-midnight drift. */
   localWeekday?: string;
+  /** The user's current system items (id + title), so chat removal/swap resolves
+   *  to exact ids instead of an inferred fuzzy phrase. */
+  scheduleItems?: { id: string; title: string; section?: string }[];
 };
 
 const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {

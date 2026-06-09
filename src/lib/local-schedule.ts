@@ -152,18 +152,40 @@ export function removeMatching(query: string): number {
   return existing.length - kept.length;
 }
 
-/** Apply a chat scheduleUpdate ({action, items, removeQuery}) from the worker. */
+/** Remove by exact ids (precise — the Worker picked these from the real list). */
+export function removeByIds(ids: string[]): number {
+  if (!ids || ids.length === 0) return 0;
+  const set = new Set(ids);
+  const existing = read();
+  const kept = existing.filter((i) => !set.has(i.id));
+  if (kept.length !== existing.length) write(kept);
+  return existing.length - kept.length;
+}
+
+/** Apply a chat scheduleUpdate from the worker. Prefers EXACT removeIds (chosen
+ *  from the user's real items); only falls back to fuzzy removeQuery when no ids.
+ *  Supports swap (removeIds + items in one update). */
 export function applyScheduleUpdate(
-  update: { action?: string; items?: GeneratedItem[]; removeQuery?: string } | null | undefined,
+  update:
+    | { action?: string; items?: GeneratedItem[]; removeIds?: string[]; removeQuery?: string }
+    | null
+    | undefined,
 ): void {
   if (!update) return;
-  if (update.action === "remove" && update.removeQuery) {
-    removeMatching(update.removeQuery);
+  if (update.action === "replace") {
+    if (Array.isArray(update.items) && update.items.length > 0) setSchedule(update.items);
     return;
   }
-  if (!Array.isArray(update.items) || update.items.length === 0) return;
-  if (update.action === "replace") setSchedule(update.items);
-  else addToSchedule(update.items);
+  // Exact removals first (covers remove + the remove half of a swap).
+  if (Array.isArray(update.removeIds) && update.removeIds.length > 0) {
+    removeByIds(update.removeIds);
+  } else if (update.action === "remove" && update.removeQuery) {
+    removeMatching(update.removeQuery);
+  }
+  // Additions (covers add + the add half of a swap).
+  if (Array.isArray(update.items) && update.items.length > 0) {
+    addToSchedule(update.items);
+  }
 }
 
 export function removeScheduleItem(id: string): void {

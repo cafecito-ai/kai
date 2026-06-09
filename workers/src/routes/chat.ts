@@ -132,6 +132,15 @@ function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClient
         ? weekday
         : undefined;
     })(),
+    scheduleItems: Array.isArray(r.scheduleItems)
+      ? (r.scheduleItems as unknown[])
+          .slice(0, 30)
+          .map((it) => {
+            const o = (it as Record<string, unknown>) ?? {};
+            return { id: str(o.id, 40), title: str(o.title, 60), section: str(o.section, 16) };
+          })
+          .filter((it) => it.id.length > 0 && it.title.length > 0)
+      : undefined,
   };
 }
 
@@ -261,7 +270,9 @@ async function handleRoutedChat(
   // single extraction call only when the message actually looks schedule-y.
   let scheduleUpdate: ScheduleIntent | null = null;
   if (looksLikeScheduleRequest(message)) {
-    scheduleUpdate = await extractScheduleIntent(env, message);
+    // Pass the user's REAL current items (sent in clientContext) so removal/swap
+    // resolves to exact ids instead of an inferred fuzzy phrase.
+    scheduleUpdate = await extractScheduleIntent(env, message, undefined, context.clientContext?.scheduleItems);
   }
 
   // Route to Mind or Body. The pick is internal — user never sees it.

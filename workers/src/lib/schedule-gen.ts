@@ -56,24 +56,32 @@ const SYSTEM_GEN = [
 
 const INTENT_SYSTEM = [
   "A teenager sent a chat message. Decide if they want to change their lifestyle system (habits/workouts/sleep/routines/mindset/avoid).",
-  'Return ONLY JSON: {"action":"add"|"replace"|"remove"|"none","items":[…],"removeQuery":"<words to match for removal>","summary":"<=60 chars"}',
-  "- \"add\": add specific item(s) ('add gym every Monday at 6', 'remind me to stretch at night').",
+  'Return ONLY JSON: {"action":"add"|"replace"|"remove"|"none","items":[…],"removeIds":["id",…],"removeQuery":"<fallback words>","summary":"<=60 chars"}',
+  "- \"add\": add specific item(s) ('add gym every Monday at 6'). For a SWAP ('swap my morning run for a bike ride'), also put the old item's id in removeIds.",
   "- \"replace\": they want a whole new system/routine ('make me a productivity routine', 'rebuild my plan').",
-  "- \"remove\": they want to drop something ('drop the morning run', 'remove gym') — put the thing to remove in removeQuery, items [].",
-  "- \"none\": not a system change — items [].",
+  "- \"remove\": they want to drop something. When CURRENT ITEMS are provided below, pick the EXACT matching id(s) and return them in removeIds (this is precise — prefer it). Only fall back to removeQuery (loose words) if no item clearly matches.",
+  "- \"none\": not a system change — items [], removeIds [].",
   "",
-  `Item shape: ${ITEM_SHAPE}`,
+  "BULK/SECTION removal — treat these as action 'remove' and put EVERY id from that section into removeIds (sections are shown in the CURRENT ITEMS list):",
+  "  'clear all my workouts' / 'remove my workouts' -> every Workouts id.",
+  "  'drop everything in mindset' -> every Mindset & discipline id.",
+  "  'remove my sleep stuff' -> every Sleep & recovery id.",
+  "  'wipe my whole system' / 'clear everything' -> every id.",
+  "Always act when they clearly ask to remove something that exists; only return 'none' if nothing matches.",
+  "",
+  `Item shape (for add/replace): ${ITEM_SHAPE}`,
   "Max 22 items. Keep it realistic + safe for a teen.",
 ].join("\n");
 
 /** Cheap pre-filter so we only spend an LLM call on plausible system messages. */
 export function looksLikeScheduleRequest(message: string): boolean {
   const t = message.toLowerCase();
-  return (
-    /\b(schedule|routine|plan|system|habit|remind|reminder)\b/.test(t) ||
-    ((/\b(add|set up|make me|build me|create|put|drop|remove|delete|swap|change|replace)\b/.test(t)) &&
-      /\b(gym|workout|run|running|lift|study|practice|stretch|sleep|wake|bed|every|daily|monday|tuesday|wednesday|thursday|friday|saturday|sunday|weekday|morning|night|evening|am|pm|\d\s*(am|pm|:\d))\b/.test(t))
-  );
+  if (/\b(schedule|routine|plan|system|habit|remind|reminder)\b/.test(t)) return true;
+  const hasEditVerb = /\b(add|set up|make me|build me|create|put|drop|remove|delete|clear|wipe|cancel|get rid|take out|swap|change|replace)\b/.test(t);
+  // NOTE: leading \b only (no trailing) so stems match plurals — "workout"
+  // matches "workouts", "run" matches "runs", etc.
+  const hasSystemNoun = /\b(gym|workout|run|lift|study|practice|stretch|mobility|sleep|wake|bed|mindset|discipline|recovery|morning|night|evening|every|daily|weekday|monday|tuesday|wednesday|thursday|friday|saturday|sunday|am|pm|\d\s*(am|pm|:\d)|everything|all of)/.test(t);
+  return hasEditVerb && hasSystemNoun;
 }
 
 function parseItems(raw: string): ScheduleItem[] {
@@ -133,17 +141,46 @@ export async function generateSchedule(env: Env, request: string, goal?: string)
 export type ScheduleIntent = {
   action: "add" | "replace" | "remove" | "none";
   items: ScheduleItem[];
+  /** Exact ids to remove — precise, chosen from the user's real item list. */
+  removeIds?: string[];
+  /** Fallback fuzzy match when no exact id was identified. */
   removeQuery?: string;
   summary: string;
 };
 
-/** Extract a system add/replace/remove intent from a chat message (null if none). */
-export async function extractScheduleIntent(env: Env, message: string, goal?: string): Promise<ScheduleIntent | null> {
+/** Compact current-items list sent from the client so removal is exact, not
+ *  inferred. Keeps the chat Worker from guessing at the user's local contents. */
+export type CurrentItem = { id: string; title: string; section?: string };
+
+/** Extract a system add/replace/remove intent from a chat message (null if none).
+ *  When `currentItems` are provided, removal is resolved to EXACT ids (precise)
+ *  instead of an inferred fuzzy phrase. */
+export async function extractScheduleIntent(
+  env: Env,
+  message: string,
+  goal?: string,
+  currentItems?: CurrentItem[],
+): Promise<ScheduleIntent | null> {
   try {
+    const sectionLabel: Record<string, string> = {
+      daily: "Daily habits",
+      training: "Workouts",
+      sleep: "Sleep & recovery",
+      routine: "Routines",
+      mindset: "Mindset & discipline",
+      avoid: "Avoid",
+    };
+    const list =
+      currentItems && currentItems.length
+        ? `\nCURRENT ITEMS (id | section | title):\n${currentItems
+            .slice(0, 30)
+            .map((i) => `${i.id} | ${sectionLabel[i.section ?? ""] ?? i.section ?? "?"} | ${i.title}`)
+            .join("\n")}`
+        : "";
     const raw = await callClaude(
       env,
       INTENT_SYSTEM,
-      [{ role: "user", content: `${goal ? `Goal: ${goal.slice(0, 120)}\n` : ""}Message: ${message.slice(0, 400)}` }],
+      [{ role: "user", content: `${goal ? `Goal: ${goal.slice(0, 120)}\n` : ""}Message: ${message.slice(0, 400)}${list}` }],
       { model: MODEL_FAST, maxTokens: 900, timeoutMs: 12_000 },
     );
     const s = raw.indexOf("{");
@@ -153,14 +190,23 @@ export async function extractScheduleIntent(env: Env, message: string, goal?: st
     const action = obj.action === "add" || obj.action === "replace" || obj.action === "remove" ? obj.action : "none";
     if (action === "none") return null;
     const summary = typeof obj.summary === "string" ? obj.summary.trim().slice(0, 60) : "Updated your system";
-    if (action === "remove") {
-      const removeQuery = typeof obj.removeQuery === "string" ? obj.removeQuery.trim().slice(0, 60) : "";
-      if (!removeQuery) return null;
-      return { action, items: [], removeQuery, summary };
-    }
+
+    // Only keep ids that actually exist in the user's current list.
+    const validIds = new Set((currentItems ?? []).map((i) => i.id));
+    const removeIds = Array.isArray(obj.removeIds)
+      ? obj.removeIds.filter((id): id is string => typeof id === "string" && validIds.has(id)).slice(0, 30)
+      : [];
+    const removeQuery = typeof obj.removeQuery === "string" ? obj.removeQuery.trim().slice(0, 60) : "";
     const items = parseItems(JSON.stringify(obj.items ?? []));
-    if (items.length === 0) return null;
-    return { action, items, summary };
+
+    if (action === "remove") {
+      // Need at least an exact id or a fallback query to act on.
+      if (removeIds.length === 0 && !removeQuery) return null;
+      return { action, items: [], removeIds, removeQuery: removeQuery || undefined, summary };
+    }
+    // add / replace (a swap = add + removeIds).
+    if (items.length === 0 && removeIds.length === 0) return null;
+    return { action, items, removeIds: removeIds.length ? removeIds : undefined, summary };
   } catch {
     return null;
   }

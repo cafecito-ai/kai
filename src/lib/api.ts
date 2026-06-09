@@ -89,6 +89,7 @@ export const api = {
       scheduleUpdate?: {
         action: "add" | "replace" | "remove";
         items: Array<{ section?: string; title: string; detail?: string; days: number[]; time: string | null }>;
+        removeIds?: string[];
         removeQuery?: string;
         summary: string;
       };

@@ -8,6 +8,8 @@
 // side is owned by the backend (Ratner). This is just the picture + a time
 // stamp, so the user can look back at what they ate and when.
 
+import type { FoodNutrition } from "./types";
+
 export type FoodHistoryEntry = {
   id: string;
   /** ISO timestamp of when the meal was logged. */
@@ -16,6 +18,8 @@ export type FoodHistoryEntry = {
   photoDataUrl?: string;
   /** What KAI saw — the item names (no grams). */
   items: string[];
+  /** Optional total nutrition estimate returned by the backend. */
+  nutrition?: FoodNutrition;
   /** The user's optional one-liner note. */
   note?: string;
 };

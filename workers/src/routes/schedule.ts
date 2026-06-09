@@ -13,11 +13,13 @@ import type { AppVariables, Env } from "../types";
 export const scheduleRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 scheduleRoutes.post("/schedule/generate", async (c) => {
-  const body = await c.req.json<{ request?: string }>().catch(() => ({ request: "" }));
+  const body = await c.req.json<{ request?: string; goal?: string }>().catch(() => ({ request: "", goal: "" }));
   const request = (body.request ?? "").trim();
-  if (!request) return c.json({ items: [] }, 400);
+  const goal = (body.goal ?? "").trim();
+  // Allow generating a full system from the goal alone (no extra request).
+  if (!request && !goal) return c.json({ items: [] }, 400);
   try {
-    const items = await generateSchedule(c.env, request);
+    const items = await generateSchedule(c.env, request, goal || undefined);
     return c.json({ items });
   } catch {
     return c.json({ items: [] }, 200);

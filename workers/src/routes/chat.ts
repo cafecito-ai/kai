@@ -132,6 +132,15 @@ function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClient
         ? weekday
         : undefined;
     })(),
+    scheduleItems: Array.isArray(r.scheduleItems)
+      ? (r.scheduleItems as unknown[])
+          .slice(0, 30)
+          .map((it) => {
+            const o = (it as Record<string, unknown>) ?? {};
+            return { id: str(o.id, 40), title: str(o.title, 60), section: str(o.section, 16) };
+          })
+          .filter((it) => it.id.length > 0 && it.title.length > 0)
+      : undefined,
   };
 }
 
@@ -261,7 +270,9 @@ async function handleRoutedChat(
   // single extraction call only when the message actually looks schedule-y.
   let scheduleUpdate: ScheduleIntent | null = null;
   if (looksLikeScheduleRequest(message)) {
-    scheduleUpdate = await extractScheduleIntent(env, message);
+    // Pass the user's REAL current items (sent in clientContext) so removal/swap
+    // resolves to exact ids instead of an inferred fuzzy phrase.
+    scheduleUpdate = await extractScheduleIntent(env, message, undefined, context.clientContext?.scheduleItems);
   }
 
   // Route to Mind or Body. The pick is internal — user never sees it.
@@ -271,7 +282,13 @@ async function handleRoutedChat(
   const memory = await loadUserMemory(env, userId);
   let system = renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
   if (scheduleUpdate) {
-    system += `\n\nSCHEDULE UPDATE: The teen just asked to ${scheduleUpdate.action === "replace" ? "set up a new routine" : "add to their schedule"} — it's being saved to their Schedule right now (${scheduleUpdate.items.length} item${scheduleUpdate.items.length === 1 ? "" : "s"}). In ONE warm, natural line, confirm it's in their Schedule and they can follow it there. Don't list every item back at them.`;
+    const what =
+      scheduleUpdate.action === "replace"
+        ? "set up a new system"
+        : scheduleUpdate.action === "remove"
+          ? `drop "${scheduleUpdate.removeQuery ?? "that"}" from their system`
+          : "add to their system";
+    system += `\n\nSYSTEM UPDATE: The teen just asked to ${what} — it's being saved to their System (in the Schedule section) right now. In ONE warm, natural line, confirm it's done and they can see it in their System. Don't list every item back at them.`;
   }
 
   // Our chat engine: depth turns run on the tiered model (Sonnet) with a real

@@ -365,9 +365,9 @@ function ScheduleHomeCard() {
   const [today, setToday] = useState<{ count: number; next: string | null }>({ count: 0, next: null });
   useEffect(() => {
     let off = () => {};
-    import("../lib/local-schedule").then(({ itemsForDay }) => {
+    import("../lib/local-schedule").then(({ itemsForToday }) => {
       const read = () => {
-        const items = itemsForDay(new Date().getDay());
+        const items = itemsForToday();
         setToday({ count: items.length, next: items[0]?.title ?? null });
       };
       read();
@@ -394,14 +394,14 @@ function ScheduleHomeCard() {
         </span>
         <span className="min-w-0">
           <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
-            schedule
+            your system
           </span>
           <span className="block truncate text-sm font-medium text-text-primary">
             {today.count > 0
               ? today.next
                 ? `Today: ${today.next}${today.count > 1 ? ` +${today.count - 1} more` : ""}`
                 : `${today.count} things today`
-              : "Build a routine with KAI"}
+              : "Build your system with KAI"}
           </span>
         </span>
       </span>

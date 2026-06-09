@@ -272,15 +272,17 @@ export function Onboarding() {
       } else {
         seedNorthStarFromFocus(focusAreas);
       }
-      // Optional custom schedule — generate it from their description. Best
-      // effort: if it fails, they can build one any time on the Schedule page.
+      // Optional custom system — generate it from their description + goal.
+      // NON-blocking: a full system is a bigger model call, so we don't make
+      // onboarding hang on it. It fills into their System section once it lands.
       if (wantSchedule === "yes" && scheduleText.trim()) {
-        try {
-          const res = await api.scheduleGenerate(scheduleText.trim());
-          if (res.items.length > 0) setSchedule(res.items);
-        } catch {
-          /* non-blocking */
-        }
+        const g = bigGoal.trim() || undefined;
+        void api
+          .scheduleGenerate(scheduleText.trim(), g)
+          .then((res) => {
+            if (res.items.length > 0) setSchedule(res.items);
+          })
+          .catch(() => {});
       }
       // displayName = the teen's name (what KAI calls them). kaiName = what
       // they call KAI. Previously firstName only landed in user_intake.summary
@@ -577,8 +579,8 @@ function ScheduleStep({
     <div className="space-y-6">
       <Heading
         eyebrow="step 9 — optional"
-        title="Want KAI to build you a schedule?"
-        blurb="A daily routine you can follow — totally optional. You can always make or change one later."
+        title="Want KAI to build your system?"
+        blurb="A full lifestyle system around your goal — habits, workouts, sleep, routines, mindset, and what to avoid. Totally optional, and you can change any part of it later."
       />
       <div className="flex gap-2">
         <button
@@ -606,14 +608,14 @@ function ScheduleStep({
       {choice === "yes" && (
         <div className="space-y-2 animate-fade-slide-up">
           <p className="text-sm text-text-secondary">
-            Describe it in a sentence — KAI will build the whole thing.
+            Describe what you're going for in a sentence — KAI builds the whole system.
           </p>
           <textarea
             autoFocus
             value={text}
             onChange={(e) => onChangeText(e.target.value.slice(0, 200))}
             rows={3}
-            placeholder='e.g. "Make me a full running and ab schedule every day for the next month"'
+            placeholder='e.g. "Build my whole system around getting stronger and disciplined"'
             className="
               w-full resize-none rounded-lg border border-glass-border bg-surface
               px-4 py-3.5 text-base text-text-primary placeholder:text-text-muted

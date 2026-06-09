@@ -79,17 +79,12 @@ describe("bucketLabel", () => {
 // ─────────────────────────────────────────────────────────────────────
 
 describe("canJoinTeenGroup", () => {
-  it("teens 13-17 allowed", () => {
-    for (const age of [13, 14, 15, 16, 17]) {
+  // App is open to all ages now (no age gate / no parental consent), so groups
+  // must not block by age — including adults (the "groups still don't work" bug).
+  it("allows every age, including adults and unknown age", () => {
+    for (const age of [13, 16, 17, 18, 21, 35, 65]) {
       expect(canJoinTeenGroup(age)).toBe(true);
     }
-  });
-  it("adults 18+ blocked", () => {
-    for (const age of [18, 21, 35, 65]) {
-      expect(canJoinTeenGroup(age)).toBe(false);
-    }
-  });
-  it("null age is allowed (teen-first app — unknown age must not block groups)", () => {
     expect(canJoinTeenGroup(null)).toBe(true);
   });
 });

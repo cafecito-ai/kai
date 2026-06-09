@@ -243,7 +243,7 @@ function DailyScoreChart({ days }: { days: DayBucket[] }) {
                 </span>
               )}
               <div
-                className={`w-full rounded-t-md transition-all ${barClassFor(d.final)} ${
+                className={`w-2/3 rounded-t-md transition-all ${barClassFor(d.final)} ${
                   isToday ? "ring-2 ring-text-primary/20" : ""
                 }`}
                 style={{ height: `${h}%` }}

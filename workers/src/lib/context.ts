@@ -42,6 +42,8 @@ export type KaiClientContext = {
   /** User's local hour (0-23) — the worker runs in UTC, so we trust the client
    *  for time-of-day so KAI doesn't say "tonight" in the afternoon. */
   localHour?: number;
+  /** User's local weekday, paired with localHour to avoid UTC-midnight drift. */
+  localWeekday?: string;
 };
 
 const FALLBACK_CONTEXT: Omit<KaiContext, "userId"> = {

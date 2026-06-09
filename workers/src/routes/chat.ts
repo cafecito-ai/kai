@@ -125,6 +125,12 @@ function sanitizeClientContext(raw: unknown): import("../lib/context").KaiClient
       const h = num(r.localHour);
       return h != null && h >= 0 && h <= 23 ? Math.floor(h) : undefined;
     })(),
+    localWeekday: (() => {
+      const weekday = str(r.localWeekday, 12);
+      return /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(weekday)
+        ? weekday
+        : undefined;
+    })(),
   };
 }
 

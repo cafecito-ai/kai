@@ -14,6 +14,7 @@ import {
   getNorthStar,
   northStarProgress,
   setNorthStar,
+  shortLabelFor,
   whatBuildsGoal,
 } from "../lib/local-northstar";
 
@@ -76,8 +77,10 @@ export function NorthStarCard() {
           </div>
         </div>
 
-        <p className="mt-3 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text-primary">
-          {goal ?? "Set your big goal"}
+        {/* Short identity/theme label — glanceable. The full goal text lives
+            in the sheet. (Client: card stays clean even if they wrote a paragraph.) */}
+        <p className="mt-3 line-clamp-1 min-h-[1.75rem] font-display text-lg font-semibold leading-snug tracking-tight text-text-primary">
+          {goal ? shortLabelFor(goal) : "Set your big goal"}
         </p>
         <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
           {goal ? (pct > 0 ? `${pct}% there` : "Log to build it") : "Tap to set"}
@@ -171,13 +174,20 @@ function GoalSheet({
         ) : (
           <>
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
                   Your goal
                 </p>
+                {/* Short label as the heading; the full text below is the
+                    deeper explanation (only shown if it's more than the label). */}
                 <p className="mt-1 font-display text-xl font-semibold leading-snug tracking-tight text-text-primary">
-                  {goal}
+                  {goal ? shortLabelFor(goal) : ""}
                 </p>
+                {goal && goal.trim().toLowerCase() !== shortLabelFor(goal).toLowerCase() && (
+                  <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
+                    {goal}
+                  </p>
+                )}
               </div>
               <button
                 type="button"

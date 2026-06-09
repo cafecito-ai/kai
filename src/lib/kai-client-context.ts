@@ -51,6 +51,9 @@ export type KaiClientContext = {
   /** The user's LOCAL hour (0-23). The worker runs in UTC, so without this
    *  KAI guesses the wrong time of day ("what's going on tonight?" at 3pm). */
   localHour: number;
+  /** The user's LOCAL weekday, paired with localHour so the prompt does not
+   *  mix client-local time with the worker's UTC calendar day. */
+  localWeekday: string;
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -150,6 +153,7 @@ export function buildKaiClientContext(now: Date = new Date()): KaiClientContext 
       label: labelForLevel(levelInfo.level),
     },
     localHour: now.getHours(),
+    localWeekday: now.toLocaleDateString("en-US", { weekday: "long" }),
   };
 }
 

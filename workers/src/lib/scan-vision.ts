@@ -151,7 +151,9 @@ export function defaultVisionCall(env: Env): VisionCallFn {
     const content: Array<Record<string, unknown>> = [
       { type: "text", text: systemPrompt },
     ];
-    for (const img of images) {
+    const labels = ["front", "side", "back"];
+    for (const [i, img] of images.entries()) {
+      content.push({ type: "text", text: `Photo ${i + 1} (${labels[i] ?? "view"}):` });
       content.push({
         type: "image",
         source: {

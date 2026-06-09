@@ -25,6 +25,7 @@ import {
   type VisionCallFn,
 } from "../src/lib/scan-vision";
 import { passesBodyLanguageFilter } from "../src/lib/body-language-filter";
+import { BODY_SCAN_VISION_PROMPT } from "../src/lib/prompts/body-scan-prompt";
 import type { Env } from "../src/types";
 
 // ─────────────────────────────────────────────────────────────────────
@@ -290,6 +291,32 @@ describe("Gate 5 filter compliance — 20 synthetic outputs", () => {
 // ─────────────────────────────────────────────────────────────────────
 
 describe("defaultVisionCall", () => {
+  it("labels front/side/back images for Workers-AI fallback accuracy", async () => {
+    const runMock = vi.fn(async () => ({ response: "ok" }));
+    const env = {
+      AI: { run: runMock },
+      AI_VISION_MODEL: "@cf/test/vision",
+    } as unknown as Env;
+
+    const call = defaultVisionCall(env);
+    await call({
+      systemPrompt: "stub",
+      images: [
+        { mime: "image/jpeg", bytesB64: "front" },
+        { mime: "image/jpeg", bytesB64: "side" },
+        { mime: "image/jpeg", bytesB64: "back" },
+      ],
+    });
+
+    expect(runMock.mock.calls.length).toBeGreaterThan(0);
+    const firstCall = runMock.mock.calls[0] as unknown as [string, { messages: Array<{ content: Array<{ text?: string }> }> }];
+    const payload = firstCall[1];
+    const content = payload.messages[0].content;
+    expect(content.some((part) => part.text === "Photo 1 (front):")).toBe(true);
+    expect(content.some((part) => part.text === "Photo 2 (side):")).toBe(true);
+    expect(content.some((part) => part.text === "Photo 3 (back):")).toBe(true);
+  });
+
   it("passes disable_training: true on every AI invocation", async () => {
     const runMock = vi.fn(async () => ({ response: "ok" }));
     const env = {
@@ -315,6 +342,21 @@ describe("defaultVisionCall", () => {
     await expect(
       call({ systemPrompt: "x", images: [{ mime: "image/jpeg", bytesB64: "AAAA" }] }),
     ).rejects.toThrow(/no vision backend/);
+  });
+});
+
+describe("BODY_SCAN_VISION_PROMPT accuracy constraints", () => {
+  it("requires all three labeled views and view-specific evidence", () => {
+    expect(BODY_SCAN_VISION_PROMPT).toMatch(/front view/i);
+    expect(BODY_SCAN_VISION_PROMPT).toMatch(/side view/i);
+    expect(BODY_SCAN_VISION_PROMPT).toMatch(/back view/i);
+    expect(BODY_SCAN_VISION_PROMPT).toMatch(/Name the view evidence/i);
+  });
+
+  it("tells the model to return ERROR instead of guessing from missing or poor side/back views", () => {
+    expect(BODY_SCAN_VISION_PROMPT).toMatch(/If any required view is missing/i);
+    expect(BODY_SCAN_VISION_PROMPT).toMatch(/side\/back view is too hard to read/i);
+    expect(BODY_SCAN_VISION_PROMPT).toMatch(/instead of guessing/i);
   });
 });
 

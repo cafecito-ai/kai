@@ -36,6 +36,7 @@ import { DesignTokens } from "./pages/DesignTokens";
 import { ForParents } from "./pages/ForParents";
 import { Goals } from "./pages/Goals";
 import { Groups } from "./pages/Groups";
+import { Schedule } from "./pages/Schedule";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
@@ -125,6 +126,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/engine/:engineId/guides/:slug" element={protectedOnboarding(<GuidePage />)} />
           <Route path="/progress" element={protectedOnboarding(<Progress />)} />
           <Route path="/groups" element={protectedOnboarding(<Groups />)} />
+          <Route path="/schedule" element={protectedOnboarding(<Schedule />)} />
           <Route path="/groups/inbox" element={protectedOnboarding(<GroupInbox />)} />
           <Route path="/groups/:id" element={protectedOnboarding(<GroupDetail />)} />
           <Route path="/groups/:id/leaderboard" element={protectedOnboarding(<GroupLeaderboard />)} />

@@ -83,9 +83,14 @@ export function ScanCapture() {
         // T-030 — Trigger vision analysis. Best-effort: if it fails
         // (no AI binding, network), we still navigate to history. The
         // observations will be re-computable on demand from history.
+        // analyzeAndNavigate owns busy from here (it navigates away).
         analyzeAndNavigate();
       } else {
+        // Advance to the next angle AND clear busy — otherwise the button
+        // stays disabled on "Saving…" forever and the user can't take the
+        // next photo (the infinite-"saving" bug).
         setIdx(idx + 1);
+        setBusy(false);
       }
     } catch {
       setError("Couldn't save that photo — try once more.");

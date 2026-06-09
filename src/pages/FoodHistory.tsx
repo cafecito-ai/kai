@@ -344,11 +344,32 @@ function MealDetail({
         {meal.note && (
           <p className="mt-1 text-xs text-text-secondary">{meal.note}</p>
         )}
-        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-          Calories · coming soon
-        </p>
+        {meal.nutrition ? (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <NutritionChip label="calories" value={Math.round(meal.nutrition.calories)} />
+            <NutritionChip label="protein" value={Math.round(meal.nutrition.protein)} unit="g" />
+            <NutritionChip label="carbs" value={Math.round(meal.nutrition.carbs)} unit="g" />
+            <NutritionChip label="fat" value={Math.round(meal.nutrition.fat)} unit="g" />
+          </div>
+        ) : (
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
+            Nutrition estimate unavailable
+          </p>
+        )}
       </div>
     </section>
+  );
+}
+
+function NutritionChip({ label, value, unit }: { label: string; value: number; unit?: string }) {
+  return (
+    <div className="rounded-md bg-surface-muted px-2 py-1.5 text-center">
+      <p className="font-mono text-sm font-semibold leading-none text-text-primary">
+        {value}
+        {unit ?? ""}
+      </p>
+      <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.1em] text-text-muted">{label}</p>
+    </div>
   );
 }
 

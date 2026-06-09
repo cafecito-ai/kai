@@ -11,7 +11,7 @@
 // AI vision is NOT wired here. Phase E (T-030) plugs that in.
 
 import { ArrowLeft, Camera, Check, ChevronRight } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { SilhouetteOverlay } from "../../components/scan/SilhouetteOverlay";
@@ -55,11 +55,34 @@ export function ScanCapture() {
   // across page navigations.
   const userSecretRef = useRef<string>(getOrCreateDeviceSecret());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [autoCapturePending, setAutoCapturePending] = useState(false);
 
   const step = ANGLES[idx];
   const isLast = idx === ANGLES.length - 1;
+
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
+
+  useEffect(() => {
+    if (!videoRef.current || !streamRef.current) return;
+    videoRef.current.srcObject = streamRef.current;
+  }, [cameraReady]);
+
+  useEffect(() => {
+    if (!autoCapturePending || !streamRef.current || busy || countdown !== null) return;
+    setAutoCapturePending(false);
+    const id = window.setTimeout(() => {
+      void startTimedCameraCapture();
+    }, 600);
+    return () => window.clearTimeout(id);
+  }, [autoCapturePending, idx, busy, countdown]);
 
   async function handleFile(file: File) {
     setBusy(true);
@@ -91,11 +114,80 @@ export function ScanCapture() {
         // next photo (the infinite-"saving" bug).
         setIdx(idx + 1);
         setBusy(false);
+        if (streamRef.current) {
+          setAutoCapturePending(true);
+        }
       }
     } catch {
       setError("Couldn't save that photo — try once more.");
       setBusy(false);
     }
+  }
+
+  async function startCamera(): Promise<boolean> {
+    if (streamRef.current) return true;
+    if (!navigator.mediaDevices?.getUserMedia) return false;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setCameraReady(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      return true;
+    } catch {
+      setCameraReady(false);
+      return false;
+    }
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }
+
+  async function startTimedCameraCapture() {
+    if (busy || countdown !== null) return;
+    setError(null);
+    const ready = await startCamera();
+    if (!ready) {
+      fileInputRef.current?.click();
+      return;
+    }
+    for (let n = idx === 0 ? 3 : 5; n > 0; n -= 1) {
+      setCountdown(n);
+      await wait(1000);
+    }
+    setCountdown(null);
+    await captureVideoFrame();
+  }
+
+  async function captureVideoFrame() {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2) {
+      setError("Camera wasn't ready — try once more.");
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 720;
+    canvas.height = video.videoHeight || 960;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      setError("Couldn't capture that photo — try once more.");
+      return;
+    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+    if (!blob) {
+      setError("Couldn't capture that photo — try once more.");
+      return;
+    }
+    const file = new File([blob], `${step.angle}-scan.jpg`, { type: "image/jpeg" });
+    await handleFile(file);
   }
 
   async function analyzeAndNavigate() {
@@ -163,10 +255,26 @@ export function ScanCapture() {
 
       {/* Silhouette card */}
       <div className="relative mb-5 flex flex-1 flex-col items-center justify-center rounded-glass border border-glass-border bg-gradient-to-b from-surface to-surface-muted/40 p-4 shadow-card">
+        {cameraReady && (
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover opacity-55"
+          />
+        )}
         <p className="absolute left-4 top-4 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
           framing guide
         </p>
         <SilhouetteOverlay angle={step.angle} className="h-full max-h-[60vh] w-auto" />
+        {countdown !== null && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/35 backdrop-blur-[1px]">
+            <span className="font-mono text-7xl font-bold text-text-primary drop-shadow">
+              {countdown}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="pb-5">
@@ -191,13 +299,14 @@ export function ScanCapture() {
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) handleFile(f);
+          e.target.value = "";
         }}
       />
 
       <button
         type="button"
-        disabled={busy}
-        onClick={() => fileInputRef.current?.click()}
+        disabled={busy || countdown !== null}
+        onClick={() => void startTimedCameraCapture()}
         className="
           flex h-12 w-full items-center justify-center gap-2 rounded-full
           bg-text-primary text-background font-medium
@@ -206,7 +315,9 @@ export function ScanCapture() {
           focus-ring
         "
       >
-        {busy ? (
+        {countdown !== null ? (
+          `Capturing in ${countdown}…`
+        ) : busy ? (
           "Saving…"
         ) : isLast ? (
           <>
@@ -226,6 +337,10 @@ export function ScanCapture() {
       </p>
     </div>
   );
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 // ─────────────────────────────────────────────────────────────────────

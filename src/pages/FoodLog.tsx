@@ -81,6 +81,7 @@ export function FoodLog() {
       loggedAt: new Date().toISOString(),
       photoDataUrl,
       items: result.items.map((i) => i.name).filter(Boolean).slice(0, 8),
+      nutrition: result.totals ?? undefined,
       note: noteText.trim() || undefined,
     });
   }
@@ -117,6 +118,7 @@ export function FoodLog() {
       saveFoodEntry({
         loggedAt: new Date().toISOString(),
         items: names.length > 0 ? names : [description],
+        nutrition: r.totals ?? undefined,
       });
       setResult(r);
       setPhase("done");
@@ -419,7 +421,7 @@ function DoneState({
       {result.totals && (
         <details className="mt-3 rounded-glass border border-glass-border bg-surface p-4 shadow-card">
           <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted focus-ring">
-            Show rough macros
+            Show nutrition estimate
           </summary>
 
           <div className="mt-3 grid grid-cols-2 gap-2">

@@ -435,7 +435,7 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
         </div>
       </div>
 
-      <p className="mt-3 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text-primary">
+      <p className="mt-3 line-clamp-1 min-h-[1.75rem] font-display text-lg font-semibold leading-snug tracking-tight text-text-primary">
         {data.bandLabel}
       </p>
       <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">

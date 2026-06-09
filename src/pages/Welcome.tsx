@@ -279,19 +279,26 @@ export function Welcome() {
           </div>
         )}
 
-        {/* Tap hint — always show, fades after a few seconds */}
+        {/* Tap hint — explicit button target for keyboard/screen-reader users.
+            The whole stage is still tappable for the original touch flow. */}
         {!isLast && beat.hint && (
-          <p
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              advance();
+            }}
             key={`hint-${idx}`}
             className="
               absolute bottom-6 left-1/2 -translate-x-1/2
+              rounded-full px-3 py-2 focus-ring
               font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted
               kai-hint-pulse
             "
-            aria-hidden="true"
+            aria-label={beat.hint}
           >
             {beat.hint}
-          </p>
+          </button>
         )}
       </div>
 

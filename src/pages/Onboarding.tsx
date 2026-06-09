@@ -35,6 +35,7 @@ import {
 } from "../lib/onboarding-followups";
 import { seedNorthStarFromFocus, setNorthStar } from "../lib/local-northstar";
 import { setSchedule } from "../lib/local-schedule";
+import { flushPendingOnboardingIntake, queueOnboardingIntake } from "../lib/pending-onboarding-intake";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -297,8 +298,10 @@ export function Onboarding() {
       });
       // Intake summarization can take a few seconds because it may call the
       // model. Do not hold the teen on the final screen after the required
-      // onboarding-complete write has succeeded.
-      void api.submitIntake(keyedResponses).catch(() => {});
+      // onboarding-complete write has succeeded. Queue it first so a transient
+      // failure is retried on the next app boot instead of being silently lost.
+      queueOnboardingIntake(keyedResponses);
+      void flushPendingOnboardingIntake();
       setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
       // Flow: Welcome → Onboarding → Home. Welcome already happened

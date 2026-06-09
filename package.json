@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "teen:sim": "node scripts/teen-sim.mjs",
     "smoke:api": "node scripts/smoke-api.mjs",
+    "smoke:browser": "node scripts/smoke-browser.mjs",
     "smoke:deploy": "node scripts/smoke-deploy.mjs",
     "worker:dev": "wrangler dev --config wrangler.worker.toml",
     "worker:deploy": "wrangler deploy --config wrangler.worker.toml",

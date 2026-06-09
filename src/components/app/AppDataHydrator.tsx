@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { api } from "../../lib/api";
+import { flushPendingOnboardingIntake } from "../../lib/pending-onboarding-intake";
 import { useKaiStore } from "../../stores/kaiStore";
 import { useProgressStore } from "../../stores/progressStore";
 import { useUserStore } from "../../stores/userStore";
@@ -22,6 +23,7 @@ export function AppDataHydrator() {
       if (userResult.status === "fulfilled") hydrateUser(userResult.value);
       if (progressResult.status === "fulfilled") setEvents(progressResult.value.eventsByDay);
       if (conversationResult.status === "fulfilled") hydrateKai(conversationResult.value);
+      void flushPendingOnboardingIntake();
     }
 
     void hydrate();

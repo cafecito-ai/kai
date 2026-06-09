@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Kai">
+  <defs>
+    <radialGradient id="face" cx="35%" cy="25%" r="75%">
+      <stop offset="0" stop-color="#f8fffb"/>
+      <stop offset="0.28" stop-color="#98eadf"/>
+      <stop offset="0.72" stop-color="#7f6cff"/>
+      <stop offset="1" stop-color="#4b36d9"/>
+    </radialGradient>
+    <linearGradient id="shadow" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#77eadf"/>
+      <stop offset="1" stop-color="#6d58f4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#fafaf7"/>
+  <circle cx="256" cy="228" r="154" fill="url(#face)"/>
+  <circle cx="206" cy="213" r="16" fill="#253047"/>
+  <circle cx="312" cy="213" r="16" fill="#253047"/>
+  <path d="M210 282c31 31 81 31 112 0" fill="none" stroke="#253047" stroke-linecap="round" stroke-width="20"/>
+  <circle cx="119" cy="345" r="38" fill="url(#shadow)" opacity="0.9"/>
+  <circle cx="393" cy="345" r="38" fill="url(#shadow)" opacity="0.9"/>
+</svg>

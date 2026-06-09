@@ -101,8 +101,11 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/chat" element={protectedOnboarding(<Chat />)} />
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />
+          <Route path="/sleep" element={<Navigate to="/sleep/log" replace />} />
           <Route path="/sleep/log" element={protectedOnboarding(<SleepLog />)} />
+          <Route path="/workout" element={<Navigate to="/workout/log" replace />} />
           <Route path="/workout/log" element={protectedOnboarding(<WorkoutLog />)} />
+          <Route path="/food" element={<Navigate to="/food/log" replace />} />
           <Route path="/food/log" element={protectedOnboarding(<FoodLog />)} />
           <Route path="/mobility" element={protectedOnboarding(<Mobility />)} />
           <Route path="/mobility/:id" element={protectedOnboarding(<MobilityPlayer />)} />

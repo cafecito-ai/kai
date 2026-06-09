@@ -262,7 +262,6 @@ export function Onboarding() {
       // so the Mind + Body agents have richer day-one context.
       const questions = pickFollowUps(focusAreas);
       Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
-      await api.submitIntake(keyedResponses);
       // Seed the long-term North Star goal from what they chose to work on.
       // Shown next to the Daily Score on Home; editable there.
       // The big goal they typed becomes the North Star title; if they
@@ -296,6 +295,10 @@ export function Onboarding() {
         age: ageNum,
         onboardingCompleted: true,
       });
+      // Intake summarization can take a few seconds because it may call the
+      // model. Do not hold the teen on the final screen after the required
+      // onboarding-complete write has succeeded.
+      void api.submitIntake(keyedResponses).catch(() => {});
       setKai(kaiName, kaiTone);
       setPrimaryEngine(primaryEngine);
       // Flow: Welcome → Onboarding → Home. Welcome already happened
@@ -910,9 +913,7 @@ function ConfirmStep({
           {error}
         </p>
       )}
-      {saving && (
-        <p className="text-xs text-text-muted">Saving and signing you in…</p>
-      )}
+      {saving && <p className="text-xs text-text-muted">Finishing setup…</p>}
     </div>
   );
 }
@@ -1090,7 +1091,7 @@ function Footer({
           focus-ring
         "
       >
-        {isLast ? (saving ? "Signing you in…" : "Start") : "Continue"}
+        {isLast ? (saving ? "Finishing…" : "Start") : "Continue"}
         {!isLast && <ArrowRight size={18} aria-hidden="true" />}
       </button>
     </div>

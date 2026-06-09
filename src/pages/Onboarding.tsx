@@ -566,8 +566,6 @@ function HardestStep({
   );
 }
 
-// The one big goal — its answer becomes the North Star title on Home,
-// shown next to the Daily Score and editable there. Optional/skippable.
 function ScheduleStep({
   choice,
   setChoice,
@@ -637,6 +635,8 @@ function ScheduleStep({
   );
 }
 
+// The one big goal — its answer becomes the North Star title on Home,
+// shown next to the Daily Score and editable there. Optional/skippable.
 function GoalStep({
   firstName,
   value,
@@ -899,7 +899,7 @@ function ConfirmStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 9"
+        eyebrow="step 10"
         title={`You're set, ${firstName}.`}
         blurb="Ready to meet your home screen?"
       />

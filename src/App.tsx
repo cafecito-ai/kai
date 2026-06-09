@@ -18,6 +18,7 @@ import { ScanResult } from "./pages/scan/ScanResult";
 import { ScanWelcome } from "./pages/scan/ScanWelcome";
 import { Voice } from "./pages/Voice";
 import { FoodLog } from "./pages/FoodLog";
+import { FoodHistory } from "./pages/FoodHistory";
 import { GroupDetail } from "./pages/GroupDetail";
 import { GroupInbox } from "./pages/GroupInbox";
 import { GroupLeaderboard } from "./pages/GroupLeaderboard";
@@ -107,6 +108,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/workout/log" element={protectedOnboarding(<WorkoutLog />)} />
           <Route path="/food" element={<Navigate to="/food/log" replace />} />
           <Route path="/food/log" element={protectedOnboarding(<FoodLog />)} />
+          <Route path="/food/history" element={protectedOnboarding(<FoodHistory />)} />
           <Route path="/mobility" element={protectedOnboarding(<Mobility />)} />
           <Route path="/mobility/:id" element={protectedOnboarding(<MobilityPlayer />)} />
           <Route path="/energy" element={protectedOnboarding(<EnergyCheckIn />)} />

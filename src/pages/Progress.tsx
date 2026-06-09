@@ -220,14 +220,33 @@ function DailyScoreChart({ days }: { days: DayBucket[] }) {
         )}
       </div>
 
-      <div className="mt-5 flex items-end gap-2" style={{ height: 120 }}>
-        {days.map((d) => {
-          const pct = d.final != null ? (d.final / maxScore) * 100 : 4;
+      {/* Bars scaled to ~85% so each one has room for its score label on
+          top — otherwise similar-height days are indistinguishable. */}
+      <div className="mt-6 flex items-end gap-2" style={{ height: 132 }}>
+        {days.map((d, i) => {
+          const isToday = i === days.length - 1;
+          const h = d.final != null ? Math.max(8, (d.final / maxScore) * 85) : 5;
           return (
-            <div key={d.date} className="flex h-full flex-1 flex-col justify-end">
+            <div
+              key={d.date}
+              className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+            >
+              {d.final != null && (
+                <span
+                  className={`font-mono text-[11px] leading-none ${
+                    isToday
+                      ? "font-bold text-text-primary"
+                      : "font-semibold text-text-secondary"
+                  }`}
+                >
+                  {d.final}
+                </span>
+              )}
               <div
-                className={`w-full rounded-t-md transition-all ${barClassFor(d.final)}`}
-                style={{ height: `${Math.max(4, pct)}%` }}
+                className={`w-2/3 rounded-t-md transition-all ${barClassFor(d.final)} ${
+                  isToday ? "ring-2 ring-text-primary/20" : ""
+                }`}
+                style={{ height: `${h}%` }}
                 title={d.final != null ? `${d.label}: ${d.final}` : `${d.label}: no data`}
                 aria-label={d.final != null ? `${d.label}: ${d.final}` : `${d.label}: no data`}
               />
@@ -236,14 +255,19 @@ function DailyScoreChart({ days }: { days: DayBucket[] }) {
         })}
       </div>
       <div className="mt-2 flex items-center gap-2">
-        {days.map((d) => (
-          <p
-            key={d.date}
-            className="flex-1 text-center font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted"
-          >
-            {d.weekday}
-          </p>
-        ))}
+        {days.map((d, i) => {
+          const isToday = i === days.length - 1;
+          return (
+            <p
+              key={d.date}
+              className={`flex-1 text-center font-mono text-[10px] uppercase tracking-[0.1em] ${
+                isToday ? "font-bold text-text-primary" : "text-text-muted"
+              }`}
+            >
+              {d.weekday}
+            </p>
+          );
+        })}
       </div>
     </section>
   );
@@ -292,27 +316,37 @@ function SubScoreTrends({ days }: { days: DayBucket[] }) {
       <div className="mt-4 space-y-4">
         {tracks.map((track) => {
           const series = days.map((d) => d[track.key]);
-          const latest = series[series.length - 1];
           return (
             <div key={track.key}>
-              <div className="mb-1.5 flex items-center justify-between gap-2">
+              <div className="mb-1.5 flex items-center gap-2">
                 <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${track.tint}`}>
                   <track.icon size={12} aria-hidden="true" />
                   {track.label}
                 </span>
-                <span className="font-mono text-xs text-text-muted">
-                  {latest != null ? `${latest}/100` : "—"}
-                </span>
               </div>
-              <div className="flex items-end gap-1" style={{ height: 36 }}>
+              {/* Bars scaled to leave headroom for today's value label on top,
+                  same pattern as the daily-score chart — just shorter. */}
+              <div className="flex items-end gap-1.5" style={{ height: 52 }}>
                 {series.map((v, idx) => {
-                  const pct = v != null ? (v / 100) * 100 : 4;
+                  const isToday = idx === series.length - 1;
+                  const h = v != null ? Math.max(10, v * 0.72) : 6;
                   return (
                     <div
                       key={idx}
-                      className={`flex-1 rounded-t ${v != null ? track.bar : "bg-surface-muted"}`}
-                      style={{ height: `${Math.max(4, pct)}%` }}
-                    />
+                      className="flex h-full flex-1 flex-col items-center justify-end gap-0.5"
+                    >
+                      {isToday && (
+                        <span className="font-mono text-[11px] font-bold leading-none text-text-primary">
+                          {v != null ? v : "—"}
+                        </span>
+                      )}
+                      <div
+                        className={`w-2/3 rounded-t-md ${
+                          v != null ? track.bar : "bg-surface-muted"
+                        } ${isToday ? "ring-1 ring-text-primary/15" : ""}`}
+                        style={{ height: `${h}%` }}
+                      />
+                    </div>
                   );
                 })}
               </div>

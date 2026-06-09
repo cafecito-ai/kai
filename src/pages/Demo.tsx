@@ -1104,7 +1104,7 @@ function FuelSnapMini({ onComplete }: { onComplete: (summary: string, result: Fu
               <li key={i} className="flex items-baseline justify-between gap-2">
                 <span className="text-[13px] font-bold text-white/90">{item.name}</span>
                 <span className="text-[11px] font-bold text-white/55">
-                  {item.estimatedGrams ? `~${item.estimatedGrams}g` : ""}
+                  {item.estimatedGrams ? `~${Math.round(item.estimatedGrams)}g portion` : ""}
                   {item.nutrition?.calories ? ` · ~${Math.round(item.nutrition.calories)} kcal` : ""}
                 </span>
               </li>

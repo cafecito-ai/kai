@@ -295,26 +295,59 @@ function DoneState({
           </p>
           <ul className="mt-2 space-y-1">
             {result.items.map((item, i) => (
-              <li key={`${item.name}-${i}`} className="text-sm text-text-primary">
-                · {item.name}
-                {item.estimatedGrams ? ` · ~${Math.round(item.estimatedGrams)}g` : ""}
+              <li
+                key={`${item.name}-${i}`}
+                className="flex items-baseline justify-between gap-3 text-sm text-text-primary"
+              >
+                <span>· {item.name}</span>
+                {item.estimatedGrams ? (
+                  <span className="shrink-0 font-mono text-xs text-text-muted">
+                    ~{Math.round(item.estimatedGrams)}g portion
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      {/* Optional macros */}
+      {/* Macro breakdown — calories + the full protein/carbs/fat split, plus a
+          per-item breakdown. Everything is labeled so a bare "33g" can't be
+          mistaken for a macro (that number is the portion weight, shown above). */}
       {result.totals && (
         <details className="mt-3 rounded-glass border border-glass-border bg-surface p-4 shadow-card">
           <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted focus-ring">
             Show rough macros
           </summary>
-          <p className="mt-2 font-mono text-sm text-text-primary">
-            ~{Math.round(result.totals.calories)} cal · ~{Math.round(result.totals.protein)}g protein
-          </p>
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-            estimates only — not a target
+
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            <MacroStat label="calories" value={Math.round(result.totals.calories)} />
+            <MacroStat label="protein" value={Math.round(result.totals.protein)} unit="g" />
+            <MacroStat label="carbs" value={Math.round(result.totals.carbs)} unit="g" />
+            <MacroStat label="fat" value={Math.round(result.totals.fat)} unit="g" />
+          </div>
+
+          {result.items.some((it) => it.nutrition) && (
+            <ul className="mt-3 space-y-1 border-t border-glass-border pt-3">
+              {result.items
+                .filter((it) => it.nutrition)
+                .map((item, i) => (
+                  <li
+                    key={`macro-${item.name}-${i}`}
+                    className="flex items-baseline justify-between gap-2 font-mono text-[11px] text-text-secondary"
+                  >
+                    <span className="min-w-0 truncate">{item.name}</span>
+                    <span className="shrink-0 text-text-muted">
+                      {Math.round(item.nutrition!.calories)} cal · {Math.round(item.nutrition!.protein)}g P ·{" "}
+                      {Math.round(item.nutrition!.carbs)}g C · {Math.round(item.nutrition!.fat)}g F
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          )}
+
+          <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+            P = protein · C = carbs · F = fat · estimates only, not a target
           </p>
         </details>
       )}
@@ -343,6 +376,20 @@ function DoneState({
           Talk to KAI
         </button>
       </div>
+    </div>
+  );
+}
+
+/** One labeled macro cell in the breakdown grid — keeps every number tied to
+ *  a word so nothing reads as a bare, ambiguous gram count. */
+function MacroStat({ label, value, unit }: { label: string; value: number; unit?: string }) {
+  return (
+    <div className="rounded-lg bg-surface-muted px-2 py-2 text-center">
+      <p className="font-mono text-base text-text-primary">
+        {value}
+        {unit ?? ""}
+      </p>
+      <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-text-muted">{label}</p>
     </div>
   );
 }

@@ -13,7 +13,7 @@ import { addDays, localDateKey } from "./dates";
 import { getNorthStar } from "./local-northstar";
 import {
   getSchedule,
-  setSchedule,
+  setScheduleItems,
   type ScheduleItem,
   type SystemSection,
 } from "./local-schedule";
@@ -114,8 +114,9 @@ export function deleteSystem(id: string): void {
 export function makeMain(id: string): void {
   const sys = readSystems().find((s) => s.id === id);
   if (!sys) return;
-  // setSchedule expects GeneratedItem-ish input; ScheduleItem is a superset.
-  setSchedule(sys.items);
+  // Preserve item ids so this system's check-off progress (keyed by id in
+  // kai_system_done_v1) survives the switch instead of getting wiped.
+  setScheduleItems(sys.items);
   // Update the system title only — the Home North Star goal stays separate.
   if (sys.goal && sys.goal !== "My system") setSystemGoal(sys.goal);
 }

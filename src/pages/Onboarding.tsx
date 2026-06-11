@@ -33,8 +33,9 @@ import {
   pickFollowUps,
   type FollowUpResponse,
 } from "../lib/onboarding-followups";
-import { seedNorthStarFromFocus, setNorthStar } from "../lib/local-northstar";
+import { getNorthStar, seedNorthStarFromFocus, setNorthStar } from "../lib/local-northstar";
 import { setSchedule } from "../lib/local-schedule";
+import { setSystemGoal } from "../lib/local-systems";
 import { flushPendingOnboardingIntake, queueOnboardingIntake } from "../lib/pending-onboarding-intake";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
@@ -184,7 +185,7 @@ function isKaiTone(v: unknown): v is KaiTone {
 // Rawz/5 — 8 steps now (inserted adaptive follow-up between Hardest
 // and Meet KAI). Net flow stays under 90 seconds for most users since
 // the new step is at most 3 quick-tap questions, all skippable.
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 9;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -197,11 +198,8 @@ export function Onboarding() {
   const [age, setAge] = useState("");
   const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([]);
   const [hardestLately, setHardestLately] = useState("");
-  // The user's one big goal — becomes the North Star title on Home.
+  // The user's one big goal — becomes the Home goal AND seeds the first system.
   const [bigGoal, setBigGoal] = useState("");
-  // Optional custom schedule KAI builds from a free-text request.
-  const [wantSchedule, setWantSchedule] = useState<"yes" | "no" | null>(null);
-  const [scheduleText, setScheduleText] = useState("");
   // Rawz/5 — adaptive follow-up responses keyed by question id.
   const [followUps, setFollowUps] = useState<FollowUpResponse>({});
   const [kaiName] = useState(demoBuild?.kaiName?.trim() || "KAI");
@@ -229,9 +227,8 @@ export function Onboarding() {
       case 5: // meet KAI
       case 6: // tone
       case 7: // big goal (optional, skippable)
-      case 8: // schedule (optional — yes/no)
         return true;
-      case 9: // confirm + save
+      case 8: // confirm + save
         return !saving;
       default:
         return true;
@@ -263,22 +260,22 @@ export function Onboarding() {
       // so the Mind + Body agents have richer day-one context.
       const questions = pickFollowUps(focusAreas);
       Object.assign(keyedResponses, formatFollowUpsForIntake(questions, followUps));
-      // Seed the long-term North Star goal from what they chose to work on.
-      // Shown next to the Daily Score on Home; editable there.
-      // The big goal they typed becomes the North Star title; if they
-      // skipped it, fall back to seeding from their focus areas.
-      if (bigGoal.trim()) {
-        setNorthStar(bigGoal.trim(), "custom");
+      // The goal they typed becomes the Home goal (and the first system's
+      // title); if they skipped it, derive one from their focus areas.
+      let goalText = bigGoal.trim();
+      if (goalText) {
+        setNorthStar(goalText, "custom");
       } else {
         seedNorthStarFromFocus(focusAreas);
+        goalText = getNorthStar()?.goal ?? "";
       }
-      // Optional custom system — generate it from their description + goal.
-      // NON-blocking: a full system is a bigger model call, so we don't make
-      // onboarding hang on it. It fills into their System section once it lands.
-      if (wantSchedule === "yes" && scheduleText.trim()) {
-        const g = bigGoal.trim() || undefined;
+      // Auto-build the first system around that goal — the Home goal ring
+      // fills from this system's weekly progress. NON-blocking (a full system
+      // is a bigger model call); it fills into the System page once it lands.
+      if (goalText) {
+        setSystemGoal(goalText);
         void api
-          .scheduleGenerate(scheduleText.trim(), g)
+          .scheduleGenerate(goalText, goalText)
           .then((res) => {
             if (res.items.length > 0) setSchedule(res.items);
           })
@@ -368,18 +365,6 @@ export function Onboarding() {
             />
           )}
           {step === 8 && (
-            <ScheduleStep
-              choice={wantSchedule}
-              setChoice={setWantSchedule}
-              text={scheduleText}
-              onChangeText={setScheduleText}
-              onSkip={() => {
-                setWantSchedule("no");
-                next();
-              }}
-            />
-          )}
-          {step === 9 && (
             <ConfirmStep
               firstName={firstName}
               focusAreas={focusAreas}
@@ -566,77 +551,8 @@ function HardestStep({
   );
 }
 
-function ScheduleStep({
-  choice,
-  setChoice,
-  text,
-  onChangeText,
-  onSkip,
-}: {
-  choice: "yes" | "no" | null;
-  setChoice: (c: "yes" | "no") => void;
-  text: string;
-  onChangeText: (v: string) => void;
-  onSkip: () => void;
-}) {
-  return (
-    <div className="space-y-6">
-      <Heading
-        eyebrow="step 9 — optional"
-        title="Want KAI to build your system?"
-        blurb="A full lifestyle system around your goal — habits, workouts, sleep, routines, mindset, and what to avoid. Totally optional, and you can change any part of it later."
-      />
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setChoice("yes")}
-          aria-pressed={choice === "yes"}
-          className={`flex h-12 flex-1 items-center justify-center rounded-full border text-sm font-semibold transition ${
-            choice === "yes"
-              ? "border-text-primary bg-text-primary text-background shadow-card-lg"
-              : "border-glass-border bg-surface text-text-primary shadow-card hover:bg-surface-muted"
-          }`}
-        >
-          Yes, build one
-        </button>
-        <button
-          type="button"
-          onClick={onSkip}
-          aria-pressed={choice === "no"}
-          className="flex h-12 flex-1 items-center justify-center rounded-full border border-glass-border bg-surface text-sm font-semibold text-text-secondary shadow-card transition hover:bg-surface-muted"
-        >
-          No schedule
-        </button>
-      </div>
-
-      {choice === "yes" && (
-        <div className="space-y-2 animate-fade-slide-up">
-          <p className="text-sm text-text-secondary">
-            Describe what you're going for in a sentence — KAI builds the whole system.
-          </p>
-          <textarea
-            autoFocus
-            value={text}
-            onChange={(e) => onChangeText(e.target.value.slice(0, 200))}
-            rows={3}
-            placeholder='e.g. "Build my whole system around getting stronger and disciplined"'
-            className="
-              w-full resize-none rounded-lg border border-glass-border bg-surface
-              px-4 py-3.5 text-base text-text-primary placeholder:text-text-muted
-              shadow-card focus-ring
-            "
-          />
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-            Anything works — a workout split, a study routine, a morning routine.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// The one big goal — its answer becomes the North Star title on Home,
-// shown next to the Daily Score and editable there. Optional/skippable.
+// The one big goal — its answer becomes the Home goal AND auto-builds the
+// first system (KAI generates it around this goal). Optional/skippable.
 function GoalStep({
   firstName,
   value,
@@ -657,7 +573,7 @@ function GoalStep({
             ? `What are you working toward, ${firstName}?`
             : "What are you working toward?"
         }
-        blurb="Your one big goal. KAI keeps it on your home screen and fills the ring as you show up. Change it anytime."
+        blurb="Your one big goal. KAI builds a system around it and keeps it on your home screen, where the ring fills as you work your system this week. Change it anytime."
       />
       <textarea
         autoFocus
@@ -899,7 +815,7 @@ function ConfirmStep({
   return (
     <div className="space-y-6">
       <Heading
-        eyebrow="step 10"
+        eyebrow="step 9"
         title={`You're set, ${firstName}.`}
         blurb="Ready to meet your home screen?"
       />

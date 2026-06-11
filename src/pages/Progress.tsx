@@ -13,10 +13,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowUpRight,
   Brain,
   Dumbbell,
   Flame,
   Heart,
+  ListChecks,
   Moon,
   NotebookPen,
   Sparkles,
@@ -32,6 +34,8 @@ import {
   type LocalInput,
 } from "../lib/local-score";
 import { getRecentHydration } from "../lib/local-hydration";
+import { hasSchedule } from "../lib/local-schedule";
+import { getSystemGoal, systemProgressWeek } from "../lib/local-systems";
 
 type DayBucket = {
   date: string;          // YYYY-MM-DD
@@ -92,6 +96,9 @@ export function Progress() {
         </p>
       </header>
 
+      {/* Your system — moved here off the Home tab; today's check-off progress. */}
+      <SystemSummaryCard />
+
       {!hasAnyActivity ? (
         <EmptyState />
       ) : (
@@ -125,6 +132,38 @@ export function Progress() {
 // ─────────────────────────────────────────────────────────────────────
 // Sections
 // ─────────────────────────────────────────────────────────────────────
+
+// Compact "Your system" entry at the top of Progress (it used to live on
+// Home). Shows today's check-off progress and links into the System page.
+function SystemSummaryCard() {
+  if (!hasSchedule()) return null;
+  const goal = getSystemGoal();
+  const { overall } = systemProgressWeek();
+  return (
+    <Link
+      to="/schedule"
+      className="mb-5 flex items-center justify-between gap-3 rounded-glass border border-glass-border bg-surface px-4 py-3.5 shadow-card transition hover:bg-surface-muted active:scale-[0.99] focus-ring"
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-cool-soft text-accent-cool">
+          <ListChecks size={16} aria-hidden="true" />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">your system</span>
+          <span className="block truncate text-sm font-medium text-text-primary">
+            {goal ? `System to “${goal}”` : "Your system"}
+          </span>
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-2">
+        <span className="font-mono text-sm font-bold text-text-primary">
+          {overall.done}<span className="text-text-muted">/{overall.total}</span>
+        </span>
+        <ArrowUpRight size={16} className="text-text-muted" aria-hidden="true" />
+      </span>
+    </Link>
+  );
+}
 
 function ThisWeekCard({
   tallies,

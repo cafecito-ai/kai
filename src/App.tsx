@@ -28,6 +28,8 @@ import { Strengths } from "./pages/Strengths";
 import { Welcome } from "./pages/Welcome";
 import { SleepLog } from "./pages/SleepLog";
 import { WorkoutLog } from "./pages/WorkoutLog";
+import { ClientReview } from "./pages/ClientReview";
+import { MeetingDeck } from "./pages/MeetingDeck";
 import { Demo } from "./pages/Demo";
 import { DesignPicker } from "./pages/DesignPicker";
 import { DesignTokens } from "./pages/DesignTokens";
@@ -143,6 +145,10 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/settings" element={protectedOnboarding(<Settings />)} />
           <Route path="/crisis" element={<Crisis />} />
           <Route path="/demo" element={<Demo />} />
+          <Route path="/client-review" element={<ClientReview />} />
+          <Route path="/meeting-deck" element={<MeetingDeck />} />
+          <Route path="/monday-deck" element={<Navigate to="/meeting-deck" replace />} />
+          <Route path="/walkthrough" element={<Navigate to="/client-review" replace />} />
           {/* Visual preview of FlowerProgressBar at every stage — not in nav */}
           <Route path="/preview/flower" element={<PreviewFlower />} />
           <Route path="/design" element={<DesignPicker />} />

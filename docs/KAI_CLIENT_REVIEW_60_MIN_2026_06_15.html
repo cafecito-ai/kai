@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KAI Client Review - 60 Minute Walkthrough</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #5b6472;
+      --line: #d9dee7;
+      --paper: #ffffff;
+      --soft: #f6f8fb;
+      --soft-2: #eef4f3;
+      --accent: #335c67;
+      --accent-2: #9b5c3d;
+      --good: #1f7a4d;
+      --warn: #a15c13;
+      --shadow: 0 18px 50px rgba(17, 24, 39, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: #f3f5f8;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: var(--accent);
+      font-weight: 750;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+
+    .hero {
+      min-height: 520px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      align-items: stretch;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background:
+        linear-gradient(120deg, rgba(255,255,255,0.94), rgba(255,255,255,0.72)),
+        url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=80");
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-copy {
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--accent-2);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(40px, 7vw, 76px);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .hero-copy > p {
+      max-width: 720px;
+      margin: 22px 0 0;
+      color: #293241;
+      font-size: 19px;
+    }
+
+    .hero-panel {
+      margin: 28px;
+      padding: 24px;
+      align-self: stretch;
+      border: 1px solid rgba(17, 24, 39, 0.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .meta-list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .meta-list li {
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper);
+    }
+
+    .label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .value {
+      display: block;
+      margin-top: 3px;
+      font-weight: 750;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .button.secondary {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      margin: 18px 0 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      box-shadow: 0 8px 30px rgba(17,24,39,0.06);
+    }
+
+    .nav a {
+      white-space: nowrap;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--ink);
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    section {
+      margin-top: 24px;
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--paper);
+      box-shadow: 0 12px 34px rgba(17, 24, 39, 0.05);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(27px, 4vw, 44px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .section-intro {
+      max-width: 780px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+      padding: 18px;
+    }
+
+    .card.white {
+      background: #fff;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .agenda {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .agenda-row {
+      display: grid;
+      grid-template-columns: 86px 1fr 160px;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .time {
+      color: var(--accent-2);
+      font-weight: 900;
+    }
+
+    .owner {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      text-align: right;
+    }
+
+    .walkthrough {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .deck {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 20px;
+      margin-top: 20px;
+      align-items: start;
+    }
+
+    .phone-frame {
+      display: block;
+      border-radius: 28px;
+      border: 1px solid #1f2937;
+      background: #111827;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      text-decoration: none;
+    }
+
+    .phone-frame img {
+      display: block;
+      width: 100%;
+      max-height: 740px;
+      object-fit: contain;
+      border-radius: 20px;
+      background: #fff;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .preview-card {
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      padding: 10px;
+      color: var(--ink);
+      text-decoration: none;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .preview-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(17, 24, 39, 0.10);
+    }
+
+    .preview-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 390 / 844;
+      object-fit: cover;
+      object-position: top;
+      border-radius: 12px;
+      background: var(--soft);
+    }
+
+    .preview-card strong {
+      display: block;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .preview-card span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .step {
+      display: grid;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .step-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .num {
+      flex: 0 0 auto;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .route {
+      display: inline-flex;
+      width: fit-content;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--soft-2);
+      color: var(--accent);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mini-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .mini-list li { margin: 4px 0; }
+
+    .status {
+      display: inline-flex;
+      width: fit-content;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .status.done {
+      background: #e8f5ee;
+      color: var(--good);
+    }
+
+    .status.blocked {
+      background: #fff3e6;
+      color: var(--warn);
+    }
+
+    .status.ready {
+      background: #eef4f3;
+      color: var(--accent);
+    }
+
+    .statement {
+      margin-top: 18px;
+      padding: 20px;
+      border-left: 5px solid var(--accent);
+      border-radius: 12px;
+      background: var(--soft);
+      font-size: 18px;
+      font-weight: 750;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 13px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--soft);
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .footer-note {
+      margin: 28px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 860px) {
+      .page { padding: 12px 12px 42px; }
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-copy { padding: 30px 24px 12px; }
+      .hero-panel { margin: 0 18px 18px; }
+      section { padding: 22px 18px; }
+      .grid.two,
+      .grid.three,
+      .walkthrough,
+      .deck {
+        grid-template-columns: 1fr;
+      }
+      .gallery {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .agenda-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+      .owner { text-align: left; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { max-width: none; padding: 0; }
+      .hero, section, .nav { box-shadow: none; }
+      .nav { display: none; }
+      a { color: #111827; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">KAI client review - June 15, 2026 - 60 minutes</p>
+        <h1>Review, test, sign off, then decide what comes next.</h1>
+        <p>
+          This walkthrough shows what Boost AI has built for KAI, what Lev and Offy need to review,
+          what is still gated by client decisions, and how we separate final development closeout
+          from new scope and go-to-market ownership.
+        </p>
+        <p>
+          The live version is the review quest at
+          <strong>https://kai.boostaisearch.ai/client-review</strong>, with the meeting deck at
+          <strong>/meeting-deck</strong>. Use this HTML as an offline backup.
+        </p>
+        <div class="actions">
+          <a class="button" href="https://kai.boostaisearch.ai/client-review">Open the review quest</a>
+          <a class="button secondary" href="https://kai.boostaisearch.ai/meeting-deck">Open meeting deck</a>
+          <a class="button secondary" href="https://kai.boostaisearch.ai">Open live app</a>
+          <a class="button secondary" href="../public/review/invoice-2026-002-kai-next-steps.html">Open invoice</a>
+        </div>
+      </div>
+      <aside class="hero-panel" aria-label="Meeting facts">
+        <ul class="meta-list">
+          <li><span class="label">Live product</span><span class="value">https://kai.boostaisearch.ai</span></li>
+          <li><span class="label">Meeting length</span><span class="value">60 minutes</span></li>
+          <li><span class="label">Invoice</span><span class="value">2026-002 - $3,500.00 - KAI Next Steps Sprint</span></li>
+          <li><span class="label">Goal of the meeting</span><span class="value">Lev tests the live app, and we agree what is accepted, what we fix, and what is new</span></li>
+        </ul>
+        <p class="statement">
+          The next bottleneck is not more features. It is product-owner testing, sign-off,
+          safety/legal review, and launch ownership.
+        </p>
+      </aside>
+    </header>
+
+    <nav class="nav" aria-label="Page sections">
+      <a href="#agenda">60-minute agenda</a>
+      <a href="#live-review-path">Live review path</a>
+      <a href="#built">What is built</a>
+      <a href="#testing">Sign-off checklist</a>
+      <a href="#scope">Scope boundary</a>
+      <a href="#gtm">Go to market</a>
+      <a href="#decisions">Monday decisions</a>
+    </nav>
+
+    <section id="agenda">
+      <p class="eyebrow">Run of show</p>
+      <h2>60-minute agenda</h2>
+      <p class="section-intro">
+        This is an acceptance meeting, not a feature brainstorm. Keep the walkthrough moving
+        and capture every new idea as either a bug, included closeout item, or change request.
+      </p>
+      <div class="agenda">
+        <div class="agenda-row">
+          <div class="time">0-5</div>
+          <div><strong>Frame the meeting.</strong><br>Agree that the goal is review, testing, sign-off, and boundary-setting.</div>
+          <div class="owner">Boost AI</div>
+        </div>
+        <div class="agenda-row">
+          <div class="time">5-18</div>
+          <div><strong>Show the live walkthrough deck.</strong><br>Open `/client-review` and use the visual deck plus sign-off flow.</div>
+          <div class="owner">Boost AI + Lev</div>
+        </div>
+        <div class="agenda-row">
+          <div class="time">18-35</div>
+          <div><strong>Walk the real app.</strong><br>Move through onboarding, home, chat, logs, scan, goals, progress, groups, settings, crisis, and parent/legal pages.</div>
+          <div class="owner">Boost AI</div>
+        </div>
+        <div class="agenda-row">
+          <div class="time">35-47</div>
+          <div><strong>Force product-owner testing.</strong><br>Lev picks the top three flows to test live and gives exact pass/fail feedback.</div>
+          <div class="owner">Lev</div>
+        </div>
+        <div class="agenda-row">
+          <div class="time">47-55</div>
+          <div><strong>Review scope and invoice.</strong><br>Confirm Invoice 2026-002, included closeout work, and what becomes a change request.</div>
+          <div class="owner">Boost AI + Offy</div>
+        </div>
+        <div class="agenda-row">
+          <div class="time">55-60</div>
+          <div><strong>Lock decisions and next steps.</strong><br>Assign testing, clinical/legal review, safety recipient, and launch-owner tasks.</div>
+          <div class="owner">All</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="live-review-path">
+      <p class="eyebrow">What to open</p>
+      <h2>Demo and walkthrough path</h2>
+      <p class="section-intro">
+        Use the live walkthrough for the story, gate check, and sign-off flow; then click into real app pages for acceptance. The client should
+        leave knowing exactly what to test after the call.
+      </p>
+      <div class="walkthrough">
+        <article class="step">
+          <div class="step-head"><span class="num">1</span><div><h3>Client review overview</h3><span class="route">/client-review</span></div></div>
+          <ul class="mini-list">
+            <li>Shows the product in a short, shareable format.</li>
+            <li>Captures reactions without requiring sign-up.</li>
+            <li>Best link for quick outside feedback.</li>
+          </ul>
+        </article>
+        <article class="step">
+          <div class="step-head"><span class="num">2</span><div><h3>Welcome and onboarding</h3><span class="route">/ | /onboarding</span></div></div>
+          <ul class="mini-list">
+            <li>First impression and KAI intro.</li>
+            <li>Name, age, focus areas, hardest lately, schedule, goal, tone.</li>
+            <li>Test whether Lev can complete setup without explanation.</li>
+          </ul>
+        </article>
+        <article class="step">
+          <div class="step-head"><span class="num">3</span><div><h3>Daily home loop</h3><span class="route">/home</span></div></div>
+          <ul class="mini-list">
+            <li>Daily score, North Star, missions, recent activity.</li>
+            <li>Plus button opens quick actions.</li>
+            <li>Decide whether the app gives a clear first move.</li>
+          </ul>
+        </article>
+        <article class="step">
+          <div class="step-head"><span class="num">4</span><div><h3>Core daily actions</h3><span class="route">/check-in | /journal | /sleep/log | /workout/log | /food/log | /energy</span></div></div>
+          <ul class="mini-list">
+            <li>Each action should be quick, private, and teen-realistic.</li>
+            <li>Actions should feed progress and KAI context.</li>
+            <li>Lev should identify which three he would actually use.</li>
+          </ul>
+        </article>
+        <article class="step">
+          <div class="step-head"><span class="num">5</span><div><h3>KAI chat and voice</h3><span class="route">/chat | /voice</span></div></div>
+          <ul class="mini-list">
+            <li>Test normal teen prompts around school, friends, goals, and energy.</li>
+            <li>Confirm KAI is short, direct, warm, and not clinical.</li>
+            <li>Do safety testing only in internal/staging review.</li>
+          </ul>
+        </article>
+        <article class="step">
+          <div class="step-head"><span class="num">6</span><div><h3>Body and movement</h3><span class="route">/mobility | /scan | /scan/history</span></div></div>
+          <ul class="mini-list">
+            <li>Mobility routines should work on phone.</li>
+            <li>Body scan must stay posture/alignment-only.</li>
+            <li>Gate 5 review remains required before treating scan as fully signed off.</li>
+          </ul>
+        </article>
+        <article class="step">
+          <div class="step-head"><span class="num">7</span><div><h3>Goals and growth</h3><span class="route">/strengths | /goals | /progress | /badges | /challenges</span></div></div>
+          <ul class="mini-list">
+            <li>Strengths, North Star, goals, next steps, badges, challenges.</li>
+            <li>Progress should motivate without shame.</li>
+            <li>Goal loop should end in a concrete next action.</li>
+          </ul>
+        </article>
+        <article class="step">
+          <div class="step-head"><span class="num">8</span><div><h3>Social, profile, and safety pages</h3><span class="route">/groups | /profile | /settings | /for-parents | /crisis | /terms | /privacy</span></div></div>
+          <ul class="mini-list">
+            <li>Groups should feel opt-in and privacy-preserving.</li>
+            <li>Settings should expose personalization clearly.</li>
+            <li>Crisis, parent, terms, and privacy pages must be easy to find.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="clickable-deck">
+      <p class="eyebrow">Clickable presentation</p>
+      <h2>Screen-by-screen product deck</h2>
+      <p class="section-intro">
+        This is the visual walkthrough to share before the call or use live in the meeting. Click any preview to open the real app route.
+        The live review quest with progress tracking is at
+        <a href="https://kai.boostaisearch.ai/client-review">https://kai.boostaisearch.ai/client-review</a>.
+      </p>
+      <div class="deck">
+        <a class="phone-frame" href="https://kai.boostaisearch.ai/client-review">
+          <img src="../public/review/screenshots-real/01-client-review.png" alt="KAI client review preview">
+        </a>
+        <div class="card">
+          <h3>How to use this deck</h3>
+          <ul class="mini-list">
+            <li>Start with the review quest to show the product and walk the screens.</li>
+            <li>Move through the real screens in order.</li>
+            <li>Ask Lev to say what works, what blocks sign-off, and what belongs in later scope.</li>
+            <li>Use the review quest for the score, one-sentence feedback, and sign-off flow.</li>
+          </ul>
+          <div class="actions">
+            <a class="button" href="https://kai.boostaisearch.ai/client-review">Open the review quest</a>
+            <a class="button secondary" href="https://kai.boostaisearch.ai/meeting-deck">Open meeting deck</a>
+          </div>
+        </div>
+      </div>
+      <div class="gallery">
+        <a class="preview-card" href="https://kai.boostaisearch.ai/client-review"><img src="../public/review/screenshots-real/01-client-review.png" alt="Client review"><strong>Client review</strong><span>The live acceptance walkthrough and sign-off page.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/onboarding"><img src="../public/review/screenshots-real/02-onboarding.png" alt="Onboarding"><strong>Onboarding</strong><span>Personalizes KAI around focus, tone, and goals.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/home"><img src="../public/review/screenshots-real/03-home.png" alt="Home"><strong>Home</strong><span>Daily score, North Star, missions, and activity.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/check-in"><img src="../public/review/screenshots-real/04-check-in.png" alt="Check-in"><strong>Check-in</strong><span>Morning/evening reflection and one next move.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/chat"><img src="../public/review/screenshots-real/05-chat.png" alt="KAI chat"><strong>KAI chat</strong><span>Short teen-coach responses with safety routing.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/scan"><img src="../public/review/screenshots-real/06-scan.png" alt="Body scan"><strong>Body scan</strong><span>Posture-only scan flow with safety gate.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/goals"><img src="../public/review/screenshots-real/07-goals.png" alt="Goals"><strong>Goals</strong><span>Goal creation, next step, and reframe loop.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/groups"><img src="../public/review/screenshots-real/08-groups.png" alt="Groups"><strong>Groups</strong><span>Opt-in social layer and privacy boundaries.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/for-parents"><img src="../public/review/screenshots-real/09-parents.png" alt="For parents"><strong>Parents</strong><span>Parent-facing safety explanation.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/food/log"><img src="../public/review/screenshots-real/10-food.png" alt="Food log"><strong>Food</strong><span>Fuel notes without calorie or diet pressure.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/progress"><img src="../public/review/screenshots-real/11-progress.png" alt="Progress"><strong>Progress</strong><span>Momentum, streaks, badges, and history.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/mobility"><img src="../public/review/screenshots-real/12-mobility.png" alt="Mobility"><strong>Mobility</strong><span>Short recovery routines and timers.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/profile"><img src="../public/review/screenshots-real/13-profile.png" alt="Profile"><strong>Profile</strong><span>Personal profile and app identity.</span></a>
+        <a class="preview-card" href="https://kai.boostaisearch.ai/crisis"><img src="../public/review/screenshots-real/15-crisis.png" alt="Crisis"><strong>Crisis</strong><span>Always reachable support resources.</span></a>
+      </div>
+    </section>
+
+    <section id="built">
+      <p class="eyebrow">Delivery evidence</p>
+      <h2>What Boost AI has built</h2>
+      <p class="section-intro">
+        These are the product surfaces and infrastructure areas the client should review and sign off on.
+      </p>
+      <div class="grid three" style="margin-top:18px">
+        <div class="card white"><strong>Live product</strong><p>Cloudflare-hosted app, review access, live app routes, and live walkthrough.</p></div>
+        <div class="card white"><strong>Teen onboarding</strong><p>Welcome flow, focus areas, tone selection, goal setup, and personalized entry.</p></div>
+        <div class="card white"><strong>KAI interaction</strong><p>Chat, voice direction, safety-first routing, and teen-coach response style.</p></div>
+        <div class="card white"><strong>Daily loops</strong><p>Check-in, journal, sleep, workout, food, energy, mobility, and progress inputs.</p></div>
+        <div class="card white"><strong>Growth system</strong><p>Daily score, XP, streaks, badges, missions, challenges, North Star, and goals.</p></div>
+        <div class="card white"><strong>Body scan</strong><p>Capture flow, privacy promise, analysis path, history, and highest-risk review gate.</p></div>
+        <div class="card white"><strong>Social layer</strong><p>Groups, inbox, leaderboard concepts, activity feed direction, privacy boundaries.</p></div>
+        <div class="card white"><strong>Safety and parents</strong><p>Crisis route, parent page, safety event architecture, ops surfaces, Terms and Privacy drafts.</p></div>
+        <div class="card white"><strong>Project handoff</strong><p>QA docs, scope docs, status docs, build spec, deployment scripts, and invoice artifact.</p></div>
+      </div>
+    </section>
+
+    <section id="original-gates">
+      <p class="eyebrow">Original gating document</p>
+      <h2>Gate confirmation against Invoice 2026-001</h2>
+      <p class="section-intro">
+        The original gating document says the $15,000 fixed-fee build is paid across six gates.
+        This separates what has been built from what still requires client sign-off, clinical/legal review,
+        or real-user testing.
+      </p>
+      <div class="actions">
+        <a class="button secondary" href="../public/review/boost-ai-invoice-2026-001-gating.docx">Download original gate doc</a>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Gate</th><th>Original scope</th><th>Confirmation</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>G1</strong><br>$3,500</td>
+            <td>Deposit; triggers Phase 1 Foundations & Kai.</td>
+            <td>Completed. Repo, app shell, Cloudflare baseline, review materials, and first working scaffold exist.</td>
+            <td><span class="status done">Complete</span></td>
+          </tr>
+          <tr>
+            <td><strong>G2</strong><br>$1,500</td>
+            <td>Kai live, customization, progress tracker, onboarding end-to-end, guidance for engine customization.</td>
+            <td>Substantially complete: onboarding, KAI tone/chat, daily score/progress, crisis resources, safety classifier, and docs.</td>
+            <td><span class="status ready">Ready to review</span></td>
+          </tr>
+          <tr>
+            <td><strong>G3</strong><br>$2,500</td>
+            <td>Physical Wellness: nutrition/food-photo, exercise, sleep, breathing, yoga, stretching.</td>
+            <td>Substantially complete: food, workout, sleep, mobility/stretching, hydration/energy, body comments, and progress inputs.</td>
+            <td><span class="status ready">Ready to review</span></td>
+          </tr>
+          <tr>
+            <td><strong>G4</strong><br>$2,500</td>
+            <td>Potential & Goals: hidden strengths, goal-setting, check-ins, encouragement system.</td>
+            <td>Substantially complete: strengths, goals, North Star, check-ins, badges, missions, challenges, and progress/gamification.</td>
+            <td><span class="status ready">Ready to review</span></td>
+          </tr>
+          <tr>
+            <td><strong>G5</strong><br>$2,500</td>
+            <td>Mental Wellness: hardened safety layer, social/emotion/nervous-system modules, breathing/meditation, third-party reviewer approved.</td>
+            <td>Engineering is partially to substantially complete, but final gate sign-off requires third-party clinical/safety review and Lev testing.</td>
+            <td><span class="status blocked">Blocked</span></td>
+          </tr>
+          <tr>
+            <td><strong>G6</strong><br>$2,500</td>
+            <td>Final QA, integration testing, 15-20 teen testers, critical bugs resolved, accessibility pass, handoff docs.</td>
+            <td>Docs, review walkthrough, build checks, and review assets exist. Final sign-off requires real-user testing and final bug/accessibility pass.</td>
+            <td><span class="status blocked">Blocked</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="testing">
+      <p class="eyebrow">Required sign-off</p>
+      <h2>What Lev tests after the call</h2>
+      <p class="section-intro">
+        New feature requests should wait until this testing evidence exists. The point is to learn
+        whether the current app works for the intended user.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Test</th><th>Required evidence</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>First-run onboarding</td><td>Screen recording or written notes on each step.</td><td><span class="status blocked">Client owed</span></td></tr>
+          <tr><td>3 normal KAI chats</td><td>Prompt, answer, and 1-5 rating for each response.</td><td><span class="status blocked">Client owed</span></td></tr>
+          <tr><td>5 daily actions</td><td>Use check-in, journal, sleep, workout, food, mobility, or energy.</td><td><span class="status blocked">Client owed</span></td></tr>
+          <tr><td>1 goal loop</td><td>Create a goal, add next step, then reframe or complete it.</td><td><span class="status blocked">Client owed</span></td></tr>
+          <tr><td>1 scan review</td><td>Phone test plus written reaction to privacy and safety framing.</td><td><span class="status blocked">Client owed</span></td></tr>
+          <tr><td>Friend-test walkthrough</td><td>Ask 3 trusted peers to use the live walkthrough and core app flows, then capture exact reactions.</td><td><span class="status blocked">Client owed</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="scope">
+      <p class="eyebrow">Scope and invoice</p>
+      <h2>What is included, and what is new scope</h2>
+      <p class="section-intro">
+        Invoice 2026-002 covers the KAI Next Steps Sprint. During the meeting, keep a clean line
+        between bugs in current scope, included closeout work, and new business or product expansion.
+      </p>
+      <div class="grid two" style="margin-top:18px">
+        <div class="card">
+          <h3>Included closeout</h3>
+          <ul class="mini-list">
+            <li>Fix reproducible bugs in already-scoped flows.</li>
+            <li>Update docs and review materials to match the current app.</li>
+            <li>Run final smoke checks and acceptance testing.</li>
+            <li>Make small copy/UI adjustments from real test evidence.</li>
+            <li>Finish agreed safety/ops config after client decisions are supplied.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Change request or client-owned</h3>
+          <ul class="mini-list">
+            <li>New major features, paid plans, native app, or new social mechanics.</li>
+            <li>Marketing campaigns, school partnerships, ambassador programs, launch execution.</li>
+            <li>Pricing strategy and business model decisions.</li>
+            <li>Legal drafting and clinical program ownership.</li>
+            <li>Broad brand redesign after a final direction is chosen.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="statement">
+        If something breaks during the test plan, we fix it. If something new is requested,
+        we scope it.
+      </p>
+    </section>
+
+    <section id="gtm">
+      <p class="eyebrow">Walk, jog, run</p>
+      <h2>How we would pace the launch</h2>
+      <div class="grid three" style="margin-top:18px">
+        <div class="card white">
+          <h3>Walk: private validation</h3>
+          <ul class="mini-list">
+            <li>Lev tests every core flow.</li>
+            <li>Offy names legal and clinical reviewers.</li>
+            <li>3-5 trusted testers use the live walkthrough and core app flows.</li>
+            <li>Boost AI fixes confirmed bugs.</li>
+          </ul>
+        </div>
+        <div class="card white">
+          <h3>Jog: controlled beta</h3>
+          <ul class="mini-list">
+            <li>15-20 invited teens.</li>
+            <li>Parent explanation ready.</li>
+            <li>Weekly bug and feedback triage.</li>
+            <li>No paid acquisition until retention signal exists.</li>
+          </ul>
+        </div>
+        <div class="card white">
+          <h3>Run: launch readiness</h3>
+          <ul class="mini-list">
+            <li>Final brand and content polish.</li>
+            <li>Final Terms and Privacy.</li>
+            <li>Clinical review complete.</li>
+            <li>Pricing, support, and launch channel owned by client.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="decisions">
+      <p class="eyebrow">Close the loop</p>
+      <h2>Decisions to lock Monday</h2>
+      <table>
+        <thead>
+          <tr><th>Decision</th><th>Owner</th><th>Why it matters</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Clinical/safety reviewer</td><td>Offy</td><td>Blocks sensitive mental and body-scan confidence.</td></tr>
+          <tr><td>Legal reviewer</td><td>Offy</td><td>Blocks responsible external beta.</td></tr>
+          <tr><td>Safety alert recipient</td><td>Offy + Boost AI</td><td>Required for production operations.</td></tr>
+          <tr><td>Testing owner and deadline</td><td>Lev</td><td>Prevents continued feature expansion without use evidence.</td></tr>
+          <tr><td>Change-request process</td><td>Offy + Boost AI</td><td>Protects scope and invoice boundary.</td></tr>
+          <tr><td>Go-to-market owner</td><td>Offy + Lev</td><td>Keeps business launch separate from development delivery.</td></tr>
+        </tbody>
+      </table>
+      <p class="statement">
+        The next step is not "what else can we add?" The next step is
+        "does the product we built solve the first problem for real teens?"
+      </p>
+    </section>
+
+    <p class="footer-note">
+      Prepared by Boost AI for the KAI / Project North Star client review. Static file:
+      docs/KAI_CLIENT_REVIEW_60_MIN_2026_06_15.html
+    </p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,7 @@
+User-agent: *
+# Internal client-review tooling — reachable but not for indexing.
+Disallow: /client-review
+Disallow: /meeting-deck
+Disallow: /monday-deck
+Disallow: /walkthrough
+Disallow: /review/

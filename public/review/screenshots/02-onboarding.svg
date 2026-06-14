@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="1688" viewBox="0 0 390 844" role="img" aria-label="Make KAI yours screen preview">
+  <rect width="390" height="844" rx="0" fill="#d7dce2"/>
+  <rect x="18" y="18" width="354" height="808" rx="34" fill="#f6f3ec"/>
+  <rect x="156" y="30" width="78" height="8" rx="4" fill="#d8d3c7"/>
+  <text x="38" y="82" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="800" letter-spacing="1.8" fill="#7b6ef6">ONBOARDING</text>
+  <text x="38" y="132" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" fill="#171717">Make KAI yours</text>
+  <rect x="38" y="162" width="314" height="144" rx="24" fill="#ffffff" opacity="0.98"/>
+  <circle cx="96" cy="234" r="42" fill="#7b6ef6" opacity="0.18"/>
+  <circle cx="96" cy="234" r="25" fill="#7b6ef6" opacity="0.82"/>
+  <path d="M87 235c8 9 17 9 26 0" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+  <text x="142" y="213" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="800" fill="#171717">KAI review moment</text>
+  <text x="142" y="240" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#5b6472">Open the real route, test it, then mark reviewed.</text>
+  <rect x="142" y="258" width="92" height="22" rx="11" fill="#7b6ef6" opacity="0.95"/>
+  <text x="158" y="273" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="800" fill="#ffffff">OPEN SCREEN</text>
+    <rect x="38" y="354" width="314" height="56" rx="18" fill="#ffffff" opacity="0.96"/>
+  <circle cx="67" cy="382" r="10" fill="#7b6ef6" opacity="0.9"/>
+  <path d="M62 382l4 4 8-10" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="88" y="379" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="800" fill="#171717">Name and age</text>
+  <text x="88" y="397" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#5b6472">Review and capture exact feedback.</text>
+  <rect x="38" y="430" width="314" height="56" rx="18" fill="#ffffff" opacity="0.96"/>
+  <circle cx="67" cy="458" r="10" fill="#7b6ef6" opacity="0.9"/>
+  <path d="M62 458l4 4 8-10" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="88" y="455" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="800" fill="#171717">Focus areas</text>
+  <text x="88" y="473" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#5b6472">Review and capture exact feedback.</text>
+  <rect x="38" y="506" width="314" height="56" rx="18" fill="#ffffff" opacity="0.96"/>
+  <circle cx="67" cy="534" r="10" fill="#7b6ef6" opacity="0.9"/>
+  <path d="M62 534l4 4 8-10" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="88" y="531" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="800" fill="#171717">Goal and tone</text>
+  <text x="88" y="549" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#5b6472">Review and capture exact feedback.</text>
+  <rect x="38" y="636" width="314" height="86" rx="22" fill="#ffffff" opacity="0.96"/>
+  <text x="58" y="670" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="800" fill="#171717">Pass condition</text>
+  <text x="58" y="696" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#5b6472">Client can say what works, what blocks sign-off,</text>
+  <text x="58" y="714" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#5b6472">and what belongs in a later change request.</text>
+  <rect x="98" y="766" width="194" height="10" rx="5" fill="#ded8cb"/>
+</svg>

@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Boost AI Invoice 2026-002</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111827;
+      margin: 40px;
+      line-height: 1.38;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #111827;
+      padding-bottom: 18px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 34px;
+      letter-spacing: 0.08em;
+      margin: 0 0 6px;
+    }
+    h2 {
+      font-size: 15px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin: 26px 0 8px;
+      color: #374151;
+    }
+    .brand {
+      font-size: 14px;
+      color: #4b5563;
+    }
+    .meta {
+      text-align: right;
+      font-size: 13px;
+    }
+    .meta strong {
+      display: inline-block;
+      min-width: 92px;
+      color: #111827;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 18px;
+    }
+    .box {
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    th {
+      text-align: left;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #4b5563;
+      border-bottom: 1px solid #9ca3af;
+      padding: 10px 8px;
+    }
+    td {
+      vertical-align: top;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 8px;
+      font-size: 13px;
+    }
+    .amount {
+      text-align: right;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+    .total {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .total span {
+      display: inline-block;
+      min-width: 150px;
+      text-align: right;
+    }
+    ul {
+      margin: 8px 0 0 20px;
+      padding: 0;
+    }
+    li {
+      margin: 4px 0;
+    }
+    .muted {
+      color: #4b5563;
+      font-size: 12px;
+    }
+    .thanks {
+      margin-top: 28px;
+      border-top: 1px solid #d1d5db;
+      padding-top: 16px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div>
+      <h1>BOOST AI</h1>
+      <div class="brand">Cafecito AI - KAI Product Build</div>
+    </div>
+    <div class="meta">
+      <div><strong>Invoice #</strong> 2026-002</div>
+      <div><strong>Issue date</strong> June 1, 2026</div>
+      <div><strong>Due</strong> Upon receipt</div>
+      <div><strong>Reference</strong> KAI Next Steps Sprint</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="box">
+      <h2>From</h2>
+      <div>Boost AI</div>
+      <div>c/o Cafecito AI</div>
+      <div>Evan Ratner, Co-founder</div>
+      <div>Miami, FL</div>
+      <div>evan@cafecito-ai.com</div>
+      <div>boostaisearch.ai</div>
+    </div>
+    <div class="box">
+      <h2>Bill To</h2>
+      <div>Offy</div>
+      <div>For: KAI / Project North Star</div>
+      <div>On behalf of Lev</div>
+    </div>
+  </div>
+
+  <h2>Invoice Summary</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 20%;">Item</th>
+        <th>Description</th>
+        <th style="width: 18%;" class="amount">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>KAI next-steps sprint</td>
+        <td>
+          Continued product development based on the current working KAI system:
+          teen-focused chat quality, onboarding-to-home continuity, mobile-first
+          polish, logging reliability, gamification refinement, live QA, and
+          client handoff support.
+        </td>
+        <td class="amount">$3,500.00</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="total">Amount due <span>$3,500.00</span></div>
+
+  <h2>Work Completed To Date</h2>
+  <ul>
+    <li>Wired KAI around the PR #143 UX/UI direction with the working chat engine and Anthropic-backed API path.</li>
+    <li>Built the simplified Home chat experience, first-run onboarding direction, and personalized daily-goal surfaces.</li>
+    <li>Added mobile-first profile/progress gamification: daily score, XP, streaks, badges, missions, and growth-path concepts.</li>
+    <li>Improved core logging flows for sleep, food, workouts, mood/check-ins, hydration, and progress tracking.</li>
+    <li>Strengthened KAI chat behavior with richer teen-coach responses, typo handling, lighter crisis routing, and check-in-to-chat continuity.</li>
+    <li>Pushed and verified working branch updates for Lev and Offy review.</li>
+  </ul>
+
+  <h2>Next Steps Covered By This Invoice</h2>
+  <ul>
+    <li>Deepen KAI response quality across more teen scenarios and add regression tests for weak prompts.</li>
+    <li>Refine onboarding so the first user session feels emotional, fast, and personalized.</li>
+    <li>Tighten Home and Profile so daily score, goals, and gamification feel clearer and more rewarding.</li>
+    <li>Improve logging flows so food, sleep, mood, exercise, and check-in actions reliably feed score and chat context.</li>
+    <li>Run mobile-first QA on the live preview, fix priority blockers, and prepare a clear review handoff for Lev and Offy.</li>
+  </ul>
+
+  <h2>Payment</h2>
+  <div class="box">
+    <div><strong>Zelle preferred payment method</strong></div>
+    <div>Send to: evan.ratner@gmail.com</div>
+    <div>Recipient name: Evan Ratner</div>
+    <div>Amount: $3,500.00</div>
+    <div>Memo: KAI Next Steps Sprint - Invoice 2026-002</div>
+  </div>
+
+  <p class="muted">
+    Most banks support Zelle at no fee. Daily and monthly limits vary by bank;
+    for first-time recipients of this size, the payment may need to be enabled
+    in the bank portal or split across sends.
+  </p>
+
+  <div class="thanks">
+    Thank you, Offy and Lev. Questions on this invoice: evan@cafecito-ai.com
+  </div>
+</body>
+</html>

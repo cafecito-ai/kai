@@ -30,7 +30,6 @@ describe("QuickActionSheet", () => {
       "Log food",
       "Journal",
       "Log sleep",
-      "Set a goal",
       "Stretch / move",
       "Body scan",
       "Call KAI",

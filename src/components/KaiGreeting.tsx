@@ -9,7 +9,7 @@
 // Goal: make the user want to talk to KAI every time they open the app.
 
 import { ArrowUpRight, MessageCircle } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { KaiCharacter } from "./KaiCharacter";
@@ -24,6 +24,14 @@ export function KaiGreeting() {
   // We don't pin it to a refresh signal — by design, it's a snapshot at
   // page-load time so the greeting feels intentional, not jittery.
   const greeting = useMemo(() => pickKaiGreeting(displayName), [displayName]);
+
+  // KAI waves hello when you open the app, then settles into the normal
+  // talking idle after one wave loop (~3.2s).
+  const [waving, setWaving] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setWaving(false), 3200);
+    return () => clearTimeout(t);
+  }, []);
 
   function openChat(draft?: string) {
     // Pre-fill the chat input with the chosen reply chip so the user
@@ -47,7 +55,7 @@ export function KaiGreeting() {
         {/* Character. Smaller than Welcome (which is hero scale) but
             still clearly "a person looking at you." */}
         <div className="kai-greeting-enter">
-          <KaiCharacter size={150} face speaking />
+          <KaiCharacter size={150} face speaking gesture={waving ? "wave" : undefined} />
         </div>
 
         {/* Dialogue bubble — the contextual greeting line. Tap to chat. */}

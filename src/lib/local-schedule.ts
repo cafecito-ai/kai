@@ -123,9 +123,16 @@ export function hasSchedule(): boolean {
   return read().length > 0;
 }
 
-/** Replace the whole system with a fresh generated set. */
+/** Replace the whole system with a fresh generated set (mints new ids). */
 export function setSchedule(items: GeneratedItem[]): void {
   write(items.slice(0, 40).map(normalize));
+}
+
+/** Replace the live schedule with already-formed items, PRESERVING their ids
+ *  so per-item check-off progress survives (e.g. switching the main system).
+ *  Only mints an id when one is missing. */
+export function setScheduleItems(items: ScheduleItem[]): void {
+  write(items.slice(0, 40).map((i) => (i.id ? i : { ...i, id: newId() })));
 }
 
 /** Append items (skipping exact dupes). */

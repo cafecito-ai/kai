@@ -14,7 +14,6 @@ import {
   Phone,
   ScanLine,
   Sparkles,
-  Target,
   X,
   Zap,
 } from "lucide-react";
@@ -62,7 +61,6 @@ const SECONDARY_ACTIONS = [
   { label: "Journal", icon: NotebookPen, to: "/journal" },
   { label: "Energy check", icon: Zap, to: "/energy" },
   { label: "Stretch / move", icon: Sparkles, to: "/mobility" },
-  { label: "Set a goal", icon: Target, to: "/goals" },
   { label: "Body scan", icon: ScanLine, to: "/scan" },
   { label: "Call KAI", icon: Phone, to: "/voice" },
 ] as const;

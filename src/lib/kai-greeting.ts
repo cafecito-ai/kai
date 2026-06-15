@@ -16,6 +16,13 @@ export type KaiGreeting = {
   replyChip: string;
 };
 
+/** Pick a random element. Called once per Home mount (the greeting is
+ *  memoized on the display name), so the line is stable while you're on the
+ *  page but varies each time you open the app. */
+function pick<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 /** Compose a contextual greeting. Pulls from local data so it works
  *  offline / before the API is wired. */
 export function pickKaiGreeting(
@@ -54,17 +61,19 @@ export function pickKaiGreeting(
   if (lastSleep && period === "morning") {
     const hours = (lastSleep.value as { hours?: number })?.hours;
     if (typeof hours === "number") {
+      const h = Math.round(hours);
       if (hours >= 8) {
-        return {
-          line: nameLine(name, `Saw you got a solid ${Math.round(hours)} hours. Good move.`),
-          replyChip: "Yeah, I feel it",
-        };
+        return pick([
+          { line: hey(name, `${h} hours? That's the good stuff.`), replyChip: "Feels good" },
+          { line: hey(name, `Solid ${h} hours, I can tell. Let's go.`), replyChip: "Yeah, I feel it" },
+          { line: hey(name, `Nice, ${h} hours. You showed up for yourself.`), replyChip: "Felt great" },
+        ]);
       }
       if (hours < 6) {
-        return {
-          line: nameLine(name, "Rough night, huh? Be easy on yourself today."),
-          replyChip: "Yeah I'm beat",
-        };
+        return pick([
+          { line: hey(name, "Rough night? Go easy on yourself today."), replyChip: "Yeah I'm beat" },
+          { line: hey(name, "Short night. We'll take it slow, no pressure."), replyChip: "Appreciate that" },
+        ]);
       }
     }
   }
@@ -73,10 +82,10 @@ export function pickKaiGreeting(
   if (period === "evening" || period === "afternoon") {
     const hyd = getTodayHydration(now);
     if (hyd.glasses < Math.max(1, Math.floor(hyd.target * 0.4))) {
-      return {
-        line: nameLine(name, "Water count's low — grab one before we talk?"),
-        replyChip: "On it",
-      };
+      return pick([
+        { line: hey(name, "Grab some water when you can? Then come find me."), replyChip: "On it" },
+        { line: hey(name, "Sip some water for me, then let's talk."), replyChip: "Got it" },
+      ]);
     }
   }
 
@@ -86,19 +95,20 @@ export function pickKaiGreeting(
   if (lastCheckIn) {
     const mood = (lastCheckIn.value as { mood?: number })?.mood;
     if (typeof mood === "number" && mood <= 2 && lastCheckIn.date === today) {
-      return {
-        line: nameLine(name, "Tough one earlier — I'm still here. Talk it out?"),
-        replyChip: "Tell me what's up",
-      };
+      return pick([
+        { line: hey(name, "Earlier felt heavy. I'm right here."), replyChip: "Tell me what's up" },
+        { line: hey(name, "Still thinking about earlier? Let's talk it out."), replyChip: "Yeah, let's talk" },
+      ]);
     }
   }
 
-  // 4) Already checked in today — proud of you.
+  // 4) Already checked in today — glad you're back.
   if (todayInputs.some((i) => i.source === "check_in")) {
-    return {
-      line: nameLine(name, "Good to see you back. What's on your mind?"),
-      replyChip: "Just checking in",
-    };
+    return pick([
+      { line: hey(name, "Good to see you again. What's up?"), replyChip: "Just checking in" },
+      { line: hey(name, "Back already? I'm glad. What's on your mind?"), replyChip: "Just saying hi" },
+      { line: hey(name, "Twice in one day? I'm here for it."), replyChip: "Couldn't stay away" },
+    ]);
   }
 
   // 5) Streak: long streak — affirm. Just back from a break — welcome.
@@ -112,59 +122,62 @@ export function pickKaiGreeting(
     d.setDate(d.getDate() - 1);
   }
   if (streak >= 7) {
-    return {
-      line: nameLine(name, `${streak} days deep. You're showing up.`),
-      replyChip: "Feels good",
-    };
+    return pick([
+      { line: hey(name, `${streak} days straight. You're really showing up.`), replyChip: "Feels good" },
+      { line: hey(name, `${streak} days deep. Proud of you.`), replyChip: "Thanks" },
+    ]);
   }
   if (streak === 0 && inputs.length > 5) {
-    return {
-      line: nameLine(name, "Been a minute. Welcome back."),
-      replyChip: "Yeah, I'm back",
-    };
+    return pick([
+      { line: hey(name, "Been a minute! Good to have you back."), replyChip: "Yeah, I'm back" },
+      { line: hey(name, "There you are. Missed you. What's new?"), replyChip: "Catch me up" },
+    ]);
   }
 
-  // 6) Fall through to time-of-day greeting.
-  return {
-    line: timeOfDayGreeting(period, name),
-    replyChip: defaultReplyChip(period),
-  };
+  // 6) Fall through to a warm time-of-day greeting.
+  return timeOfDayGreeting(period, name);
 }
 
-function nameLine(name: string | null, rest: string): string {
-  if (!name) return rest;
-  // "Evan — saw you got a solid 8 hours..." reads warmer than
-  // "Evan, saw you got..." (no comma). En-dash for a natural pause.
-  return `${name} — ${rest}`;
+/** Warm name prefix: "Hey Evan, ..." (no name → just the line). */
+function hey(name: string | null, rest: string): string {
+  return name ? `Hey ${name}, ${lower(rest)}` : capitalize(rest);
+}
+
+function lower(s: string): string {
+  return s.charAt(0).toLowerCase() + s.slice(1);
+}
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function timeOfDayGreeting(
   period: "morning" | "afternoon" | "evening" | "late",
   name: string | null,
-): string {
+): KaiGreeting {
+  const n = name ? ` ${name}` : "";
   switch (period) {
     case "morning":
-      return name ? `Morning, ${name}. How'd you sleep?` : "Morning. How'd you sleep?";
+      return pick([
+        { line: `Morning${n}! 👋 How'd you sleep?`, replyChip: "Pretty good" },
+        { line: `Hey${n}, new day 👋 How you feeling?`, replyChip: "Feeling alright" },
+        { line: `Morning${n}. Glad you're here.`, replyChip: "Glad to be" },
+      ]);
     case "afternoon":
-      return name ? `Hey ${name}. How's the day?` : "Hey. How's the day?";
+      return pick([
+        { line: `Hey${n}! 👋 How's the day treating you?`, replyChip: "Going alright" },
+        { line: `Good to see you${n} 👋 How's it going?`, replyChip: "Not bad" },
+        { line: `Afternoon${n}. What's the vibe?`, replyChip: "Pretty chill" },
+      ]);
     case "evening":
-      return name ? `${name} — how'd today land?` : "How'd today land?";
+      return pick([
+        { line: `Hey${n}! 👋 How'd today land?`, replyChip: "Mixed bag" },
+        { line: `Made it to evening${n} 👋 How was it?`, replyChip: "Long day" },
+        { line: `Evening${n}. How you doing?`, replyChip: "Hanging in" },
+      ]);
     case "late":
-      return name ? `${name} — still up? Brain busy?` : "Still up? Brain busy?";
-  }
-}
-
-function defaultReplyChip(
-  period: "morning" | "afternoon" | "evening" | "late",
-): string {
-  switch (period) {
-    case "morning":
-      return "Pretty good";
-    case "afternoon":
-      return "Going alright";
-    case "evening":
-      return "Mixed bag";
-    case "late":
-      return "Yeah, kinda";
+      return pick([
+        { line: `Hey${n} 👋 Still up? I'm here if your brain's busy.`, replyChip: "Yeah, kinda" },
+        { line: `Late one${n}? Talk to me.`, replyChip: "Can't sleep" },
+      ]);
   }
 }

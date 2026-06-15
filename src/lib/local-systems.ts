@@ -17,6 +17,7 @@ import {
   type ScheduleItem,
   type SystemSection,
 } from "./local-schedule";
+import { loadJSON, namespacedKey, saveJSON } from "./local-storage";
 
 // ─────────────────────────────────────────────────────────────────────
 // Live system goal/title — decoupled from the Home North Star goal.
@@ -28,18 +29,20 @@ const SYSTEM_GOAL_KEY = "kai_system_goal_v1";
 
 /** The current (main/live) system's title. Falls back to the North Star goal
  *  so the very first system still reads "be happier", then null. */
-export function getSystemGoal(): string | null {
+export function getSystemGoal(userId?: string | null): string | null {
   if (typeof localStorage !== "undefined") {
-    const v = localStorage.getItem(SYSTEM_GOAL_KEY);
+    const v = loadJSON<string | null>(SYSTEM_GOAL_KEY, userId, null);
     if (v && v.trim()) return v;
+    const legacy = localStorage.getItem(namespacedKey(SYSTEM_GOAL_KEY, userId));
+    if (legacy && legacy.trim()) return legacy;
   }
   return getNorthStar()?.goal ?? null;
 }
 
-export function setSystemGoal(goal: string): void {
+export function setSystemGoal(goal: string, userId?: string | null): void {
   if (typeof localStorage === "undefined") return;
   try {
-    localStorage.setItem(SYSTEM_GOAL_KEY, goal.trim().slice(0, 80));
+    saveJSON(SYSTEM_GOAL_KEY, userId, goal.trim().slice(0, 80));
     window.dispatchEvent(new Event("kai:state-changed"));
   } catch {
     /* ignore */
@@ -59,66 +62,58 @@ export type SavedSystem = {
 
 const SYSTEMS_KEY = "kai_systems_v1";
 
-function readSystems(): SavedSystem[] {
-  if (typeof localStorage === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(SYSTEMS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as SavedSystem[]) : [];
-  } catch {
-    return [];
-  }
+function readSystems(userId?: string | null): SavedSystem[] {
+  return loadJSON<SavedSystem[]>(SYSTEMS_KEY, userId, []);
 }
 
-function writeSystems(systems: SavedSystem[]): void {
+function writeSystems(systems: SavedSystem[], userId?: string | null): void {
   if (typeof localStorage === "undefined") return;
   try {
-    localStorage.setItem(SYSTEMS_KEY, JSON.stringify(systems.slice(0, 20)));
+    saveJSON(SYSTEMS_KEY, userId, systems.slice(0, 20));
     window.dispatchEvent(new Event("kai:state-changed"));
   } catch {
     /* ignore */
   }
 }
 
-export function listSystems(): SavedSystem[] {
-  return [...readSystems()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export function listSystems(userId?: string | null): SavedSystem[] {
+  return [...readSystems(userId)].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 /** Snapshot the current live system (its items + the current goal) as a saved
  *  system. If a saved system already has the same goal, it's replaced so Save
  *  acts like "save the latest version of this system". */
-export function saveCurrentAsSystem(): SavedSystem | null {
+export function saveCurrentAsSystem(userId?: string | null): SavedSystem | null {
   const items = getSchedule();
   if (items.length === 0) return null;
-  const goal = getSystemGoal()?.trim() || "My system";
+  const goal = getSystemGoal(userId)?.trim() || "My system";
   const entry: SavedSystem = {
     id: `sys_save_${crypto.randomUUID()}`,
     goal,
     items,
     createdAt: new Date().toISOString(),
   };
-  const existing = readSystems().filter(
+  const existing = readSystems(userId).filter(
     (s) => s.goal.toLowerCase() !== goal.toLowerCase(),
   );
-  writeSystems([entry, ...existing]);
+  writeSystems([entry, ...existing], userId);
   return entry;
 }
 
-export function deleteSystem(id: string): void {
-  writeSystems(readSystems().filter((s) => s.id !== id));
+export function deleteSystem(id: string, userId?: string | null): void {
+  writeSystems(readSystems(userId).filter((s) => s.id !== id), userId);
 }
 
 /** Promote a saved system to "main": load its items into the live store and
  *  restore its goal, so the System tab now shows it. */
-export function makeMain(id: string): void {
-  const sys = readSystems().find((s) => s.id === id);
+export function makeMain(id: string, userId?: string | null): void {
+  const sys = readSystems(userId).find((s) => s.id === id);
   if (!sys) return;
   // Preserve item ids so this system's check-off progress (keyed by id in
   // kai_system_done_v1) survives the switch instead of getting wiped.
   setScheduleItems(sys.items);
   // Update the system title only — the Home North Star goal stays separate.
-  if (sys.goal && sys.goal !== "My system") setSystemGoal(sys.goal);
+  if (sys.goal && sys.goal !== "My system") setSystemGoal(sys.goal, userId);
 }
 
 /** Is this saved system the one currently loaded as the live/main system?
@@ -138,19 +133,11 @@ export function isMainSystem(sys: SavedSystem): boolean {
 const DONE_KEY = "kai_system_done_v1";
 type DoneMap = Record<string, string[]>; // localDateKey -> item ids done that day
 
-function readDone(): DoneMap {
-  if (typeof localStorage === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(DONE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    return parsed && typeof parsed === "object" ? (parsed as DoneMap) : {};
-  } catch {
-    return {};
-  }
+function readDone(userId?: string | null): DoneMap {
+  return loadJSON<DoneMap>(DONE_KEY, userId, {});
 }
 
-function writeDone(map: DoneMap): void {
+function writeDone(map: DoneMap, userId?: string | null): void {
   if (typeof localStorage === "undefined") return;
   const keys = Object.keys(map).sort();
   while (keys.length > 14) {
@@ -158,29 +145,29 @@ function writeDone(map: DoneMap): void {
     if (oldest) delete map[oldest];
   }
   try {
-    localStorage.setItem(DONE_KEY, JSON.stringify(map));
+    saveJSON(DONE_KEY, userId, map);
     window.dispatchEvent(new Event("kai:state-changed"));
   } catch {
     /* ignore */
   }
 }
 
-export function doneIdsToday(): string[] {
-  return readDone()[localDateKey()] ?? [];
+export function doneIdsToday(userId?: string | null): string[] {
+  return readDone(userId)[localDateKey()] ?? [];
 }
 
-export function isDoneToday(id: string): boolean {
-  return doneIdsToday().includes(id);
+export function isDoneToday(id: string, userId?: string | null): boolean {
+  return doneIdsToday(userId).includes(id);
 }
 
-export function toggleDoneToday(id: string): void {
-  const map = readDone();
+export function toggleDoneToday(id: string, userId?: string | null): void {
+  const map = readDone(userId);
   const key = localDateKey();
   const set = new Set(map[key] ?? []);
   if (set.has(id)) set.delete(id);
   else set.add(id);
   map[key] = Array.from(set);
-  writeDone(map);
+  writeDone(map, userId);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -203,8 +190,8 @@ export function weeklyTarget(item: ScheduleItem): number {
 }
 
 /** How many distinct days THIS WEEK the item was checked off. */
-export function weeklyDoneCount(itemId: string): number {
-  const map = readDone();
+export function weeklyDoneCount(itemId: string, userId?: string | null): number {
+  const map = readDone(userId);
   return currentWeekKeys().reduce(
     (n, k) => n + ((map[k] ?? []).includes(itemId) ? 1 : 0),
     0,
@@ -217,10 +204,10 @@ export type SystemProgress = {
   byCategory: CategoryProgress[];
 };
 
-export function systemProgressWeek(): SystemProgress {
+export function systemProgressWeek(userId?: string | null): SystemProgress {
   const items = getSchedule().filter((i) => i.section !== "avoid");
   const weekKeys = currentWeekKeys();
-  const map = readDone();
+  const map = readDone(userId);
   const weekCount = (id: string) =>
     weekKeys.reduce((n, k) => n + ((map[k] ?? []).includes(id) ? 1 : 0), 0);
 

@@ -12,16 +12,18 @@ import { useNavigate } from "react-router-dom";
 import { ScoreRing } from "./ScoreRing";
 import { hasSchedule } from "../lib/local-schedule";
 import { getSystemGoal, systemProgressWeek } from "../lib/local-systems";
+import { useStorageUserId } from "../lib/storage-user-id";
 
 export function NorthStarCard() {
+  const userId = useStorageUserId();
   const navigate = useNavigate();
   const [goal, setGoal] = useState<string | null>(null);
   const [pct, setPct] = useState(0);
   const [hasSys, setHasSys] = useState(false);
 
   function refresh() {
-    setGoal(getSystemGoal());
-    setPct(systemProgressWeek().overall.pct);
+    setGoal(getSystemGoal(userId));
+    setPct(systemProgressWeek(userId).overall.pct);
     setHasSys(hasSchedule());
   }
 
@@ -34,7 +36,7 @@ export function NorthStarCard() {
       window.removeEventListener("kai:state-changed", on);
       window.removeEventListener("kai:input-appended", on);
     };
-  }, []);
+  }, [userId]);
 
   return (
     <button

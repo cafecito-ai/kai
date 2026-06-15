@@ -37,6 +37,7 @@ import { getNorthStar, seedNorthStarFromFocus, setNorthStar } from "../lib/local
 import { setSchedule } from "../lib/local-schedule";
 import { setSystemGoal } from "../lib/local-systems";
 import { flushPendingOnboardingIntake, queueOnboardingIntake } from "../lib/pending-onboarding-intake";
+import { useStorageUserId } from "../lib/storage-user-id";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -188,6 +189,7 @@ function isKaiTone(v: unknown): v is KaiTone {
 const TOTAL_STEPS = 9;
 
 export function Onboarding() {
+  const userId = useStorageUserId();
   const navigate = useNavigate();
   const { setKai, setPrimaryEngine } = useUserStore();
 
@@ -273,7 +275,7 @@ export function Onboarding() {
       // fills from this system's weekly progress. NON-blocking (a full system
       // is a bigger model call); it fills into the System page once it lands.
       if (goalText) {
-        setSystemGoal(goalText);
+        setSystemGoal(goalText, userId);
         void api
           .scheduleGenerate(goalText, goalText)
           .then((res) => {

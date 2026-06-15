@@ -40,6 +40,7 @@ import {
   weeklyTarget,
   type SavedSystem,
 } from "../lib/local-systems";
+import { useStorageUserId } from "../lib/storage-user-id";
 
 const SECTION_ICON: Record<SystemSection, typeof Dumbbell> = {
   daily: ListChecks,
@@ -59,6 +60,7 @@ const SECTION_TINT: Record<SystemSection, string> = {
 };
 
 export function Schedule() {
+  const userId = useStorageUserId();
   const navigate = useNavigate();
   const [bump, setBump] = useState(0);
   const [draft, setDraft] = useState("");
@@ -73,9 +75,9 @@ export function Schedule() {
     return () => window.removeEventListener("kai:state-changed", on);
   }, []);
 
-  const goal = getSystemGoal();
+  const goal = getSystemGoal(userId);
   const sections = getScheduleBySection();
-  const systems = listSystems();
+  const systems = listSystems(userId);
   const empty = !hasSchedule();
   void bump;
 
@@ -92,7 +94,7 @@ export function Schedule() {
         setError("Couldn't build that. Try describing it a bit more, or set a goal first.");
       } else {
         setSchedule(res.items);
-        if (prompt) setSystemGoal(prompt);
+        if (prompt) setSystemGoal(prompt, userId);
         setDraft("");
         refresh();
       }
@@ -104,7 +106,7 @@ export function Schedule() {
   }
 
   function save() {
-    if (saveCurrentAsSystem()) {
+    if (saveCurrentAsSystem(userId)) {
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
       refresh();
@@ -132,7 +134,7 @@ export function Schedule() {
       </div>
 
       {/* Today's progress (check-offs, resets daily) */}
-      {!empty && <ProgressMeter />}
+      {!empty && <ProgressMeter userId={userId} />}
 
       {/* Build / extend / save */}
       <div className="rounded-glass border border-glass-border bg-surface p-4 shadow-card">
@@ -170,7 +172,7 @@ export function Schedule() {
       </div>
 
       {/* Saved systems — swipe through, make one main */}
-      {systems.length > 0 && <SavedSystemsRow systems={systems} onChange={refresh} />}
+      {systems.length > 0 && <SavedSystemsRow systems={systems} userId={userId} onChange={refresh} />}
 
       {empty ? (
         <div className="rounded-glass border border-dashed border-glass-border bg-surface/60 p-8 text-center">
@@ -182,7 +184,7 @@ export function Schedule() {
       ) : (
         <>
           {sections.map(({ section, items }) => (
-            <SectionBlock key={section} section={section} items={items} onChange={refresh} />
+            <SectionBlock key={section} section={section} items={items} userId={userId} onChange={refresh} />
           ))}
         </>
       )}
@@ -191,8 +193,8 @@ export function Schedule() {
 }
 
 // Per-category weekly progress, driven by check-offs. Avoid is excluded.
-function ProgressMeter() {
-  const { overall, byCategory } = systemProgressWeek();
+function ProgressMeter({ userId }: { userId?: string | null }) {
+  const { overall, byCategory } = systemProgressWeek(userId);
   return (
     <div className="rounded-glass border border-glass-border bg-surface p-4 shadow-card">
       <div className="flex items-end justify-between">
@@ -219,7 +221,7 @@ function ProgressMeter() {
   );
 }
 
-function SavedSystemsRow({ systems, onChange }: { systems: SavedSystem[]; onChange: () => void }) {
+function SavedSystemsRow({ systems, userId, onChange }: { systems: SavedSystem[]; userId?: string | null; onChange: () => void }) {
   return (
     <section>
       <p className="px-1 font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">Saved systems</p>
@@ -238,7 +240,7 @@ function SavedSystemsRow({ systems, onChange }: { systems: SavedSystem[]; onChan
                   )}
                   <button
                     type="button"
-                    onClick={() => { deleteSystem(sys.id); onChange(); }}
+                    onClick={() => { deleteSystem(sys.id, userId); onChange(); }}
                     aria-label={`Delete saved system "${sys.goal}"`}
                     className="flex h-6 w-6 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-muted hover:text-danger focus-ring"
                   >
@@ -250,7 +252,7 @@ function SavedSystemsRow({ systems, onChange }: { systems: SavedSystem[]; onChan
               <button
                 type="button"
                 disabled={main}
-                onClick={() => { makeMain(sys.id); onChange(); }}
+                onClick={() => { makeMain(sys.id, userId); onChange(); }}
                 className="mt-3 flex h-8 w-full items-center justify-center rounded-full bg-text-primary text-xs font-medium text-background transition active:scale-[0.99] disabled:cursor-default disabled:bg-surface-muted disabled:text-text-muted focus-ring"
               >
                 {main ? "Current" : "Make main"}
@@ -263,7 +265,7 @@ function SavedSystemsRow({ systems, onChange }: { systems: SavedSystem[]; onChan
   );
 }
 
-function SectionBlock({ section, items, onChange }: { section: SystemSection; items: ScheduleItem[]; onChange: () => void }) {
+function SectionBlock({ section, items, userId, onChange }: { section: SystemSection; items: ScheduleItem[]; userId?: string | null; onChange: () => void }) {
   const Icon = SECTION_ICON[section];
   const meta = SECTION_META[section];
   const [adding, setAdding] = useState(false);
@@ -302,8 +304,9 @@ function SectionBlock({ section, items, onChange }: { section: SystemSection; it
           <Row
             key={it.id}
             item={it}
-            done={isDoneToday(it.id)}
-            onToggle={() => { toggleDoneToday(it.id); onChange(); }}
+            userId={userId}
+            done={isDoneToday(it.id, userId)}
+            onToggle={() => { toggleDoneToday(it.id, userId); onChange(); }}
             onRemove={() => { removeScheduleItem(it.id); onChange(); }}
           />
         ))}
@@ -312,13 +315,13 @@ function SectionBlock({ section, items, onChange }: { section: SystemSection; it
   );
 }
 
-function Row({ item, done, onToggle, onRemove }: { item: ScheduleItem; done: boolean; onToggle: () => void; onRemove: () => void }) {
+function Row({ item, userId, done, onToggle, onRemove }: { item: ScheduleItem; userId?: string | null; done: boolean; onToggle: () => void; onRemove: () => void }) {
   const time = formatTime(item.time);
   const days = daysLabel(item.days);
   const meta = [time, days].filter(Boolean).join(" · ");
   const avoid = item.section === "avoid";
   const target = avoid ? 0 : weeklyTarget(item);
-  const weekDone = avoid ? 0 : Math.min(weeklyDoneCount(item.id), target);
+  const weekDone = avoid ? 0 : Math.min(weeklyDoneCount(item.id, userId), target);
   const complete = !avoid && weekDone >= target;
 
   return (

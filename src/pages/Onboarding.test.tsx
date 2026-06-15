@@ -7,6 +7,10 @@ import { MemoryRouter } from "react-router-dom";
 import { Onboarding } from "./Onboarding";
 import { api } from "../lib/api";
 
+vi.mock("../lib/storage-user-id", () => ({
+  useStorageUserId: () => "test_user",
+}));
+
 // The Onboarding page calls api.submitIntake / updateUser / sendParentConsent
 // on finish. Stub them so the test doesn't hit a real backend.
 vi.mock("../lib/api", () => ({

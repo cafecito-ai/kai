@@ -91,10 +91,10 @@ export function Profile() {
           <ChevronRight size={18} className="text-text-muted" />
         </Link>
 
-        {/* Strengths Discovery — the 15-question Q&A flow. Replaces the
-            old Goals row here (goals belong in the + quick-action sheet). */}
+        {/* About you — edit the answers from onboarding (name, goal, why,
+            tone) and your future photo. Saving updates the home screen. */}
         <Link
-          to="/strengths"
+          to="/about-you"
           className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
         >
           <span className="flex items-center gap-3">
@@ -103,10 +103,10 @@ export function Profile() {
             </span>
             <span>
               <span className="block text-sm font-medium text-text-primary">
-                Strengths discovery
+                About you
               </span>
               <span className="block text-xs text-text-secondary">
-                15 questions · ~15 min · save and resume
+                Your name, goal, why, and future photo
               </span>
             </span>
           </span>

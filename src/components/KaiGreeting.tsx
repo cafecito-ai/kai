@@ -14,6 +14,8 @@ import { useNavigate } from "react-router-dom";
 
 import { KaiCharacter } from "./KaiCharacter";
 import { pickKaiGreeting } from "../lib/kai-greeting";
+import { getHeroImage, getIdentityStatement } from "../lib/local-identity";
+import { getSystemGoal } from "../lib/local-systems";
 import { useUserStore } from "../stores/userStore";
 
 export function KaiGreeting() {
@@ -24,6 +26,29 @@ export function KaiGreeting() {
   // We don't pin it to a refresh signal — by design, it's a snapshot at
   // page-load time so the greeting feels intentional, not jittery.
   const greeting = useMemo(() => pickKaiGreeting(displayName), [displayName]);
+
+  // Identity, folded into KAI's bubble: the goal/identity lead the greeting,
+  // and the hero photo sits softly behind the character (not a card).
+  const [identity, setIdentity] = useState<{
+    goal: string | null;
+    statement: string | null;
+    hero: string | null;
+    heroPos: string;
+  }>({ goal: null, statement: null, hero: null, heroPos: "50% 50%" });
+  useEffect(() => {
+    const read = () => {
+      const h = getHeroImage();
+      setIdentity({
+        goal: getSystemGoal(),
+        statement: getIdentityStatement(),
+        hero: h?.dataUrl ?? null,
+        heroPos: h?.position ?? "50% 50%",
+      });
+    };
+    read();
+    window.addEventListener("kai:state-changed", read);
+    return () => window.removeEventListener("kai:state-changed", read);
+  }, []);
 
   // KAI waves hello when you open the app, then settles into the normal
   // talking idle after one wave loop (~3.2s).
@@ -41,6 +66,21 @@ export function KaiGreeting() {
 
   return (
     <section className="relative">
+      {/* Hero photo, softly behind the character (ambient, not a card). */}
+      {identity.hero && (
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <img
+            src={identity.hero}
+            alt=""
+            style={{ objectPosition: identity.heroPos }}
+            className="h-full w-full object-cover opacity-[0.14] blur-2xl"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/30 to-background" />
+        </div>
+      )}
       {/* Glow background behind the character */}
       <div
         className="
@@ -70,6 +110,19 @@ export function KaiGreeting() {
             focus-ring text-left
           "
         >
+          {/* Identity lead — KAI opens by naming who you're becoming, then
+              lands the warm greeting. */}
+          {(identity.goal || identity.statement) && (
+            <p className="mb-1.5 text-sm leading-snug">
+              {identity.goal && (
+                <span className="font-semibold text-accent">{identity.goal}</span>
+              )}
+              {identity.goal && identity.statement ? " " : ""}
+              {identity.statement && (
+                <span className="text-text-secondary">· “{identity.statement}”</span>
+              )}
+            </p>
+          )}
           <p className="font-display text-lg font-medium leading-snug text-text-primary sm:text-xl">
             {greeting.line}
           </p>

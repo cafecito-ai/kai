@@ -177,7 +177,7 @@ export function Friends() {
 
       {/* Challenges entry */}
       <Link
-        to="/challenges"
+        to="/friends/challenges"
         className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
       >
         <span className="flex items-center gap-3">

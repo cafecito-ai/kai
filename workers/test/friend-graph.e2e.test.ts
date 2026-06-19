@@ -18,7 +18,7 @@ function makeDb() {
   const progress: Row[] = [];
   const progressEvents: Row[] = [];
 
-  function exec(sqlRaw: string, args: unknown[], mode: "first" | "all" | "run") {
+  function exec(sqlRaw: string, args: unknown[]) {
     const sql = sqlRaw.replace(/\s+/g, " ").trim();
     const has = (frag: string) => sql.includes(frag);
 
@@ -129,9 +129,9 @@ function makeDb() {
       return {
         bind(...args: unknown[]) {
           return {
-            first: async () => exec(sql, args, "first"),
-            all: async () => ({ results: exec(sql, args, "all") }),
-            run: async () => exec(sql, args, "run"),
+            first: async () => exec(sql, args),
+            all: async () => ({ results: exec(sql, args) }),
+            run: async () => exec(sql, args),
           };
         },
       };
@@ -141,7 +141,7 @@ function makeDb() {
 }
 
 function makeClient(db: ReturnType<typeof makeDb>) {
-  const app = new Hono();
+  const app = new Hono<{ Variables: { userId: string } }>();
   app.use("*", async (c, next) => {
     c.set("userId", c.req.header("x-test-user") ?? "");
     await next();
@@ -153,6 +153,11 @@ function makeClient(db: ReturnType<typeof makeDb>) {
       { ...init, headers: { "content-type": "application/json", "x-test-user": user, ...(init.headers ?? {}) } },
       { DB: db.DB } as unknown as Record<string, unknown>,
     );
+}
+
+// Typed JSON reader so the test stays strict without `unknown` noise.
+async function body<T>(r: Response): Promise<T> {
+  return (await r.json()) as T;
 }
 
 describe("friend graph — two-user E2E", () => {
@@ -175,16 +180,16 @@ describe("friend graph — two-user E2E", () => {
     // 2. Bob finds Alice.
     const search = await call("bob", "/friends/search?u=aliceboxer");
     expect(search.status).toBe(200);
-    expect((await search.json()).user.username).toBe("aliceboxer");
+    expect((await body<{ user: { username: string } }>(search)).user.username).toBe("aliceboxer");
 
     // 3. Bob requests Alice.
     const reqRes = await call("bob", "/friends/request", { method: "POST", body: JSON.stringify({ username: "aliceboxer" }) });
     expect(reqRes.status).toBe(200);
-    const friendshipId = (await reqRes.json()).friendship.id;
+    const friendshipId = (await body<{ friendship: { id: string } }>(reqRes)).friendship.id;
 
     // 4. Duplicate request is guarded.
     const dup = await call("bob", "/friends/request", { method: "POST", body: JSON.stringify({ username: "aliceboxer" }) });
-    expect((await dup.json()).alreadyExists).toBe(true);
+    expect((await body<{ alreadyExists: boolean }>(dup)).alreadyExists).toBe(true);
 
     // 5. Self-request rejected.
     const self = await call("alice", "/friends/request", { method: "POST", body: JSON.stringify({ username: "aliceboxer" }) });
@@ -195,12 +200,12 @@ describe("friend graph — two-user E2E", () => {
     expect(bobAccept.status).toBe(403);
     const aliceAccept = await call("alice", `/friends/${friendshipId}/accept`, { method: "POST" });
     expect(aliceAccept.status).toBe(200);
-    expect((await aliceAccept.json()).friendship.status).toBe("accepted");
+    expect((await body<{ friendship: { status: string } }>(aliceAccept)).friendship.status).toBe("accepted");
 
     // 7. Compare now shows the friend (aggregate-only).
     const cmp = await call("alice", "/friends/compare");
-    const friends = (await cmp.json()).friends;
-    expect(friends.map((f: { displayName: string }) => f.displayName)).toContain("Bob");
+    const friends = (await body<{ friends: Array<{ displayName: string }> }>(cmp)).friends;
+    expect(friends.map((f) => f.displayName)).toContain("Bob");
 
     // 8. Alice creates a challenge on the friendship.
     const create = await call("alice", "/friends/challenges", {
@@ -208,7 +213,7 @@ describe("friend graph — two-user E2E", () => {
       body: JSON.stringify({ friendshipId, title: "20 workouts this month", metric: "workout", target: 20, days: 30 }),
     });
     expect(create.status).toBe(200);
-    const challengeId = (await create.json()).challenge.id;
+    const challengeId = (await body<{ challenge: { id: string } }>(create)).challenge.id;
 
     // 9. A non-member cannot bump progress.
     const carolBump = await call("carol", `/friends/challenges/${challengeId}/progress`, { method: "POST", body: JSON.stringify({ delta: 1 }) });
@@ -216,17 +221,25 @@ describe("friend graph — two-user E2E", () => {
 
     // 10. Alice bumps her own progress.
     const bump = await call("alice", `/friends/challenges/${challengeId}/progress`, { method: "POST", body: JSON.stringify({ delta: 1 }) });
-    expect((await bump.json()).count).toBe(1);
+    expect((await body<{ count: number }>(bump)).count).toBe(1);
 
     // 11. Listing shows both members, Alice at 1, Bob at 0.
     const list = await call("alice", "/friends/challenges");
-    const challenge = (await list.json()).challenges[0];
+    const challenge = (
+      await body<{
+        challenges: Array<{
+          title: string;
+          target: number;
+          members: Array<{ isYou: boolean; displayName: string; count: number }>;
+        }>;
+      }>(list)
+    ).challenges[0];
     expect(challenge.title).toBe("20 workouts this month");
     expect(challenge.target).toBe(20);
-    const alice = challenge.members.find((m: { isYou: boolean }) => m.isYou);
-    const bob = challenge.members.find((m: { displayName: string }) => m.displayName === "Bob");
-    expect(alice.count).toBe(1);
-    expect(bob.count).toBe(0);
+    const alice = challenge.members.find((m) => m.isYou);
+    const bob = challenge.members.find((m) => m.displayName === "Bob");
+    expect(alice?.count).toBe(1);
+    expect(bob?.count).toBe(0);
   });
 
   it("rejects an invalid username and a taken one", async () => {

@@ -26,6 +26,7 @@ import {
 import { Link } from "react-router-dom";
 
 import { HydrationTile } from "../components/HydrationTile";
+import { ThenVsNowCard } from "../components/progress/ThenVsNowCard";
 import {
   computeLocalScoreFor,
   readLocalInputs,
@@ -103,6 +104,9 @@ export function Progress() {
               old Home page so /home stays focused on action and
               /progress becomes the data deep-dive. */}
           <StreakRecordCard inputs={inputs} currentStreak={streak} />
+
+          {/* Then → now reflection (who you were when you started vs now) */}
+          <ThenVsNowCard />
 
           {/* 7-day Daily Score chart */}
           <DailyScoreChart days={days} />

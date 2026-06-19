@@ -32,6 +32,7 @@ import {
   type LocalInput,
 } from "../lib/local-score";
 import { getRecentHydration } from "../lib/local-hydration";
+import { progressDeltas } from "../lib/baseline";
 
 type DayBucket = {
   date: string;          // YYYY-MM-DD
@@ -98,6 +99,9 @@ export function Progress() {
         <>
           {/* This week tallies */}
           <ThisWeekCard tallies={tallies} streak={streak} />
+
+          {/* Growth you don't notice in yourself — vs when you started. */}
+          <SinceYouStartedCard />
 
           {/* Streak record — current + longest. Moved here from the
               old Home page so /home stays focused on action and
@@ -373,6 +377,55 @@ function RecentActivityCard({ recent }: { recent: LocalInput[] }) {
           <RecentRow key={r.id} row={r} />
         ))}
       </div>
+    </section>
+  );
+}
+
+// "Since you started" — growth the user can't see for themselves, compared
+// against their first week. Shows the deeper reflection link once they've been
+// building a while (60+ days).
+function SinceYouStartedCard() {
+  const d = progressDeltas();
+  const rows: { label: string; value: string }[] = [];
+  if (d.sleepHoursDelta != null && Math.abs(d.sleepHoursDelta) >= 0.25) {
+    const sign = d.sleepHoursDelta > 0 ? "+" : "−";
+    rows.push({
+      label: "Sleep a night",
+      value: `${sign}${Math.abs(d.sleepHoursDelta).toFixed(1)}h`,
+    });
+  }
+  if (d.workoutsLifetime > 0) {
+    rows.push({ label: "Workouts logged", value: `${d.workoutsLifetime}` });
+  }
+  rows.push({ label: "Days building", value: `${d.daysBuilding}` });
+
+  // Nothing meaningful beyond day count for a brand-new user → skip the card.
+  if (rows.length <= 1 && d.daysBuilding < 3) return null;
+
+  return (
+    <section className="mt-4 rounded-glass border border-glass-border bg-surface p-5 shadow-card">
+      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+        since you started
+      </p>
+      <h2 className="mt-1 font-display text-xl font-semibold leading-tight tracking-tight">
+        How far you've come
+      </h2>
+      <div className="mt-3 space-y-2">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center justify-between gap-4">
+            <span className="text-sm text-text-secondary">{r.label}</span>
+            <span className="font-mono text-base font-bold text-text-primary">{r.value}</span>
+          </div>
+        ))}
+      </div>
+      {d.daysBuilding >= 60 && (
+        <Link
+          to="/reflection"
+          className="mt-4 flex items-center justify-center rounded-full bg-accent-soft px-4 py-2.5 text-sm font-medium text-accent transition hover:bg-accent-soft/60 focus-ring"
+        >
+          See how far you've come
+        </Link>
+      )}
     </section>
   );
 }

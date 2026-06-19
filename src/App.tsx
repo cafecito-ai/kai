@@ -48,6 +48,7 @@ import { PreviewFlower } from "./pages/PreviewFlower";
 import { Vault } from "./pages/Vault";
 import { AboutYou } from "./pages/AboutYou";
 import { Comeback, COMEBACK_SEEN_KEY } from "./pages/Comeback";
+import { Reflection } from "./pages/Reflection";
 import { FriendInvite } from "./pages/FriendInvite";
 import { daysSinceAnyActivity } from "./lib/local-score";
 import { Profile } from "./pages/Profile";
@@ -123,6 +124,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/welcome" element={protectedOnboarding(<Welcome />)} />
           <Route path="/home" element={protectedOnboarding(<HomeOrComeback />)} />
           <Route path="/comeback" element={protectedOnboarding(<Comeback />)} />
+          <Route path="/reflection" element={protectedOnboarding(<Reflection />)} />
           <Route path="/chat" element={protectedOnboarding(<Chat />)} />
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />

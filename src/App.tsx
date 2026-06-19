@@ -50,6 +50,7 @@ import { AboutYou } from "./pages/AboutYou";
 import { Comeback, COMEBACK_SEEN_KEY } from "./pages/Comeback";
 import { Reflection } from "./pages/Reflection";
 import { FriendInvite } from "./pages/FriendInvite";
+import { Friends } from "./pages/Friends";
 import { daysSinceAnyActivity } from "./lib/local-score";
 import { Profile } from "./pages/Profile";
 import { Ops } from "./pages/Ops";
@@ -164,6 +165,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/profile" element={protectedOnboarding(<Profile />)} />
           <Route path="/about-you" element={protectedOnboarding(<AboutYou />)} />
           <Route path="/invite" element={protectedOnboarding(<FriendInvite />)} />
+          <Route path="/friends" element={protectedOnboarding(<Friends />)} />
           {/* Vault — private/sacred space behind a biometric lock.
               Not in the tabbar. Surfaces from Home only when fading
               signals fire (low activity / streak break / low mood). */}

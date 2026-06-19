@@ -211,6 +211,18 @@ export function setNorthStar(goal: string, source: NorthStar["source"], theme?: 
   write({ goal: clean, theme: theme ?? classifyTheme(clean), source, createdAt: new Date().toISOString() });
 }
 
+/** Remove the Home goal entirely. Used when the user clears their goal in the
+ *  About-you editor; the Home card falls back to its "Set your goal" state. */
+export function clearNorthStar(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(GOAL_KEY);
+    window.dispatchEvent(new Event("kai:state-changed"));
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Seed from onboarding focus areas, unless the teen already set a custom goal. */
 export function seedNorthStarFromFocus(focusAreas: string[]): void {
   const existing = read();

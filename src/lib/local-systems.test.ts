@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setSchedule } from "./local-schedule";
 import {
+  clearSystemGoal,
   getSystemGoal,
   isDoneToday,
   listSystems,
@@ -36,5 +37,16 @@ describe("local systems storage", () => {
     toggleDoneToday(itemId, "alice");
     expect(isDoneToday(itemId, "alice")).toBe(true);
     expect(isDoneToday(itemId, "bob")).toBe(false);
+  });
+
+  it("clears the system goal for the right user only", () => {
+    setSystemGoal("Alice goal", "alice");
+    setSystemGoal("Bob goal", "bob");
+
+    clearSystemGoal("alice");
+
+    // Alice's goal is gone (no North Star fallback set, so null); Bob's stays.
+    expect(getSystemGoal("alice")).toBeNull();
+    expect(getSystemGoal("bob")).toBe("Bob goal");
   });
 });

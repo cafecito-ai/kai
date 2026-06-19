@@ -28,6 +28,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { KaiGreeting } from "../components/KaiGreeting";
+import { ComebackMoment } from "../components/ComebackMoment";
+import { shouldShowComeback } from "../lib/local-comeback";
 import { MissionsCard } from "../components/MissionsCard";
 import { NorthStarCard } from "../components/NorthStarCard";
 import { XpPill } from "../components/XpPill";
@@ -194,6 +196,11 @@ export function Home() {
   useEffect(() => {
     setVaultSurfaced(shouldSurfaceVaultOnHome());
   }, []);
+  // Comeback: returning after a 7+ day gap gets a warm welcome, not shame.
+  const [comeback, setComeback] = useState(false);
+  useEffect(() => {
+    setComeback(shouldShowComeback());
+  }, []);
   useEffect(() => {
     function onChange() {
       setRefreshKey((k) => k + 1);
@@ -264,6 +271,7 @@ export function Home() {
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6 pt-2 sm:max-w-lg">
+      {comeback && <ComebackMoment onClose={() => setComeback(false)} />}
       {/* KAI greets you the moment you open the app — character +
           contextual line + tap-to-talk. This is the surface that makes
           the user WANT to come back and talk to their best friend. */}

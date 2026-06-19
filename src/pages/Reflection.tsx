@@ -1,4 +1,4 @@
-// Reflection — the "you're not the same person who downloaded Rawz" moment.
+// Reflection — the "you're not the same person who started" moment.
 // Surfaces growth the user doesn't notice in themselves: sleep vs when they
 // started, lifetime workouts, consistency, days building. Reachable from
 // Progress once they've been at it a while.
@@ -35,7 +35,7 @@ export function Reflection() {
     <div className="mx-auto flex min-h-[80vh] max-w-md flex-col items-center justify-center px-6 text-center">
       <KaiOrb size={72} />
       <h1 className="mt-7 font-display text-3xl font-semibold leading-tight tracking-tight text-text-primary">
-        You're not the same person who downloaded Rawz.
+        You're not the same person who started.
       </h1>
       <p className="mt-3 text-sm text-text-secondary">
         Here's what's changed while you weren't keeping score.

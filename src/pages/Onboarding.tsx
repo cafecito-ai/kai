@@ -201,7 +201,7 @@ type Draft = {
   kaiTone: KaiTone;
   bigGoal: string;
   identityStatement: string; // "Someone who keeps his word" — who they want to become
-  whyMatters: string; // origin story: "why are you downloading Rawz today" (write-once)
+  whyMatters: string; // origin story: "what made you want to start today" (write-once)
   heroImageFile: File | null;
 };
 
@@ -342,10 +342,10 @@ const QUESTION_STAGES: Stage[] = [
     placeholder: "e.g. Someone who keeps his word. Someone who never quits.",
     optional: true,
     kaiLines: () => [
-      "What kind of person do you want to become?",
-      "Not what you do — who you are.",
+      "Who do you want to become?",
+      "However it comes out — there's no wrong answer.",
     ],
-    reaction: () => "That's who we're building.",
+    reaction: () => "Love that. That's who we're building.",
   },
   {
     id: "why",
@@ -356,8 +356,8 @@ const QUESTION_STAGES: Stage[] = [
     placeholder: "e.g. I'm tired of wasting my potential. I need structure.",
     optional: true,
     kaiLines: () => [
-      "Why are you downloading Rawz today?",
-      "Keep it short. This is your day-one story — I won't forget it.",
+      "What made you want to start today?",
+      "Just be real with me — I'll hold onto this one.",
     ],
   },
   {

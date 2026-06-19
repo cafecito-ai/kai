@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 
 import { KaiCharacter } from "./KaiCharacter";
 import { pickKaiGreeting } from "../lib/kai-greeting";
-import { getHeroImage, getIdentityStatement } from "../lib/local-identity";
+import { daysBuilding, getHeroImage, getIdentityStatement } from "../lib/local-identity";
 import { getSystemGoal } from "../lib/local-systems";
 import { useStorageUserId } from "../lib/storage-user-id";
 import { useUserStore } from "../stores/userStore";
@@ -36,7 +36,8 @@ export function KaiGreeting() {
     statement: string | null;
     hero: string | null;
     heroPos: string;
-  }>({ goal: null, statement: null, hero: null, heroPos: "50% 50%" });
+    days: number;
+  }>({ goal: null, statement: null, hero: null, heroPos: "50% 50%", days: 1 });
   useEffect(() => {
     const read = () => {
       const h = getHeroImage();
@@ -45,6 +46,7 @@ export function KaiGreeting() {
         statement: getIdentityStatement(),
         hero: h?.dataUrl ?? null,
         heroPos: h?.position ?? "50% 50%",
+        days: daysBuilding(),
       });
     };
     read();
@@ -66,21 +68,44 @@ export function KaiGreeting() {
     navigate("/chat", { state: draft ? { draft } : undefined });
   }
 
+  const hasIdentity = Boolean(identity.goal || identity.statement);
+
   return (
     <section className="relative">
-      {/* Hero photo, softly behind the character (ambient, not a card). */}
-      {identity.hero && (
-        <div
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          aria-hidden="true"
-        >
-          <img
-            src={identity.hero}
-            alt=""
-            style={{ objectPosition: identity.heroPos }}
-            className="h-full w-full object-cover opacity-[0.14] blur-2xl"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/30 to-background" />
+      {/* Identity hero — the emotional centerpiece. The first thing you see is
+          who you're becoming: your photo, your goal, your chosen identity, and
+          how long you've been at it. Not "Good morning." */}
+      {hasIdentity && (
+        <div className="mb-5 overflow-hidden rounded-3xl border border-glass-border shadow-card-lg">
+          <div className="relative">
+            {identity.hero ? (
+              <img
+                src={identity.hero}
+                alt=""
+                style={{ objectPosition: identity.heroPos }}
+                className="h-48 w-full object-cover sm:h-56"
+              />
+            ) : (
+              <div className="h-32 w-full bg-gradient-to-br from-accent/30 via-surface to-background" />
+            )}
+            {/* Scrim so the text is always legible over any photo. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-4">
+              {identity.goal && (
+                <p className="font-display text-2xl font-bold leading-tight tracking-tight text-text-primary">
+                  {identity.goal}
+                </p>
+              )}
+              {identity.statement && (
+                <p className="mt-1 text-sm italic leading-snug text-text-secondary">
+                  “{identity.statement}”
+                </p>
+              )}
+              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+                Day {identity.days} becoming the person you said you'd be
+              </p>
+            </div>
+          </div>
         </div>
       )}
       {/* Glow background behind the character */}
@@ -112,19 +137,8 @@ export function KaiGreeting() {
             focus-ring text-left
           "
         >
-          {/* Identity lead — KAI opens by naming who you're becoming, then
-              lands the warm greeting. */}
-          {(identity.goal || identity.statement) && (
-            <p className="mb-1.5 text-sm leading-snug">
-              {identity.goal && (
-                <span className="font-semibold text-accent">{identity.goal}</span>
-              )}
-              {identity.goal && identity.statement ? " " : ""}
-              {identity.statement && (
-                <span className="text-text-secondary">· “{identity.statement}”</span>
-              )}
-            </p>
-          )}
+          {/* Identity now leads in the hero panel above; the bubble is just
+              KAI's warm, contextual line. */}
           <p className="font-display text-lg font-medium leading-snug text-text-primary sm:text-xl">
             {greeting.line}
           </p>

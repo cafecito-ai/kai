@@ -269,7 +269,17 @@ export function Home() {
           the user WANT to come back and talk to their best friend. */}
       <KaiGreeting />
 
-      {/* Small ambient context row — streak + level pill */}
+      {/* Daily Score + North Star goal, side by side. The score is today;
+          the North Star is the weeks/months goal whose ring fills as they
+          keep showing up. Sits below the identity hero on purpose — we lead
+          with who they're becoming, not the metrics. */}
+      <div className="grid grid-cols-2 gap-3">
+        <DailyScoreCard data={data} />
+        <NorthStarCard />
+      </div>
+
+      {/* Small ambient context row — streak + level pill. Demoted below the
+          cards so a raw streak number never leads the screen. */}
       <div className="flex items-center justify-center gap-2 px-1">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs">
           <Flame size={12} className="text-accent-warm" />
@@ -278,14 +288,6 @@ export function Home() {
           </span>
         </span>
         <XpPill />
-      </div>
-
-      {/* Daily Score + North Star goal, side by side. The score is today;
-          the North Star is the weeks/months goal whose ring fills as they
-          keep showing up. */}
-      <div className="grid grid-cols-2 gap-3">
-        <DailyScoreCard data={data} />
-        <NorthStarCard />
       </div>
 
       {/* Level-up moment lands here when it fires — kept on Home

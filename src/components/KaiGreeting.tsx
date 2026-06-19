@@ -16,11 +16,13 @@ import { KaiCharacter } from "./KaiCharacter";
 import { pickKaiGreeting } from "../lib/kai-greeting";
 import { getHeroImage, getIdentityStatement } from "../lib/local-identity";
 import { getSystemGoal } from "../lib/local-systems";
+import { useStorageUserId } from "../lib/storage-user-id";
 import { useUserStore } from "../stores/userStore";
 
 export function KaiGreeting() {
   const navigate = useNavigate();
   const displayName = useUserStore((s) => s.displayName);
+  const userId = useStorageUserId();
 
   // Greeting recomputes when display name changes (e.g. after onboarding).
   // We don't pin it to a refresh signal — by design, it's a snapshot at
@@ -39,7 +41,7 @@ export function KaiGreeting() {
     const read = () => {
       const h = getHeroImage();
       setIdentity({
-        goal: getSystemGoal(),
+        goal: getSystemGoal(userId),
         statement: getIdentityStatement(),
         hero: h?.dataUrl ?? null,
         heroPos: h?.position ?? "50% 50%",
@@ -48,7 +50,7 @@ export function KaiGreeting() {
     read();
     window.addEventListener("kai:state-changed", read);
     return () => window.removeEventListener("kai:state-changed", read);
-  }, []);
+  }, [userId]);
 
   // KAI waves hello when you open the app, then settles into the normal
   // talking idle after one wave loop (~3.2s).

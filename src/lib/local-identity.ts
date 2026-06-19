@@ -21,13 +21,15 @@ function read(key: string): string | null {
   }
 }
 
-function write(key: string, val: string): void {
-  if (typeof localStorage === "undefined") return;
+function write(key: string, val: string): boolean {
+  if (typeof localStorage === "undefined") return false;
   try {
     localStorage.setItem(key, val);
     window.dispatchEvent(new Event("kai:state-changed"));
+    return true;
   } catch {
     /* quota — fine, this is best-effort device-local state */
+    return false;
   }
 }
 
@@ -92,7 +94,9 @@ export async function setHeroImage(file: File): Promise<boolean> {
   // Full-screen hero, so allow a larger edge than the food thumbnail.
   const dataUrl = await fileToThumbnailDataUrl(file, 1080, 0.75);
   if (!dataUrl) return false;
-  write(
+  // A 1080px data URL can blow the localStorage quota; report that honestly so
+  // callers don't reframe (setHeroPosition) or mark the photo "set" on a miss.
+  const stored = write(
     HERO_KEY,
     JSON.stringify({
       dataUrl,
@@ -100,6 +104,7 @@ export async function setHeroImage(file: File): Promise<boolean> {
       position: DEFAULT_HERO_POSITION,
     }),
   );
+  if (!stored) return false;
   stampStartOnce();
   return true;
 }

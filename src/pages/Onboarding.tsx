@@ -44,6 +44,7 @@ import {
   setIdentityStatement,
   setOriginStory,
 } from "../lib/local-identity";
+import { useStorageUserId } from "../lib/storage-user-id";
 import type { EngineId, KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -430,6 +431,7 @@ function makeInitialDraft(demo: DemoBuildSlice | null): Draft {
 export function Onboarding() {
   const navigate = useNavigate();
   const { setKai, setPrimaryEngine, onboardingCompletedAt } = useUserStore();
+  const userId = useStorageUserId();
 
   const [demoBuild] = useState<DemoBuildSlice | null>(() => loadDemoBuild());
   const [isStatic] = useState(() => detectStatic());
@@ -561,7 +563,7 @@ export function Onboarding() {
         goalText = getNorthStar()?.goal ?? "";
       }
       if (goalText) {
-        setSystemGoal(goalText);
+        setSystemGoal(goalText, userId);
         void api
           .scheduleGenerate(goalText, goalText)
           .then((res) => {
@@ -1111,9 +1113,11 @@ function PhotoComposer({
     if (!file) return;
     setBusy(true);
     // Store the photo now (with the chosen framing) so finish() doesn't have
-    // to re-store and reset the position.
-    await setHeroImage(file);
-    setHeroPosition(`50% ${posY}%`);
+    // to re-store and reset the position. Only apply framing if it stored —
+    // setHeroImage returns false on decode failure / quota, and setHeroPosition
+    // is a no-op without a stored photo.
+    const stored = await setHeroImage(file);
+    if (stored) setHeroPosition(`50% ${posY}%`);
     setBusy(false);
     onSend(file);
   }

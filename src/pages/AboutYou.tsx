@@ -22,11 +22,13 @@ import {
 } from "../lib/local-identity";
 import { setNorthStar } from "../lib/local-northstar";
 import { getSystemGoal, setSystemGoal } from "../lib/local-systems";
+import { useStorageUserId } from "../lib/storage-user-id";
 import { useUserStore } from "../stores/userStore";
 
 export function AboutYou() {
   const navigate = useNavigate();
   const { displayName, setDisplayName } = useUserStore();
+  const userId = useStorageUserId();
 
   const [name, setName] = useState(displayName ?? "");
   const [goal, setGoal] = useState("");
@@ -41,10 +43,10 @@ export function AboutYou() {
   const [pendUrl, setPendUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    setGoal(getSystemGoal() ?? "");
+    setGoal(getSystemGoal(userId) ?? "");
     setWhy(getIdentityStatement() ?? "");
     setHero(getHeroImage());
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (!pending) {
@@ -65,9 +67,10 @@ export function AboutYou() {
     setDisplayName(nm || null);
     const g = goal.trim();
     if (g) {
-      setSystemGoal(g);
+      // Both setters dispatch kai:state-changed on their own, so no extra
+      // dispatch is needed here (it would only fire redundant re-reads).
+      setSystemGoal(g, userId);
       setNorthStar(g, "custom");
-      window.dispatchEvent(new Event("kai:state-changed"));
     }
     if (why.trim()) setIdentityStatement(why); // dispatches on its own
     setSaved(true);
@@ -84,8 +87,11 @@ export function AboutYou() {
 
   async function useChosenPhoto() {
     if (!pending) return;
-    await setHeroImage(pending);
-    setHeroPosition(`50% ${pendPos}%`);
+    // Only apply the chosen framing if the image actually stored — setHeroImage
+    // returns false on a decode failure or localStorage quota, and
+    // setHeroPosition is a no-op without a stored photo.
+    const stored = await setHeroImage(pending);
+    if (stored) setHeroPosition(`50% ${pendPos}%`);
     setHero(getHeroImage());
     setPending(null);
   }

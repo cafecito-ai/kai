@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 
 import { KaiCharacter } from "./KaiCharacter";
 import { pickKaiGreeting } from "../lib/kai-greeting";
-import { getHeroImage, getIdentityStatement } from "../lib/local-identity";
+import { daysBuilding, getHeroImage, getIdentityStatement } from "../lib/local-identity";
 import { getSystemGoal } from "../lib/local-systems";
 import { useUserStore } from "../stores/userStore";
 
@@ -34,7 +34,8 @@ export function KaiGreeting() {
     statement: string | null;
     hero: string | null;
     heroPos: string;
-  }>({ goal: null, statement: null, hero: null, heroPos: "50% 50%" });
+    days: number;
+  }>({ goal: null, statement: null, hero: null, heroPos: "50% 50%", days: 1 });
   useEffect(() => {
     const read = () => {
       const h = getHeroImage();
@@ -43,6 +44,7 @@ export function KaiGreeting() {
         statement: getIdentityStatement(),
         hero: h?.dataUrl ?? null,
         heroPos: h?.position ?? "50% 50%",
+        days: daysBuilding(),
       });
     };
     read();
@@ -111,7 +113,13 @@ export function KaiGreeting() {
           "
         >
           {/* Identity lead — KAI opens by naming who you're becoming, then
-              lands the warm greeting. */}
+              lands the warm greeting. The day counter turns showing up into a
+              streak of identity ("day 12 of becoming…"). */}
+          {identity.statement && (
+            <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+              Day {identity.days} · becoming
+            </p>
+          )}
           {(identity.goal || identity.statement) && (
             <p className="mb-1.5 text-sm leading-snug">
               {identity.goal && (

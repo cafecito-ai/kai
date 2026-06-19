@@ -34,6 +34,8 @@ export type KaiClientContext = {
     originStory: string | null;
     daysBuilding: number;
   };
+  /** Emotional moment: "milestone" | "struggle" | "routine". Optional. */
+  moment?: "milestone" | "struggle" | "routine";
   todayScore: {
     final: number | null;
     mental: number | null;

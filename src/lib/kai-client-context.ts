@@ -16,6 +16,7 @@
 
 import { getActiveChallenges } from "./local-challenges";
 import { daysBuilding, getIdentityStatement, getOriginStory } from "./local-identity";
+import { classifyMoment, type KaiMoment } from "./kai-moment";
 import { getNorthStar } from "./local-northstar";
 import { getSchedule } from "./local-schedule";
 import { getCurrentLevel, labelForLevel } from "./local-xp";
@@ -36,6 +37,9 @@ export type KaiClientContext = {
     originStory: string | null; // Day-1 "why", write-once
     daysBuilding: number; // days since they started
   };
+  /** The emotional moment the user is in — gates whether KAI reaches for the
+   *  origin-story callback / open-loop tools (rare) vs. stays routine. */
+  moment: KaiMoment;
   /** Today's daily score breakdown (0-100 per pillar). */
   todayScore: {
     final: number | null;
@@ -157,6 +161,7 @@ export function buildKaiClientContext(now: Date = new Date()): KaiClientContext 
 
   return {
     identity,
+    moment: classifyMoment(now),
     todayScore: {
       final: todayScore.final,
       mental: todayScore.mental,

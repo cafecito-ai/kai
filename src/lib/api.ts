@@ -483,6 +483,52 @@ export const api = {
         totalScore: number;
       }>;
     }>("/api/friends/compare"),
+  setUsername: (username: string) =>
+    request<{ username?: string; error?: string }>("/api/friends/username", {
+      method: "PATCH",
+      body: JSON.stringify({ username }),
+    }),
+  searchFriend: (u: string) =>
+    request<{ user?: { userId: string; username: string; displayName: string }; error?: string }>(
+      `/api/friends/search?u=${encodeURIComponent(u)}`,
+    ),
+  requestFriend: (username: string) =>
+    request<{ friendship?: { id: string; status: string }; alreadyExists?: boolean; error?: string }>(
+      "/api/friends/request",
+      { method: "POST", body: JSON.stringify({ username }) },
+    ),
+  listFriends: () =>
+    request<{
+      accepted: Array<{ friendshipId: string }>;
+      incoming: Array<{ friendshipId: string; fromUserId: string; username: string | null; displayName: string }>;
+      outgoing: Array<{ friendshipId: string }>;
+    }>("/api/friends"),
+  acceptFriend: (friendshipId: string) =>
+    request<{ friendship: { id: string; status: string } }>(`/api/friends/${friendshipId}/accept`, {
+      method: "POST",
+    }),
+  listChallenges: () =>
+    request<{
+      challenges: Array<{
+        id: string;
+        title: string;
+        metric: string;
+        target: number;
+        endsOn: string;
+        daysRemaining: number;
+        members: Array<{ userId: string; displayName: string; count: number; isYou: boolean; complete: boolean }>;
+      }>;
+    }>("/api/friends/challenges"),
+  createChallenge: (body: { friendshipId: string; title: string; metric: string; target: number; days: number }) =>
+    request<{ challenge: { id: string; title: string; endsOn: string } }>("/api/friends/challenges", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  bumpChallenge: (id: string, delta = 1) =>
+    request<{ count: number }>(`/api/friends/challenges/${id}/progress`, {
+      method: "POST",
+      body: JSON.stringify({ delta }),
+    }),
   getDemoSessions: () =>
     request<{
       sessions: Array<{

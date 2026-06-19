@@ -27,6 +27,13 @@ export type KaiContext = {
  *  client values for safety-critical things (this is just background
  *  context for tone, not authorization). */
 export type KaiClientContext = {
+  /** Who the user is becoming. Optional — older clients won't send it. */
+  identity?: {
+    goalName: string | null;
+    statement: string | null;
+    originStory: string | null;
+    daysBuilding: number;
+  };
   todayScore: {
     final: number | null;
     mental: number | null;

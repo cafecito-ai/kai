@@ -47,7 +47,9 @@ import { Onboarding } from "./pages/Onboarding";
 import { PreviewFlower } from "./pages/PreviewFlower";
 import { Vault } from "./pages/Vault";
 import { AboutYou } from "./pages/AboutYou";
+import { Comeback, COMEBACK_SEEN_KEY } from "./pages/Comeback";
 import { FriendInvite } from "./pages/FriendInvite";
+import { daysSinceAnyActivity } from "./lib/local-score";
 import { Profile } from "./pages/Profile";
 import { Ops } from "./pages/Ops";
 import { OpsDemoSession } from "./pages/OpsDemoSession";
@@ -56,6 +58,23 @@ import { PolicyPage } from "./pages/PolicyPage";
 import { Progress } from "./pages/Progress";
 import { Scope } from "./pages/Scope";
 import { Settings } from "./pages/Settings";
+
+// Before the dashboard, a returning user who's been gone 7+ days sees the
+// no-guilt comeback screen — once per app session, and never a brand-new user
+// (daysSinceAnyActivity returns null when nothing's ever been logged).
+function HomeOrComeback() {
+  let seen = false;
+  try {
+    seen = sessionStorage.getItem(COMEBACK_SEEN_KEY) === "1";
+  } catch {
+    /* ignore */
+  }
+  const gap = daysSinceAnyActivity();
+  if (!seen && gap !== null && gap >= 7) {
+    return <Navigate to="/comeback" replace />;
+  }
+  return <Home />;
+}
 
 export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
   const protectedAuth = (children: React.ReactNode) => (authEnabled ? <RequireAuth>{children}</RequireAuth> : children);
@@ -102,7 +121,8 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           />
           <Route path="/onboarding" element={protectedAuth(<Onboarding />)} />
           <Route path="/welcome" element={protectedOnboarding(<Welcome />)} />
-          <Route path="/home" element={protectedOnboarding(<Home />)} />
+          <Route path="/home" element={protectedOnboarding(<HomeOrComeback />)} />
+          <Route path="/comeback" element={protectedOnboarding(<Comeback />)} />
           <Route path="/chat" element={protectedOnboarding(<Chat />)} />
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />

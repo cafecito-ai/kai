@@ -55,6 +55,21 @@ export function readLocalInputs(): LocalInput[] {
   }
 }
 
+/** Days since the user's most recent logged activity of ANY kind. Returns
+ *  null when they've never logged anything (so we don't show a brand-new user
+ *  a "welcome back" comeback screen). Returns 0 when they logged today. */
+export function daysSinceAnyActivity(now: Date = new Date()): number | null {
+  const inputs = readLocalInputs();
+  if (inputs.length === 0) return null;
+  let latest = inputs[0].date;
+  for (const i of inputs) {
+    if (i.date > latest) latest = i.date;
+  }
+  const latestMs = new Date(latest).getTime();
+  const todayMs = new Date(now.toISOString().slice(0, 10)).getTime();
+  return Math.max(0, Math.floor((todayMs - latestMs) / (24 * 60 * 60 * 1000)));
+}
+
 /** Test helper — wipe all logged inputs. Also useful from dev tools. */
 export function clearLocalInputs(): void {
   if (typeof localStorage === "undefined") return;

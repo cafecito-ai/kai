@@ -5,8 +5,10 @@
 // recent state (sleep, mood, streak) when there's signal, and keeps
 // it short. Tone is best-friend, not therapist.
 
-import { readLocalInputs } from "./local-score";
+import { getIdentityStatement } from "./local-identity";
 import { getTodayHydration } from "./local-hydration";
+import { getNorthStar } from "./local-northstar";
+import { readLocalInputs } from "./local-score";
 
 export type KaiGreeting = {
   /** The line KAI says next to their character. ≤ 80 chars. */
@@ -134,8 +136,36 @@ export function pickKaiGreeting(
     ]);
   }
 
-  // 6) Fall through to a warm time-of-day greeting.
+  // 6) No specific signal. Lead with WHO they're becoming, not a generic
+  //    "Good morning" — the product's whole point is reminding them of their
+  //    identity. Only fall back to a time-of-day line if no identity is set.
+  const identityLine = identityGreeting(name);
+  if (identityLine) return identityLine;
   return timeOfDayGreeting(period, name);
+}
+
+/** Identity-led open: references the goal name and/or chosen identity so the
+ *  greeting reminds the user who they're becoming. Returns null when neither
+ *  is set yet (brand-new user) so we fall back to a time-of-day line. */
+function identityGreeting(name: string | null): KaiGreeting | null {
+  const goal = getNorthStar()?.goal?.trim() || null;
+  const statement = getIdentityStatement()?.trim() || null;
+  if (!goal && !statement) return null;
+
+  const options: KaiGreeting[] = [];
+  if (goal) {
+    options.push(
+      { line: hey(name, `still becoming ${goal}. Let's get after it.`), replyChip: "Let's go" },
+      { line: hey(name, `one day closer to ${goal}.`), replyChip: "What's first?" },
+    );
+  }
+  if (statement) {
+    options.push({
+      line: hey(name, `"${statement}" — that's the work today.`),
+      replyChip: "I'm in",
+    });
+  }
+  return pick(options);
 }
 
 /** Warm name prefix: "Hey Evan, ..." (no name → just the line). */

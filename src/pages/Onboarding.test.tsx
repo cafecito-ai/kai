@@ -1,4 +1,8 @@
-// Onboarding tests — covers the v3 §4 7-step flow.
+// Onboarding tests — covers the merged cinematic, KAI-led flow.
+//
+// The flow is: a couple of tap-to-advance intro stages, then KAI asks the
+// questions with input panels. Lines render via CSS pop (no timers), so the
+// walk is deterministic in jsdom; we use async findBy* at boundaries.
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,13 +10,8 @@ import { MemoryRouter } from "react-router-dom";
 
 import { Onboarding } from "./Onboarding";
 import { api } from "../lib/api";
+import { pickFollowUps } from "../lib/onboarding-followups";
 
-vi.mock("../lib/storage-user-id", () => ({
-  useStorageUserId: () => "test_user",
-}));
-
-// The Onboarding page calls api.submitIntake / updateUser / sendParentConsent
-// on finish. Stub them so the test doesn't hit a real backend.
 vi.mock("../lib/api", () => ({
   api: {
     submitIntake: vi.fn().mockResolvedValue({}),
@@ -30,141 +29,112 @@ function renderOnboarding() {
   );
 }
 
-async function clickContinue() {
-  const continueBtn = await screen.findByRole("button", { name: /continue/i });
-  fireEvent.click(continueBtn);
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
-  // Remove the demo-carryover key in case a prior test (or jsdom warm-cache)
-  // left it. Not using `clear()` because jsdom's Storage impl in this version
-  // lacks it.
-  try {
-    localStorage.removeItem("kai_demo_build_v1");
-  } catch {
-    /* localStorage unavailable in this env — fine */
+  for (const k of ["kai_demo_build_v1", "kai_walkthrough_seen_v1"]) {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* localStorage unavailable — fine */
+    }
   }
 });
 afterEach(() => {
-  try {
-    localStorage.removeItem("kai_demo_build_v1");
-  } catch {
-    /* noop */
+  for (const k of ["kai_demo_build_v1", "kai_walkthrough_seen_v1"]) {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* noop */
+    }
   }
 });
 
-describe("Onboarding (v3 §4)", () => {
-  it("shows step 1 (name) on first render", () => {
+// Tap through the two intro stages into the first question (name).
+async function passIntro() {
+  fireEvent.click(await screen.findByText("Hi, I'm KAI."));
+  fireEvent.click(await screen.findByText(/let me learn about you/i));
+}
+
+// Walk the whole flow up to (but not clicking) the finale Start.
+async function walkToFinale() {
+  await passIntro();
+  // name
+  fireEvent.change(await screen.findByPlaceholderText(/first name/i), {
+    target: { value: "Lev" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /send/i }));
+  // age — skip
+  fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
+  // focus — pick two, send
+  fireEvent.click(await screen.findByRole("button", { name: /confidence/i }));
+  fireEvent.click(screen.getByRole("button", { name: /better sleep/i }));
+  fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
+  // hardest + adaptive follow-ups + blocker — all skippable
+  const followCount = pickFollowUps(["confidence", "better_sleep"]).length;
+  for (let i = 0; i < followCount + 2; i++) {
+    fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
+  }
+  // meet (intro interstitial) — tap to advance
+  fireEvent.click(await screen.findByText(/two sides/i));
+  // tone
+  fireEvent.click(await screen.findByRole("button", { name: /warm/i }));
+  // goal, why, photo — skip
+  for (let i = 0; i < 3; i++) {
+    fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
+  }
+  // finale
+  await screen.findByRole("button", { name: /^start/i });
+}
+
+describe("Onboarding (cinematic)", () => {
+  it("opens on the intro and reaches the name question after taps", async () => {
     renderOnboarding();
-    expect(screen.getByText("1 of 9")).toBeInTheDocument();
-    expect(
-      screen.getByText(/what should kai call you/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Hi, I'm KAI.")).toBeInTheDocument();
+    await passIntro();
+    expect(await screen.findByPlaceholderText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByText(/what should i call you/i)).toBeInTheDocument();
   });
 
-  it("blocks Continue until a name is entered", () => {
+  it("blocks Send until a name is entered", async () => {
     renderOnboarding();
-    const continueBtn = screen.getByRole("button", { name: /continue/i });
-    expect(continueBtn).toBeDisabled();
-    fireEvent.change(screen.getByPlaceholderText(/first name/i), {
-      target: { value: "Lev" },
-    });
-    expect(continueBtn).not.toBeDisabled();
+    await passIntro();
+    const input = await screen.findByPlaceholderText(/first name/i);
+    const send = screen.getByRole("button", { name: /send/i });
+    expect(send).toBeDisabled();
+    fireEvent.change(input, { target: { value: "Lev" } });
+    expect(send).not.toBeDisabled();
   });
 
-  it("walks through step order → confirm", async () => {
+  it("walks the full conversation to the finale", async () => {
     renderOnboarding();
-
-    // Step 1: name
-    fireEvent.change(screen.getByPlaceholderText(/first name/i), {
-      target: { value: "Lev" },
-    });
-    await clickContinue();
-
-    // Step 2: age — optional, no parent verification
-    expect(await screen.findByText("2 of 9")).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
-      target: { value: "16" },
-    });
-    await clickContinue();
-
-    // Step 3: focus areas — multi-select, must pick at least one
-    expect(await screen.findByText("3 of 9")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
-    fireEvent.click(screen.getByRole("button", { name: /better sleep/i }));
-    await clickContinue();
-
-    // Step 4: hardest lately
-    expect(await screen.findByText("4 of 9")).toBeInTheDocument();
-    await clickContinue();
-
-    // Step 5: adaptive follow-ups
-    expect(await screen.findByText("5 of 9")).toBeInTheDocument();
-    await clickContinue();
-
-    // Step 6: meet KAI
-    expect(await screen.findByText(/meet kai/i)).toBeInTheDocument();
-    await clickContinue();
-
-    // Step 7: tone
-    expect(await screen.findByText("7 of 9")).toBeInTheDocument();
-    await clickContinue();
-
-    // Step 8: big goal (auto-builds the first system on finish)
-    expect(await screen.findByText("8 of 9")).toBeInTheDocument();
-    expect(screen.getByText(/what are you working toward/i)).toBeInTheDocument();
-    await clickContinue();
-
-    // Step 9: confirm — final, button reads "Start"
-    expect(await screen.findByText("9 of 9")).toBeInTheDocument();
-    expect(screen.getByText(/you're set/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^start$/i }),
-    ).toBeInTheDocument();
+    await walkToFinale();
+    expect(await screen.findByRole("button", { name: /^start/i })).toBeInTheDocument();
   });
 
-  it("no longer asks for a parent email, and never gates the age step", async () => {
+  it("never gates age and never asks for a parent email", async () => {
     renderOnboarding();
-    fireEvent.change(screen.getByPlaceholderText(/first name/i), {
+    await passIntro();
+    fireEvent.change(await screen.findByPlaceholderText(/first name/i), {
       target: { value: "A" },
     });
-    await clickContinue();
-
-    // Any age can continue — no parent-email field, no verification gate.
-    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
-      target: { value: "15" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+    const ageInput = await screen.findByPlaceholderText(/^age$/i);
     expect(
       screen.queryByPlaceholderText(/parent@example\.com/i),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /continue/i }),
-    ).not.toBeDisabled();
+    fireEvent.change(ageInput, { target: { value: "15" } });
+    expect(screen.getByRole("button", { name: /send/i })).not.toBeDisabled();
   });
 
-  it("never sends parental consent (consent flow removed)", async () => {
+  it("updates the user once on finish, and never sends parental consent", async () => {
     renderOnboarding();
-    fireEvent.change(screen.getByPlaceholderText(/first name/i), {
-      target: { value: "Lev" },
-    });
-    await clickContinue();
-    fireEvent.change(screen.getByPlaceholderText(/^age$/i), {
-      target: { value: "16" },
-    });
-    await clickContinue();
-    fireEvent.click(screen.getByRole("button", { name: /confidence/i }));
-    await clickContinue(); // focus → hardest
-    await clickContinue(); // hardest → follow-ups (Rawz/5)
-    await clickContinue(); // follow-ups → meet
-    await clickContinue(); // meet → tone
-    await clickContinue(); // tone → big goal
-    await clickContinue(); // big goal → confirm
-    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
+    await walkToFinale();
+    fireEvent.click(screen.getByRole("button", { name: /^start/i }));
     await waitFor(() => {
-      expect(api.submitIntake).toHaveBeenCalledOnce();
       expect(api.updateUser).toHaveBeenCalledOnce();
     });
+    // Intake is queued + flushed (api.submitIntake) via the intake-retry path,
+    // which is covered by pending-onboarding-intake's own tests.
     expect(api.sendParentConsent).not.toHaveBeenCalled();
   });
 });

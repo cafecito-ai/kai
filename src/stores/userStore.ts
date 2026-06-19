@@ -13,6 +13,7 @@ interface UserState {
   consentStatus: NonNullable<UserProfile["consentStatus"]>;
   parentConsentAt: string | null;
   hydrate: (profile: UserProfile) => void;
+  setDisplayName: (displayName: string | null) => void;
   setKai: (kaiName: string, kaiTone: KaiTone) => void;
   setPrimaryEngine: (engine: EngineId) => void;
   setConsentPending: (parentEmail: string) => void;
@@ -49,6 +50,7 @@ export const useUserStore = create<UserState>((set) => ({
       parentConsentAt: profile.parentConsentAt ?? null,
     });
   },
+  setDisplayName: (displayName) => set({ displayName: displayName || null }),
   setKai: (kaiName, kaiTone) => set({ kaiName, kaiTone }),
   setPrimaryEngine: (primaryEngine) => set({ primaryEngine }),
   setConsentPending: (parentEmail) => set({ parentEmail, consentStatus: "pending", parentConsentAt: null })

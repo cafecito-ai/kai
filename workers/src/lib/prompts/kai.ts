@@ -103,6 +103,21 @@ function renderClientContextBlock(
   if (!ctx) return "";
   const lines: string[] = [];
 
+  // Identity — who they said they're becoming. This leads so KAI frames
+  // everything around the person they're trying to become, not the metrics.
+  // The origin story is the day-one "why"; reference it only at meaningful
+  // moments (a milestone or a hard stretch), never as routine filler.
+  const id = ctx.identity;
+  if (id && (id.goalName || id.statement || id.originStory)) {
+    if (id.goalName) lines.push(`- Becoming: ${id.goalName} (day ${id.daysBuilding})`);
+    if (id.statement) lines.push(`- Identity they chose: "${id.statement}"`);
+    if (id.originStory) {
+      lines.push(
+        `- Why they started (day one — never forget, reference only when it matters): "${id.originStory}"`,
+      );
+    }
+  }
+
   // Today's score breakdown — give KAI a number to reference. Skip if
   // they haven't logged anything today (null final means no data).
   if (ctx.todayScore.final != null) {

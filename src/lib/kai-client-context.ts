@@ -15,6 +15,8 @@
 //   - Total payload capped under ~2KB to keep prompts fast.
 
 import { getActiveChallenges } from "./local-challenges";
+import { daysBuilding, getIdentityStatement, getOriginStory } from "./local-identity";
+import { getNorthStar } from "./local-northstar";
 import { getSchedule } from "./local-schedule";
 import { getCurrentLevel, labelForLevel } from "./local-xp";
 import { getRecentHydration, getTodayHydration } from "./local-hydration";
@@ -26,6 +28,14 @@ import {
 } from "./local-score";
 
 export type KaiClientContext = {
+  /** Who the user is becoming — the durable identity layer KAI must hold so it
+   *  can reference the goal, the chosen identity, and the day-one "why". */
+  identity: {
+    goalName: string | null; // North Star goal, e.g. "180 lb Boxer"
+    statement: string | null; // "Someone who keeps his word"
+    originStory: string | null; // Day-1 "why", write-once
+    daysBuilding: number; // days since they started
+  };
   /** Today's daily score breakdown (0-100 per pillar). */
   todayScore: {
     final: number | null;
@@ -136,7 +146,17 @@ export function buildKaiClientContext(now: Date = new Date()): KaiClientContext 
 
   const levelInfo = getCurrentLevel();
 
+  // Identity — who they said they're becoming. Lets KAI lead with the goal
+  // and call back to the day-one origin story at meaningful moments.
+  const identity = {
+    goalName: getNorthStar()?.goal ?? null,
+    statement: getIdentityStatement(),
+    originStory: getOriginStory(),
+    daysBuilding: daysBuilding(now),
+  };
+
   return {
+    identity,
     todayScore: {
       final: todayScore.final,
       mental: todayScore.mental,

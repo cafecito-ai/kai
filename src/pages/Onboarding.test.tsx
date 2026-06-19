@@ -10,6 +10,7 @@ import { MemoryRouter } from "react-router-dom";
 
 import { Onboarding } from "./Onboarding";
 import { api } from "../lib/api";
+import { getIdentityStatement, getOriginStory } from "../lib/local-identity";
 import { pickFollowUps } from "../lib/onboarding-followups";
 
 vi.mock("../lib/api", () => ({
@@ -69,19 +70,21 @@ async function walkToFinale() {
   fireEvent.click(await screen.findByRole("button", { name: /confidence/i }));
   fireEvent.click(screen.getByRole("button", { name: /better sleep/i }));
   fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
-  // hardest + adaptive follow-ups + blocker — all skippable
+  // hardest + adaptive follow-ups — all skippable (blocker now comes later)
   const followCount = pickFollowUps(["confidence", "better_sleep"]).length;
-  for (let i = 0; i < followCount + 2; i++) {
+  for (let i = 0; i < followCount + 1; i++) {
     fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
   }
-  // meet (intro interstitial) — tap to advance
-  fireEvent.click(await screen.findByText(/two sides/i));
   // tone
   fireEvent.click(await screen.findByRole("button", { name: /warm/i }));
-  // goal, why, photo — skip
-  for (let i = 0; i < 3; i++) {
+  // goal, identity, why, photo — skip
+  for (let i = 0; i < 4; i++) {
     fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
   }
+  // meet (intro interstitial, after they've described themselves) — tap to advance
+  fireEvent.click(await screen.findByText(/become the person you just described/i));
+  // blocker — skip
+  fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
   // finale
   await screen.findByRole("button", { name: /^start/i });
 }
@@ -109,6 +112,53 @@ describe("Onboarding (cinematic)", () => {
     renderOnboarding();
     await walkToFinale();
     expect(await screen.findByRole("button", { name: /^start/i })).toBeInTheDocument();
+  });
+
+  it("stores the identity statement and origin story as DISTINCT values", async () => {
+    renderOnboarding();
+    await passIntro();
+    // name
+    fireEvent.change(await screen.findByPlaceholderText(/first name/i), {
+      target: { value: "Lev" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+    // age — skip
+    fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
+    // focus — pick two, send
+    fireEvent.click(await screen.findByRole("button", { name: /confidence/i }));
+    fireEvent.click(screen.getByRole("button", { name: /better sleep/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
+    // hardest + follow-ups — skip
+    const followCount = pickFollowUps(["confidence", "better_sleep"]).length;
+    for (let i = 0; i < followCount + 1; i++) {
+      fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
+    }
+    // tone
+    fireEvent.click(await screen.findByRole("button", { name: /warm/i }));
+    // goal — skip
+    fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
+    // identity statement — fill it
+    fireEvent.change(await screen.findByPlaceholderText(/keeps his word/i), {
+      target: { value: "Someone who keeps his word" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
+    // origin story ("why are you downloading Rawz today") — fill it differently
+    fireEvent.change(await screen.findByPlaceholderText(/wasting my potential/i), {
+      target: { value: "I'm tired of wasting my potential" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
+    // photo — skip
+    fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
+    // meet — tap to advance
+    fireEvent.click(await screen.findByText(/become the person you just described/i));
+    // blocker — skip
+    fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
+    // finale
+    fireEvent.click(await screen.findByRole("button", { name: /^start/i }));
+
+    await waitFor(() => expect(api.updateUser).toHaveBeenCalledOnce());
+    expect(getIdentityStatement()).toBe("Someone who keeps his word");
+    expect(getOriginStory()).toBe("I'm tired of wasting my potential");
   });
 
   it("never gates age and never asks for a parent email", async () => {

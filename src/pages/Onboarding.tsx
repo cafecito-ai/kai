@@ -200,7 +200,8 @@ type Draft = {
   biggestBlocker: string;
   kaiTone: KaiTone;
   bigGoal: string;
-  whyMatters: string;
+  identityStatement: string; // "Someone who keeps his word" — who they want to become
+  whyMatters: string; // origin story: "why are you downloading Rawz today" (write-once)
   heroImageFile: File | null;
 };
 
@@ -311,30 +312,6 @@ const QUESTION_STAGES: Stage[] = [
     kaiLines: () => ["Real talk. What's been hardest lately?", "One messy sentence is plenty, or skip it."],
   },
   {
-    id: "blocker",
-    kind: "question",
-    ...Q,
-    input: "chips-single",
-    field: "biggestBlocker",
-    options: BLOCKER_CHIPS,
-    optional: true,
-    kaiLines: () => ["And the biggest thing holding you back right now?"],
-  },
-  {
-    id: "meet",
-    kind: "intro",
-    kaiOffsetX: 0,
-    kaiTopPct: 0.3,
-    kaiScale: 0.98,
-    gesture: "reach",
-    magic: "starBurst",
-    hint: "tap to continue",
-    kaiLines: () => [
-      "I've got two sides.",
-      "Mind for your head. Body for training, food, and sleep. You just talk to me.",
-    ],
-  },
-  {
     id: "tone",
     kind: "question",
     ...Q,
@@ -357,14 +334,31 @@ const QUESTION_STAGES: Stage[] = [
     ],
   },
   {
+    id: "identity",
+    kind: "question",
+    ...Q,
+    input: "longtext",
+    field: "identityStatement",
+    placeholder: "e.g. Someone who keeps his word. Someone who never quits.",
+    optional: true,
+    kaiLines: () => [
+      "What kind of person do you want to become?",
+      "Not what you do — who you are.",
+    ],
+    reaction: () => "That's who we're building.",
+  },
+  {
     id: "why",
     kind: "question",
     ...Q,
     input: "longtext",
     field: "whyMatters",
-    placeholder: "The person you want to be, why you're here.",
+    placeholder: "e.g. I'm tired of wasting my potential. I need structure.",
     optional: true,
-    kaiLines: () => ["Why does that matter to you?", "I'll keep it in front of you and I won't forget it."],
+    kaiLines: () => [
+      "Why are you downloading Rawz today?",
+      "Keep it short. This is your day-one story — I won't forget it.",
+    ],
   },
   {
     id: "photo",
@@ -374,6 +368,30 @@ const QUESTION_STAGES: Stage[] = [
     field: "heroImageFile",
     optional: true,
     kaiLines: () => ["Want to add a photo of where you're headed?", "Totally optional."],
+  },
+  {
+    id: "meet",
+    kind: "intro",
+    kaiOffsetX: 0,
+    kaiTopPct: 0.3,
+    kaiScale: 0.98,
+    gesture: "reach",
+    magic: "starBurst",
+    hint: "tap to continue",
+    kaiLines: (d) => [
+      `Hey ${d.firstName.trim() || "there"}. I'm KAI.`,
+      "My job isn't to judge you. My job is to help you become the person you just described.",
+    ],
+  },
+  {
+    id: "blocker",
+    kind: "question",
+    ...Q,
+    input: "chips-single",
+    field: "biggestBlocker",
+    options: BLOCKER_CHIPS,
+    optional: true,
+    kaiLines: () => ["So — what's the biggest thing holding you back right now?"],
   },
   {
     id: "finale",
@@ -419,6 +437,7 @@ function makeInitialDraft(demo: DemoBuildSlice | null): Draft {
     biggestBlocker: "",
     kaiTone: isKaiTone(demo?.kaiTone) ? demo.kaiTone : "balanced",
     bigGoal: "",
+    identityStatement: "",
     whyMatters: "",
     heroImageFile: null,
   };
@@ -571,15 +590,19 @@ export function Onboarding() {
           })
           .catch(() => {});
       }
-      // One "why does this matter" answer carries both the identity statement
-      // (leads KAI's home greeting) and the write-once day-one origin story.
-      const why = d.whyMatters.trim();
+      // Two distinct answers: the identity statement ("who you want to become",
+      // editable, leads KAI's home greeting) and the write-once day-one origin
+      // story ("why you're here today").
+      const identity = d.identityStatement.trim();
+      const origin = d.whyMatters.trim();
       const blocker = d.biggestBlocker.trim();
-      if (why) {
-        setIdentityStatement(why);
-        setOriginStory(why); // write-once
-        keyedResponses.identity_statement = why;
-        keyedResponses.origin_story = why;
+      if (identity) {
+        setIdentityStatement(identity);
+        keyedResponses.identity_statement = identity;
+      }
+      if (origin) {
+        setOriginStory(origin); // write-once
+        keyedResponses.origin_story = origin;
       }
       if (blocker) keyedResponses.biggest_blocker = blocker;
       if (d.heroImageFile) {

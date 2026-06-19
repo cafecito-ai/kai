@@ -17,7 +17,7 @@ import {
   type ScheduleItem,
   type SystemSection,
 } from "./local-schedule";
-import { loadJSON, namespacedKey, saveJSON } from "./local-storage";
+import { clearKey, loadJSON, namespacedKey, saveJSON } from "./local-storage";
 
 // ─────────────────────────────────────────────────────────────────────
 // Live system goal/title — decoupled from the Home North Star goal.
@@ -46,6 +46,15 @@ export function setSystemGoal(goal: string, userId?: string | null): void {
     window.dispatchEvent(new Event("kai:state-changed"));
   } catch {
     /* ignore */
+  }
+}
+
+/** Remove the live system goal so getSystemGoal() falls back to the North Star
+ *  (or null). Used when the user clears their goal in the About-you editor. */
+export function clearSystemGoal(userId?: string | null): void {
+  clearKey(SYSTEM_GOAL_KEY, userId);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("kai:state-changed"));
   }
 }
 

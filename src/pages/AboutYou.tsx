@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import {
   clearHeroImage,
+  clearIdentityStatement,
   getHeroImage,
   getIdentityStatement,
   setHeroImage,
@@ -20,8 +21,8 @@ import {
   setIdentityStatement,
   type HeroImage,
 } from "../lib/local-identity";
-import { setNorthStar } from "../lib/local-northstar";
-import { getSystemGoal, setSystemGoal } from "../lib/local-systems";
+import { clearNorthStar, setNorthStar } from "../lib/local-northstar";
+import { clearSystemGoal, getSystemGoal, setSystemGoal } from "../lib/local-systems";
 import { useStorageUserId } from "../lib/storage-user-id";
 import { useUserStore } from "../stores/userStore";
 
@@ -65,14 +66,21 @@ export function AboutYou() {
   async function save() {
     const nm = name.trim();
     setDisplayName(nm || null);
+    // Both setters/clearers dispatch kai:state-changed on their own, so no
+    // extra dispatch is needed here (it would only fire redundant re-reads).
     const g = goal.trim();
     if (g) {
-      // Both setters dispatch kai:state-changed on their own, so no extra
-      // dispatch is needed here (it would only fire redundant re-reads).
       setSystemGoal(g, userId);
       setNorthStar(g, "custom");
+    } else {
+      // Blanked the field on purpose — remove the goal instead of silently
+      // keeping the old one (the Home card falls back to "Set your goal").
+      clearSystemGoal(userId);
+      clearNorthStar();
     }
-    if (why.trim()) setIdentityStatement(why); // dispatches on its own
+    const w = why.trim();
+    if (w) setIdentityStatement(w);
+    else clearIdentityStatement();
     setSaved(true);
     try {
       await api.updateUser({ displayName: nm || undefined });
@@ -85,7 +93,7 @@ export function AboutYou() {
     fileRef.current?.click();
   }
 
-  async function useChosenPhoto() {
+  async function applyChosenPhoto() {
     if (!pending) return;
     // Only apply the chosen framing if the image actually stored — setHeroImage
     // returns false on a decode failure or localStorage quota, and
@@ -222,7 +230,7 @@ export function AboutYou() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => void useChosenPhoto()}
+                  onClick={() => void applyChosenPhoto()}
                   className="inline-flex items-center gap-2 rounded-full bg-text-primary px-5 py-2.5 text-sm font-medium text-background shadow-card transition active:scale-[0.98] focus-ring"
                 >
                   Use this photo

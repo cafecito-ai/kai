@@ -57,6 +57,18 @@ export function setIdentityStatement(s: string): void {
   stampStartOnce();
 }
 
+/** Remove the identity statement ("why"). Used when the user clears it in the
+ *  About-you editor. The write-once origin story is intentionally left intact. */
+export function clearIdentityStatement(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(IDENTITY_KEY);
+    window.dispatchEvent(new Event("kai:state-changed"));
+  } catch {
+    /* ignore */
+  }
+}
+
 // ── Origin story: "why you're here today" — WRITE-ONCE ────────────────
 // Never overwrite once set (mirrors the spec's permanence). The durable,
 // cross-device, never-overwrite version is a backend write-once table.

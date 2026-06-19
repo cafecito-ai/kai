@@ -386,6 +386,16 @@ friendsRoutes.post("/friends/challenges/:id/progress", async (c) => {
     .catch(() => null);
   if (!member) return c.json({ error: "Not part of this challenge." }, 403);
 
+  // Don't let progress accrue on a cancelled or closed challenge.
+  const ch = await c.env.DB
+    .prepare("SELECT status, ends_on FROM friend_challenges WHERE id = ?")
+    .bind(challengeId)
+    .first<{ status: string; ends_on: string }>()
+    .catch(() => null);
+  if (!ch || ch.status !== "active" || daysRemaining(ch.ends_on) === 0) {
+    return c.json({ error: "This challenge is closed." }, 409);
+  }
+
   const next = Math.max(0, member.count + delta);
   await c.env.DB
     .prepare("UPDATE friend_challenge_progress SET count = ?, updated_at = CURRENT_TIMESTAMP WHERE challenge_id = ? AND user_id = ?")

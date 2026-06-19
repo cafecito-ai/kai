@@ -112,6 +112,9 @@ function makeDb() {
           display_name: users.find((u) => u.id === p.user_id)?.display_name ?? null,
         }));
     }
+    if (has("SELECT status, ends_on FROM friend_challenges WHERE id = ?")) {
+      return challenges.find((ch) => ch.id === args[0]) ?? null;
+    }
     if (has("SELECT count FROM friend_challenge_progress WHERE challenge_id = ? AND user_id = ?")) {
       return progress.find((p) => p.challenge_id === args[0] && p.user_id === args[1]) ?? null;
     }

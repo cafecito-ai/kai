@@ -113,9 +113,9 @@ export function Profile() {
           <ChevronRight size={18} className="text-text-muted" />
         </Link>
 
-        {/* Invite a friend — shareable link + QR (friend graph is backend). */}
+        {/* Friends — accountability list (with invite inside). */}
         <Link
-          to="/invite"
+          to="/friends"
           className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
         >
           <span className="flex items-center gap-3">
@@ -124,10 +124,10 @@ export function Profile() {
             </span>
             <span>
               <span className="block text-sm font-medium text-text-primary">
-                Invite a friend
+                Friends
               </span>
               <span className="block text-xs text-text-secondary">
-                Share your link or QR
+                Who you're doing this with — invite or check in
               </span>
             </span>
           </span>

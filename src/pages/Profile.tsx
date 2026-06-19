@@ -11,7 +11,7 @@
 // is for things that don't fit "do a thing today": who KAI is for you,
 // who YOU are to KAI, and the boring account knobs.
 
-import { Award, ChevronRight, Flame, Settings as SettingsIcon, Sparkles, User } from "lucide-react";
+import { Award, ChevronRight, Flame, Settings as SettingsIcon, Sparkles, User, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -107,6 +107,27 @@ export function Profile() {
               </span>
               <span className="block text-xs text-text-secondary">
                 Your name, goal, why, and future photo
+              </span>
+            </span>
+          </span>
+          <ChevronRight size={18} className="text-text-muted" />
+        </Link>
+
+        {/* Invite a friend — shareable link + QR (friend graph is backend). */}
+        <Link
+          to="/invite"
+          className="flex items-center justify-between gap-3 rounded-lg border border-glass-border bg-surface px-4 py-3 shadow-card transition hover:bg-surface-muted focus-ring"
+        >
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft">
+              <UserPlus size={16} className="text-accent" />
+            </span>
+            <span>
+              <span className="block text-sm font-medium text-text-primary">
+                Invite a friend
+              </span>
+              <span className="block text-xs text-text-secondary">
+                Share your link or QR
               </span>
             </span>
           </span>

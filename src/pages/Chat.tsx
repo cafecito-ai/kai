@@ -10,16 +10,20 @@
 // left off. Send: POST via api.chat("kai", message, conversationId)
 // and append the reply when it lands.
 
-import { ArrowLeft, ArrowUp, ArrowRight, RotateCw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowUp, ArrowRight, ListPlus, RotateCw } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import { useEffect, useMemo, useRef, useState } from "react";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
 import { suggestChatAction } from "../lib/chat-actions";
 import { buildKaiClientContext } from "../lib/kai-client-context";
-import { applyScheduleUpdate } from "../lib/local-schedule";
+import { addToSchedule, applyScheduleUpdate } from "../lib/local-schedule";
+import { looksLikePlan } from "../lib/plan-from-chat";
+import { getQuickAction } from "../lib/quick-actions";
+import { getSystemGoal } from "../lib/local-systems";
+import { useStorageUserId } from "../lib/storage-user-id";
 import { useKaiStore } from "../stores/kaiStore";
 import type { ChatMessage } from "../lib/types";
 
@@ -32,6 +36,12 @@ export function Chat() {
     typeof (location.state as { draft?: string } | null)?.draft === "string"
       ? (location.state as { draft: string }).draft
       : "";
+  // A Home quick action ("Can't Sleep", etc.) opens a BRAND-NEW chat where KAI
+  // opens by understanding first. Resolved once from navigation state.
+  const quickAction = useMemo(
+    () => getQuickAction((location.state as { quickAction?: string } | null)?.quickAction),
+    [location.state],
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [draft, setDraft] = useState(initialDraft);
@@ -40,6 +50,9 @@ export function Chat() {
   // When the model is unreachable after retries we show an honest error +
   // Retry instead of faking a reply in KAI's voice. Holds the text to re-send.
   const [failedMessage, setFailedMessage] = useState<string | null>(null);
+  // Bucket 6 — per-message state for the "Add to My Plan" button.
+  const [planAdds, setPlanAdds] = useState<Record<string, AddState>>({});
+  const userId = useStorageUserId();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // Continuity handoff: a check-in / log can stash a first-person opener; once
   // the thread hydrates we send it through the normal path so Kai continues it.
@@ -47,9 +60,24 @@ export function Chat() {
   const setPendingSeed = useKaiStore((s) => s.setPendingSeed);
   const seedFired = useRef(false);
 
-  // Hydrate the latest conversation on mount.
+  // Hydrate the latest conversation on mount — UNLESS this is a quick-action
+  // launch, which always starts a brand-new chat (never continues the old one)
+  // with KAI's understand-first opener shown immediately (no model call).
   useEffect(() => {
     let cancelled = false;
+    if (quickAction) {
+      setConversationId(null);
+      setMessages([
+        {
+          id: "qa-opener",
+          role: "assistant",
+          content: quickAction.opener,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      setHydrating(false);
+      return;
+    }
     (async () => {
       try {
         const data = await api.getCurrentConversation("kai");
@@ -65,11 +93,12 @@ export function Chat() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [quickAction]);
 
-  // Consume a handoff seed once the conversation has hydrated.
+  // Consume a handoff seed once the conversation has hydrated. Quick actions
+  // own the opening turn, so a stashed seed never fires on top of them.
   useEffect(() => {
-    if (hydrating || seedFired.current || !pendingSeed) return;
+    if (quickAction || hydrating || seedFired.current || !pendingSeed) return;
     seedFired.current = true;
     const seed = pendingSeed;
     setPendingSeed(null);
@@ -154,6 +183,23 @@ export function Chat() {
     }
   }
 
+  // Bucket 6 — turn a plan KAI gave in chat into structured plan items and
+  // append them to My Plan (never replace). Reuses the schedule generator the
+  // System builder already uses; the chat message stays put.
+  async function addPlanToMyPlan(messageId: string, planText: string) {
+    if (planAdds[messageId] === "adding" || planAdds[messageId] === "done") return;
+    setPlanAdds((p) => ({ ...p, [messageId]: "adding" }));
+    try {
+      const goal = getSystemGoal(userId) ?? undefined;
+      const res = await api.scheduleGenerate(planText, goal);
+      if (!res.items?.length) throw new Error("no items");
+      addToSchedule(res.items);
+      setPlanAdds((p) => ({ ...p, [messageId]: "done" }));
+    } catch {
+      setPlanAdds((p) => ({ ...p, [messageId]: "error" }));
+    }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -201,6 +247,9 @@ export function Chat() {
               return <UserBubble key={m.id}>{m.content}</UserBubble>;
             }
             const action = m.safety ? null : suggestChatAction(m.content);
+            // Bucket 6 — when KAI lays out a workout / run / sleep / meal plan,
+            // offer to push its action items straight into My Plan.
+            const showAddToPlan = !m.safety && looksLikePlan(m.content);
             return (
               <div key={m.id} className="space-y-2">
                 <KaiMessage orbSize={28}>{m.content}</KaiMessage>
@@ -210,10 +259,37 @@ export function Chat() {
                     onClick={() => navigate(action.route)}
                   />
                 ) : null}
+                {showAddToPlan ? (
+                  <AddToPlanButton
+                    state={planAdds[m.id] ?? "idle"}
+                    onClick={() => void addPlanToMyPlan(m.id, m.content)}
+                  />
+                ) : null}
               </div>
             );
           })
         )}
+        {/* Bucket 2 — guide the user through likely causes before advice. */}
+        {quickAction && !messages.some((m) => m.role === "user") && !sending ? (
+          <div className="flex flex-wrap gap-2 pl-9">
+            {quickAction.causes.map((cause) => (
+              <button
+                key={cause.label}
+                type="button"
+                onClick={() => void send(cause.message)}
+                className="
+                  inline-flex items-center rounded-full
+                  border border-accent-cool/40 bg-accent-cool-soft/30
+                  px-3.5 py-1.5 text-[13px] font-medium text-text-primary
+                  shadow-card transition hover:bg-accent-cool-soft/50
+                  active:scale-[0.98] focus-ring
+                "
+              >
+                {cause.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {sending ? <TypingIndicator /> : null}
         {failedMessage && !sending ? (
           <RetryNotice onRetry={() => void requestReply(failedMessage)} />
@@ -288,6 +364,38 @@ function ActionChip({ label, onClick }: { label: string; onClick: () => void }) 
       >
         {label}
         <ArrowRight size={13} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+type AddState = "idle" | "adding" | "done" | "error";
+
+function AddToPlanButton({ state, onClick }: { state: AddState; onClick: () => void }) {
+  const label =
+    state === "done"
+      ? "Added to My Plan ✓"
+      : state === "adding"
+        ? "Adding…"
+        : state === "error"
+          ? "Couldn't add — try again"
+          : "Add to My Plan";
+  return (
+    <div className="pl-9">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={state === "adding" || state === "done"}
+        className="
+          inline-flex items-center gap-1.5 rounded-full
+          bg-accent px-3.5 py-1.5 text-[13px] font-medium text-background
+          shadow-card transition hover:bg-accent/90
+          active:scale-[0.98] focus-ring
+          disabled:cursor-default disabled:opacity-80
+        "
+      >
+        <ListPlus size={13} aria-hidden="true" />
+        {label}
       </button>
     </div>
   );

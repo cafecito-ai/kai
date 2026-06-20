@@ -7,6 +7,7 @@ import {
 } from "../lib/body-language-filter";
 import { callClaudeDetailed, selectChatModel, type ClaudeSource } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
+import { buildGroceryPrompt, looksLikeGroceryRequest } from "../lib/grocery";
 import { loadUserMemory, renderMemoryBlock, updateUserMemory } from "../lib/memory";
 import { extractScheduleIntent, looksLikeScheduleRequest, type ScheduleIntent } from "../lib/schedule-gen";
 import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
@@ -265,20 +266,28 @@ async function handleRoutedChat(
 
   // Schedule intent: "add gym every Monday at 6" / "make me a productivity
   // routine" updates the teen's Schedule. Cheap regex pre-filter first, then a
+  // Smart Grocery Planner (Bucket 5): a grocery run gets its own one-turn prompt
+  // (categorized list + nutrition + cost, budget/goal/store-aware). It's a body
+  // topic, so it still rides the body-language filter below. No schedule edit.
+  const grocery = looksLikeGroceryRequest(message);
+
   // single extraction call only when the message actually looks schedule-y.
   let scheduleUpdate: ScheduleIntent | null = null;
-  if (looksLikeScheduleRequest(message)) {
+  if (!grocery && looksLikeScheduleRequest(message)) {
     // Pass the user's REAL current items (sent in clientContext) so removal/swap
     // resolves to exact ids instead of an inferred fuzzy phrase.
     scheduleUpdate = await extractScheduleIntent(env, message, undefined, context.clientContext?.scheduleItems);
   }
 
-  // Route to Mind or Body. The pick is internal — user never sees it.
-  const decision = await pickAgent(env, message);
+  // Route to Mind or Body. The pick is internal — user never sees it. A grocery
+  // run is always Body (and uses the grocery prompt instead of the agent one).
+  const decision = grocery ? "physical" : await pickAgent(env, message);
   // Durable cross-conversation memory: inject what KAI already knows about them
   // so it picks up where you left off, not from scratch.
   const memory = await loadUserMemory(env, userId);
-  let system = renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
+  let system = grocery
+    ? buildGroceryPrompt(context)
+    : renderAgentPrompt(decision, context) + renderMemoryBlock(memory, context.displayName);
   if (scheduleUpdate) {
     const what =
       scheduleUpdate.action === "replace"

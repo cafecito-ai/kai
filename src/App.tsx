@@ -40,6 +40,7 @@ import { ForParents } from "./pages/ForParents";
 import { Goals } from "./pages/Goals";
 import { Groups } from "./pages/Groups";
 import { Schedule } from "./pages/Schedule";
+import { ScoreDetail } from "./pages/ScoreDetail";
 import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
@@ -128,6 +129,7 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
           <Route path="/comeback" element={protectedOnboarding(<Comeback />)} />
           <Route path="/reflection" element={protectedOnboarding(<Reflection />)} />
           <Route path="/chat" element={protectedOnboarding(<Chat />)} />
+          <Route path="/score" element={protectedOnboarding(<ScoreDetail />)} />
           <Route path="/check-in" element={protectedOnboarding(<CheckIn />)} />
           <Route path="/journal" element={protectedOnboarding(<Journal />)} />
           <Route path="/sleep" element={<Navigate to="/sleep/log" replace />} />

@@ -114,6 +114,91 @@ export function computeLocalScore(inputs: LocalInput[]): LocalScore {
   return computeLocalScoreFor(inputs, new Date().toISOString().slice(0, 10));
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Score transparency (Bucket 4): make it obvious what's done, what's left,
+// and why today isn't at 100. The score is Mind 40% + Sleep 30% + Mood 30%
+// (NOT "complete 3 actions → 100%"), so we explain that composition plainly
+// and point at the exact logs that would raise each part.
+// ─────────────────────────────────────────────────────────────────────
+
+const SCORE_ACTIONS: Record<LocalSource, { label: string; to: string }> = {
+  check_in: { label: "Check in", to: "/check-in" },
+  journal: { label: "Journal", to: "/journal" },
+  sleep_log: { label: "Log last night's sleep", to: "/sleep/log" },
+  workout: { label: "Log a workout", to: "/workout/log" },
+  food_log: { label: "Log a meal", to: "/food/log" },
+  energy_check_in: { label: "Energy check", to: "/energy" },
+  hydration_goal_hit: { label: "Hit your water goal", to: "/home" },
+  goal_progress: { label: "Move a goal forward", to: "/schedule" },
+};
+
+export type ScoreComponent = {
+  key: "mental" | "sleep" | "mood";
+  label: string;
+  weight: number;                         // % of the final score
+  value: number;                          // this sub-score, 0–100
+  contribution: number;                   // points it adds to the final (rounded)
+  done: string[];                         // feeding logs already done today
+  todos: { label: string; to: string }[]; // logs that would raise this sub-score
+};
+
+export type ScoreExplanation = {
+  final: number;
+  pointsLeft: number;
+  components: ScoreComponent[];
+};
+
+export function explainScore(
+  inputs: LocalInput[],
+  now: Date = new Date(),
+): ScoreExplanation {
+  const day = now.toISOString().slice(0, 10);
+  const present = new Set(inputs.filter((i) => i.date === day).map((i) => i.source));
+  const s = computeLocalScoreFor(inputs, day);
+
+  const build = (
+    key: ScoreComponent["key"],
+    label: string,
+    weight: number,
+    value: number | null,
+    feeders: LocalSource[],
+  ): ScoreComponent => {
+    const v = Math.round(value ?? 0);
+    return {
+      key,
+      label,
+      weight,
+      value: v,
+      contribution: Math.round((v * weight) / 100),
+      done: feeders.filter((f) => present.has(f)).map((f) => SCORE_ACTIONS[f].label),
+      todos: feeders
+        .filter((f) => !present.has(f))
+        .map((f) => ({ label: SCORE_ACTIONS[f].label, to: SCORE_ACTIONS[f].to })),
+    };
+  };
+
+  const components: ScoreComponent[] = [
+    build("mental", "Mind", 40, s.mental, [
+      "check_in",
+      "journal",
+      "workout",
+      "energy_check_in",
+      "goal_progress",
+    ]),
+    build("sleep", "Sleep", 30, s.sleep, ["sleep_log"]),
+    build("mood", "Mood", 30, s.mood, [
+      "check_in",
+      "journal",
+      "food_log",
+      "workout",
+      "hydration_goal_hit",
+    ]),
+  ];
+
+  const final = Math.round(s.final ?? 0);
+  return { final, pointsLeft: Math.max(0, 100 - final), components };
+}
+
 /** Same as computeLocalScore but for any specific date — used by the
  *  Progress page to build a 7-day series. */
 export function computeLocalScoreFor(

@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { renderAgentPrompt, renderBodyPrompt } from "../lib/agent-prompts";
-import { pickAgent } from "../lib/agent-router";
+import { pickAgent, type AgentDecision } from "../lib/agent-router";
 import {
   BODY_LANGUAGE_FALLBACK,
   passesBodyLanguageFilter,
 } from "../lib/body-language-filter";
-import { callClaudeDetailed, selectChatModel } from "../lib/claude";
+import { callClaudeDetailed, selectChatModel, type ClaudeSource } from "../lib/claude";
 import { buildKaiContext, type KaiContext } from "../lib/context";
 import { loadUserMemory, renderMemoryBlock, updateUserMemory } from "../lib/memory";
 import { extractScheduleIntent, looksLikeScheduleRequest, type ScheduleIntent } from "../lib/schedule-gen";
@@ -184,26 +184,24 @@ async function handleChat(env: Env, userId: string, conversationId: string | und
   }
   const history = await buildHistory(env, conversation, userId, message);
   const generated = await callClaudeDetailed(env, system, history, { model: selectChatModel(env, engine, message), maxTokens: 600 });
-  // CHAT only ever serves Claude. Any non-anthropic source (Llama secondary or
-  // the rule table) is discarded for a clean in-voice line — never the Llama
-  // refusal / transcript-echo the client hit.
-  const usable = generated.source === "anthropic";
-  const responseSource = usable ? "model" : "fallback";
-  const reply = usable ? limitToOneQuestion(generated.text) : chatFallback(message);
-  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { responseSource } });
-  return Response.json({ conversationId: conversation, reply, responseSource });
+  // CHAT only ever serves Claude. If the model is unavailable (timeout, outage,
+  // rate-limit, or only the Llama secondary answered) we do NOT fabricate an
+  // in-voice line and persist it as if Kai said it — we tell the client so it
+  // can show a real retry state instead of a fake reply.
+  if (generated.source !== "anthropic") return modelUnavailable(conversation);
+  const reply = limitToOneQuestion(generated.text);
+  await createMessage(env.DB, { conversationId: conversation, role: "assistant", content: reply, metadata: { responseSource: "model" } });
+  return Response.json({ conversationId: conversation, reply, responseSource: "model" });
 }
 
-// When the model call falls back (rate-limit blip, timeout, outage), CHAT shows
-// one of these instead of a Llama refusal or a generic canned coaching line.
-// On-voice (older brother), honest, and asks the teen to resend.
-const CHAT_FALLBACKS = [
-  "My head glitched for a sec there — say that again?",
-  "Hang on, that didn't load right on my end. Hit me with it one more time?",
-  "Ugh, lost the thread for a second. Run that by me again?",
-];
-function chatFallback(seed: string): string {
-  return CHAT_FALLBACKS[seed.length % CHAT_FALLBACKS.length];
+// The model is unavailable (network / timeout / rate-limit / no usable Anthropic
+// reply). We deliberately DON'T fabricate a coaching line and save it as Kai's —
+// a fake "lost the thread" reply erodes trust. Instead we return a retryable
+// signal and persist nothing, so the client shows a loading/error state and can
+// re-send. NOTE: this never touches the crisis, safety-hold, or body-language
+// content paths — those return above with their mandatory content.
+function modelUnavailable(conversationId: string): Response {
+  return Response.json({ conversationId, error: "model_unavailable", retryable: true }, { status: 503 });
 }
 
 /**
@@ -300,7 +298,8 @@ async function handleRoutedChat(
   let reply = generated.text;
   let source = generated.source;
 
-  // Body responses get the post-generation forbidden-language guard.
+  // Body responses get the post-generation forbidden-language guard: regen with
+  // a stricter prompt, up to MAX_BODY_REGENERATIONS, before giving up.
   if (decision === "physical") {
     let attempt = 0;
     while (!passesBodyLanguageFilter(reply) && attempt < MAX_BODY_REGENERATIONS) {
@@ -310,17 +309,15 @@ async function handleRoutedChat(
       reply = regen.text;
       source = regen.source;
     }
-    if (!passesBodyLanguageFilter(reply)) {
-      reply = BODY_LANGUAGE_FALLBACK;
-      source = "fallback";
-    }
   }
-  // CHAT only ever serves Claude. Discard any non-anthropic source (Llama
-  // secondary / rule table) for a clean in-voice line — never the Llama refusal
-  // or "user: ... assistant: ..." transcript echo the client hit.
-  const usable = source === "anthropic";
-  const responseSource = usable ? "model" : "fallback";
-  reply = usable ? limitToOneQuestion(reply) : chatFallback(message);
+
+  const outcome = resolveChatOutcome({ decision, source, reply, passesBodyFilter: passesBodyLanguageFilter(reply) });
+
+  // Genuine model outage: don't fabricate a reply. Tell the client to retry.
+  if (outcome.kind === "model_unavailable") return modelUnavailable(conversation);
+
+  reply = outcome.reply;
+  const responseSource = outcome.kind === "reply" ? "model" : "body_filter_fallback";
 
   await createMessage(env.DB, {
     conversationId: conversation,
@@ -331,8 +328,10 @@ async function handleRoutedChat(
 
   // Update durable memory from this exchange — only real model replies, and only
   // on this normal path (crisis turns returned earlier and never reach here, so
-  // crisis content never lands in casual memory). Fire-and-forget: no latency.
-  if (usable && waitUntil) {
+  // crisis content never lands in casual memory). The body-language content
+  // fallback is a canned safe line, not a real exchange, so it's excluded too.
+  // Fire-and-forget: no latency.
+  if (outcome.kind === "reply" && waitUntil) {
     waitUntil(updateUserMemory(env, userId, message, reply, memory));
   }
 
@@ -345,11 +344,42 @@ async function handleRoutedChat(
   });
 }
 
+/** Outcome of a routed chat turn after generation + the body-language guard.
+ *  Pure decision so it can be unit-tested without a DB or live model:
+ *   - reply               → a real Claude reply (capped to one follow-up Q)
+ *   - body_filter_fallback → the model spoke but kept tripping the forbidden
+ *                            body-language filter; serve the safe canned line
+ *                            (a content-safety guarantee, NOT a model outage)
+ *   - model_unavailable   → no usable Anthropic reply; the caller signals the
+ *                            client to retry instead of faking a line. */
+export type ChatOutcome =
+  | { kind: "reply"; reply: string }
+  | { kind: "body_filter_fallback"; reply: string }
+  | { kind: "model_unavailable" };
+
+export function resolveChatOutcome(args: {
+  decision: AgentDecision;
+  source: ClaudeSource;
+  reply: string;
+  passesBodyFilter: boolean;
+}): ChatOutcome {
+  // Content safety wins: a body reply that still trips the filter after regens
+  // is replaced with the safe canned line. This is a real, useful message — not
+  // a "lost the thread" fake — so we serve it even though the model "spoke".
+  if (args.decision === "physical" && !args.passesBodyFilter) {
+    return { kind: "body_filter_fallback", reply: BODY_LANGUAGE_FALLBACK };
+  }
+  // CHAT only ever serves Claude. A non-anthropic source (Llama secondary / rule
+  // table) means the model was unavailable — don't fabricate, ask to retry.
+  if (args.source !== "anthropic") return { kind: "model_unavailable" };
+  return { kind: "reply", reply: limitToOneQuestion(args.reply) };
+}
+
 /** Enforce the one-follow-up-question rule deterministically (the prompt alone
  *  doesn't hold — the eval showed back-to-back interrogation). If a reply has
  *  more than one question sentence, drop all but the LAST (the intended
  *  follow-up); statements are untouched. */
-function limitToOneQuestion(reply: string): string {
+export function limitToOneQuestion(reply: string): string {
   const parts = reply.split(/(?<=[.?!])\s+/);
   const qIdx = parts.map((p, i) => (/\?\s*$/.test(p.trim()) ? i : -1)).filter((i) => i >= 0);
   if (qIdx.length <= 1) return reply;

@@ -10,7 +10,7 @@
 // left off. Send: POST via api.chat("kai", message, conversationId)
 // and append the reply when it lands.
 
-import { ArrowLeft, ArrowUp, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowRight, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -37,6 +37,9 @@ export function Chat() {
   const [draft, setDraft] = useState(initialDraft);
   const [sending, setSending] = useState(false);
   const [hydrating, setHydrating] = useState(true);
+  // When the model is unreachable after retries we show an honest error +
+  // Retry instead of faking a reply in KAI's voice. Holds the text to re-send.
+  const [failedMessage, setFailedMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // Continuity handoff: a check-in / log can stash a first-person opener; once
   // the thread hydrates we send it through the normal path so Kai continues it.
@@ -96,20 +99,28 @@ export function Chat() {
     };
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
+    await requestReply(trimmed);
+  }
+
+  // Fetch KAI's reply for a message already shown in the thread. Retries a few
+  // times on transient failures (the user just sees the typing indicator a beat
+  // longer). If it still can't reach the model, we surface an honest error +
+  // Retry rather than fabricating a reply — a fake "lost the thread" line in
+  // KAI's voice erodes trust. (Crisis turns are server-side and never fail this
+  // way — the 988 path always returns its mandatory response.)
+  async function requestReply(text: string) {
+    setFailedMessage(null);
     setSending(true);
     try {
       // Build a fresh client context per turn so KAI sees the latest
       // hydration, score, missing logs, etc. The rollup is cheap (pure
       // localStorage reads) — well under 50ms.
       const clientContext = buildKaiClientContext();
-      // Silent auto-retry on transient failures. A hiccup should never
-      // surface as an error/CTA (breaks immersion) — the user just sees KAI
-      // "thinking" a beat longer while we quietly retry with backoff.
       let data: Awaited<ReturnType<typeof api.chat>> | null = null;
       let lastErr: unknown;
       for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
-          data = await api.chat("kai", trimmed, conversationId, clientContext);
+          data = await api.chat("kai", text, conversationId, clientContext);
           break;
         } catch (e) {
           lastErr = e;
@@ -135,17 +146,9 @@ export function Chat() {
         },
       ]);
     } catch {
-      // Last resort, only after retries: a soft, in-voice line — never an
-      // error or a "try again" button, so it stays human and immersive.
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err-${Date.now()}`,
-          role: "assistant",
-          content: "Mind saying that again? I lost the thread for a second.",
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      // Honest, recoverable error state — not a fake reply. The user's message
+      // stays in the thread; they can retry it.
+      setFailedMessage(text);
     } finally {
       setSending(false);
     }
@@ -212,6 +215,9 @@ export function Chat() {
           })
         )}
         {sending ? <TypingIndicator /> : null}
+        {failedMessage && !sending ? (
+          <RetryNotice onRetry={() => void requestReply(failedMessage)} />
+        ) : null}
       </div>
 
       {/* Composer */}
@@ -282,6 +288,30 @@ function ActionChip({ label, onClick }: { label: string; onClick: () => void }) 
       >
         {label}
         <ArrowRight size={13} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+function RetryNotice({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-2 py-2" role="alert">
+      <p className="text-sm text-text-muted">
+        Couldn't reach KAI just now.
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="
+          inline-flex items-center gap-1.5 rounded-full
+          border border-glass-border bg-surface
+          px-4 py-1.5 text-[13px] font-medium text-text-primary
+          shadow-card transition hover:bg-surface-muted
+          active:scale-[0.98] focus-ring
+        "
+      >
+        <RotateCw size={13} aria-hidden="true" />
+        Try again
       </button>
     </div>
   );

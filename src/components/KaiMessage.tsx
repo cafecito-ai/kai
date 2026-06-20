@@ -9,6 +9,7 @@
 //   - Avatar (KaiOrb) anchored bottom-left at the corner
 //   - When `timestamp` provided, shown small + muted at the top
 
+import { formatKaiReply } from "../lib/format-kai-reply";
 import { KaiOrb } from "./KaiOrb";
 
 type KaiMessageProps = {
@@ -52,7 +53,7 @@ export function KaiMessage({
             </p>
           ) : null}
           <div className="font-display text-[17px] leading-snug text-text-primary">
-            {children}
+            {typeof children === "string" ? <KaiRichText text={children} /> : children}
           </div>
           {action ? (
             <button
@@ -70,6 +71,36 @@ export function KaiMessage({
           ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Render a plain-text KAI reply for scanning: separate thoughts get spacing,
+// and the numbered/dashed lists KAI uses for plans/options render as real
+// lists instead of collapsing into one paragraph. A single flowing reply (the
+// common case) renders as one paragraph — we never invent structure.
+function KaiRichText({ text }: { text: string }) {
+  const blocks = formatKaiReply(text);
+  if (blocks.length === 0) return <>{text}</>;
+  return (
+    <div className="space-y-2.5">
+      {blocks.map((block, i) =>
+        block.type === "paragraph" ? (
+          <p key={i}>{block.text}</p>
+        ) : block.ordered ? (
+          <ol key={i} className="list-decimal space-y-1 pl-5 marker:text-text-muted">
+            {block.items.map((item, j) => (
+              <li key={j}>{item}</li>
+            ))}
+          </ol>
+        ) : (
+          <ul key={i} className="list-disc space-y-1 pl-5 marker:text-text-muted">
+            {block.items.map((item, j) => (
+              <li key={j}>{item}</li>
+            ))}
+          </ul>
+        ),
+      )}
     </div>
   );
 }

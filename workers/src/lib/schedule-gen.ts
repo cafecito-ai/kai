@@ -50,7 +50,7 @@ const SYSTEM_GEN = [
   "- 2-4 items per section, total <= 22. EVERY item must clearly serve the goal.",
   "- Realistic + safe for a teen. No extreme dieting, no overtraining, nothing risky.",
   "- Short, concrete titles ('Run — 20 min', 'Phone out of room by 10:30', 'No doomscrolling at night').",
-  "- detail is one short motivating line on why/how it helps the goal.",
+  "- detail MUST explain the WHY: what this item actually improves and the simple reason it works (e.g. 'Protein at breakfast steadies energy and muscle repair', 'Phone out of the room cuts the late scroll that wrecks deep sleep'). Plain language a teen gets — the reasoning, not just a pep line.",
   "- Use days for scheduled things (workouts, routines); [] for standing habits/rules/avoid items. time only when a specific time genuinely helps.",
 ].join("\n");
 

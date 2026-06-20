@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ScoreRing } from "./ScoreRing";
+import { cleanPlanTitle } from "../lib/local-northstar";
 import { hasSchedule } from "../lib/local-schedule";
 import { getSystemGoal, systemProgressWeek } from "../lib/local-systems";
 import { useStorageUserId } from "../lib/storage-user-id";
@@ -54,7 +55,7 @@ export function NorthStarCard() {
         aria-hidden="true"
       />
       <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
-        Your goal
+        My Plan
       </p>
 
       <div className="mt-3 flex justify-center">
@@ -75,9 +76,10 @@ export function NorthStarCard() {
         </div>
       </div>
 
-      {/* The main system's goal; line-clamp keeps the card clean if it's long. */}
+      {/* Clean, memorable plan title (messy goals get shortened); the full
+          goal text lives on the plan page. */}
       <p className="mt-3 line-clamp-1 min-h-[1.75rem] font-display text-lg font-semibold leading-snug tracking-tight text-text-primary">
-        {goal ?? "Set your goal"}
+        {goal ? cleanPlanTitle(goal) : "Build my plan"}
       </p>
       <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
         {hasSys ? `${pct}% this week` : "Tap to build"}

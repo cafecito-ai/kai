@@ -27,6 +27,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { HomeQuickActions } from "../components/HomeQuickActions";
 import { KaiGreeting } from "../components/KaiGreeting";
 import { MissionsCard } from "../components/MissionsCard";
 import { NorthStarCard } from "../components/NorthStarCard";
@@ -269,12 +270,16 @@ export function Home() {
           the user WANT to come back and talk to their best friend. */}
       <KaiGreeting />
 
+      {/* Talk-to-KAI quick actions — one tap opens a fresh chat where KAI
+          understands first (Can't Sleep, Feeling Stressed, etc.). */}
+      <HomeQuickActions />
+
       {/* Daily Score + North Star goal, side by side. The score is today;
           the North Star is the weeks/months goal whose ring fills as they
           keep showing up. Sits below the identity hero on purpose — we lead
           with who they're becoming, not the metrics. */}
       <div className="grid grid-cols-2 gap-3">
-        <DailyScoreCard data={data} />
+        <DailyScoreCard data={data} onClick={() => navigate("/score")} />
         <NorthStarCard />
       </div>
 
@@ -362,9 +367,13 @@ export function Home() {
 // Sections
 // ─────────────────────────────────────────────────────────────────────
 
-function DailyScoreCard({ data }: { data: DailyScoreView }) {
+function DailyScoreCard({ data, onClick }: { data: DailyScoreView; onClick?: () => void }) {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-glass border border-glass-border bg-surface p-5 text-center shadow-card-lg">
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative flex flex-col overflow-hidden rounded-glass border border-glass-border bg-surface p-5 text-center shadow-card-lg transition active:scale-[0.99] hover:bg-surface-muted focus-ring"
+    >
       <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
         Today
       </p>
@@ -387,9 +396,9 @@ function DailyScoreCard({ data }: { data: DailyScoreView }) {
         {data.bandLabel}
       </p>
       <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-        {data.trend > 0 ? `+${data.trend} vs yesterday` : data.streak > 0 ? `${data.streak}-day streak` : "Today's score"}
+        {data.trend > 0 ? `+${data.trend} vs yesterday` : data.streak > 0 ? `${data.streak}-day streak` : "Tap for breakdown"}
       </p>
-    </div>
+    </button>
   );
 }
 

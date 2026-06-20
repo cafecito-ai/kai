@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { api } from "../lib/api";
+import { cleanPlanTitle } from "../lib/local-northstar";
 import {
   SECTION_META,
   addManualItem,
@@ -119,17 +120,21 @@ export function Schedule() {
         <Link to="/home" aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface-muted focus-ring">
           <ArrowLeft size={18} aria-hidden="true" />
         </Link>
-        <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">your system</p>
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">my plan</p>
         <div className="h-10 w-10" aria-hidden="true" />
       </header>
 
       <div>
         <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight">
-          {goal ? <>System to <span className="text-accent">“{goal}”</span></> : "Your system"}
+          {goal ? cleanPlanTitle(goal) : "My Plan"}
         </h1>
+        {goal && cleanPlanTitle(goal).toLowerCase() !== goal.trim().toLowerCase() && (
+          <p className="mt-1 text-sm italic text-text-secondary">“{goal}”</p>
+        )}
         <p className="mt-2 text-sm text-text-secondary">
-          Your habits, training, sleep, routines, mindset, and what to avoid, all connected.
-          Check things off as you go. Change anything any time, here or just by telling KAI.
+          Your blueprint: habits, training, sleep, routines, mindset, and what to avoid —
+          each piece here for a reason. Check things off as you go. Change anything any time,
+          here or just by telling KAI.
         </p>
       </div>
 
@@ -278,7 +283,11 @@ function SectionBlock({ section, items, userId, onChange }: { section: SystemSec
           <span className={`flex h-7 w-7 items-center justify-center rounded-full ${SECTION_TINT[section]}`}>
             <Icon size={14} aria-hidden="true" />
           </span>
-          <p className="text-sm font-semibold text-text-primary">{meta.label}</p>
+          <div>
+            <p className="text-sm font-semibold leading-tight text-text-primary">{meta.label}</p>
+            {/* Explain what this part of the plan is for. */}
+            <p className="text-[11px] leading-tight text-text-muted">{meta.blurb}</p>
+          </div>
         </div>
         <button type="button" onClick={() => setAdding((a) => !a)} aria-label={`Add to ${meta.label}`} className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-muted hover:text-text-primary focus-ring">
           {adding ? <X size={14} /> : <Plus size={15} />}

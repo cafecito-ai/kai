@@ -172,6 +172,43 @@ export function shortLabelFor(goal: string): string {
   return "My Goal";
 }
 
+// A clean, memorable plan title for a messy goal. The client's ask: don't use a
+// rambling sentence ("I want to lock in, get disciplined, stop wasting time…")
+// as the title — convert it to something tight ("Discipline Reset", "Strength
+// Build"). Built on shortLabelFor (the theme word) and polished to a short title.
+const PLAN_TITLE_BY_LABEL: Record<string, string> = {
+  Discipline: "Discipline Reset",
+  Confidence: "Confidence Build",
+  Relationships: "Social Reset",
+  Bulk: "Strength Build",
+  "Get Lean": "Lean Up",
+  Fitness: "Fitness Plan",
+  Sleep: "Sleep Reset",
+  Nutrition: "Nutrition Plan",
+  Grades: "Grades Push",
+  Calm: "Calm Plan",
+  Mood: "Mood Lift",
+  Money: "Money Plan",
+  Focus: "Focus Plan",
+  Drive: "Motivation Reset",
+  Purpose: "Find Your Why",
+  Creativity: "Creative Push",
+  Patience: "Patience Plan",
+  Learning: "Learning Plan",
+  "Less Screen": "Screen Reset",
+  Faith: "Faith Plan",
+};
+
+export function cleanPlanTitle(goal: string): string {
+  const t = goal.trim().replace(/[.?!,;:]+$/g, "");
+  if (!t) return "My Plan";
+  const words = t.split(/\s+/);
+  // Already a tight, intentional title (1–3 words) — keep what they wrote.
+  if (words.length <= 3 && t.length <= 24) return titleCase(t);
+  const label = shortLabelFor(t);
+  return PLAN_TITLE_BY_LABEL[label] ?? label ?? "My Plan";
+}
+
 function read(): NorthStar | null {
   if (typeof localStorage === "undefined") return null;
   try {

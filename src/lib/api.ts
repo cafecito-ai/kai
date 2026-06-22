@@ -1,4 +1,4 @@
-import type { ChatMessage, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { ChatMessage, ConversationSummary, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
@@ -103,6 +103,13 @@ export const api = {
     }),
   getCurrentConversation: (engine: EngineId | "kai" = "kai") =>
     request<{ conversationId: string | null; messages: ChatMessage[] }>(`/api/conversations/current?engine=${engine}`),
+  // Chat history — list past conversations, open one, delete one.
+  listConversations: (engine: EngineId | "kai" = "kai") =>
+    request<{ conversations: ConversationSummary[] }>(`/api/conversations?engine=${engine}`),
+  getConversation: (id: string) =>
+    request<{ conversationId: string; messages: ChatMessage[] }>(`/api/conversations/${id}`),
+  deleteConversation: (id: string) =>
+    request<{ ok: boolean }>(`/api/conversations/${id}`, { method: "DELETE" }),
   // North Star: 3 concrete today-doable moves toward a specific long-term goal.
   northStarMoves: (goal: string) =>
     request<{ moves: string[] }>("/api/north-star/moves", {

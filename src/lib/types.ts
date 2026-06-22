@@ -51,6 +51,17 @@ export interface SafetyResult {
   response?: string;
 }
 
+/** A row in the chat-history list (a past conversation). Title is derived
+ *  server-side from the first user message. */
+export interface ConversationSummary {
+  id: string;
+  engine: EngineId | "kai";
+  startedAt?: string;
+  lastMessageAt?: string;
+  messageCount: number;
+  title: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";

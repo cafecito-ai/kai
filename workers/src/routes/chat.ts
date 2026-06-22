@@ -10,7 +10,15 @@ import { buildKaiContext, type KaiContext } from "../lib/context";
 import { buildGroceryPrompt, looksLikeGroceryRequest } from "../lib/grocery";
 import { loadUserMemory, renderMemoryBlock, updateUserMemory } from "../lib/memory";
 import { extractScheduleIntent, looksLikeScheduleRequest, type ScheduleIntent } from "../lib/schedule-gen";
-import { createMessage, getConversationMessages, getLatestConversation, getOrCreateConversation } from "../lib/conversations";
+import {
+  createMessage,
+  deleteConversation,
+  getConversation,
+  getConversationMessages,
+  getLatestConversation,
+  getOrCreateConversation,
+  listConversations,
+} from "../lib/conversations";
 import { sendSafetyAlert } from "../lib/email";
 import { renderEnginePrompt } from "../lib/prompts/engines";
 import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
@@ -43,6 +51,35 @@ chatRoutes.get("/conversations/current", async (c) => {
   if (!conversation) return c.json({ conversationId: null, messages: [] });
   const messages = await getConversationMessages(c.env.DB, { conversationId: conversation.id, userId: c.get("userId") });
   return c.json({ conversationId: conversation.id, messages: messages ?? [] });
+});
+
+// Chat history: list / open / delete. Registered AFTER /conversations/current
+// so the static segment wins over the :id matcher (Hono matches in order).
+chatRoutes.get("/conversations", async (c) => {
+  const engine = (c.req.query("engine") ?? "kai") as EngineId | "kai";
+  if (!["kai", "physical", "potential", "mental"].includes(engine)) return c.json({ error: "Unknown engine" }, 404);
+  const conversations = await listConversations(c.env.DB, { userId: c.get("userId"), engine });
+  return c.json({ conversations });
+});
+
+chatRoutes.get("/conversations/:id", async (c) => {
+  const messages = await getConversation(c.env.DB, {
+    conversationId: c.req.param("id"),
+    userId: c.get("userId"),
+  });
+  // null = unknown id OR not owned. Return 404 either way — a private,
+  // single-owner resource must not reveal that an id exists for someone else.
+  if (!messages) return c.json({ error: "Not found" }, 404);
+  return c.json({ conversationId: c.req.param("id"), messages });
+});
+
+chatRoutes.delete("/conversations/:id", async (c) => {
+  const { deleted } = await deleteConversation(c.env.DB, {
+    conversationId: c.req.param("id"),
+    userId: c.get("userId"),
+  });
+  if (!deleted) return c.json({ error: "Not found" }, 404);
+  return c.json({ ok: true });
 });
 
 chatRoutes.post("/kai/chat", async (c) => {

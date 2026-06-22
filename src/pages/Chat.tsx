@@ -10,10 +10,11 @@
 // left off. Send: POST via api.chat("kai", message, conversationId)
 // and append the reply when it lands.
 
-import { ArrowLeft, ArrowUp, ArrowRight, ListPlus, RotateCw } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowUp, ArrowRight, History, ListPlus, RotateCw } from "lucide-react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChatHistoryDrawer } from "../components/ChatHistoryDrawer";
 import { KaiMessage } from "../components/KaiMessage";
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
@@ -44,6 +45,8 @@ export function Chat() {
   );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [draft, setDraft] = useState(initialDraft);
   const [sending, setSending] = useState(false);
   const [hydrating, setHydrating] = useState(true);
@@ -80,7 +83,12 @@ export function Chat() {
     }
     (async () => {
       try {
-        const data = await api.getCurrentConversation("kai");
+        // Deep link: ?conversationId=<id> opens that specific chat (refresh /
+        // share survivable). Otherwise pick up the latest conversation.
+        const paramId = searchParams.get("conversationId");
+        const data = paramId
+          ? await api.getConversation(paramId)
+          : await api.getCurrentConversation("kai");
         if (cancelled) return;
         setConversationId(data.conversationId);
         setMessages(data.messages ?? []);
@@ -207,6 +215,41 @@ export function Chat() {
     }
   }
 
+  // Open a past conversation from the history drawer. Swaps the thread in place
+  // and deep-links it via ?conversationId= (refresh survivable).
+  function openConversation(id: string) {
+    setHistoryOpen(false);
+    setFailedMessage(null);
+    void (async () => {
+      try {
+        const data = await api.getConversation(id);
+        setConversationId(data.conversationId);
+        setMessages(data.messages ?? []);
+        setSearchParams({ conversationId: id }, { replace: true });
+      } catch {
+        /* keep the current thread if the load fails */
+      }
+    })();
+  }
+
+  // Start a fresh chat (same reset the quick-action path uses).
+  function newChat() {
+    setHistoryOpen(false);
+    setConversationId(null);
+    setMessages([]);
+    setFailedMessage(null);
+    setSearchParams({}, { replace: true });
+  }
+
+  // If they delete the chat they're currently in, drop back to a fresh thread.
+  function onConversationDeleted(id: string) {
+    if (id === conversationId) {
+      setConversationId(null);
+      setMessages([]);
+      setSearchParams({}, { replace: true });
+    }
+  }
+
   const isEmpty = !hydrating && messages.length === 0;
 
   return (
@@ -226,7 +269,14 @@ export function Chat() {
             KAI
           </span>
         </div>
-        <div className="h-10 w-10" aria-hidden="true" />
+        <button
+          type="button"
+          aria-label="Chat history"
+          onClick={() => setHistoryOpen(true)}
+          className="flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface-muted focus-ring"
+        >
+          <History size={18} aria-hidden="true" />
+        </button>
       </header>
 
       {/* Thread */}
@@ -331,6 +381,15 @@ export function Chat() {
           </button>
         </div>
       </div>
+
+      <ChatHistoryDrawer
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        activeId={conversationId}
+        onOpen={openConversation}
+        onNew={newChat}
+        onDeleted={onConversationDeleted}
+      />
     </div>
   );
 }

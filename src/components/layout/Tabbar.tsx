@@ -11,6 +11,7 @@ import {
   Activity,
   Home as HomeIcon,
   Plus,
+  Target,
   User,
   Users,
 } from "lucide-react";
@@ -18,6 +19,7 @@ import { NavLink } from "react-router-dom";
 
 const TABS = [
   { to: "/home", label: "Home", icon: HomeIcon },
+  { to: "/schedule", label: "System", icon: Target },
   { to: "/progress", label: "Progress", icon: Activity },
   { to: "/groups", label: "Groups", icon: Users },
   { to: "/profile", label: "Profile", icon: User },

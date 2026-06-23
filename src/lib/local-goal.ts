@@ -17,6 +17,12 @@ const TIMELINE_KEY = "kai_goal_timeline_v1";
 const GOAL_STARTED_KEY = "kai_goal_started_v1";
 /** Below this, projecting a finish date would explode — floor the consistency. */
 const MIN_CONSISTENCY = 0.4;
+/** Cap the system summary at the SAME length the worker feeds the model
+ *  (`body.system.slice(0, 800)` in workers/src/routes/goal-timeline.ts). Keeping
+ *  these in lockstep means the cache key (derived from this summary) changes
+ *  exactly when the model's actual input does — edits past the cap can't change
+ *  the estimate, so they must not invalidate the cache. */
+const SUMMARY_MAX = 800;
 
 type CachedTimeline = { sig: string; estimate: GoalTimeline };
 type StartMap = Record<string, string>; // normalized goal -> YYYY-MM-DD it began
@@ -25,15 +31,14 @@ function normGoal(goal: string): string {
   return goal.trim().toLowerCase().slice(0, 160);
 }
 
-/** A signature of the goal + the FULL system (cadence + specifics, not just
- *  titles), so the cached estimate is reused only while the goal AND the system
- *  it depends on are unchanged — a workout moving 1→5 days re-estimates. */
+/** A signature of the goal + the system it depends on, used to reuse the cached
+ *  estimate only while the goal AND that system are unchanged. Derived from the
+ *  SAME capped summary the estimate endpoint receives (systemSummary), so the
+ *  key changes exactly when the model's input changes — no stale reuse, and no
+ *  wasted re-estimate on edits the prompt never sees (e.g. detail past the
+ *  summary's length cap). */
 export function goalSignature(goal: string): string {
-  const items = getSchedule()
-    .map((i) => `${i.section}:${i.title}:${i.days.join(",")}:${i.time ?? ""}:${i.detail.slice(0, 40)}`)
-    .sort()
-    .join("|");
-  return `${normGoal(goal)}#${items}`.slice(0, 1000);
+  return `${normGoal(goal)}#${systemSummary()}`;
 }
 
 /** When the user started working toward THIS goal (stamped once, keyed by the
@@ -51,8 +56,17 @@ function ensureGoalStart(goal: string, userId: string | null | undefined, now: D
   // Credit the date the goal was actually SET, not the first time the timeline
   // was fetched — otherwise an existing user (e.g. their onboarding goal) would
   // reset to 0% on their first /schedule visit. The North Star carries that
-  // createdAt; only use it when it's the same goal. A freshly set or switched
-  // goal has createdAt = now (or doesn't match) → starts at 0%, as intended.
+  // createdAt; use it only when its goal matches the goal being measured. A
+  // freshly set or switched goal has createdAt = now (or doesn't match) →
+  // starts at 0%, as intended — and this preserves the set date for a
+  // signed-in user whose first estimate lands days after they set the goal.
+  //
+  // NOTE: getNorthStar() reads an un-namespaced key, so on a shared device the
+  // matched North Star is the device's, not strictly this userId's. Complete
+  // per-user isolation would require namespacing the North Star store itself
+  // (app-wide change, out of scope here); the goal-text match is a sufficient
+  // guard for this local progress heuristic, and onboarding rewrites the North
+  // Star per user, so in practice the matched goal is the current user's.
   const ns = getNorthStar();
   let stamp = localDateKey(now);
   if (ns && normGoal(ns.goal) === k) {
@@ -76,7 +90,7 @@ export function systemSummary(): string {
       return `- ${i.section}: ${i.title} (${cadence}${time})${detail}`;
     })
     .join("\n")
-    .slice(0, 1200);
+    .slice(0, SUMMARY_MAX);
 }
 
 export function loadCachedTimeline(goal: string, userId?: string | null): GoalTimeline | null {
@@ -108,6 +122,11 @@ export type GoalProgress = {
 export function goalProgress(goal: string, now: Date = new Date(), userId?: string | null): GoalProgress | null {
   const estimate = loadCachedTimeline(goal, userId);
   if (!estimate) return null;
+
+  // Stamp the goal's clock here too, not just in saveCachedTimeline — a timeline
+  // cached before the start-map existed (or whose second write failed) would
+  // otherwise have no start date and sit at 0% until the cache invalidated.
+  ensureGoalStart(goal, userId, now);
 
   const consistency = Math.max(MIN_CONSISTENCY, Math.min(1, systemHealth(userId, now).overall / 100));
   // Elapsed time is scoped to THIS goal (stamped when its timeline was cached),

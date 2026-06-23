@@ -165,6 +165,12 @@ export function doneIdsToday(userId?: string | null): string[] {
   return readDone(userId)[localDateKey()] ?? [];
 }
 
+/** Item ids checked off on a given local date key (YYYY-MM-DD). Used by the
+ *  System Health model to read consistency across a trailing window. */
+export function doneIdsOn(dateKey: string, userId?: string | null): string[] {
+  return readDone(userId)[dateKey] ?? [];
+}
+
 export function isDoneToday(id: string, userId?: string | null): boolean {
   return doneIdsToday(userId).includes(id);
 }

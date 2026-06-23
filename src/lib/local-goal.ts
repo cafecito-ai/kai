@@ -30,10 +30,14 @@ function normGoal(goal: string): string {
  *  it depends on are unchanged — a workout moving 1→5 days re-estimates. */
 export function goalSignature(goal: string): string {
   const items = getSchedule()
-    .map((i) => `${i.section}:${i.title}:${i.days.join(",")}:${i.time ?? ""}:${i.detail.slice(0, 40)}`)
+    // Use the FULL detail (not a 40-char prefix) so it matches what
+    // systemSummary() actually sends to the estimate endpoint — a detail edit
+    // past char 40 still invalidates the cache and re-estimates. The whole
+    // signature is capped below, so this stays bounded.
+    .map((i) => `${i.section}:${i.title}:${i.days.join(",")}:${i.time ?? ""}:${i.detail}`)
     .sort()
     .join("|");
-  return `${normGoal(goal)}#${items}`.slice(0, 1000);
+  return `${normGoal(goal)}#${items}`.slice(0, 2000);
 }
 
 /** When the user started working toward THIS goal (stamped once, keyed by the
@@ -53,7 +57,10 @@ function ensureGoalStart(goal: string, userId: string | null | undefined, now: D
   // reset to 0% on their first /schedule visit. The North Star carries that
   // createdAt; only use it when it's the same goal. A freshly set or switched
   // goal has createdAt = now (or doesn't match) → starts at 0%, as intended.
-  const ns = getNorthStar();
+  // getNorthStar() reads the un-namespaced key, so it's only trustworthy for
+  // the anonymous/local user; when a userId is present (shared device, multiple
+  // signed-in accounts) skip it so we never inherit another user's start date.
+  const ns = userId ? null : getNorthStar();
   let stamp = localDateKey(now);
   if (ns && normGoal(ns.goal) === k) {
     const setAt = new Date(ns.createdAt);
@@ -108,6 +115,11 @@ export type GoalProgress = {
 export function goalProgress(goal: string, now: Date = new Date(), userId?: string | null): GoalProgress | null {
   const estimate = loadCachedTimeline(goal, userId);
   if (!estimate) return null;
+
+  // Stamp the goal's clock here too, not just in saveCachedTimeline — a timeline
+  // cached before the start-map existed (or whose second write failed) would
+  // otherwise have no start date and sit at 0% until the cache invalidated.
+  ensureGoalStart(goal, userId, now);
 
   const consistency = Math.max(MIN_CONSISTENCY, Math.min(1, systemHealth(userId, now).overall / 100));
   // Elapsed time is scoped to THIS goal (stamped when its timeline was cached),

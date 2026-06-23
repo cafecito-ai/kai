@@ -66,7 +66,46 @@ describe("systemSummary (Codex round-2 — cadence in the estimate input)", () =
   });
 });
 
+describe("goal start anchor — cross-user safety (Codex round-3)", () => {
+  function setNorthStarRaw(goal: string, createdAtISO: string) {
+    localStorage.setItem(
+      NORTHSTAR_KEY,
+      JSON.stringify({ goal, theme: "strength", source: "custom", createdAt: createdAtISO }),
+    );
+  }
+
+  it("ignores the un-namespaced North Star date when a userId is present", () => {
+    seedSystem();
+    // A North Star left behind by another signed-in user on this device.
+    setNorthStarRaw("Get stronger", "2026-05-01T12:00:00.000Z");
+    saveCachedTimeline("Get stronger", { weeks: 10, rationale: "", factors: [] }, "user_b");
+    // The authenticated user's clock must start today, not inherit user A's date.
+    const map = JSON.parse(localStorage.getItem("u_user_b__kai_goal_started_v1")!);
+    expect(map["get stronger"]).toBe(localDateKey(new Date()));
+  });
+});
+
 describe("timeline cache (only re-calls when goal/system changes)", () => {
+  it("invalidates when an item's detail changes past 40 chars (Codex round-3)", () => {
+    const longA = "x".repeat(40) + " original tail";
+    const longB = "x".repeat(40) + " changed tail";
+    localStorage.setItem(
+      SCHEDULE_KEY,
+      JSON.stringify([{ id: "t1", section: "training", title: "Lift", detail: longA, days: [1], time: null, createdAt: OLD }]),
+    );
+    saveCachedTimeline("Get stronger", { weeks: 8, rationale: "", factors: [] });
+    expect(loadCachedTimeline("Get stronger")?.weeks).toBe(8);
+    // Only the detail past char 40 changed — the AI input differs, so the cache
+    // must miss and re-estimate (the old 40-char prefix would have collided).
+    localStorage.setItem(
+      SCHEDULE_KEY,
+      JSON.stringify([{ id: "t1", section: "training", title: "Lift", detail: longB, days: [1], time: null, createdAt: OLD }]),
+    );
+    expect(loadCachedTimeline("Get stronger")).toBeNull();
+  });
+});
+
+describe("timeline cache (goal/system signature)", () => {
   it("returns the cached estimate for the same goal + system, null otherwise", () => {
     seedSystem();
     saveCachedTimeline("Get stronger", { weeks: 12, rationale: "r", factors: [] });
@@ -121,6 +160,23 @@ describe("goalProgress — consistency-driven", () => {
   it("returns null without a cached estimate", () => {
     seedSystem();
     expect(goalProgress("Get stronger", ref)).toBeNull();
+  });
+
+  it("stamps a start date for a pre-cached estimate that has none (Codex round-3)", () => {
+    seedSystem();
+    // Simulate a timeline cached before the start-map existed: write the cache
+    // entry directly so saveCachedTimeline (and its ensureGoalStart) never ran.
+    localStorage.setItem(
+      "kai_goal_timeline_v1",
+      JSON.stringify({ sig: goalSignature("Get stronger"), estimate: { weeks: 10, rationale: "", factors: [] } }),
+    );
+    expect(localStorage.getItem(GOAL_STARTED_KEY)).toBeNull();
+
+    const p = goalProgress("Get stronger", ref)!;
+    expect(p).not.toBeNull();
+    // goalProgress must have stamped the start (today = ref) so it isn't stuck at 0%.
+    const map = JSON.parse(localStorage.getItem(GOAL_STARTED_KEY)!);
+    expect(map["get stronger"]).toBe(localDateKey(ref));
   });
 
   it("higher consistency = more progress and a sooner finish", () => {

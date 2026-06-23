@@ -62,6 +62,13 @@ export interface ConversationSummary {
   title: string;
 }
 
+/** AI estimate of how long a goal realistically takes, given the system. */
+export interface GoalTimeline {
+  weeks: number;
+  rationale: string;
+  factors: string[];
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";

@@ -12,6 +12,7 @@ import { goalsRoutes } from "./routes/goals";
 import { groupsRoutes } from "./routes/groups";
 import { opsRoutes } from "./routes/ops";
 import { northStarRoutes } from "./routes/northstar";
+import { goalTimelineRoutes } from "./routes/goal-timeline";
 import { scheduleRoutes } from "./routes/schedule";
 import { progressRoutes } from "./routes/progress";
 import { scanRoutes } from "./routes/scan";
@@ -52,6 +53,7 @@ app.route("/api", workoutsRoutes);
 app.route("/api", scanRoutes);
 app.route("/api", voiceRoutes);
 app.route("/api", northStarRoutes);
+app.route("/api", goalTimelineRoutes);
 app.route("/api", scheduleRoutes);
 app.post("/api/safety/log", async (c) => c.json({ event: await c.req.json() }));
 app.get("/api/parent/consent", async (c) => {

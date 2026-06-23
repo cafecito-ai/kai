@@ -13,6 +13,16 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { api } from "../lib/api";
+import { parseLocalDate } from "../lib/dates";
+import { getHeroImage } from "../lib/local-identity";
+import {
+  goalProgress,
+  goalSignature,
+  loadCachedTimeline,
+  saveCachedTimeline,
+  systemSummary,
+  type GoalProgress,
+} from "../lib/local-goal";
 import { cleanPlanTitle } from "../lib/local-northstar";
 import {
   SECTION_META,
@@ -173,6 +183,9 @@ export function Schedule() {
         </p>
       </div>
 
+      {/* Goal as destination — the visual target, AI timeline, and progress. */}
+      {!empty && goal && <GoalDestination goal={goal} userId={userId} bump={bump} />}
+
       {/* System Health — the four attributes you strengthen by showing up. */}
       {!empty && <SystemHealthPanel userId={userId} bump={bump} />}
 
@@ -254,6 +267,90 @@ function RewardToast({
         <p className="mt-0.5 font-mono text-sm font-semibold text-text-primary">
           {`${reward.before}% → ${reward.after}%`}
         </p>
+      </div>
+    </div>
+  );
+}
+
+// Goal as destination — the visual target with the AI-estimated timeline and
+// consistency-driven progress. The System (above/below) is the vehicle.
+function GoalDestination({ goal, userId, bump }: { goal: string; userId?: string | null; bump: number }) {
+  const hero = getHeroImage();
+  const sig = goalSignature(goal);
+  const [progress, setProgress] = useState<GoalProgress | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch the AI timeline once per goal/system (cached); refetch only when the
+  // goal or system actually changes (sig), never on a check-off.
+  useEffect(() => {
+    let cancelled = false;
+    if (!goal) return;
+    if (loadCachedTimeline(goal, userId)) return; // already have an estimate
+    setLoading(true);
+    api
+      .estimateGoalTimeline(goal, systemSummary())
+      .then((res) => {
+        if (!cancelled && res.estimate) saveCachedTimeline(goal, res.estimate, userId);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+          setProgress(goalProgress(goal, new Date(), userId));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sig, goal, userId]);
+
+  // Recompute progress (consistency-driven) whenever check-offs change.
+  useEffect(() => {
+    setProgress(goalProgress(goal, new Date(), userId));
+  }, [bump, sig, goal, userId]);
+
+  const finish = progress ? parseLocalDate(progress.projectedFinishISO) : null;
+  const finishLabel = finish
+    ? finish.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : null;
+
+  return (
+    <div className="overflow-hidden rounded-glass border border-glass-border shadow-card-lg">
+      {hero?.dataUrl ? (
+        <img
+          src={hero.dataUrl}
+          alt=""
+          style={{ objectPosition: hero.position }}
+          className="h-36 w-full object-cover"
+        />
+      ) : (
+        <div className="h-20 w-full bg-gradient-to-br from-accent/30 via-surface to-background" />
+      )}
+      <div className="p-4">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">Your goal</p>
+        <h2 className="mt-0.5 font-display text-xl font-semibold leading-tight tracking-tight text-text-primary">
+          {cleanPlanTitle(goal)}
+        </h2>
+
+        {progress ? (
+          <div className="mt-3">
+            <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-500"
+                style={{ width: `${progress.pct}%` }}
+              />
+            </div>
+            <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
+              {progress.pct}% there
+              {finishLabel ? ` · on this pace, ${finishLabel}` : ""}
+            </p>
+            {progress.rationale && (
+              <p className="mt-1 text-xs leading-snug text-text-secondary">{progress.rationale}</p>
+            )}
+          </div>
+        ) : loading ? (
+          <p className="mt-3 text-xs text-text-muted">Mapping out your timeline…</p>
+        ) : null}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import type { ChatMessage, ConversationSummary, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, KaiTone, ProgressEvent, UserProfile } from "./types";
+import type { ChatMessage, ConversationSummary, DemoFeedbackChoices, DemoFoodPhotoResult, EngineEntry, EngineId, FoodPhotoResult, Goal, GoalTimeline, KaiTone, ProgressEvent, UserProfile } from "./types";
 
 const STAGING_API_BASE = "https://kai-staging.evan-ratner.workers.dev";
 const PRODUCTION_API_BASE = "https://kai.boostaisearch.ai";
@@ -115,6 +115,12 @@ export const api = {
     request<{ moves: string[] }>("/api/north-star/moves", {
       method: "POST",
       body: JSON.stringify({ goal }),
+    }),
+  // Goal timeline: realistic weeks-to-goal estimate from the goal + system.
+  estimateGoalTimeline: (goal: string, system?: string) =>
+    request<{ estimate: GoalTimeline | null }>("/api/goal/timeline", {
+      method: "POST",
+      body: JSON.stringify({ goal, system }),
     }),
   // Schedule/system: turn the goal (+ optional free-text) into a full lifestyle
   // system — daily habits, workouts, sleep, routines, mindset, things to avoid.

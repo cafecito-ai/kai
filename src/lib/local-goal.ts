@@ -25,19 +25,14 @@ function normGoal(goal: string): string {
   return goal.trim().toLowerCase().slice(0, 160);
 }
 
-/** A signature of the goal + the FULL system (cadence + specifics, not just
- *  titles), so the cached estimate is reused only while the goal AND the system
- *  it depends on are unchanged — a workout moving 1→5 days re-estimates. */
+/** A signature of the goal + the system it depends on, used to reuse the cached
+ *  estimate only while the goal AND that system are unchanged. Derived from the
+ *  SAME capped summary the estimate endpoint receives (systemSummary), so the
+ *  key changes exactly when the model's input changes — no stale reuse, and no
+ *  wasted re-estimate on edits the prompt never sees (e.g. detail past the
+ *  summary's length cap). */
 export function goalSignature(goal: string): string {
-  const items = getSchedule()
-    // Use the FULL detail (not a 40-char prefix) so it matches what
-    // systemSummary() actually sends to the estimate endpoint — a detail edit
-    // past char 40 still invalidates the cache and re-estimates. The whole
-    // signature is capped below, so this stays bounded.
-    .map((i) => `${i.section}:${i.title}:${i.days.join(",")}:${i.time ?? ""}:${i.detail}`)
-    .sort()
-    .join("|");
-  return `${normGoal(goal)}#${items}`.slice(0, 2000);
+  return `${normGoal(goal)}#${systemSummary()}`;
 }
 
 /** When the user started working toward THIS goal (stamped once, keyed by the
@@ -55,12 +50,18 @@ function ensureGoalStart(goal: string, userId: string | null | undefined, now: D
   // Credit the date the goal was actually SET, not the first time the timeline
   // was fetched — otherwise an existing user (e.g. their onboarding goal) would
   // reset to 0% on their first /schedule visit. The North Star carries that
-  // createdAt; only use it when it's the same goal. A freshly set or switched
-  // goal has createdAt = now (or doesn't match) → starts at 0%, as intended.
-  // getNorthStar() reads the un-namespaced key, so it's only trustworthy for
-  // the anonymous/local user; when a userId is present (shared device, multiple
-  // signed-in accounts) skip it so we never inherit another user's start date.
-  const ns = userId ? null : getNorthStar();
+  // createdAt; use it only when its goal matches the goal being measured. A
+  // freshly set or switched goal has createdAt = now (or doesn't match) →
+  // starts at 0%, as intended — and this preserves the set date for a
+  // signed-in user whose first estimate lands days after they set the goal.
+  //
+  // NOTE: getNorthStar() reads an un-namespaced key, so on a shared device the
+  // matched North Star is the device's, not strictly this userId's. Complete
+  // per-user isolation would require namespacing the North Star store itself
+  // (app-wide change, out of scope here); the goal-text match is a sufficient
+  // guard for this local progress heuristic, and onboarding rewrites the North
+  // Star per user, so in practice the matched goal is the current user's.
+  const ns = getNorthStar();
   let stamp = localDateKey(now);
   if (ns && normGoal(ns.goal) === k) {
     const setAt = new Date(ns.createdAt);

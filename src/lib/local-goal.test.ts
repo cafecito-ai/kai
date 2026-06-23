@@ -66,7 +66,7 @@ describe("systemSummary (Codex round-2 — cadence in the estimate input)", () =
   });
 });
 
-describe("goal start anchor — cross-user safety (Codex round-3)", () => {
+describe("goal start anchor — signed-in users keep their set date (Codex round-3)", () => {
   function setNorthStarRaw(goal: string, createdAtISO: string) {
     localStorage.setItem(
       NORTHSTAR_KEY,
@@ -74,14 +74,14 @@ describe("goal start anchor — cross-user safety (Codex round-3)", () => {
     );
   }
 
-  it("ignores the un-namespaced North Star date when a userId is present", () => {
+  it("credits a signed-in user's own matching North Star createdAt", () => {
     seedSystem();
-    // A North Star left behind by another signed-in user on this device.
+    // A signed-in user set this goal weeks ago; their first estimate lands now.
     setNorthStarRaw("Get stronger", "2026-05-01T12:00:00.000Z");
     saveCachedTimeline("Get stronger", { weeks: 10, rationale: "", factors: [] }, "user_b");
-    // The authenticated user's clock must start today, not inherit user A's date.
+    // The clock must reflect when they SET the goal, not lose those weeks.
     const map = JSON.parse(localStorage.getItem("u_user_b__kai_goal_started_v1")!);
-    expect(map["get stronger"]).toBe(localDateKey(new Date()));
+    expect(map["get stronger"]).toBe(localDateKey(new Date("2026-05-01T12:00:00.000Z")));
   });
 });
 

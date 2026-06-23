@@ -50,9 +50,14 @@ afterEach(() => {
   }
 });
 
-// Tap through the two intro stages into the first question (name).
+// Tap through the Kai-led intro stages (who Kai is, what he does, how the
+// Score + System work) into the first question (name).
 async function passIntro() {
-  fireEvent.click(await screen.findByText("Hi, I'm KAI."));
+  fireEvent.click(await screen.findByText(/I'm KAI/i));
+  fireEvent.click(await screen.findByText(/not just some chatbot/i));
+  fireEvent.click(await screen.findByText(/thinking off your plate/i));
+  fireEvent.click(await screen.findByText(/what moves it/i));
+  fireEvent.click(await screen.findByText(/System gets stronger/i));
   fireEvent.click(await screen.findByText(/let me learn about you/i));
 }
 
@@ -92,10 +97,28 @@ async function walkToFinale() {
 describe("Onboarding (cinematic)", () => {
   it("opens on the intro and reaches the name question after taps", async () => {
     renderOnboarding();
-    expect(await screen.findByText("Hi, I'm KAI.")).toBeInTheDocument();
+    expect(await screen.findByText(/I'm KAI/i)).toBeInTheDocument();
     await passIntro();
     expect(await screen.findByPlaceholderText(/first name/i)).toBeInTheDocument();
     expect(screen.getByText(/what should i call you/i)).toBeInTheDocument();
+  });
+
+  it("explains who Kai is and how the Score + System work BEFORE asking for a name", async () => {
+    renderOnboarding();
+    // Kai introduces himself as more than a chatbot.
+    fireEvent.click(await screen.findByText(/I'm KAI/i));
+    expect(await screen.findByText(/not just some chatbot/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/not just some chatbot/i));
+    // What he helps with.
+    expect(await screen.findByText(/thinking off your plate/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/thinking off your plate/i));
+    // The Daily Score is explained.
+    expect(await screen.findByText(/what moves it/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/what moves it/i));
+    // The System is explained.
+    expect(await screen.findByText(/System gets stronger/i)).toBeInTheDocument();
+    // Still no name field yet — the explanation comes first.
+    expect(screen.queryByPlaceholderText(/first name/i)).not.toBeInTheDocument();
   });
 
   it("blocks Send until a name is entered", async () => {

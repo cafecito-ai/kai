@@ -94,4 +94,38 @@ describe("systemHealth — build & gently decay", () => {
     expect(h.attributes.find((a) => a.key === "discipline")!.hasItems).toBe(false);
     expect(h.overall).toBe(0);
   });
+
+  it("credits a completion logged on an off day", () => {
+    const now = new Date("2026-06-23T12:00:00");
+    const otherWeekday = (now.getDay() + 1) % 7; // not today
+    seedSchedule([item("b1", "training", [otherWeekday])]);
+    // Nothing done → 0.
+    expect(systemHealth(undefined, now).attributes.find((a) => a.key === "body")!.value).toBe(0);
+    // Complete it TODAY, which is an off day for this Monday-ish item.
+    localStorage.setItem(DONE_KEY, JSON.stringify({ [localDateKey(now)]: ["b1"] }));
+    expect(systemHealth(undefined, now).attributes.find((a) => a.key === "body")!.value).toBeGreaterThan(0);
+  });
+
+  it("marks a pillar active when its only item is scheduled for a future day", () => {
+    const now = new Date("2026-06-23T12:00:00");
+    const futureWeekday = (now.getDay() + 2) % 7;
+    // Created today, scheduled only on a not-yet-arrived weekday.
+    seedSchedule([
+      { id: "b1", section: "training", title: "Lift", detail: "", days: [futureWeekday], time: null, createdAt: now.toISOString() },
+    ]);
+    const body = systemHealth(undefined, now).attributes.find((a) => a.key === "body")!;
+    expect(body.hasItems).toBe(true); // present, even though nothing is due yet
+    expect(body.value).toBe(0);
+  });
+
+  it("counts legacy items with no stored createdAt across the full window", () => {
+    const now = new Date("2026-06-23T12:00:00");
+    // A legacy stored item with NO createdAt → migration fills a stable epoch,
+    // so past completions still count (health doesn't reset to today).
+    localStorage.setItem(SCHEDULE_KEY, JSON.stringify([{ id: "d1", section: "daily", title: "Move", days: [] }]));
+    const map: Record<string, string[]> = {};
+    for (const off of [1, 2, 3]) map[localDateKey(addDays(now, -off))] = ["d1"];
+    localStorage.setItem(DONE_KEY, JSON.stringify(map));
+    expect(systemHealth(undefined, now).attributes.find((a) => a.key === "discipline")!.value).toBeGreaterThan(0);
+  });
 });

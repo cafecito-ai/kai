@@ -88,12 +88,24 @@ function expectedOnWeekday(item: ScheduleItem, weekday: number): boolean {
   return item.days.length === 0 || item.days.includes(weekday);
 }
 
+// A createdAt we can trust as a real "existed from" date. Legacy items stored
+// before the field get epoch from the migration (see local-schedule), which we
+// treat as "always existed" rather than "created today" — otherwise an existing
+// user's health would reset daily until their next schedule write.
+function existedOn(item: ScheduleItem, dayKey: string): boolean {
+  if (!item.createdAt) return true;
+  return localDateKey(new Date(item.createdAt)) <= dayKey;
+}
+
 /**
  * Compute System Health. Each attribute = (expected actions completed) /
  * (expected actions) across the trailing window, counting a day only from when
- * the item existed. `avoid` items aren't completable check-offs, so they don't
- * feed health (they're a "held the line" display in the UI). `overall` is the
- * mean of the pillars that actually have items.
+ * the item existed. A completion logged on an OFF day (e.g. a Monday item
+ * checked on Tuesday) still counts — the day becomes expected + done — so the
+ * reward never lies. `hasItems` tracks whether the pillar contains any items at
+ * all (independent of the window), so a pillar whose only action is scheduled
+ * for a future day still counts toward `overall` instead of showing "—".
+ * `avoid` items aren't completable check-offs, so they don't feed health.
  */
 export function systemHealth(userId?: string | null, now: Date = new Date()): SystemHealth {
   const items = getSchedule().filter((i) => i.section !== "avoid");
@@ -104,6 +116,13 @@ export function systemHealth(userId?: string | null, now: Date = new Date()): Sy
     discipline: { done: 0, expected: 0 },
     recovery: { done: 0, expected: 0 },
   };
+  const present: Record<AttributeKey, boolean> = {
+    mental: false,
+    body: false,
+    discipline: false,
+    recovery: false,
+  };
+  for (const item of items) present[attributeForItem(item)] = true;
 
   for (let d = 0; d < HEALTH_WINDOW_DAYS; d += 1) {
     const date = addDays(now, -d);
@@ -111,12 +130,14 @@ export function systemHealth(userId?: string | null, now: Date = new Date()): Sy
     const weekday = date.getDay();
     const doneSet = new Set(doneIdsOn(key, userId));
     for (const item of items) {
-      // Only count days on/after the item was created.
-      if (item.createdAt && localDateKey(new Date(item.createdAt)) > key) continue;
-      if (!expectedOnWeekday(item, weekday)) continue;
+      if (!existedOn(item, key)) continue;
+      const did = doneSet.has(item.id);
+      // A day counts as "expected" if the item was scheduled that weekday OR it
+      // was actually completed that day (an off-day rep is credited, not lost).
+      if (!expectedOnWeekday(item, weekday) && !did) continue;
       const attr = attributeForItem(item);
       acc[attr].expected += 1;
-      if (doneSet.has(item.id)) acc[attr].done += 1;
+      if (did) acc[attr].done += 1;
     }
   }
 
@@ -125,7 +146,7 @@ export function systemHealth(userId?: string | null, now: Date = new Date()): Sy
     return {
       key,
       label,
-      hasItems: expected > 0,
+      hasItems: present[key],
       value: expected > 0 ? Math.round((done / expected) * 100) : 0,
     };
   });

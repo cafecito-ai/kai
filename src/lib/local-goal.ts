@@ -7,7 +7,8 @@
 // stay consistent and the finish line comes in; fall off and it slips.
 
 import { addDays, daysBetween, localDateKey, parseLocalDate } from "./dates";
-import { getSchedule } from "./local-schedule";
+import { daysLabel, formatTime, getSchedule } from "./local-schedule";
+import { getNorthStar } from "./local-northstar";
 import { systemHealth } from "./local-system-health";
 import { loadJSON, saveJSON } from "./local-storage";
 import type { GoalTimeline } from "./types";
@@ -46,18 +47,36 @@ function readGoalStart(goal: string, userId?: string | null): string | null {
 function ensureGoalStart(goal: string, userId: string | null | undefined, now: Date): void {
   const map = loadJSON<StartMap>(GOAL_STARTED_KEY, userId, {});
   const k = normGoal(goal);
-  if (!map[k]) {
-    map[k] = localDateKey(now);
-    saveJSON(GOAL_STARTED_KEY, userId, map);
+  if (map[k]) return;
+  // Credit the date the goal was actually SET, not the first time the timeline
+  // was fetched — otherwise an existing user (e.g. their onboarding goal) would
+  // reset to 0% on their first /schedule visit. The North Star carries that
+  // createdAt; only use it when it's the same goal. A freshly set or switched
+  // goal has createdAt = now (or doesn't match) → starts at 0%, as intended.
+  const ns = getNorthStar();
+  let stamp = localDateKey(now);
+  if (ns && normGoal(ns.goal) === k) {
+    const setAt = new Date(ns.createdAt);
+    if (!Number.isNaN(setAt.getTime())) stamp = localDateKey(setAt);
   }
+  map[k] = stamp;
+  saveJSON(GOAL_STARTED_KEY, userId, map);
 }
 
-/** A compact text summary of the system to send to the estimate endpoint. */
+/** A compact text summary of the system to send to the estimate endpoint.
+ *  Includes cadence + specifics (days/time/detail) so a workload change — e.g.
+ *  a workout moving from one day to five — actually changes the model's input
+ *  and therefore the estimate, not just the cache key. */
 export function systemSummary(): string {
   return getSchedule()
-    .map((i) => `- ${i.section}: ${i.title}`)
+    .map((i) => {
+      const cadence = i.days.length ? daysLabel(i.days) : "daily";
+      const time = i.time ? `, ${formatTime(i.time)}` : "";
+      const detail = i.detail ? ` — ${i.detail}` : "";
+      return `- ${i.section}: ${i.title} (${cadence}${time})${detail}`;
+    })
     .join("\n")
-    .slice(0, 800);
+    .slice(0, 1200);
 }
 
 export function loadCachedTimeline(goal: string, userId?: string | null): GoalTimeline | null {

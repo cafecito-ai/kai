@@ -5,11 +5,13 @@ import {
   goalSignature,
   loadCachedTimeline,
   saveCachedTimeline,
+  systemSummary,
 } from "./local-goal";
 
 const SCHEDULE_KEY = "kai_schedule_v1";
 const DONE_KEY = "kai_system_done_v1";
 const GOAL_STARTED_KEY = "kai_goal_started_v1";
+const NORTHSTAR_KEY = "kai_northstar_v1";
 
 const OLD = new Date(0).toISOString();
 
@@ -23,6 +25,46 @@ function seedSystem() {
 }
 
 afterEach(() => localStorage.clear());
+
+describe("goal start anchor (Codex round-2)", () => {
+  function setNorthStarRaw(goal: string, createdAtISO: string) {
+    localStorage.setItem(
+      NORTHSTAR_KEY,
+      JSON.stringify({ goal, theme: "strength", source: "custom", createdAt: createdAtISO }),
+    );
+  }
+
+  it("stamps the goal start from a matching North Star createdAt (credits prior time)", () => {
+    seedSystem();
+    setNorthStarRaw("Get stronger", "2026-05-01T12:00:00.000Z");
+    saveCachedTimeline("Get stronger", { weeks: 10, rationale: "", factors: [] });
+    const map = JSON.parse(localStorage.getItem(GOAL_STARTED_KEY)!);
+    expect(map["get stronger"]).toBe(localDateKey(new Date("2026-05-01T12:00:00.000Z")));
+  });
+
+  it("falls back to today when the North Star goal doesn't match", () => {
+    seedSystem();
+    setNorthStarRaw("Learn guitar", "2026-05-01T12:00:00.000Z");
+    saveCachedTimeline("Get stronger", { weeks: 10, rationale: "", factors: [] });
+    const map = JSON.parse(localStorage.getItem(GOAL_STARTED_KEY)!);
+    expect(map["get stronger"]).toBe(localDateKey(new Date()));
+  });
+});
+
+describe("systemSummary (Codex round-2 — cadence in the estimate input)", () => {
+  it("includes cadence and detail so a workload change reaches the model", () => {
+    localStorage.setItem(
+      SCHEDULE_KEY,
+      JSON.stringify([
+        { id: "t1", section: "training", title: "Lift", detail: "progressive overload", days: [1, 2, 3, 4, 5], time: "17:00", createdAt: OLD },
+      ]),
+    );
+    const s = systemSummary();
+    expect(s).toContain("Lift (");          // cadence is now attached
+    expect(s).toContain("progressive overload");
+    expect(s).not.toContain("(daily)");      // a 5-day item isn't "daily"
+  });
+});
 
 describe("timeline cache (only re-calls when goal/system changes)", () => {
   it("returns the cached estimate for the same goal + system, null otherwise", () => {

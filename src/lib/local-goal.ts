@@ -17,6 +17,12 @@ const TIMELINE_KEY = "kai_goal_timeline_v1";
 const GOAL_STARTED_KEY = "kai_goal_started_v1";
 /** Below this, projecting a finish date would explode — floor the consistency. */
 const MIN_CONSISTENCY = 0.4;
+/** Cap the system summary at the SAME length the worker feeds the model
+ *  (`body.system.slice(0, 800)` in workers/src/routes/goal-timeline.ts). Keeping
+ *  these in lockstep means the cache key (derived from this summary) changes
+ *  exactly when the model's actual input does — edits past the cap can't change
+ *  the estimate, so they must not invalidate the cache. */
+const SUMMARY_MAX = 800;
 
 type CachedTimeline = { sig: string; estimate: GoalTimeline };
 type StartMap = Record<string, string>; // normalized goal -> YYYY-MM-DD it began
@@ -84,7 +90,7 @@ export function systemSummary(): string {
       return `- ${i.section}: ${i.title} (${cadence}${time})${detail}`;
     })
     .join("\n")
-    .slice(0, 1200);
+    .slice(0, SUMMARY_MAX);
 }
 
 export function loadCachedTimeline(goal: string, userId?: string | null): GoalTimeline | null {

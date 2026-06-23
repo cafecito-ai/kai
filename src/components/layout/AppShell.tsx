@@ -56,6 +56,7 @@ const TABBAR_PREFIXES = [
   "/progress",
   "/groups",
   "/profile",
+  "/schedule",
   "/engine",
   "/settings",
   "/check-in",

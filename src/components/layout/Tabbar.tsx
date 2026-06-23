@@ -36,7 +36,7 @@ export function Tabbar({ onOpenQuickActions }: TabbarProps) {
         pointer-events-none
         fixed inset-x-0 bottom-0 z-30
         flex items-end justify-center
-        px-4 pb-4
+        px-3 pb-4
       "
       style={{
         paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
@@ -46,7 +46,7 @@ export function Tabbar({ onOpenQuickActions }: TabbarProps) {
       <nav
         className="
           pointer-events-auto
-          flex items-center gap-1
+          flex items-center gap-0
           rounded-full
           border border-glass-border
           bg-surface-glass
@@ -66,7 +66,7 @@ export function Tabbar({ onOpenQuickActions }: TabbarProps) {
                 relative
                 flex flex-col items-center justify-center
                 rounded-full
-                h-11 w-12
+                h-11 w-11
                 transition
                 ${
                   isActive
@@ -105,8 +105,8 @@ export function Tabbar({ onOpenQuickActions }: TabbarProps) {
         aria-label="Quick actions"
         className="
           pointer-events-auto
-          ml-3
-          flex h-14 w-14
+          ml-2
+          flex h-12 w-12
           items-center justify-center
           rounded-full
           bg-text-primary text-background

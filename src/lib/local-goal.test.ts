@@ -9,7 +9,7 @@ import {
 
 const SCHEDULE_KEY = "kai_schedule_v1";
 const DONE_KEY = "kai_system_done_v1";
-const STARTED_KEY = "kai_identity_started_v1";
+const GOAL_STARTED_KEY = "kai_goal_started_v1";
 
 const OLD = new Date(0).toISOString();
 
@@ -48,14 +48,32 @@ describe("timeline cache (only re-calls when goal/system changes)", () => {
     expect(goalSignature("Get stronger")).not.toBe(sigBefore);
     expect(loadCachedTimeline("Get stronger")).toBeNull();
   });
+
+  it("invalidates when an item's cadence changes, not just its title", () => {
+    localStorage.setItem(
+      SCHEDULE_KEY,
+      JSON.stringify([{ id: "t1", section: "training", title: "Lift", detail: "", days: [1], time: null, createdAt: OLD }]),
+    );
+    saveCachedTimeline("Get stronger", { weeks: 8, rationale: "", factors: [] });
+    expect(loadCachedTimeline("Get stronger")?.weeks).toBe(8);
+    // Same title, but now five days a week → a real system change → cache miss.
+    localStorage.setItem(
+      SCHEDULE_KEY,
+      JSON.stringify([{ id: "t1", section: "training", title: "Lift", detail: "", days: [1, 2, 3, 4, 5], time: null, createdAt: OLD }]),
+    );
+    expect(loadCachedTimeline("Get stronger")).toBeNull();
+  });
 });
 
 describe("goalProgress — consistency-driven", () => {
   const ref = new Date("2026-06-20T12:00:00");
 
   function startedDaysAgo(days: number) {
-    // local-identity stores this as a raw YYYY-MM-DD string (not JSON).
-    localStorage.setItem(STARTED_KEY, localDateKey(addDays(ref, -days)));
+    // The goal's clock is scoped per-goal (keyed by normalized goal text).
+    localStorage.setItem(
+      GOAL_STARTED_KEY,
+      JSON.stringify({ "get stronger": localDateKey(addDays(ref, -days)) }),
+    );
   }
 
   it("returns null without a cached estimate", () => {

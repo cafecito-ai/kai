@@ -35,12 +35,16 @@ import {
   makeMain,
   saveCurrentAsSystem,
   setSystemGoal,
-  systemProgressWeek,
   toggleDoneToday,
-  weeklyDoneCount,
-  weeklyTarget,
   type SavedSystem,
 } from "../lib/local-systems";
+import {
+  attributeForItem,
+  attributeLabel,
+  pointsForItem,
+  systemHealth,
+  type AttributeKey,
+} from "../lib/local-system-health";
 import { useStorageUserId } from "../lib/storage-user-id";
 
 const SECTION_ICON: Record<SystemSection, typeof Dumbbell> = {
@@ -68,8 +72,39 @@ export function Schedule() {
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Reward feedback when an action is completed: "+8 BODY / SYSTEM HEALTH 74→76".
+  const [reward, setReward] = useState<
+    { points: number; attr: AttributeKey; attrLabel: string; before: number; after: number } | null
+  >(null);
 
   const refresh = () => setBump((b) => b + 1);
+
+  // Completing an action strengthens the System. Capture health before/after so
+  // the toast can show the bump; only celebrate on a fresh completion (not an
+  // un-check). Toggling itself lives in local-systems.
+  function handleToggle(item: ScheduleItem) {
+    const wasDone = isDoneToday(item.id, userId);
+    const before = systemHealth(userId).overall;
+    toggleDoneToday(item.id, userId);
+    refresh();
+    if (!wasDone) {
+      const after = systemHealth(userId).overall;
+      setReward({
+        points: pointsForItem(item),
+        attr: attributeForItem(item),
+        attrLabel: attributeLabel(attributeForItem(item)),
+        before,
+        after,
+      });
+    }
+  }
+
+  // Auto-dismiss the reward toast.
+  useEffect(() => {
+    if (!reward) return;
+    const t = setTimeout(() => setReward(null), 2600);
+    return () => clearTimeout(t);
+  }, [reward]);
   useEffect(() => {
     const on = () => refresh();
     window.addEventListener("kai:state-changed", on);
@@ -138,8 +173,8 @@ export function Schedule() {
         </p>
       </div>
 
-      {/* Today's progress (check-offs, resets daily) */}
-      {!empty && <ProgressMeter userId={userId} />}
+      {/* System Health — the four attributes you strengthen by showing up. */}
+      {!empty && <SystemHealthPanel userId={userId} bump={bump} />}
 
       {/* Build / extend / save */}
       <div className="rounded-glass border border-glass-border bg-surface p-4 shadow-card">
@@ -189,38 +224,78 @@ export function Schedule() {
       ) : (
         <>
           {sections.map(({ section, items }) => (
-            <SectionBlock key={section} section={section} items={items} userId={userId} onChange={refresh} />
+            <SectionBlock key={section} section={section} items={items} userId={userId} onChange={refresh} onToggleItem={handleToggle} />
           ))}
         </>
       )}
+
+      {reward && <RewardToast reward={reward} />}
     </div>
   );
 }
 
-// Per-category weekly progress, driven by check-offs. Avoid is excluded.
-function ProgressMeter({ userId }: { userId?: string | null }) {
-  const { overall, byCategory } = systemProgressWeek(userId);
+// The rewarding feedback when an action is completed — "+8 BODY / SYSTEM HEALTH
+// 74 → 76". Replaces the plain checkmark with a sense of upgrading yourself.
+function RewardToast({
+  reward,
+}: {
+  reward: { points: number; attr: AttributeKey; attrLabel: string; before: number; after: number };
+}) {
+  const climbed = reward.after > reward.before;
   return (
-    <div className="rounded-glass border border-glass-border bg-surface p-4 shadow-card">
-      <div className="flex items-end justify-between">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">This week</p>
-        <p className="font-mono text-sm font-bold text-text-primary">
-          {overall.done}<span className="text-text-muted">/{overall.total}</span>
+    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center px-6">
+      <div className="animate-celebrate-chip rounded-glass border border-accent-soft bg-surface px-5 py-3 text-center shadow-card-lg">
+        <p className="font-mono text-sm font-bold uppercase tracking-[0.12em] text-accent">
+          +{reward.points} {reward.attrLabel}
+        </p>
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+          {climbed ? "System health increased" : "System strengthened"}
+        </p>
+        <p className="mt-0.5 font-mono text-sm font-semibold text-text-primary">
+          {`${reward.before}% → ${reward.after}%`}
         </p>
       </div>
-      <div className="mt-3 space-y-2">
-        {byCategory.map((c) => {
-          const pct = c.total ? Math.round((c.done / c.total) * 100) : 0;
-          return (
-            <div key={c.section} className="flex items-center gap-3">
-              <p className="w-24 shrink-0 truncate text-xs text-text-secondary">{SECTION_META[c.section].label}</p>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
-                <div className="h-full rounded-full bg-text-primary transition-all duration-300" style={{ width: `${pct}%` }} />
-              </div>
-              <p className="w-8 shrink-0 text-right font-mono text-[10px] text-text-muted">{c.done}/{c.total}</p>
+    </div>
+  );
+}
+
+// System Health — overall % + the four attributes you strengthen by showing up.
+// Each attribute is recent consistency (builds as you do the work, gently
+// decays if you stop). Replaces the old "X/Y this week" counters.
+const ATTR_BAR_TINT: Record<AttributeKey, string> = {
+  mental: "bg-mental",
+  body: "bg-physical",
+  discipline: "bg-goal",
+  recovery: "bg-sleep",
+};
+
+function SystemHealthPanel({ userId, bump }: { userId?: string | null; bump: number }) {
+  void bump; // re-render trigger (check-offs change health)
+  const { overall, attributes } = systemHealth(userId);
+  return (
+    <div className="rounded-glass border border-glass-border bg-surface p-5 shadow-card-lg">
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">System health</p>
+          <p className="mt-1 text-sm text-text-secondary">Your system is getting stronger.</p>
+        </div>
+        <p className="font-mono text-3xl font-bold leading-none text-text-primary">{overall}%</p>
+      </div>
+      <div className="mt-4 space-y-2.5">
+        {attributes.map((a) => (
+          <div key={a.key} className="flex items-center gap-3">
+            <p className="w-20 shrink-0 text-xs font-medium text-text-secondary">{a.label}</p>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
+              <div
+                className={`h-full rounded-full ${ATTR_BAR_TINT[a.key]} transition-all duration-500`}
+                style={{ width: `${a.value}%` }}
+              />
             </div>
-          );
-        })}
+            <p className="w-10 shrink-0 text-right font-mono text-[11px] font-bold text-text-primary">
+              {a.hasItems ? `${a.value}%` : "—"}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -270,7 +345,7 @@ function SavedSystemsRow({ systems, userId, onChange }: { systems: SavedSystem[]
   );
 }
 
-function SectionBlock({ section, items, userId, onChange }: { section: SystemSection; items: ScheduleItem[]; userId?: string | null; onChange: () => void }) {
+function SectionBlock({ section, items, userId, onChange, onToggleItem }: { section: SystemSection; items: ScheduleItem[]; userId?: string | null; onChange: () => void; onToggleItem: (item: ScheduleItem) => void }) {
   const Icon = SECTION_ICON[section];
   const meta = SECTION_META[section];
   const [adding, setAdding] = useState(false);
@@ -315,7 +390,7 @@ function SectionBlock({ section, items, userId, onChange }: { section: SystemSec
             item={it}
             userId={userId}
             done={isDoneToday(it.id, userId)}
-            onToggle={() => { toggleDoneToday(it.id, userId); onChange(); }}
+            onToggle={() => onToggleItem(it)}
             onRemove={() => { removeScheduleItem(it.id); onChange(); }}
           />
         ))}
@@ -324,28 +399,25 @@ function SectionBlock({ section, items, userId, onChange }: { section: SystemSec
   );
 }
 
-function Row({ item, userId, done, onToggle, onRemove }: { item: ScheduleItem; userId?: string | null; done: boolean; onToggle: () => void; onRemove: () => void }) {
+function Row({ item, done, onToggle, onRemove }: { item: ScheduleItem; userId?: string | null; done: boolean; onToggle: () => void; onRemove: () => void }) {
   const time = formatTime(item.time);
   const days = daysLabel(item.days);
   const meta = [time, days].filter(Boolean).join(" · ");
   const avoid = item.section === "avoid";
-  const target = avoid ? 0 : weeklyTarget(item);
-  const weekDone = avoid ? 0 : Math.min(weeklyDoneCount(item.id, userId), target);
-  const complete = !avoid && weekDone >= target;
+  // What this action strengthens (e.g. "+8 Body") — the upgrade, not a counter.
+  const attr = attributeLabel(attributeForItem(item));
+  const points = pointsForItem(item);
 
   return (
-    <div className={`group flex items-start gap-2.5 rounded-2xl border bg-surface px-3.5 py-2.5 shadow-card transition ${avoid ? "border-danger-soft" : "border-glass-border"} ${complete ? "opacity-60" : ""}`}>
+    <div className={`group flex items-start gap-2.5 rounded-2xl border bg-surface px-3.5 py-2.5 shadow-card transition ${avoid ? "border-danger-soft" : "border-glass-border"} ${done ? "opacity-60" : ""}`}>
       {avoid && <Ban size={15} className="mt-0.5 shrink-0 text-danger" aria-hidden="true" />}
       <div className="min-w-0 flex-1">
-        <p className={`text-sm font-medium ${complete ? "text-text-muted line-through" : "text-text-primary"}`}>{item.title}</p>
+        <p className={`text-sm font-medium ${done ? "text-text-muted line-through" : "text-text-primary"}`}>{item.title}</p>
         {item.detail && <p className="mt-0.5 text-xs leading-snug text-text-secondary">{item.detail}</p>}
-        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-          {meta}
-          {meta && !avoid ? " · " : ""}
+        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
+          {meta && <span>{meta}</span>}
           {!avoid && (
-            <span className={complete ? "font-bold text-success" : "font-bold text-text-secondary"}>
-              {weekDone}/{target} this week
-            </span>
+            <span className="font-bold text-accent">+{points} {attr}</span>
           )}
         </p>
       </div>

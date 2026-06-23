@@ -12,7 +12,8 @@ import { useNavigate } from "react-router-dom";
 import { ScoreRing } from "./ScoreRing";
 import { cleanPlanTitle } from "../lib/local-northstar";
 import { hasSchedule } from "../lib/local-schedule";
-import { getSystemGoal, systemProgressWeek } from "../lib/local-systems";
+import { getSystemGoal } from "../lib/local-systems";
+import { systemHealth } from "../lib/local-system-health";
 import { useStorageUserId } from "../lib/storage-user-id";
 
 export function NorthStarCard() {
@@ -24,7 +25,7 @@ export function NorthStarCard() {
 
   function refresh() {
     setGoal(getSystemGoal(userId));
-    setPct(systemProgressWeek(userId).overall.pct);
+    setPct(systemHealth(userId).overall);
     setHasSys(hasSchedule());
   }
 
@@ -82,7 +83,7 @@ export function NorthStarCard() {
         {goal ? cleanPlanTitle(goal) : "Build my plan"}
       </p>
       <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-        {hasSys ? `${pct}% this week` : "Tap to build"}
+        {hasSys ? `${pct}% system health` : "Tap to build"}
       </p>
     </button>
   );

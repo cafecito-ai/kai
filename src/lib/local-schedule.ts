@@ -85,7 +85,11 @@ function migrate(i: Record<string, unknown>): ScheduleItem {
     detail: typeof i.detail === "string" ? i.detail.slice(0, 100) : "",
     days: Array.isArray(i.days) ? i.days.filter((d): d is number => typeof d === "number" && d >= 0 && d <= 6) : [],
     time: typeof i.time === "string" && /^\d{1,2}:\d{2}$/.test(i.time) ? i.time : null,
-    createdAt: typeof i.createdAt === "string" ? i.createdAt : new Date().toISOString(),
+    // Legacy items predate this field. Default to epoch (a stable "existed long
+    // ago"), NOT new Date() — a transient "now" on every read would make
+    // System Health treat old items as brand-new and reset daily. Genuinely new
+    // items get a real createdAt persisted by normalize() on write.
+    createdAt: typeof i.createdAt === "string" ? i.createdAt : new Date(0).toISOString(),
   };
 }
 

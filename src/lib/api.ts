@@ -458,6 +458,30 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ responses })
     }),
+  // Voice-first onboarding (v2): one conversational turn. Returns Kai's next
+  // line + a background profile-extraction delta. Safety runs server-side first.
+  onboardingConverse: (body: {
+    transcript: Array<{ role: "kai" | "user"; text: string }>;
+    latestUserMessage: string;
+    stepId?: string;
+  }) =>
+    request<{
+      safety: { safe: boolean; response?: string };
+      kaiLine: string;
+      done: boolean;
+      delta: {
+        firstName?: string | null;
+        primaryGoal?: string | null;
+        focusAreas?: string[];
+        motivation?: string | null;
+        emotionalMotivation?: string | null;
+        timeframe?: string | null;
+        tone?: KaiTone | null;
+        blocker?: string | null;
+        identityStatement?: string | null;
+        originStory?: string | null;
+      };
+    }>("/api/onboarding/converse", { method: "POST", body: JSON.stringify(body) }),
   logProgress: (body: Omit<ProgressEvent, "id" | "occurredAt">) =>
     request<{ event: ProgressEvent }>("/api/progress/event", { method: "POST", body: JSON.stringify(body) }),
   getProgress: () => request<{ eventsByDay: ProgressEvent[]; level: number; streaks: unknown; belts: unknown }>("/api/progress"),

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { api } from "../../lib/api";
+import { isOnboardingV2Enabled } from "../../lib/onboarding/flag";
 import { useUserStore } from "../../stores/userStore";
 import { RequireAuth } from "./RequireAuth";
 
@@ -36,7 +37,7 @@ export function RequireOnboarding({ children }: { children: React.ReactNode }) {
 
   return (
     <RequireAuth>
-      {loading ? <LoadingShell /> : failed || onboardingCompletedAt ? children : <Navigate to="/onboarding" replace state={{ from: location.pathname }} />}
+      {loading ? <LoadingShell /> : failed || onboardingCompletedAt ? children : <Navigate to={isOnboardingV2Enabled() ? "/onboarding-v2" : "/onboarding"} replace state={{ from: location.pathname }} />}
     </RequireAuth>
   );
 }

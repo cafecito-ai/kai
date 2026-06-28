@@ -45,6 +45,7 @@ import { GuidePage } from "./pages/GuidePage";
 import { Home } from "./pages/Home";
 import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
+import { OnboardingV2 } from "./pages/onboarding-v2/OnboardingV2";
 import { PreviewFlower } from "./pages/PreviewFlower";
 import { Vault } from "./pages/Vault";
 import { AboutYou } from "./pages/AboutYou";
@@ -124,6 +125,10 @@ export default function App({ authEnabled = true }: { authEnabled?: boolean }) {
             }
           />
           <Route path="/onboarding" element={protectedAuth(<Onboarding />)} />
+          {/* v2 voice-first onboarding — flag-gated (see isOnboardingV2Enabled).
+              Reachable directly for staging/Lev review; RequireOnboarding routes
+              new users here only when the flag is on. */}
+          <Route path="/onboarding-v2" element={protectedAuth(<OnboardingV2 />)} />
           <Route path="/welcome" element={protectedOnboarding(<Welcome />)} />
           <Route path="/home" element={protectedOnboarding(<HomeOrComeback />)} />
           <Route path="/comeback" element={protectedOnboarding(<Comeback />)} />

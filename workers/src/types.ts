@@ -20,6 +20,7 @@ export interface Env {
   ANTHROPIC_MODEL_MENTAL?: string;
   ANTHROPIC_MODEL_PHYSICAL?: string;
   ANTHROPIC_MODEL_HIGH_STAKES?: string;
+  ANTHROPIC_MODEL_ONBOARDING?: string;
   AI_TEXT_MODEL?: string;
   AI_VISION_MODEL?: string;
   APP_ENV?: "staging" | "production" | "development";

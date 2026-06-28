@@ -1,9 +1,13 @@
 // Browser-native speech layer for the voice-first onboarding.
 //
 // Wraps SpeechRecognition (speech -> text) and SpeechSynthesis (Kai speaks).
-// AUDIO STAYS ON THE DEVICE — only the final transcript text is handed to the
-// caller (and from there to the backend). How the voice *sounds* is explicitly
-// low-priority; the typed fallback is a first-class path, not an afterthought,
+// Only the final transcript TEXT is handed to the caller (and from there to the
+// backend) — we never upload audio ourselves. Note: some browsers (e.g. Chrome)
+// implement SpeechRecognition with a server-side engine, so the browser itself
+// may send audio to its own speech service; that's outside this code's control,
+// which is why the UI copy promises only "Kai receives the words", not on-device
+// audio. How the voice *sounds* is explicitly low-priority; the typed fallback
+// is a first-class path, not an afterthought,
 // so onboarding works fully even where SpeechRecognition is missing
 // (notably iOS Safari) or the mic is denied.
 

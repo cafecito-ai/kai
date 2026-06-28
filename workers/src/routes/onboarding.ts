@@ -18,6 +18,7 @@
 import { Hono } from "hono";
 import { callClaude, selectChatModel } from "../lib/claude";
 import { extractJsonObject } from "../lib/json-utils";
+import { rateLimit, rateLimitedResponse } from "../lib/rate-limit";
 import { classifySafetyFull, logSafetyEvent } from "../lib/safety";
 import type { AppVariables, Env } from "../types";
 
@@ -29,6 +30,11 @@ type Turn = { role: Role; text: string };
 const VALID_TONES = new Set(["warm", "balanced", "direct"]);
 const MAX_TRANSCRIPT_TURNS = 12;
 const MAX_MSG_LEN = 800;
+// The conversational prompt is capped at MAX_MSG_LEN, but the safety classifier
+// must see the WHOLE message (a crisis line can sit past the first 800 chars);
+// this larger bound just protects the classifier from a pathological payload.
+const MAX_SAFETY_LEN = 4000;
+const ONBOARDING_RATE_LIMIT = { route: "onboarding", limit: 40, periodSeconds: 60 } as const;
 
 // Kai's voice for onboarding: the trusted older-sibling/coach meeting someone
 // for the first time. Warm, real, curious — never a form, never a product pitch.
@@ -147,22 +153,29 @@ onboardingRoutes.post("/onboarding/converse", async (c) => {
   const body = await c.req
     .json<{ transcript?: unknown; latestUserMessage?: string; stepId?: string }>()
     .catch(() => ({}) as { transcript?: unknown; latestUserMessage?: string; stepId?: string });
-  const latest = (body.latestUserMessage ?? "").trim().slice(0, MAX_MSG_LEN);
-  if (!latest) {
+  // Keep the FULL message for the safety classifier; only the conversational
+  // prompt is truncated (see `latest` below).
+  const rawLatest = (body.latestUserMessage ?? "").trim().slice(0, MAX_SAFETY_LEN);
+  if (!rawLatest) {
     return c.json({ safety: { safe: true }, kaiLine: "", done: false, delta: EMPTY_DELTA }, 400);
   }
 
-  // 1) Safety always runs first and always wins (CLAUDE.md §6). On a crisis
-  //    disclosure we never call the conversational model — we hand off to 988
-  //    and tell the client to stop normal onboarding.
-  const safety = await classifySafetyFull(c.env, latest);
+  // Per-user rate limit before any model call, matching the chat/journal routes
+  // (a scripted client must not be able to spend unbounded Anthropic budget).
+  const userId = c.get("userId");
+  const limit = await rateLimit(c.env, userId, ONBOARDING_RATE_LIMIT);
+  if (!limit.allowed) return rateLimitedResponse(limit, ONBOARDING_RATE_LIMIT);
+
+  // 1) Safety always runs first and always wins (CLAUDE.md §6), on the FULL
+  //    message. On a crisis disclosure we never call the conversational model —
+  //    we hand off to 988 and tell the client to stop normal onboarding.
+  const safety = await classifySafetyFull(c.env, rawLatest);
   if (!safety.safe) {
-    const userId = c.get("userId");
     if (userId) {
       // Fire-and-forget — logging must never block or fail the response. Start
       // the promise regardless; attach it to waitUntil when an execution context
       // exists (c.executionCtx throws when there isn't one, e.g. in tests).
-      const logging = logSafetyEvent(c.env, { userId, rawText: latest, classification: safety }).catch(() => {});
+      const logging = logSafetyEvent(c.env, { userId, rawText: rawLatest, classification: safety }).catch(() => {});
       try {
         c.executionCtx.waitUntil(logging);
       } catch {
@@ -177,7 +190,9 @@ onboardingRoutes.post("/onboarding/converse", async (c) => {
     });
   }
 
-  // 2) Conversational turn + extraction (one Sonnet call, two outputs).
+  // 2) Conversational turn + extraction (one Sonnet call, two outputs). The
+  //    prompt only needs the truncated message; safety already saw the full one.
+  const latest = rawLatest.slice(0, MAX_MSG_LEN);
   const transcript = normalizeTranscript(body.transcript);
   const messages = transcript.map((t) => ({
     role: t.role === "kai" ? ("assistant" as const) : ("user" as const),

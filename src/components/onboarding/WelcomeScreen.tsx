@@ -51,7 +51,7 @@ export function WelcomeScreen({
                 I'd rather type
               </button>
               <p className="px-4 text-xs leading-relaxed text-text-muted">
-                Talking uses your mic — your voice stays on your device, only the words come through.
+                Talking uses your mic — Kai only ever receives the words you say, never a recording.
               </p>
             </>
           ) : (

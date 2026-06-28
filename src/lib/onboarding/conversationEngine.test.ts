@@ -91,6 +91,25 @@ describe("isComplete", () => {
   });
 });
 
+describe("offline / extraction-unavailable", () => {
+  it("captures answers locally and still finishes when the backend never extracts", () => {
+    // Simulate the backend being down: every kaiResponse has an empty line and
+    // no delta (the engine falls back to scripted lines). The user answers each
+    // scripted step; local capture should fill the draft and the flow must end.
+    const answers = ["I'm Leo", "been feeling stuck", "captain of the team, fitter", "to prove it to myself", "I always quit"];
+    let s = reducer(createInitialState("typed"), { type: "begin" });
+    for (const text of answers) {
+      s = reducer(s, { type: "userMessage", text, ts: 1 });
+      s = reducer(s, { type: "kaiResponse", kaiLine: "", ts: 2 }); // backend gave nothing
+      if (s.readyForPlan) break;
+    }
+    expect(s.readyForPlan).toBe(true);
+    expect(s.draft.firstName).toBe("Leo");
+    expect(s.draft.primaryGoal).toBe("captain of the team, fitter");
+    expect(s.draft.motivation).toBe("been feeling stuck");
+  });
+});
+
 describe("turn cap", () => {
   it("treats the step list as exhausted at MAX_TURNS", () => {
     let s = withDraft(createInitialState("voice"), {

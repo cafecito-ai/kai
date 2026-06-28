@@ -1,21 +1,26 @@
-// SEAM ONLY (PR 1). The full "Kai walks you through the app" guided tour is an
-// explicit follow-up PR. This stub keeps the onboarding flow's shape — the
-// "want a quick tour?" branch and the OnboardingComplete handoff — so the tour
-// PR can drop in here without touching the conversation engine or persistence.
-//
-// While TOUR_ENABLED is false, this immediately completes (users already learned
-// what Kai does through the conversation, so skipping costs them nothing).
+// The optional guided tour (PR 3). Offers the tour, then runs it — or, if the
+// user skips (or the flag is off), completes immediately. Because the
+// conversation already taught them what Kai does, skipping is a first-class,
+// no-cost choice.
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { GuidedTour } from "./GuidedTour";
+import { TourChoice } from "./TourChoice";
 
-export const TOUR_ENABLED = false;
+export const TOUR_ENABLED = true;
 
 export function OptionalGuidedTour({ onComplete }: { onComplete: () => void }) {
+  const [stage, setStage] = useState<"choice" | "touring">("choice");
+
+  // When disabled, behave like the old stub seam — straight through.
   useEffect(() => {
-    // TODO(follow-up PR): render the "Yes, show me around" / "I'll figure it out"
-    // choice and the Apple-keynote-style guided walkthrough. For now, no-op.
-    onComplete();
+    if (!TOUR_ENABLED) onComplete();
   }, [onComplete]);
 
-  return null;
+  if (!TOUR_ENABLED) return null;
+
+  if (stage === "choice") {
+    return <TourChoice onYes={() => setStage("touring")} onSkip={onComplete} />;
+  }
+  return <GuidedTour onComplete={onComplete} />;
 }

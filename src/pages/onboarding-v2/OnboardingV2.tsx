@@ -67,6 +67,7 @@ export function OnboardingV2() {
           <PlanGenerationSequence
             draft={state.draft}
             userId={userId}
+            variant="cinematic"
             onDone={() => setPlanStage("tour")}
           />
         );

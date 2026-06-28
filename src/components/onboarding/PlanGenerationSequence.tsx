@@ -13,18 +13,19 @@ import { persistProfile, realDeps } from "../../lib/onboarding/profileBuilder";
 import type { ProfileDraft } from "../../lib/onboarding/types";
 import { useUserStore } from "../../stores/userStore";
 import { KaiOrb } from "../KaiOrb";
-import { MagicEffect } from "../MagicEffect";
 import { MagicField } from "../MagicField";
+import { CinematicGeneration } from "./CinematicGeneration";
 
 const STEPS = [
   "Understanding you…",
-  "Learning what drives you…",
+  "Learning your habits…",
   "Building your personalized system…",
   "Designing your daily plan…",
+  "Creating your AI coach…",
   "Personalizing Kai…",
 ];
 
-const STEP_MS = 1100;
+const STEP_MS = 1050;
 
 export function PlanGenerationSequence({
   draft,
@@ -80,13 +81,16 @@ export function PlanGenerationSequence({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (variant === "cinematic") {
+    return <CinematicGeneration stepIndex={stepIndex} steps={STEPS} />;
+  }
+
   return (
     <div className="relative mx-auto flex h-[100vh] w-full max-w-md flex-col items-center justify-center overflow-hidden px-6 sm:max-w-lg">
       <MagicField />
       <div className="relative z-10 flex flex-col items-center text-center">
         <div className="relative">
           <KaiOrb size={132} animate />
-          {variant === "cinematic" && <MagicEffect kind="converge" triggerKey={stepIndex} />}
         </div>
         <p
           key={stepIndex}

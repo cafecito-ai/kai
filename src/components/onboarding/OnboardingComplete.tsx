@@ -21,10 +21,10 @@ export function OnboardingComplete({
           <MagicEffect kind="heart" triggerKey={1} />
         </div>
         <h1 className="mt-6 font-display text-3xl font-semibold text-text-primary animate-fade-slide-up">
-          {displayName ? `You're all set, ${displayName}.` : "You're all set."}
+          Your Personal AI Coach is Ready
         </h1>
         <p className="mt-3 max-w-[20rem] text-base leading-relaxed text-text-secondary">
-          Your coach is ready. Let's get to work.
+          {displayName ? `Built around you, ${displayName}. Let's get to work.` : "Built around you. Let's get to work."}
         </p>
         <button
           type="button"

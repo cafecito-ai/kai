@@ -1,540 +1,343 @@
-// /schedule — the teen's lifestyle SYSTEM, built by KAI around their goal.
+// /schedule — your SYSTEM, built by KAI around your main goal.
 //
-// A reference + daily checklist: daily habits, workouts, sleep, routines,
-// mindset, and things to avoid, all tied to the goal. Check items off as you
-// do them (resets daily) and a per-category progress meter fills at the top.
-// Save the current system and swipe between saved ones; "Make main" picks the
-// one the tab shows. Fully editable here or by telling KAI in chat.
+// One main goal pinned at the top. KAI breaks it into 2-4 named SUB-SYSTEMS
+// (component skills), each with concrete how-to habits and its own weekly fill
+// meter. Swipe between them with the side arrows. The "This week" score (X of Y
+// done) is the one clear System number and mirrors the Home "My Plan" ring. No
+// clock.
+//
+// You don't add sub-systems here: change your main goal in Settings (regenerates
+// the set), or ask KAI in chat to add or drop one.
 
-import {
-  ArrowLeft, Ban, Brain, CheckCircle2, Circle, Dumbbell, ListChecks, Moon, Plus, Save, Sparkles, Star, Sunrise, Trash2, X,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Circle, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { api } from "../lib/api";
-import { parseLocalDate } from "../lib/dates";
-import { getHeroImage } from "../lib/local-identity";
-import {
-  goalProgress,
-  goalSignature,
-  loadCachedTimeline,
-  saveCachedTimeline,
-  systemSummary,
-  type GoalProgress,
-} from "../lib/local-goal";
+import { KaiOrb } from "../components/KaiOrb";
 import { cleanPlanTitle } from "../lib/local-northstar";
+import { daysLabel, formatTime, type ScheduleItem } from "../lib/local-schedule";
+import { getSystemGoal, isDoneToday, toggleDoneToday } from "../lib/local-systems";
 import {
-  SECTION_META,
-  addManualItem,
-  daysLabel,
-  formatTime,
-  getScheduleBySection,
-  hasSchedule,
-  removeScheduleItem,
-  setSchedule,
-  type ScheduleItem,
-  type SystemSection,
-} from "../lib/local-schedule";
-import {
-  deleteSystem,
-  getSystemGoal,
-  isDoneToday,
-  isMainSystem,
-  listSystems,
-  makeMain,
-  saveCurrentAsSystem,
-  setSystemGoal,
-  toggleDoneToday,
-  type SavedSystem,
-} from "../lib/local-systems";
-import {
-  attributeForItem,
-  attributeLabel,
-  pointsForItem,
-  systemHealth,
-  type AttributeKey,
-} from "../lib/local-system-health";
+  allSubSystemsProgressWeek,
+  getSubSystems,
+  hasSubSystemsForGoal,
+  normGoal,
+  setSubSystems,
+  subSystemProgressWeek,
+  type SubSystem,
+} from "../lib/local-subsystems";
+import { generateSubSystemsAI, templateSubSystems } from "../lib/subsystem-gen";
 import { useStorageUserId } from "../lib/storage-user-id";
-
-const SECTION_ICON: Record<SystemSection, typeof Dumbbell> = {
-  daily: ListChecks,
-  training: Dumbbell,
-  sleep: Moon,
-  routine: Sunrise,
-  mindset: Brain,
-  avoid: Ban,
-};
-const SECTION_TINT: Record<SystemSection, string> = {
-  daily: "bg-success-soft text-success",
-  training: "bg-accent-warm-soft text-accent-warm",
-  sleep: "bg-accent-soft text-accent",
-  routine: "bg-accent-cool-soft text-accent-cool",
-  mindset: "bg-accent-soft text-accent",
-  avoid: "bg-danger-soft text-danger",
-};
 
 export function Schedule() {
   const userId = useStorageUserId();
   const navigate = useNavigate();
   const [bump, setBump] = useState(0);
-  const [draft, setDraft] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // Reward feedback when an action is completed: "+8 BODY / SYSTEM HEALTH 74→76".
-  const [reward, setReward] = useState<
-    { points: number; attr: AttributeKey; attrLabel: string; before: number; after: number } | null
-  >(null);
-
+  const [active, setActive] = useState(0);
+  const [building, setBuilding] = useState(false);
+  const [logged, setLogged] = useState(false);
+  const genFor = useRef<string | null>(null);
+  const touchX = useRef(0);
   const refresh = () => setBump((b) => b + 1);
+  void bump;
 
-  // Completing an action strengthens the System. Capture health before/after so
-  // the toast can show the bump; only celebrate on a fresh completion (not an
-  // un-check). Toggling itself lives in local-systems.
-  function handleToggle(item: ScheduleItem) {
-    const wasDone = isDoneToday(item.id, userId);
-    const before = systemHealth(userId).overall;
-    toggleDoneToday(item.id, userId);
-    refresh();
-    if (!wasDone) {
-      const after = systemHealth(userId).overall;
-      setReward({
-        points: pointsForItem(item),
-        attr: attributeForItem(item),
-        attrLabel: attributeLabel(attributeForItem(item)),
-        before,
-        after,
-      });
-    }
-  }
+  const goal = getSystemGoal(userId);
+  const systems = getSubSystems(userId);
+  const week = allSubSystemsProgressWeek(userId);
 
-  // Auto-dismiss the reward toast.
+  // Build sub-systems when we have a goal but none for it yet. We show a
+  // "KAI is making your system" loading state the whole time and NEVER flash a
+  // generic placeholder: try the live AI first (bounded), and only when it fails
+  // fall back to the goal-matched template. Runs lazily on mount and again when
+  // the goal changes (mismatch makes hasSubSystemsForGoal false).
   useEffect(() => {
-    if (!reward) return;
-    const t = setTimeout(() => setReward(null), 2600);
-    return () => clearTimeout(t);
-  }, [reward]);
+    if (!goal) return;
+    if (hasSubSystemsForGoal(goal, userId)) return;
+    if (genFor.current === normGoal(goal)) return;
+    genFor.current = normGoal(goal);
+    setBuilding(true);
+    generateSubSystemsAI(goal)
+      .then((ai) => {
+        if (genFor.current !== normGoal(goal)) return;
+        const result = ai && ai.length >= 2 ? ai : templateSubSystems(goal);
+        setSubSystems(goal, result, userId);
+        setActive(0);
+      })
+      .catch(() => {
+        if (genFor.current === normGoal(goal)) {
+          setSubSystems(goal, templateSubSystems(goal), userId);
+          setActive(0);
+        }
+      })
+      .finally(() => setBuilding(false));
+  }, [goal, userId]);
+
   useEffect(() => {
     const on = () => refresh();
     window.addEventListener("kai:state-changed", on);
     return () => window.removeEventListener("kai:state-changed", on);
   }, []);
 
-  const goal = getSystemGoal(userId);
-  const sections = getScheduleBySection();
-  const systems = listSystems(userId);
-  const empty = !hasSchedule();
-  void bump;
+  useEffect(() => {
+    if (!logged) return;
+    const t = setTimeout(() => setLogged(false), 1200);
+    return () => clearTimeout(t);
+  }, [logged]);
 
-  // Building from the box makes a fresh MAIN system, titled by what you typed.
-  // (Save the current one first if you want to keep it.)
-  async function build() {
-    if (busy) return;
-    const prompt = draft.trim();
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await api.scheduleGenerate(prompt, (prompt || goal) ?? undefined);
-      if (res.items.length === 0) {
-        setError("Couldn't build that. Try describing it a bit more, or set a goal first.");
-      } else {
-        setSchedule(res.items);
-        if (prompt) setSystemGoal(prompt, userId);
-        setDraft("");
-        refresh();
-      }
-    } catch {
-      setError("Couldn't reach KAI just now. Try again in a sec.");
-    } finally {
-      setBusy(false);
-    }
+  const safeActive = Math.min(active, Math.max(0, systems.length - 1));
+
+  function handleToggle(item: ScheduleItem) {
+    const wasDone = isDoneToday(item.id, userId);
+    toggleDoneToday(item.id, userId);
+    if (!wasDone) setLogged(true);
+    refresh();
   }
 
-  function save() {
-    if (saveCurrentAsSystem(userId)) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1800);
-      refresh();
-    }
+  function go(dir: -1 | 1) {
+    setActive((a) => Math.max(0, Math.min(systems.length - 1, a + dir)));
   }
+
+  const title = goal ? cleanPlanTitle(goal) : "Your system";
+  const showRaw = goal && cleanPlanTitle(goal).toLowerCase() !== goal.trim().toLowerCase();
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6 px-5 pt-2 pb-28 sm:max-w-lg">
+    <div className="mx-auto w-full max-w-md px-5 pt-2 pb-28 sm:max-w-lg">
       <header className="flex items-center justify-between pb-1">
-        <Link to="/home" aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface-muted focus-ring">
+        <Link
+          to="/home"
+          aria-label="Back"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface-muted focus-ring"
+        >
           <ArrowLeft size={18} aria-hidden="true" />
         </Link>
-        <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">my plan</p>
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">my system</p>
         <div className="h-10 w-10" aria-hidden="true" />
       </header>
 
-      <div>
-        <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight">
-          {goal ? cleanPlanTitle(goal) : "My Plan"}
-        </h1>
-        {goal && cleanPlanTitle(goal).toLowerCase() !== goal.trim().toLowerCase() && (
-          <p className="mt-1 text-sm italic text-text-secondary">“{goal}”</p>
-        )}
-        <p className="mt-2 text-sm text-text-secondary">
-          Your blueprint: habits, training, sleep, routines, mindset, and what to avoid —
-          each piece here for a reason. Check things off as you go. Change anything any time,
-          here or just by telling KAI.
-        </p>
-      </div>
-
-      {/* Goal as destination — the visual target, AI timeline, and progress. */}
-      {!empty && goal && <GoalDestination goal={goal} userId={userId} bump={bump} />}
-
-      {/* System Health — the four attributes you strengthen by showing up. */}
-      {!empty && <SystemHealthPanel userId={userId} bump={bump} />}
-
-      {/* Build / extend / save */}
-      <div className="rounded-glass border border-glass-border bg-surface p-4 shadow-card">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
-          {empty ? "Build your system" : "Build a new system"}
-        </p>
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value.slice(0, 200))}
-          rows={2}
-          placeholder={empty ? 'e.g. "be happier" or "get stronger"' : 'e.g. "Sunday meal prep" or "get stronger"'}
-          className="mt-2 w-full resize-none rounded-lg border border-glass-border bg-background px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus-ring"
-        />
-        {error && <p className="mt-2 text-xs text-warning">{error}</p>}
-        <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            onClick={build}
-            disabled={busy || (!draft.trim() && !goal && empty)}
-            className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-text-primary text-sm font-medium text-background transition active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-text-soft focus-ring"
-          >
-            {busy ? "Building…" : empty ? (<><Sparkles size={15} /> Build my system</>) : (<><Sparkles size={15} /> New system</>)}
-          </button>
-          {!empty && (
-            <button type="button" onClick={save} className="flex h-10 items-center justify-center gap-1.5 rounded-full border border-glass-border bg-surface px-4 text-sm font-medium text-text-primary transition hover:bg-surface-muted focus-ring">
-              {saved ? <><CheckCircle2 size={15} className="text-success" /> Saved</> : <><Save size={15} /> Save</>}
-            </button>
-          )}
-        </div>
-        <p className="mt-2 text-xs text-text-muted">
-          {empty
-            ? (goal ? "Build the whole system around your goal, or type a different focus." : "Type a focus, or set a goal on Home first.")
-            : "Building makes a new main system. Save the current one first to keep it."}
-        </p>
-      </div>
-
-      {/* Saved systems — swipe through, make one main */}
-      {systems.length > 0 && <SavedSystemsRow systems={systems} userId={userId} onChange={refresh} />}
-
-      {empty ? (
-        <div className="rounded-glass border border-dashed border-glass-border bg-surface/60 p-8 text-center">
-          <Sparkles size={26} className="mx-auto text-text-muted" aria-hidden="true" />
-          <p className="mt-3 text-sm font-medium text-text-primary">No system yet</p>
-          <p className="mt-1 text-xs text-text-secondary">Build one above, or tell KAI in chat what you're going for.</p>
-          <button type="button" onClick={() => navigate("/chat")} className="mt-4 text-sm font-medium text-accent underline-offset-4 hover:underline">Talk to KAI</button>
-        </div>
-      ) : (
-        <>
-          {sections.map(({ section, items }) => (
-            <SectionBlock key={section} section={section} items={items} userId={userId} onChange={refresh} onToggleItem={handleToggle} />
-          ))}
-        </>
-      )}
-
-      {reward && <RewardToast reward={reward} />}
-    </div>
-  );
-}
-
-// The rewarding feedback when an action is completed — "+8 BODY / SYSTEM HEALTH
-// 74 → 76". Replaces the plain checkmark with a sense of upgrading yourself.
-function RewardToast({
-  reward,
-}: {
-  reward: { points: number; attr: AttributeKey; attrLabel: string; before: number; after: number };
-}) {
-  const climbed = reward.after > reward.before;
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center px-6">
-      <div className="animate-celebrate-chip rounded-glass border border-accent-soft bg-surface px-5 py-3 text-center shadow-card-lg">
-        <p className="font-mono text-sm font-bold uppercase tracking-[0.12em] text-accent">
-          +{reward.points} {reward.attrLabel}
-        </p>
-        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
-          {climbed ? "System health increased" : "System strengthened"}
-        </p>
-        <p className="mt-0.5 font-mono text-sm font-semibold text-text-primary">
-          {`${reward.before}% → ${reward.after}%`}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Goal as destination — the visual target with the AI-estimated timeline and
-// consistency-driven progress. The System (above/below) is the vehicle.
-function GoalDestination({ goal, userId, bump }: { goal: string; userId?: string | null; bump: number }) {
-  const hero = getHeroImage();
-  const sig = goalSignature(goal);
-  const [progress, setProgress] = useState<GoalProgress | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  // Fetch the AI timeline once per goal/system (cached); refetch only when the
-  // goal or system actually changes (sig), never on a check-off.
-  useEffect(() => {
-    let cancelled = false;
-    if (!goal) return;
-    if (loadCachedTimeline(goal, userId)) return; // already have an estimate
-    setLoading(true);
-    api
-      .estimateGoalTimeline(goal, systemSummary())
-      .then((res) => {
-        if (!cancelled && res.estimate) saveCachedTimeline(goal, res.estimate, userId);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-          setProgress(goalProgress(goal, new Date(), userId));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sig, goal, userId]);
-
-  // Recompute progress (consistency-driven) whenever check-offs change.
-  useEffect(() => {
-    setProgress(goalProgress(goal, new Date(), userId));
-  }, [bump, sig, goal, userId]);
-
-  const finish = progress ? parseLocalDate(progress.projectedFinishISO) : null;
-  const finishLabel = finish
-    ? finish.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-    : null;
-
-  return (
-    <div className="overflow-hidden rounded-glass border border-glass-border shadow-card-lg">
-      {hero?.dataUrl ? (
-        <img
-          src={hero.dataUrl}
-          alt=""
-          style={{ objectPosition: hero.position }}
-          className="h-36 w-full object-cover"
-        />
-      ) : (
-        <div className="h-20 w-full bg-gradient-to-br from-accent/30 via-surface to-background" />
-      )}
-      <div className="p-4">
+      {/* MAIN GOAL — pinned at the top while you swipe through sub-systems. */}
+      <div className="sticky top-0 z-10 -mx-5 border-b border-glass-border/60 bg-background/85 px-5 pb-3 pt-2 backdrop-blur">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">Your goal</p>
-        <h2 className="mt-0.5 font-display text-xl font-semibold leading-tight tracking-tight text-text-primary">
-          {cleanPlanTitle(goal)}
-        </h2>
-
-        {progress ? (
-          <div className="mt-3">
-            <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
-              <div
-                className="h-full rounded-full bg-accent transition-all duration-500"
-                style={{ width: `${progress.pct}%` }}
-              />
-            </div>
-            <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
-              {progress.pct}% there
-              {finishLabel ? ` · on this pace, ${finishLabel}` : ""}
-            </p>
-            {progress.rationale && (
-              <p className="mt-1 text-xs leading-snug text-text-secondary">{progress.rationale}</p>
-            )}
-          </div>
-        ) : loading ? (
-          <p className="mt-3 text-xs text-text-muted">Mapping out your timeline…</p>
-        ) : null}
+        <h1 className="mt-0.5 font-display text-3xl font-semibold leading-tight tracking-tight">{title}</h1>
+        {showRaw && <p className="mt-0.5 text-sm italic text-text-secondary">“{goal}”</p>}
       </div>
+
+      {/* THIS WEEK — the one clear System score. Same number as the "My Plan"
+          ring on Home. Resets each week. */}
+      <div className="mt-4 rounded-glass border border-glass-border bg-surface px-4 py-3 shadow-card">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">This week</p>
+            <p className="text-xs text-text-secondary">
+              {week.total > 0 ? `${week.done} of ${week.total} done` : "Check off habits to fill your week"}
+            </p>
+          </div>
+          <p className="font-mono text-3xl font-bold leading-none text-text-primary">{week.pct}%</p>
+        </div>
+        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
+          <div
+            className="h-full rounded-full bg-accent transition-all duration-500"
+            style={{ width: `${week.pct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* SUB-SYSTEMS */}
+      <div className="mt-5">
+        {!goal ? (
+          <EmptyNoGoal onTalk={() => navigate("/chat")} />
+        ) : building || systems.length === 0 ? (
+          <BuildingState />
+        ) : (
+          <section
+            onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
+            onTouchEnd={(e) => {
+              const dx = e.changedTouches[0].clientX - touchX.current;
+              if (dx < -40) go(1);
+              if (dx > 40) go(-1);
+            }}
+          >
+            <div className="flex items-stretch gap-2">
+              <ArrowBtn dir="left" disabled={safeActive === 0} onClick={() => go(-1)} />
+              <div className="min-w-0 flex-1">
+                <SubSystemCard
+                  sys={systems[safeActive]}
+                  index={safeActive}
+                  total={systems.length}
+                  userId={userId}
+                  onToggle={handleToggle}
+                />
+              </div>
+              <ArrowBtn dir="right" disabled={safeActive === systems.length - 1} onClick={() => go(1)} />
+            </div>
+            {systems.length > 1 && (
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                {systems.map((s, i) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setActive(i)}
+                    aria-label={`Go to ${s.name}`}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === safeActive ? "w-5 bg-text-primary" : "w-1.5 bg-surface-muted"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-center text-xs text-text-muted">
+              Swipe between your systems. Ask KAI to add or drop one.
+            </p>
+          </section>
+        )}
+      </div>
+
+      {logged && <LoggedPill />}
     </div>
   );
 }
 
-// System Health — overall % + the four attributes you strengthen by showing up.
-// Each attribute is recent consistency (builds as you do the work, gently
-// decays if you stop). Replaces the old "X/Y this week" counters.
-const ATTR_BAR_TINT: Record<AttributeKey, string> = {
-  mental: "bg-mental",
-  body: "bg-physical",
-  discipline: "bg-goal",
-  recovery: "bg-sleep",
-};
+function ArrowBtn({ dir, disabled, onClick }: { dir: "left" | "right"; disabled: boolean; onClick: () => void }) {
+  const Icon = dir === "left" ? ChevronLeft : ChevronRight;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === "left" ? "Previous system" : "Next system"}
+      className="flex h-9 w-9 shrink-0 items-center justify-center self-center rounded-full border border-glass-border bg-surface text-text-secondary shadow-card transition hover:bg-surface-muted disabled:opacity-30 focus-ring"
+    >
+      <Icon size={18} aria-hidden="true" />
+    </button>
+  );
+}
 
-function SystemHealthPanel({ userId, bump }: { userId?: string | null; bump: number }) {
-  void bump; // re-render trigger (check-offs change health)
-  const { overall, attributes } = systemHealth(userId);
+function SubSystemCard({
+  sys,
+  index,
+  total,
+  userId,
+  onToggle,
+}: {
+  sys: SubSystem;
+  index: number;
+  total: number;
+  userId?: string | null;
+  onToggle: (item: ScheduleItem) => void;
+}) {
+  const prog = subSystemProgressWeek(sys, userId);
   return (
     <div className="rounded-glass border border-glass-border bg-surface p-5 shadow-card-lg">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">System health</p>
-          <p className="mt-1 text-sm text-text-secondary">Your system is getting stronger.</p>
-        </div>
-        <p className="font-mono text-3xl font-bold leading-none text-text-primary">{overall}%</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+          System {index + 1} of {total}
+        </p>
+        <p className="font-mono text-[11px] font-bold text-accent">
+          {prog.done}/{prog.total} this week
+        </p>
       </div>
-      <div className="mt-4 space-y-2.5">
-        {attributes.map((a) => (
-          <div key={a.key} className="flex items-center gap-3">
-            <p className="w-20 shrink-0 text-xs font-medium text-text-secondary">{a.label}</p>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
-              <div
-                className={`h-full rounded-full ${ATTR_BAR_TINT[a.key]} transition-all duration-500`}
-                style={{ width: `${a.value}%` }}
-              />
-            </div>
-            <p className="w-10 shrink-0 text-right font-mono text-[11px] font-bold text-text-primary">
-              {a.hasItems ? `${a.value}%` : "—"}
-            </p>
-          </div>
+      <h2 className="mt-1 font-display text-2xl font-semibold leading-tight tracking-tight text-text-primary">
+        {sys.name}
+      </h2>
+      {sys.blurb && <p className="mt-1 text-sm text-text-secondary">{sys.blurb}</p>}
+
+      {/* This sub-system's own weekly fill meter. */}
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-muted">
+        <div
+          className="h-full rounded-full bg-accent transition-all duration-500"
+          style={{ width: `${prog.pct}%` }}
+        />
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {sys.items.map((it) => (
+          <HabitRow key={it.id} item={it} done={isDoneToday(it.id, userId)} onToggle={() => onToggle(it)} />
         ))}
       </div>
     </div>
   );
 }
 
-function SavedSystemsRow({ systems, userId, onChange }: { systems: SavedSystem[]; userId?: string | null; onChange: () => void }) {
+function HabitRow({ item, done, onToggle }: { item: ScheduleItem; done: boolean; onToggle: () => void }) {
+  const meta = [formatTime(item.time), daysLabel(item.days)].filter(Boolean).join(" · ");
   return (
-    <section>
-      <p className="px-1 font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">Saved systems</p>
-      <div className="mt-2 flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
-        {systems.map((sys) => {
-          const main = isMainSystem(sys);
-          return (
-            <div key={sys.id} className="w-56 shrink-0 snap-start rounded-glass border border-glass-border bg-surface p-3 shadow-card">
-              <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 flex-1 truncate font-display text-sm font-semibold text-text-primary">{sys.goal}</p>
-                <div className="flex shrink-0 items-center gap-1">
-                  {main && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent">
-                      <Star size={9} /> Main
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => { deleteSystem(sys.id, userId); onChange(); }}
-                    aria-label={`Delete saved system "${sys.goal}"`}
-                    className="flex h-6 w-6 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-muted hover:text-danger focus-ring"
-                  >
-                    <Trash2 size={12} aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-text-muted">{sys.items.length} items</p>
-              <button
-                type="button"
-                disabled={main}
-                onClick={() => { makeMain(sys.id, userId); onChange(); }}
-                className="mt-3 flex h-8 w-full items-center justify-center rounded-full bg-text-primary text-xs font-medium text-background transition active:scale-[0.99] disabled:cursor-default disabled:bg-surface-muted disabled:text-text-muted focus-ring"
-              >
-                {main ? "Current" : "Make main"}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function SectionBlock({ section, items, userId, onChange, onToggleItem }: { section: SystemSection; items: ScheduleItem[]; userId?: string | null; onChange: () => void; onToggleItem: (item: ScheduleItem) => void }) {
-  const Icon = SECTION_ICON[section];
-  const meta = SECTION_META[section];
-  const [adding, setAdding] = useState(false);
-  const [text, setText] = useState("");
-
-  return (
-    <section>
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <span className={`flex h-7 w-7 items-center justify-center rounded-full ${SECTION_TINT[section]}`}>
-            <Icon size={14} aria-hidden="true" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold leading-tight text-text-primary">{meta.label}</p>
-            {/* Explain what this part of the plan is for. */}
-            <p className="text-[11px] leading-tight text-text-muted">{meta.blurb}</p>
-          </div>
-        </div>
-        <button type="button" onClick={() => setAdding((a) => !a)} aria-label={`Add to ${meta.label}`} className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-muted hover:text-text-primary focus-ring">
-          {adding ? <X size={14} /> : <Plus size={15} />}
-        </button>
-      </div>
-      {adding && (
-        <div className="mt-2 flex gap-2">
-          <input
-            autoFocus
-            value={text}
-            onChange={(e) => setText(e.target.value.slice(0, 60))}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && text.trim()) { addManualItem({ section, title: text.trim() }); setText(""); setAdding(false); onChange(); }
-            }}
-            placeholder={section === "avoid" ? "Something to avoid…" : "Add an item…"}
-            className="h-10 flex-1 rounded-lg border border-glass-border bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted focus-ring"
-          />
-          <button type="button" onClick={() => { if (text.trim()) { addManualItem({ section, title: text.trim() }); setText(""); setAdding(false); onChange(); } }} className="rounded-full bg-text-primary px-4 text-sm font-medium text-background focus-ring">Add</button>
-        </div>
-      )}
-      <div className="mt-2 space-y-2">
-        {items.map((it) => (
-          <Row
-            key={it.id}
-            item={it}
-            userId={userId}
-            done={isDoneToday(it.id, userId)}
-            onToggle={() => onToggleItem(it)}
-            onRemove={() => { removeScheduleItem(it.id); onChange(); }}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Row({ item, done, onToggle, onRemove }: { item: ScheduleItem; userId?: string | null; done: boolean; onToggle: () => void; onRemove: () => void }) {
-  const time = formatTime(item.time);
-  const days = daysLabel(item.days);
-  const meta = [time, days].filter(Boolean).join(" · ");
-  const avoid = item.section === "avoid";
-  // What this action strengthens (e.g. "+8 Body") — the upgrade, not a counter.
-  const attr = attributeLabel(attributeForItem(item));
-  const points = pointsForItem(item);
-
-  return (
-    <div className={`group flex items-start gap-2.5 rounded-2xl border bg-surface px-3.5 py-2.5 shadow-card transition ${avoid ? "border-danger-soft" : "border-glass-border"} ${done ? "opacity-60" : ""}`}>
-      {avoid && <Ban size={15} className="mt-0.5 shrink-0 text-danger" aria-hidden="true" />}
+    <div
+      className={`flex items-start gap-2.5 rounded-2xl border border-glass-border bg-background px-3.5 py-2.5 transition ${
+        done ? "opacity-60" : ""
+      }`}
+    >
       <div className="min-w-0 flex-1">
-        <p className={`text-sm font-medium ${done ? "text-text-muted line-through" : "text-text-primary"}`}>{item.title}</p>
-        {item.detail && <p className="mt-0.5 text-xs leading-snug text-text-secondary">{item.detail}</p>}
-        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-          {meta && <span>{meta}</span>}
-          {!avoid && (
-            <span className="font-bold text-accent">+{points} {attr}</span>
-          )}
+        <p className={`text-sm font-medium ${done ? "text-text-muted line-through" : "text-text-primary"}`}>
+          {item.title}
         </p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <button type="button" onClick={onRemove} aria-label="Remove" className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted opacity-0 transition hover:bg-surface-muted hover:text-danger group-hover:opacity-100 focus-ring">
-          <Trash2 size={13} aria-hidden="true" />
-        </button>
-        {!avoid && (
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-pressed={done}
-            aria-label={done ? `Mark "${item.title}" not done today` : `Mark "${item.title}" done today`}
-            className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-surface-muted active:scale-95 focus-ring"
-          >
-            {done
-              ? <CheckCircle2 size={22} className="text-success" aria-hidden="true" />
-              : <Circle size={22} className="text-text-muted" aria-hidden="true" />}
-          </button>
+        {item.detail && (
+          <p className={`mt-0.5 text-xs leading-snug ${done ? "text-text-muted" : "text-text-secondary"}`}>
+            {item.detail}
+          </p>
         )}
+        {meta && (
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">{meta}</p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={done}
+        aria-label={done ? `Mark "${item.title}" not done` : `Mark "${item.title}" done`}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition hover:bg-surface-muted active:scale-95 focus-ring"
+      >
+        {done ? (
+          <CheckCircle2 size={22} className="text-success" aria-hidden="true" />
+        ) : (
+          <Circle size={22} className="text-text-muted" aria-hidden="true" />
+        )}
+      </button>
+    </div>
+  );
+}
+
+// Shown the whole time KAI is generating — no generic systems ever flash. A
+// KAI orb + three bouncing dots so it reads as "working on it".
+function BuildingState() {
+  return (
+    <div className="rounded-glass border border-glass-border bg-surface p-10 text-center shadow-card">
+      <div className="flex justify-center">
+        <KaiOrb size={56} />
+      </div>
+      <p className="mt-4 text-sm font-medium text-text-primary">KAI is making your system</p>
+      <div className="mt-3 flex items-center justify-center gap-1.5" aria-hidden="true">
+        <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted [animation-delay:-0.3s]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted [animation-delay:-0.15s]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-text-muted" />
+      </div>
+      <p className="mt-3 text-xs text-text-secondary">Breaking your goal into the skills that get you there.</p>
+    </div>
+  );
+}
+
+function EmptyNoGoal({ onTalk }: { onTalk: () => void }) {
+  return (
+    <div className="rounded-glass border border-dashed border-glass-border bg-surface/60 p-8 text-center">
+      <Sparkles size={26} className="mx-auto text-text-muted" aria-hidden="true" />
+      <p className="mt-3 text-sm font-medium text-text-primary">Set your main goal first</p>
+      <p className="mt-1 text-xs text-text-secondary">
+        Add it in Settings, or tell KAI what you're going for and they'll build your systems.
+      </p>
+      <button
+        type="button"
+        onClick={onTalk}
+        className="mt-4 text-sm font-medium text-accent underline-offset-4 hover:underline"
+      >
+        Talk to KAI
+      </button>
+    </div>
+  );
+}
+
+function LoggedPill() {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center px-6">
+      <div className="animate-fade-slide-up rounded-full border border-glass-border bg-surface px-4 py-2 font-mono text-xs font-medium text-text-primary shadow-card-lg">
+        Logged ✓
       </div>
     </div>
   );

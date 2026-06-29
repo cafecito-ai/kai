@@ -1,9 +1,10 @@
 // NorthStarCard — the goal tile next to the Daily Score on Home.
 //
 // The goal IS your main system: the title comes from the live system
-// (getSystemGoal) and the ring shows your WEEKLY system completion
-// (systemProgressWeek), which resets each week. Tapping the tile opens the
-// System page (/schedule), where the goal/system is built, switched, edited.
+// (getSystemGoal) and the ring shows your WEEKLY completion across all of the
+// goal's sub-systems (allSubSystemsProgressWeek) — the SAME number shown at the
+// top of the System page, so Home and /schedule finally agree. Tapping the tile
+// opens the System page (/schedule).
 
 import { ArrowUpRight, Target } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,9 +12,8 @@ import { useNavigate } from "react-router-dom";
 
 import { ScoreRing } from "./ScoreRing";
 import { cleanPlanTitle } from "../lib/local-northstar";
-import { hasSchedule } from "../lib/local-schedule";
 import { getSystemGoal } from "../lib/local-systems";
-import { systemHealth } from "../lib/local-system-health";
+import { allSubSystemsProgressWeek, getSubSystems } from "../lib/local-subsystems";
 import { useStorageUserId } from "../lib/storage-user-id";
 
 export function NorthStarCard() {
@@ -25,8 +25,8 @@ export function NorthStarCard() {
 
   function refresh() {
     setGoal(getSystemGoal(userId));
-    setPct(systemHealth(userId).overall);
-    setHasSys(hasSchedule());
+    setPct(allSubSystemsProgressWeek(userId).pct);
+    setHasSys(getSubSystems(userId).length > 0);
   }
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export function NorthStarCard() {
         {goal ? cleanPlanTitle(goal) : "Build my plan"}
       </p>
       <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
-        {hasSys ? `${pct}% system health` : "Tap to build"}
+        {hasSys ? `${pct}% this week` : "Tap to build"}
       </p>
     </button>
   );

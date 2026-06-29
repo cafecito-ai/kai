@@ -23,7 +23,11 @@ import { buildKaiClientContext } from "../lib/kai-client-context";
 import { addToSchedule, applyScheduleUpdate } from "../lib/local-schedule";
 import { looksLikePlan } from "../lib/plan-from-chat";
 import { getQuickAction } from "../lib/quick-actions";
+import { isGeneratedConversation } from "../lib/generated-convos";
 import { getSystemGoal } from "../lib/local-systems";
+import { addSubSystem, removeSubSystemByName } from "../lib/local-subsystems";
+import { stubSubSystem } from "../lib/subsystem-gen";
+import { detectSubSystemIntent } from "../lib/subsystem-intent";
 import { useStorageUserId } from "../lib/storage-user-id";
 import { useKaiStore } from "../stores/kaiStore";
 import type { ChatMessage } from "../lib/types";
@@ -90,8 +94,15 @@ export function Chat() {
           ? await api.getConversation(paramId)
           : await api.getCurrentConversation("kai");
         if (cancelled) return;
-        setConversationId(data.conversationId);
-        setMessages(data.messages ?? []);
+        // The "current" conversation can be a throwaway sub-system generation
+        // (raw prompt + JSON). Never show it — start a fresh thread instead.
+        if (!paramId && isGeneratedConversation(data.conversationId)) {
+          setConversationId(null);
+          setMessages([]);
+        } else {
+          setConversationId(data.conversationId);
+          setMessages(data.messages ?? []);
+        }
       } catch {
         // Hydration failure is non-fatal — user can start a fresh thread.
       } finally {
@@ -136,7 +147,21 @@ export function Chat() {
     };
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
+    handleSubSystemIntent(trimmed);
     await requestReply(trimmed);
+  }
+
+  // Prototype: "add a strength system" / "drop the footwork system" mutate the
+  // System page's sub-systems device-locally. KAI still replies conversationally
+  // through the normal path; this just makes the page reflect the ask live.
+  function handleSubSystemIntent(text: string) {
+    const intent = detectSubSystemIntent(text);
+    if (!intent) return;
+    if (intent.kind === "remove") {
+      removeSubSystemByName(intent.name, userId);
+    } else {
+      addSubSystem(stubSubSystem(intent.name, getSystemGoal(userId) ?? ""), userId);
+    }
   }
 
   // Fetch KAI's reply for a message already shown in the thread. Retries a few

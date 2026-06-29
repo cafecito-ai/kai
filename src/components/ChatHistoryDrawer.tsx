@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { api } from "../lib/api";
+import { isGeneratedConversation } from "../lib/generated-convos";
 import type { ConversationSummary } from "../lib/types";
 
 // D1's CURRENT_TIMESTAMP returns "YYYY-MM-DD HH:MM:SS" with no timezone, so we
@@ -54,7 +55,8 @@ export function ChatHistoryDrawer({
     (async () => {
       try {
         const data = await api.listConversations("kai");
-        if (!cancelled) setRows(data.conversations ?? []);
+        // Hide throwaway sub-system generation conversations.
+        if (!cancelled) setRows((data.conversations ?? []).filter((c) => !isGeneratedConversation(c.id)));
       } catch {
         if (!cancelled) setRows([]);
       } finally {

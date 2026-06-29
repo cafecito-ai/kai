@@ -10,12 +10,16 @@
 //   2. Privacy + danger zone — link to delete-my-data, sign out
 
 import { ArrowLeft, Check, Heart, Scale, Zap } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 
 import { KaiOrb } from "../components/KaiOrb";
 import { api } from "../lib/api";
+import { clearNorthStar, setNorthStar } from "../lib/local-northstar";
+import { clearSystemGoal, getSystemGoal, setSystemGoal } from "../lib/local-systems";
+import { clearSubSystems } from "../lib/local-subsystems";
+import { useStorageUserId } from "../lib/storage-user-id";
 import type { KaiTone } from "../lib/types";
 import { useUserStore } from "../stores/userStore";
 
@@ -56,16 +60,40 @@ export function Settings() {
     setKai,
   } = useUserStore();
 
+  const userId = useStorageUserId();
   const [name, setName] = useState(kaiName);
   const [tone, setTone] = useState<KaiTone>(kaiTone);
+  const [goal, setGoal] = useState(() => getSystemGoal(userId) ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+
+  // Keep the goal field in sync if the stored user id resolves after mount.
+  useEffect(() => {
+    setGoal(getSystemGoal(userId) ?? "");
+  }, [userId]);
+
+  // Persist the main goal. Changing it clears the sub-systems so the System page
+  // rebuilds them around the new goal on its next visit.
+  function persistGoal() {
+    const g = goal.trim();
+    const prev = (getSystemGoal(userId) ?? "").trim();
+    if (g.toLowerCase() === prev.toLowerCase()) return;
+    if (g) {
+      setSystemGoal(g, userId);
+      setNorthStar(g, "custom");
+    } else {
+      clearSystemGoal(userId);
+      clearNorthStar();
+    }
+    clearSubSystems(userId);
+  }
 
   async function save() {
     setSaving(true);
     setSaved(false);
     setError("");
+    persistGoal();
     try {
       await api.updateUser({ kaiName: name, kaiTone: tone });
       setSaved(true);
@@ -80,7 +108,8 @@ export function Settings() {
     }
   }
 
-  const dirty = name !== kaiName || tone !== kaiTone;
+  const goalDirty = goal.trim().toLowerCase() !== (getSystemGoal(userId) ?? "").trim().toLowerCase();
+  const dirty = name !== kaiName || tone !== kaiTone || goalDirty;
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-2 pb-6 sm:max-w-lg">
@@ -107,6 +136,28 @@ export function Settings() {
           A name and a voice — change either any time.
         </p>
       </div>
+
+      {/* ─── Main goal ────────────────────────────────────────────── */}
+      <section className="mb-5 rounded-glass border border-glass-border bg-surface p-5 shadow-card">
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
+          your main goal
+        </p>
+        <input
+          type="text"
+          value={goal}
+          maxLength={80}
+          onChange={(e) => setGoal(e.target.value)}
+          placeholder="e.g. Make the soccer team as an attacker"
+          className="
+            mt-2.5 w-full rounded-lg border border-glass-border bg-surface
+            px-4 py-3 text-base text-text-primary
+            placeholder:text-text-muted shadow-card focus-ring
+          "
+        />
+        <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">
+          Change this and KAI rebuilds your systems around it.
+        </p>
+      </section>
 
       {/* ─── KAI identity ─────────────────────────────────────────── */}
       <section className="mb-5 rounded-glass border border-glass-border bg-surface p-5 shadow-card">

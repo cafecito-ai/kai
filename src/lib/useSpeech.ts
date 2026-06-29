@@ -60,6 +60,43 @@ function synthesisSupported(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
+// The browser's DEFAULT speech voice is usually the most robotic one available;
+// modern devices ship a far more natural voice that we just have to select.
+// Higher score = more natural. (Scored on the voice NAME, restricted to English.)
+const VOICE_PREFERENCES: Array<{ match: RegExp; score: number }> = [
+  { match: /natural/i, score: 100 }, // Microsoft "… (Natural)" online voices
+  { match: /\bgoogle\b/i, score: 92 }, // Chrome "Google US English"
+  { match: /siri/i, score: 90 },
+  { match: /enhanced|premium/i, score: 86 }, // Apple enhanced/premium voices
+  { match: /aria|jenny|guy|libby|sonia|emma|ryan/i, score: 82 }, // MS neural names
+  { match: /\b(samantha|ava|allison|aaron|nicky|zoe|evan|joelle)\b/i, score: 80 }, // Apple natural-ish
+];
+
+// Novelty / low-quality engines to avoid (eSpeak on Linux, Apple's joke voices).
+const VOICE_BLOCKLIST =
+  /espeak|e-speak|albert|zarvox|bad news|good news|bells|bahh|trinoids|whisper|wobble|cellos|organ|boing|jester|superstar|bubbles|deranged|hysterical|pipe organ|fred|junior|ralph|kathy/i;
+
+/** Pick the most natural-sounding English voice the device offers. Exported for
+ *  testing. */
+export function pickPreferredVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const english = voices.filter((v) => /^en(-|_|$)/i.test(v.lang) && !VOICE_BLOCKLIST.test(v.name));
+  const pool = english.length ? english : voices;
+  let best: SpeechSynthesisVoice | null = null;
+  let bestScore = -1;
+  for (const v of pool) {
+    let score = 0;
+    for (const p of VOICE_PREFERENCES) if (p.match.test(v.name)) score = Math.max(score, p.score);
+    if (/^en[-_]us/i.test(v.lang)) score += 5; // prefer US English
+    if (v.localService) score += 2; // offline = reliable + low latency
+    if (v.default) score += 1;
+    if (score > bestScore) {
+      bestScore = score;
+      best = v;
+    }
+  }
+  return best;
+}
+
 export function useSpeech(opts: { onFinalTranscript: (text: string) => void }): SpeechController {
   const { onFinalTranscript } = opts;
   const recognitionCtor = useMemo(getRecognitionCtor, []);
@@ -76,6 +113,21 @@ export function useSpeech(opts: { onFinalTranscript: (text: string) => void }): 
   const finalRef = useRef("");
   const onFinalRef = useRef(onFinalTranscript);
   onFinalRef.current = onFinalTranscript;
+
+  // The preferred (most natural) voice. Voices load asynchronously in some
+  // browsers (getVoices() is empty until "voiceschanged"), so we (re)select
+  // whenever the list changes.
+  const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  useEffect(() => {
+    if (!synthesisSupported()) return;
+    const load = () => {
+      const v = pickPreferredVoice(window.speechSynthesis.getVoices());
+      if (v) voiceRef.current = v;
+    };
+    load();
+    window.speechSynthesis.addEventListener?.("voiceschanged", load);
+    return () => window.speechSynthesis.removeEventListener?.("voiceschanged", load);
+  }, []);
 
   // Lazily construct one recognition instance.
   const ensureRecognition = useCallback((): SpeechRecognitionLike | null => {
@@ -153,8 +205,13 @@ export function useSpeech(opts: { onFinalTranscript: (text: string) => void }): 
     try {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.0;
-      u.pitch = 1.0;
+      const voice = voiceRef.current;
+      if (voice) u.voice = voice;
+      u.lang = voice?.lang || "en-US";
+      // Slightly slower + a touch higher reads warmer and less clipped than the
+      // robotic default; this is the "older sibling talking to you" cadence.
+      u.rate = 0.96;
+      u.pitch = 1.05;
       if (speakOpts?.onEnd) u.onend = () => speakOpts.onEnd?.();
       window.speechSynthesis.speak(u);
     } catch {
